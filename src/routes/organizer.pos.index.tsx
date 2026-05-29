@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Banknote, CreditCard, Building2, Gift, Plus, Minus, Trash2,
-  Printer, Mail, QrCode, Ticket as TicketIcon, Receipt, Calendar,
+  Printer, Mail, Ticket as TicketIcon, Receipt, Calendar,
   TrendingUp, Ban, Usb, FileText, ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
