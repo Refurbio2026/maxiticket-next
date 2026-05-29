@@ -21,6 +21,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
+import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
@@ -118,6 +119,11 @@ const OrganizerPosIndexRoute = OrganizerPosIndexRouteImport.update({
 const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosClosingRoute = OrganizerPosClosingRouteImport.update({
+  id: '/pos/closing',
+  path: '/pos/closing',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
@@ -419,6 +426,7 @@ export interface FileRoutesByTo {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
 }
@@ -472,6 +480,7 @@ export interface FileRoutesById {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
@@ -526,6 +535,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/pos/closing'
     | '/organizer/events/'
     | '/organizer/pos/'
   fileRoutesByTo: FileRoutesByTo
@@ -576,6 +586,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/pos/closing'
     | '/organizer/events'
     | '/organizer/pos'
   id:
@@ -628,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/pos/closing'
     | '/organizer/events/'
     | '/organizer/pos/'
   fileRoutesById: FileRoutesById
@@ -727,6 +739,13 @@ declare module '@tanstack/react-router' {
       path: '/events'
       fullPath: '/organizer/events/'
       preLoaderRoute: typeof OrganizerEventsIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/closing': {
+      id: '/organizer/pos/closing'
+      path: '/pos/closing'
+      fullPath: '/organizer/pos/closing'
+      preLoaderRoute: typeof OrganizerPosClosingRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/events/new': {
@@ -1094,6 +1113,7 @@ const EventsRouteWithChildren =
 interface OrganizerRouteChildren {
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
+  OrganizerPosClosingRoute: typeof OrganizerPosClosingRoute
   OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
   OrganizerPosIndexRoute: typeof OrganizerPosIndexRoute
 }
@@ -1101,6 +1121,7 @@ interface OrganizerRouteChildren {
 const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerEventsNewRoute: OrganizerEventsNewRoute,
+  OrganizerPosClosingRoute: OrganizerPosClosingRoute,
   OrganizerEventsIndexRoute: OrganizerEventsIndexRoute,
   OrganizerPosIndexRoute: OrganizerPosIndexRoute,
 }
