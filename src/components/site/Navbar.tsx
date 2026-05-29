@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const { user, isAdmin, isOrganizer, signOut } = useAuth();
@@ -48,6 +49,7 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle className="rounded-xl" />
             {user ? (
               <>
                 <Button asChild variant="ghost" className="rounded-xl text-sm">
