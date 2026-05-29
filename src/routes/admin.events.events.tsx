@@ -14,7 +14,12 @@ const columns: Column[] = [
   { key: "event_date", label: "Dátum" },
   { key: "city", label: "Mesto" },
   { key: "venue", label: "Miesto" },
-  { key: "status", label: "Stav", type: "status" },
+  {
+    key: "status",
+    label: "Stav",
+    badge: true,
+    badgeMap: { Publikované: "success", Koncept: "muted" },
+  },
 ];
 
 function Page() {
@@ -27,9 +32,14 @@ function Page() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((e) => ({
-        ...e,
-        status: e.status === "published" ? "Active" : "Pending",
-      }));
+        id: e.id,
+        title: e.title,
+        category: e.category,
+        event_date: e.event_date,
+        city: e.city,
+        venue: e.venue,
+        status: e.status === "published" ? "Publikované" : "Koncept",
+      })) as Record<string, string | number>[];
     },
   });
 
@@ -38,7 +48,8 @@ function Page() {
       title="Podujatia"
       subtitle="Všetky podujatia v systéme — z reálnej databázy."
       columns={columns}
-      rows={rows as Record<string, unknown>[]}
+      rows={rows}
     />
   );
 }
+
