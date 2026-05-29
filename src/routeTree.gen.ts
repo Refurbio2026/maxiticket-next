@@ -34,6 +34,11 @@ import { Route as AdminSalesNotesRouteImport } from './routes/admin.sales.notes'
 import { Route as AdminSalesCancellationsRouteImport } from './routes/admin.sales.cancellations'
 import { Route as AdminReportsSalesRouteImport } from './routes/admin.reports.sales'
 import { Route as AdminReportsAvfRouteImport } from './routes/admin.reports.avf'
+import { Route as AdminPosTerminalsRouteImport } from './routes/admin.pos.terminals'
+import { Route as AdminPosSalesRouteImport } from './routes/admin.pos.sales'
+import { Route as AdminPosFiscalRouteImport } from './routes/admin.pos.fiscal'
+import { Route as AdminPosClosingsRouteImport } from './routes/admin.pos.closings'
+import { Route as AdminPosCashiersRouteImport } from './routes/admin.pos.cashiers'
 import { Route as AdminMaxiticketTicketsRouteImport } from './routes/admin.maxiticket.tickets'
 import { Route as AdminMaxiticketRefundTypesRouteImport } from './routes/admin.maxiticket.refund-types'
 import { Route as AdminMaxiticketProtocolsRouteImport } from './routes/admin.maxiticket.protocols'
@@ -188,6 +193,31 @@ const AdminReportsSalesRoute = AdminReportsSalesRouteImport.update({
 const AdminReportsAvfRoute = AdminReportsAvfRouteImport.update({
   id: '/reports/avf',
   path: '/reports/avf',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosTerminalsRoute = AdminPosTerminalsRouteImport.update({
+  id: '/pos/terminals',
+  path: '/pos/terminals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosSalesRoute = AdminPosSalesRouteImport.update({
+  id: '/pos/sales',
+  path: '/pos/sales',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosFiscalRoute = AdminPosFiscalRouteImport.update({
+  id: '/pos/fiscal',
+  path: '/pos/fiscal',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosClosingsRoute = AdminPosClosingsRouteImport.update({
+  id: '/pos/closings',
+  path: '/pos/closings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosCashiersRoute = AdminPosCashiersRouteImport.update({
+  id: '/pos/cashiers',
+  path: '/pos/cashiers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMaxiticketTicketsRoute = AdminMaxiticketTicketsRouteImport.update({
@@ -384,6 +414,11 @@ export interface FileRoutesByFullPath {
   '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
   '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
   '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
+  '/admin/pos/cashiers': typeof AdminPosCashiersRoute
+  '/admin/pos/closings': typeof AdminPosClosingsRoute
+  '/admin/pos/fiscal': typeof AdminPosFiscalRoute
+  '/admin/pos/sales': typeof AdminPosSalesRoute
+  '/admin/pos/terminals': typeof AdminPosTerminalsRoute
   '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
@@ -438,6 +473,11 @@ export interface FileRoutesByTo {
   '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
   '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
   '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
+  '/admin/pos/cashiers': typeof AdminPosCashiersRoute
+  '/admin/pos/closings': typeof AdminPosClosingsRoute
+  '/admin/pos/fiscal': typeof AdminPosFiscalRoute
+  '/admin/pos/sales': typeof AdminPosSalesRoute
+  '/admin/pos/terminals': typeof AdminPosTerminalsRoute
   '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
@@ -495,6 +535,11 @@ export interface FileRoutesById {
   '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
   '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
   '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
+  '/admin/pos/cashiers': typeof AdminPosCashiersRoute
+  '/admin/pos/closings': typeof AdminPosClosingsRoute
+  '/admin/pos/fiscal': typeof AdminPosFiscalRoute
+  '/admin/pos/sales': typeof AdminPosSalesRoute
+  '/admin/pos/terminals': typeof AdminPosTerminalsRoute
   '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
@@ -553,6 +598,11 @@ export interface FileRouteTypes {
     | '/admin/maxiticket/protocols'
     | '/admin/maxiticket/refund-types'
     | '/admin/maxiticket/tickets'
+    | '/admin/pos/cashiers'
+    | '/admin/pos/closings'
+    | '/admin/pos/fiscal'
+    | '/admin/pos/sales'
+    | '/admin/pos/terminals'
     | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
@@ -607,6 +657,11 @@ export interface FileRouteTypes {
     | '/admin/maxiticket/protocols'
     | '/admin/maxiticket/refund-types'
     | '/admin/maxiticket/tickets'
+    | '/admin/pos/cashiers'
+    | '/admin/pos/closings'
+    | '/admin/pos/fiscal'
+    | '/admin/pos/sales'
+    | '/admin/pos/terminals'
     | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
@@ -663,6 +718,11 @@ export interface FileRouteTypes {
     | '/admin/maxiticket/protocols'
     | '/admin/maxiticket/refund-types'
     | '/admin/maxiticket/tickets'
+    | '/admin/pos/cashiers'
+    | '/admin/pos/closings'
+    | '/admin/pos/fiscal'
+    | '/admin/pos/sales'
+    | '/admin/pos/terminals'
     | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
@@ -866,6 +926,41 @@ declare module '@tanstack/react-router' {
       path: '/reports/avf'
       fullPath: '/admin/reports/avf'
       preLoaderRoute: typeof AdminReportsAvfRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/terminals': {
+      id: '/admin/pos/terminals'
+      path: '/pos/terminals'
+      fullPath: '/admin/pos/terminals'
+      preLoaderRoute: typeof AdminPosTerminalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/sales': {
+      id: '/admin/pos/sales'
+      path: '/pos/sales'
+      fullPath: '/admin/pos/sales'
+      preLoaderRoute: typeof AdminPosSalesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/fiscal': {
+      id: '/admin/pos/fiscal'
+      path: '/pos/fiscal'
+      fullPath: '/admin/pos/fiscal'
+      preLoaderRoute: typeof AdminPosFiscalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/closings': {
+      id: '/admin/pos/closings'
+      path: '/pos/closings'
+      fullPath: '/admin/pos/closings'
+      preLoaderRoute: typeof AdminPosClosingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/cashiers': {
+      id: '/admin/pos/cashiers'
+      path: '/pos/cashiers'
+      fullPath: '/admin/pos/cashiers'
+      preLoaderRoute: typeof AdminPosCashiersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/maxiticket/tickets': {
@@ -1105,6 +1200,11 @@ interface AdminRouteChildren {
   AdminMaxiticketProtocolsRoute: typeof AdminMaxiticketProtocolsRoute
   AdminMaxiticketRefundTypesRoute: typeof AdminMaxiticketRefundTypesRoute
   AdminMaxiticketTicketsRoute: typeof AdminMaxiticketTicketsRoute
+  AdminPosCashiersRoute: typeof AdminPosCashiersRoute
+  AdminPosClosingsRoute: typeof AdminPosClosingsRoute
+  AdminPosFiscalRoute: typeof AdminPosFiscalRoute
+  AdminPosSalesRoute: typeof AdminPosSalesRoute
+  AdminPosTerminalsRoute: typeof AdminPosTerminalsRoute
   AdminReportsAvfRoute: typeof AdminReportsAvfRoute
   AdminReportsSalesRoute: typeof AdminReportsSalesRoute
   AdminSalesCancellationsRoute: typeof AdminSalesCancellationsRoute
@@ -1145,6 +1245,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMaxiticketProtocolsRoute: AdminMaxiticketProtocolsRoute,
   AdminMaxiticketRefundTypesRoute: AdminMaxiticketRefundTypesRoute,
   AdminMaxiticketTicketsRoute: AdminMaxiticketTicketsRoute,
+  AdminPosCashiersRoute: AdminPosCashiersRoute,
+  AdminPosClosingsRoute: AdminPosClosingsRoute,
+  AdminPosFiscalRoute: AdminPosFiscalRoute,
+  AdminPosSalesRoute: AdminPosSalesRoute,
+  AdminPosTerminalsRoute: AdminPosTerminalsRoute,
   AdminReportsAvfRoute: AdminReportsAvfRoute,
   AdminReportsSalesRoute: AdminReportsSalesRoute,
   AdminSalesCancellationsRoute: AdminSalesCancellationsRoute,
