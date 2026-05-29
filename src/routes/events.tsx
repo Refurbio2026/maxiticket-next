@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { getEvents, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
@@ -17,18 +17,23 @@ export const Route = createFileRoute("/events")({
 });
 
 function EventsPage() {
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["public-events"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("status", "published")
-        .order("event_date", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-  });
+  const [events, setEvents] = useState<EventItem[]>([]);
+
+  useEffect(() => {
+    const load = () =>
+      setEvents(
+        getEvents()
+          .filter((e) => e.status === "published")
+          .sort((a, b) => a.event_date.localeCompare(b.event_date)),
+      );
+    load();
+    window.addEventListener(EVENTS_EVENT, load);
+    window.addEventListener("storage", load);
+    return () => {
+      window.removeEventListener(EVENTS_EVENT, load);
+      window.removeEventListener("storage", load);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -39,9 +44,7 @@ function EventsPage() {
           <p className="text-muted-foreground mt-2">Všetky aktuálne podujatia na jednom mieste.</p>
         </div>
 
-        {isLoading ? (
-          <div className="text-muted-foreground">Načítavam…</div>
-        ) : !events || events.length === 0 ? (
+        {events.length === 0 ? (
           <Card className="p-12 text-center bg-card/60 border-dashed border-border/50">
             <Calendar className="size-10 text-muted-foreground mx-auto mb-3" />
             <div className="font-semibold">Žiadne publikované podujatia</div>
@@ -50,8 +53,8 @@ function EventsPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {events.map((e) => (
-              <Link to="/events/$id" params={{ id: e.id }} key={e.id} className="group">
-                <Card className="overflow-hidden bg-card/60 border-border/50 transition group-hover:border-primary/40 group-hover:shadow-glow">
+              <Link key={e.id} to="/events/$id" params={{ id: e.id }} className="group">
+                <Card className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 transition">
                   <div
                     className="aspect-video bg-muted bg-cover bg-center"
                     style={e.image_url ? { backgroundImage: `url(${e.image_url})` } : undefined}

@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Ticket, Menu, Shield, LayoutDashboard, User } from "lucide-react";
+import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
 export function Navbar() {
-  const { user, isAdmin, isOrganizer } = useAuth();
+  const { user, isAdmin, isOrganizer, signOut } = useAuth();
 
   return (
     <motion.header
@@ -44,9 +44,14 @@ export function Navbar() {
 
           <div className="flex items-center gap-2">
             {user ? (
-              <Button asChild variant="ghost" className="rounded-xl text-sm">
-                <Link to="/account"><User className="size-4 mr-1.5" /> Účet</Link>
-              </Button>
+              <>
+                <Button asChild variant="ghost" className="rounded-xl text-sm">
+                  <Link to="/account"><User className="size-4 mr-1.5" /> Účet</Link>
+                </Button>
+                <Button variant="ghost" className="rounded-xl text-sm" onClick={() => signOut()}>
+                  <LogOut className="size-4 mr-1.5" /> Odhlásiť
+                </Button>
+              </>
             ) : (
               <>
                 <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">

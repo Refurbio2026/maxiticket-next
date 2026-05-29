@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { getEvent, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
@@ -14,17 +14,22 @@ export const Route = createFileRoute("/events/$id")({
 
 function EventDetail() {
   const { id } = Route.useParams();
+  const [event, setEvent] = useState<EventItem | undefined>(undefined);
+  const [loaded, setLoaded] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["event", id],
-    queryFn: async () => {
-      const [{ data: event }, { data: tickets }] = await Promise.all([
-        supabase.from("events").select("*").eq("id", id).maybeSingle(),
-        supabase.from("ticket_types").select("*").eq("event_id", id).order("price"),
-      ]);
-      return { event, tickets: tickets ?? [] };
-    },
-  });
+  useEffect(() => {
+    const load = () => {
+      setEvent(getEvent(id));
+      setLoaded(true);
+    };
+    load();
+    window.addEventListener(EVENTS_EVENT, load);
+    window.addEventListener("storage", load);
+    return () => {
+      window.removeEventListener(EVENTS_EVENT, load);
+      window.removeEventListener("storage", load);
+    };
+  }, [id]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -33,9 +38,9 @@ function EventDetail() {
         <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6">
           <ArrowLeft className="size-4" /> Späť na podujatia
         </Link>
-        {isLoading ? (
+        {!loaded ? (
           <div className="text-muted-foreground">Načítavam…</div>
-        ) : !data?.event ? (
+        ) : !event ? (
           <Card className="p-12 text-center bg-card/60 border-dashed">
             <div className="font-semibold">Podujatie sa nenašlo</div>
           </Card>
@@ -43,27 +48,30 @@ function EventDetail() {
           <>
             <div
               className="aspect-[21/9] rounded-2xl bg-muted bg-cover bg-center mb-8"
-              style={data.event.image_url ? { backgroundImage: `url(${data.event.image_url})` } : undefined}
+              style={event.image_url ? { backgroundImage: `url(${event.image_url})` } : undefined}
             />
             <div className="grid lg:grid-cols-[1fr_360px] gap-10">
               <div>
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">{data.event.category}</span>
-                <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-2">{data.event.title}</h1>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">{event.category}</span>
+                <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-2">{event.title}</h1>
                 <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5"><Calendar className="size-4" /> {data.event.event_date} · {data.event.event_time}</span>
-                  <span className="inline-flex items-center gap-1.5"><MapPin className="size-4" /> {data.event.venue}, {data.event.city}</span>
+                  <span className="inline-flex items-center gap-1.5"><Calendar className="size-4" /> {event.event_date} · {event.event_time}</span>
+                  <span className="inline-flex items-center gap-1.5"><MapPin className="size-4" /> {event.venue}, {event.city}</span>
                 </div>
-                {data.event.description && (
-                  <p className="text-foreground/80 leading-relaxed mt-8 whitespace-pre-line">{data.event.description}</p>
+                {event.organizer_name && (
+                  <div className="text-sm text-muted-foreground mt-2">Organizátor: {event.organizer_name}</div>
+                )}
+                {event.description && (
+                  <p className="text-foreground/80 leading-relaxed mt-8 whitespace-pre-line">{event.description}</p>
                 )}
               </div>
               <Card className="p-6 bg-card/60 border-border/50 h-fit sticky top-28">
                 <h2 className="font-display font-semibold text-lg mb-4">Vstupenky</h2>
-                {data.tickets.length === 0 ? (
+                {event.tickets.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Vstupenky budú onedlho v predaji.</p>
                 ) : (
                   <div className="space-y-3">
-                    {data.tickets.map((t) => (
+                    {event.tickets.map((t) => (
                       <div key={t.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/20">
                         <div>
                           <div className="font-medium text-sm">{t.name}</div>

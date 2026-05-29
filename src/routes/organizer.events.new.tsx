@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { upsertEvent, uid, emit, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,7 @@ function NewEventPage() {
     event_time: "",
     venue: "",
     city: "",
+    address: "",
     description: "",
     image_url: "",
     status: "draft" as "draft" | "published",
@@ -44,48 +45,50 @@ function NewEventPage() {
   const upd = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  if (user && user.role === "user") {
+    return (
+      <Card className="p-12 text-center bg-card/60 border-dashed border-border/50 max-w-2xl">
+        <h2 className="font-display text-2xl font-semibold mb-2">Nedostatočné oprávnenia</h2>
+        <p className="text-muted-foreground">
+          Na pridanie podujatia potrebujete organizátorský účet.
+        </p>
+      </Card>
+    );
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setBusy(true);
-    const { data: event, error } = await supabase
-      .from("events")
-      .insert({
-        organizer_id: user.id,
-        title: form.title,
-        category: form.category,
-        event_date: form.event_date,
-        event_time: form.event_time,
-        venue: form.venue,
-        city: form.city,
-        description: form.description || null,
-        image_url: form.image_url || null,
-        status: form.status,
-      })
-      .select()
-      .single();
-    if (error || !event) {
-      setBusy(false);
-      toast.error(error?.message ?? "Nepodarilo sa uložiť podujatie");
-      return;
-    }
-    const ttRows = tickets
-      .filter((t) => t.name.trim())
-      .map((t) => ({
-        event_id: event.id,
-        name: t.name,
-        price: Number(t.price) || 0,
-        quantity: Number(t.quantity) || 0,
-      }));
-    if (ttRows.length) {
-      const { error: tErr } = await supabase.from("ticket_types").insert(ttRows);
-      if (tErr) {
-        toast.error("Podujatie uložené, ale typy vstupeniek zlyhali: " + tErr.message);
-      }
-    }
+    const event: EventItem = {
+      id: uid(),
+      organizer_id: user.id,
+      organizer_name: user.full_name ?? user.email,
+      title: form.title,
+      category: form.category,
+      event_date: form.event_date,
+      event_time: form.event_time,
+      venue: form.venue,
+      city: form.city,
+      address: form.address || undefined,
+      description: form.description || undefined,
+      image_url: form.image_url || undefined,
+      status: form.status,
+      created_at: new Date().toISOString(),
+      tickets: tickets
+        .filter((t) => t.name.trim())
+        .map((t) => ({
+          id: uid(),
+          name: t.name,
+          price: Number(t.price) || 0,
+          quantity: Number(t.quantity) || 0,
+        })),
+    };
+    upsertEvent(event);
+    emit(EVENTS_EVENT);
     setBusy(false);
-    toast.success("Podujatie vytvorené");
-    navigate({ to: "/organizer" });
+    toast.success("Podujatie bolo úspešne vytvorené");
+    navigate({ to: "/organizer/events" });
   };
 
   return (
@@ -135,6 +138,10 @@ function NewEventPage() {
           <div className="space-y-2">
             <Label>Mesto *</Label>
             <Input required value={form.city} onChange={(e) => upd("city", e.target.value)} />
+          </div>
+          <div className="sm:col-span-2 space-y-2">
+            <Label>Adresa</Label>
+            <Input value={form.address} onChange={(e) => upd("address", e.target.value)} />
           </div>
           <div className="sm:col-span-2 space-y-2">
             <Label>URL obrázka podujatia</Label>
