@@ -38,8 +38,8 @@ function AccountPage() {
               ))}
             </div>
           </div>
-          <Button variant="outline" onClick={() => signOut().then(() => navigate({ to: "/" }))}>
-            <LogOut className="size-4 mr-2" /> Odhlásiť
+          <Button variant="outline" onClick={async () => { await signOut(); navigate({ to: "/login", replace: true }); }}>
+            <LogOut className="size-4 mr-2" /> Odhlásiť sa
           </Button>
         </div>
 
