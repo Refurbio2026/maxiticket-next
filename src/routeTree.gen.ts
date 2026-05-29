@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -49,6 +50,11 @@ import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -257,6 +263,7 @@ const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/login': typeof LoginRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/admin': typeof AdminIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/login': typeof LoginRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/login'
     | '/admin/'
     | '/admin/data/categories'
     | '/admin/data/content'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/admin'
     | '/admin/data/categories'
     | '/admin/data/content'
@@ -463,6 +474,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/login'
     | '/admin/'
     | '/admin/data/categories'
     | '/admin/data/content'
@@ -505,10 +517,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -870,6 +890,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
