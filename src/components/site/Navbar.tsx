@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Ticket, Menu, Shield, LayoutDashboard, User } from "lucide-react";
+import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
 export function Navbar() {
-  const { user, isAdmin, isOrganizer } = useAuth();
+  const { user, isAdmin, isOrganizer, signOut } = useAuth();
 
   return (
     <motion.header
