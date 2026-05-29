@@ -15,7 +15,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
 import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
 import { Route as AdminSalesSalesRouteImport } from './routes/admin.sales.sales'
@@ -83,10 +85,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
+  id: '/events/new',
+  path: '/events/new',
+  getParentRoute: () => OrganizerRoute,
 } as any)
 const AdminSystemUsersRoute = AdminSystemUsersRouteImport.update({
   id: '/system/users',
@@ -283,9 +295,10 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/organizer': typeof OrganizerRoute
+  '/organizer': typeof OrganizerRouteWithChildren
   '/register': typeof RegisterRoute
   '/admin/': typeof AdminIndexRoute
+  '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
@@ -322,14 +335,15 @@ export interface FileRoutesByFullPath {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/login': typeof LoginRoute
-  '/organizer': typeof OrganizerRoute
   '/register': typeof RegisterRoute
   '/admin': typeof AdminIndexRoute
+  '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
@@ -366,6 +380,7 @@ export interface FileRoutesByTo {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -373,9 +388,10 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/organizer': typeof OrganizerRoute
+  '/organizer': typeof OrganizerRouteWithChildren
   '/register': typeof RegisterRoute
   '/admin/': typeof AdminIndexRoute
+  '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
@@ -412,6 +428,7 @@ export interface FileRoutesById {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -423,6 +440,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/register'
     | '/admin/'
+    | '/organizer/'
     | '/admin/data/categories'
     | '/admin/data/content'
     | '/admin/data/discount-categories'
@@ -459,14 +477,15 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/organizer/events/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/account'
     | '/login'
-    | '/organizer'
     | '/register'
     | '/admin'
+    | '/organizer'
     | '/admin/data/categories'
     | '/admin/data/content'
     | '/admin/data/discount-categories'
@@ -503,6 +522,7 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/organizer/events/new'
   id:
     | '__root__'
     | '/'
@@ -512,6 +532,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/register'
     | '/admin/'
+    | '/organizer/'
     | '/admin/data/categories'
     | '/admin/data/content'
     | '/admin/data/discount-categories'
@@ -548,6 +569,7 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/organizer/events/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -555,7 +577,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
-  OrganizerRoute: typeof OrganizerRoute
+  OrganizerRoute: typeof OrganizerRouteWithChildren
   RegisterRoute: typeof RegisterRoute
 }
 
@@ -603,12 +625,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/organizer/': {
+      id: '/organizer/'
+      path: '/'
+      fullPath: '/organizer/'
+      preLoaderRoute: typeof OrganizerIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/organizer/events/new': {
+      id: '/organizer/events/new'
+      path: '/events/new'
+      fullPath: '/organizer/events/new'
+      preLoaderRoute: typeof OrganizerEventsNewRouteImport
+      parentRoute: typeof OrganizerRoute
     }
     '/admin/system/users': {
       id: '/admin/system/users'
@@ -947,14 +983,38 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface OrganizerRouteChildren {
+  OrganizerIndexRoute: typeof OrganizerIndexRoute
+  OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
+}
+
+const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerIndexRoute: OrganizerIndexRoute,
+  OrganizerEventsNewRoute: OrganizerEventsNewRoute,
+}
+
+const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
+  OrganizerRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
-  OrganizerRoute: OrganizerRoute,
+  OrganizerRoute: OrganizerRouteWithChildren,
   RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
