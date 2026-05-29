@@ -23,6 +23,9 @@ function SalesPage() {
   const { user } = useAuth();
   const [sales, setSales] = useState<PosSale[]>([]);
   const [receipts, setReceipts] = useState<FiscalReceipt[]>([]);
+  const [tickets, setTickets] = useState<PosTicket[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [detail, setDetail] = useState<PosSale | null>(null);
   const [q, setQ] = useState("");
   const [tick, setTick] = useState(0);
 
@@ -30,6 +33,8 @@ function SalesPage() {
     if (!user) return;
     setSales(getSales().filter((s) => user.role === "admin" || s.organizer_id === user.id));
     setReceipts(getFiscalReceipts());
+    setTickets(getTickets());
+    setEvents(getEvents());
   }, [user, tick]);
 
   const receiptById = (id?: string) => (id ? receipts.find((r) => r.id === id) : undefined);
