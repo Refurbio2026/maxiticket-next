@@ -25,6 +25,7 @@ function OrganizerLayout() {
   const tabs: { to: string; label: string; exact?: boolean }[] = [
     { to: "/organizer", label: "Prehľad", exact: true },
     { to: "/organizer/events/new", label: "Pridať podujatie" },
+    { to: "/organizer/pos", label: "Pokladňa" },
   ];
 
 
