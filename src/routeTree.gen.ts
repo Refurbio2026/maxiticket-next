@@ -20,6 +20,7 @@ import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
+import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
 import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
 import { Route as AdminSalesSalesRouteImport } from './routes/admin.sales.sales'
@@ -111,6 +112,11 @@ const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
   id: '/events/new',
   path: '/events/new',
   getParentRoute: () => OrganizerRoute,
+} as any)
+const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
+  id: '/api/public/seed-demo',
+  path: '/api/public/seed-demo',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSystemUsersRoute = AdminSystemUsersRouteImport.update({
   id: '/system/users',
@@ -349,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRoutesByTo {
@@ -396,6 +403,7 @@ export interface FileRoutesByTo {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRoutesById {
@@ -446,6 +454,7 @@ export interface FileRoutesById {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRouteTypes {
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/api/public/seed-demo'
     | '/organizer/events/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/api/public/seed-demo'
     | '/organizer/events/new'
   id:
     | '__root__'
@@ -593,6 +604,7 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/api/public/seed-demo'
     | '/organizer/events/new'
   fileRoutesById: FileRoutesById
 }
@@ -604,6 +616,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
   RegisterRoute: typeof RegisterRoute
+  ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -684,6 +697,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/organizer/events/new'
       preLoaderRoute: typeof OrganizerEventsNewRouteImport
       parentRoute: typeof OrganizerRoute
+    }
+    '/api/public/seed-demo': {
+      id: '/api/public/seed-demo'
+      path: '/api/public/seed-demo'
+      fullPath: '/api/public/seed-demo'
+      preLoaderRoute: typeof ApiPublicSeedDemoRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/system/users': {
       id: '/admin/system/users'
@@ -1055,6 +1075,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
   RegisterRoute: RegisterRoute,
+  ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
