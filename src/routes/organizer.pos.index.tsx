@@ -6,12 +6,13 @@ import {
 } from "@/lib/local-db";
 import {
   addSale, getSales, nextReceiptNumber, voidSale, logAudit,
-  computeClosing, POS_EVENT, addSession, addTickets,
+  computeClosing, POS_EVENT, addSession, addTickets, getTickets,
   getFiscalSettings, getFiscalReceipts,
   type PaymentMethod, type PosSale, type PosSaleItem, type PosTicket,
 } from "@/lib/pos-db";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { fiscal } from "@/lib/fiscal-adapter";
+import { printTickets } from "@/lib/print-tickets";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
