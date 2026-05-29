@@ -64,6 +64,47 @@
 :root {
   --radius: 0.875rem;
 
+  /* Light mode — Stripe / Linear / Notion inspired */
+  --background: oklch(1 0 0);                  /* #FFFFFF */
+  --foreground: oklch(0.21 0.04 265);          /* #0F172A */
+
+  --surface: oklch(0.98 0.005 265);            /* #F8FAFC */
+  --surface-elevated: oklch(1 0 0);
+
+  --card: oklch(0.985 0.004 265);              /* near-white card */
+  --card-foreground: oklch(0.21 0.04 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.04 265);
+
+  /* #FF7A00 flame orange */
+  --primary: oklch(0.7 0.2 45);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.965 0.005 265);
+  --secondary-foreground: oklch(0.21 0.04 265);
+
+  --muted: oklch(0.965 0.005 265);
+  --muted-foreground: oklch(0.55 0.03 260);    /* #64748B */
+
+  --accent: oklch(0.83 0.17 82);
+  --accent-foreground: oklch(0.21 0.04 265);
+
+  --destructive: oklch(0.62 0.22 27);          /* #EF4444 */
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.012 260);              /* #E2E8F0 */
+  --input: oklch(0.9 0.012 260);
+  --ring: oklch(0.7 0.2 45);
+
+  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.7 0.2 45 / 0.18), transparent 70%),
+                   radial-gradient(ellipse 60% 50% at 80% 30%, oklch(0.83 0.17 82 / 0.12), transparent 70%),
+                   linear-gradient(180deg, oklch(1 0 0), oklch(0.98 0.005 265));
+  --gradient-flame: linear-gradient(135deg, oklch(0.7 0.2 45), oklch(0.83 0.17 82));
+  --gradient-glass: linear-gradient(135deg, oklch(1 0 0 / 0.85), oklch(0.98 0.005 265 / 0.7));
+  --shadow-glow: 0 0 60px -10px oklch(0.7 0.2 45 / 0.3);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.04), 0 10px 30px -15px oklch(0 0 0 / 0.12);
+}
+
+.dark {
   /* Dark-first noir palette with flame accents */
   --background: oklch(0.13 0.02 270);
   --foreground: oklch(0.98 0.005 100);
@@ -76,7 +117,6 @@
   --popover: oklch(0.17 0.025 270);
   --popover-foreground: oklch(0.98 0.005 100);
 
-  /* #FF5A1F flame orange */
   --primary: oklch(0.69 0.21 38);
   --primary-foreground: oklch(0.13 0.02 270);
 
@@ -86,7 +126,6 @@
   --muted: oklch(0.22 0.03 270);
   --muted-foreground: oklch(0.68 0.02 270);
 
-  /* #FFB703 amber */
   --accent: oklch(0.83 0.17 82);
   --accent-foreground: oklch(0.13 0.02 270);
 
@@ -130,7 +169,7 @@
     background: var(--gradient-glass);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid oklch(1 0 0 / 0.08);
+    border: 1px solid var(--color-border);
   }
   .text-gradient-flame {
     background: var(--gradient-flame);

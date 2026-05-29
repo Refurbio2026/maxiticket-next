@@ -21,6 +21,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const labels: Record<string, string> = {
   admin: "Admin",
@@ -109,6 +110,8 @@ export function AdminTopbar() {
             ⌘K
           </kbd>
         </div>
+
+        <ThemeToggle className="h-9 w-9" />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
