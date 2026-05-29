@@ -1,14 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { getSales, getFiscalReceipts, POS_EVENT, voidSale, logAudit, type PosSale, type FiscalReceipt } from "@/lib/pos-db";
+import { getSales, getFiscalReceipts, getTickets, POS_EVENT, voidSale, logAudit, type PosSale, type FiscalReceipt, type PosTicket } from "@/lib/pos-db";
+import { getEvents, type EventItem } from "@/lib/local-db";
 import { orpAdapter } from "@/lib/fiscal-adapter";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
+import { printTickets } from "@/lib/print-tickets";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Ban, FileDown, Search, Receipt } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Ban, FileDown, Search, Receipt, Printer, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/sales")({
