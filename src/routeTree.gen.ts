@@ -77,6 +77,7 @@ import { Route as AdminDataDiscountsRouteImport } from './routes/admin.data.disc
 import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.data.discount-categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
+import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
@@ -427,6 +428,12 @@ const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
   path: '/data/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDataCategoriesCategoryIdEventsNewRoute =
+  AdminDataCategoriesCategoryIdEventsNewRouteImport.update({
+    id: '/$categoryId/events/new',
+    path: '/$categoryId/events/new',
+    getParentRoute: () => AdminDataCategoriesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -445,7 +452,7 @@ export interface FileRoutesByFullPath {
   '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
-  '/admin/data/categories': typeof AdminDataCategoriesRoute
+  '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
   '/admin/data/discounts': typeof AdminDataDiscountsRoute
@@ -497,6 +504,7 @@ export interface FileRoutesByFullPath {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -513,7 +521,7 @@ export interface FileRoutesByTo {
   '/events/$id': typeof EventsIdRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
-  '/admin/data/categories': typeof AdminDataCategoriesRoute
+  '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
   '/admin/data/discounts': typeof AdminDataDiscountsRoute
@@ -565,6 +573,7 @@ export interface FileRoutesByTo {
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
+  '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -584,7 +593,7 @@ export interface FileRoutesById {
   '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
-  '/admin/data/categories': typeof AdminDataCategoriesRoute
+  '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
   '/admin/data/discounts': typeof AdminDataDiscountsRoute
@@ -636,6 +645,7 @@ export interface FileRoutesById {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -708,6 +718,7 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/admin/data/categories/$categoryId/events/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -776,6 +787,7 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/pos'
+    | '/admin/data/categories/$categoryId/events/new'
   id:
     | '__root__'
     | '/'
@@ -846,6 +858,7 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/admin/data/categories/$categoryId/events/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1342,13 +1355,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/data/categories/$categoryId/events/new': {
+      id: '/admin/data/categories/$categoryId/events/new'
+      path: '/$categoryId/events/new'
+      fullPath: '/admin/data/categories/$categoryId/events/new'
+      preLoaderRoute: typeof AdminDataCategoriesCategoryIdEventsNewRouteImport
+      parentRoute: typeof AdminDataCategoriesRoute
+    }
   }
 }
+
+interface AdminDataCategoriesRouteChildren {
+  AdminDataCategoriesCategoryIdEventsNewRoute: typeof AdminDataCategoriesCategoryIdEventsNewRoute
+}
+
+const AdminDataCategoriesRouteChildren: AdminDataCategoriesRouteChildren = {
+  AdminDataCategoriesCategoryIdEventsNewRoute:
+    AdminDataCategoriesCategoryIdEventsNewRoute,
+}
+
+const AdminDataCategoriesRouteWithChildren =
+  AdminDataCategoriesRoute._addFileChildren(AdminDataCategoriesRouteChildren)
 
 interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  AdminDataCategoriesRoute: typeof AdminDataCategoriesRoute
+  AdminDataCategoriesRoute: typeof AdminDataCategoriesRouteWithChildren
   AdminDataContentRoute: typeof AdminDataContentRoute
   AdminDataDiscountCategoriesRoute: typeof AdminDataDiscountCategoriesRoute
   AdminDataDiscountsRoute: typeof AdminDataDiscountsRoute
@@ -1394,7 +1426,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminIndexRoute: AdminIndexRoute,
-  AdminDataCategoriesRoute: AdminDataCategoriesRoute,
+  AdminDataCategoriesRoute: AdminDataCategoriesRouteWithChildren,
   AdminDataContentRoute: AdminDataContentRoute,
   AdminDataDiscountCategoriesRoute: AdminDataDiscountCategoriesRoute,
   AdminDataDiscountsRoute: AdminDataDiscountsRoute,
