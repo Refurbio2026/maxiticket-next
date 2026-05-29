@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut } from "lucide-react";
+import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
