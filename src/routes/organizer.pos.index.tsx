@@ -438,43 +438,60 @@ function PosPage() {
         )}
       </Card>
 
-      {/* Receipt dialog */}
+      {/* Tickets dialog */}
       <Dialog open={!!lastSale} onOpenChange={(o) => !o && setLastSale(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Pokladničný doklad {lastSale?.receipt_number}</DialogTitle></DialogHeader>
-          {lastSale && (
-            <div className="space-y-3 text-sm">
-              <div className="text-xs text-muted-foreground">{new Date(lastSale.created_at).toLocaleString("sk-SK")} · {lastSale.cashier_name}</div>
-              <div className="font-medium">{lastSale.event_title}</div>
-              <Separator />
-              {lastSale.items.map((i) => (
-                <div key={i.ticket_id} className="flex justify-between">
-                  <span>{i.ticket_name} × {i.quantity}</span>
-                  <span>€{i.subtotal.toFixed(2)}</span>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Vstupenky · doklad {lastSale?.receipt_number}</DialogTitle>
+          </DialogHeader>
+          {lastSale && (() => {
+            const saleTickets = getTickets().filter((t) => t.sale_id === lastSale.id);
+            const ev = events.find((e) => e.id === lastSale.event_id);
+            return (
+              <div className="space-y-4 text-sm">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{new Date(lastSale.created_at).toLocaleString("sk-SK")} · {lastSale.cashier_name}</span>
+                  <span>Spolu: <strong className="text-foreground">€{lastSale.total.toFixed(2)}</strong></span>
                 </div>
-              ))}
-              {lastSale.discount > 0 && <div className="flex justify-between text-primary"><span>Zľava</span><span>−€{lastSale.discount.toFixed(2)}</span></div>}
-              <Separator />
-              <div className="flex justify-between font-bold text-base"><span>SPOLU</span><span>€{lastSale.total.toFixed(2)}</span></div>
-              <div className="text-xs text-muted-foreground capitalize">Platba: {lastSale.payment_method} {lastSale.terminal_tx_id ? `· ${lastSale.terminal_tx_id}` : ""}</div>
-              <div className="text-xs text-muted-foreground">eKasa: {lastSale.fiscal_receipt_id}</div>
-
-              <Separator />
-              <div className="text-xs uppercase text-muted-foreground tracking-wider">Vstupenky · {lastSale.qr_codes.length}× QR</div>
-              <div className="grid grid-cols-3 gap-2">
-                {lastSale.qr_codes.slice(0, 6).map((q) => (
-                  <div key={q} className="aspect-square bg-white rounded-md p-1.5 flex items-center justify-center">
-                    <img alt="QR" className="w-full h-full" src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(q)}`} />
-                  </div>
-                ))}
+                <div className="font-medium">{lastSale.event_title}</div>
+                <Separator />
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Vytvorených vstupeniek: {saleTickets.length} (1 kus = 1 unikátna vstupenka)
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {saleTickets.map((t, idx) => (
+                    <div key={t.id} className="rounded-xl border border-border/50 bg-background p-3 flex gap-3 items-center">
+                      <div className="aspect-square w-20 bg-white rounded-md p-1 flex items-center justify-center shrink-0">
+                        <img alt="QR" className="w-full h-full" src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.code)}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Vstupenka #{idx + 1}</div>
+                        <div className="font-semibold truncate">{t.ticket_type_name}</div>
+                        <div className="text-xs">€{t.price.toFixed(2)}</div>
+                        <div className="font-mono text-[10px] text-muted-foreground truncate mt-1">{t.code}</div>
+                        <Badge variant="outline" className="mt-1 text-[10px] uppercase">{t.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    className="bg-gradient-flame text-primary-foreground shadow-glow"
+                    onClick={() => printTickets(saleTickets, lastSale, ev)}
+                  >
+                    <Printer className="size-4 mr-1.5" /> Vytlačiť všetky vstupenky ({saleTickets.length})
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => toast.success("Vstupenky odoslané emailom")}>
+                    <Mail className="size-4 mr-1.5" /> Email
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => window.print()}>
+                    <Receipt className="size-4 mr-1.5" /> Vytlačiť doklad
+                  </Button>
+                </DialogFooter>
               </div>
-            </div>
-          )}
-          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="size-4 mr-1.5" /> Vytlačiť doklad</Button>
-            <Button variant="outline" size="sm" onClick={() => toast.success("Vstupenka odoslaná emailom")}><Mail className="size-4 mr-1.5" /> Email</Button>
-            <Button variant="outline" size="sm" onClick={() => toast.success("QR zobrazené")}><QrCode className="size-4 mr-1.5" /> QR</Button>
-          </DialogFooter>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
