@@ -127,6 +127,10 @@ const groups: Group[] = [
     items: [{ title: "Štatistiky", url: "/admin/finance/stats", icon: BarChart3 }],
   },
   {
+    label: "Marketing",
+    items: [{ title: "Reklamné kampane", url: "/admin/marketing", icon: Megaphone }],
+  },
+  {
     label: "Systém",
     items: [
       { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail },
