@@ -47,8 +47,8 @@ function OrganizerLayout() {
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/account"><User className="size-4 mr-1.5" /> {user.full_name || user.email}</Link>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => signOut()}>
-                  <LogOut className="size-4 mr-1.5" /> Odhlásiť
+                <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate({ to: "/login", replace: true }); }}>
+                  <LogOut className="size-4 mr-1.5" /> Odhlásiť sa
                 </Button>
               </div>
             </header>
