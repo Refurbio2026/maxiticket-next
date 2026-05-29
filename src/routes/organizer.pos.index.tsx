@@ -7,6 +7,7 @@ import {
 import {
   addSale, getSales, nextReceiptNumber, voidSale, logAudit,
   computeClosing, POS_EVENT, addSession, addTickets,
+  getFiscalSettings, getFiscalReceipts,
   type PaymentMethod, type PosSale, type PosSaleItem, type PosTicket,
 } from "@/lib/pos-db";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
@@ -284,6 +285,10 @@ function PosPage() {
         <Stat label="Vstupeniek" value={String(todayStats?.tickets_count ?? 0)} icon={<TicketIcon className="size-4 text-primary" />} />
         <Stat label="Storná" value={`€${todayStats?.voided_total.toLocaleString("sk-SK") ?? 0}`} icon={<Ban className="size-4 text-destructive" />} />
       </div>
+
+      {/* ORP / eKasa card */}
+      <OrpStatusCard />
+
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* LEFT: event + tickets */}
