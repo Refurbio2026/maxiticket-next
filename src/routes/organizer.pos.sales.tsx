@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { getSales, POS_EVENT, voidSale, logAudit, type PosSale } from "@/lib/pos-db";
-import { fiscal } from "@/lib/fiscal-adapter";
+import { getSales, getFiscalReceipts, POS_EVENT, voidSale, logAudit, type PosSale, type FiscalReceipt } from "@/lib/pos-db";
+import { orpAdapter } from "@/lib/fiscal-adapter";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
