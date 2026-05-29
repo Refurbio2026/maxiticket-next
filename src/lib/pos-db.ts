@@ -1,6 +1,7 @@
 // POS / Pokladňa local storage layer for MAXITICKET.
 // Architektúra je pripravená na neskoršie napojenie na reálnu DB,
-// VRP2 / eKasa (fiscal-adapter) a USB platobné terminály (payment-terminal-adapter).
+// ORP / eKasa (fiscal-adapter) a USB platobné terminály (payment-terminal-adapter).
+
 
 import { uid } from "./local-db";
 
@@ -134,17 +135,26 @@ export type FiscalReceipt = {
   cancelled_at?: string;
 };
 
+export type OrpConnectionStatus = "connected" | "disconnected" | "error";
+
 export type FiscalSettings = {
   mode: "mock" | "production";
-  provider: "VRP2" | "eKasa";
+  provider: "ORP" | "eKasa";
+  orp_provider: string;
   api_url: string;
   api_key: string;
+  client_id: string;
+  client_secret: string;
+  ico: string;
   dic: string;
   ic_dph: string;
-  pos_code: string; // kód pokladnice / DKP
-  premises: string; // prevádzka
-  connected: boolean;
+  pos_code: string;
+  premises_code: string;
+  premises_name: string;
+  premises_address: string;
+  connection_status: OrpConnectionStatus;
   last_tested_at?: string;
+  last_error?: string;
 };
 
 export type AuditLog = {
@@ -166,8 +176,8 @@ const AUDIT = "mt_audit_logs";
 const SESSIONS = "mt_pos_sessions";
 const TICKETS = "mt_pos_tickets";
 const TERMINAL_TX = "mt_payment_terminal_tx";
-const FISCAL_RECEIPTS = "mt_fiscal_receipts";
-const FISCAL_SETTINGS = "mt_fiscal_settings";
+const FISCAL_RECEIPTS = "mt_orp_receipts";
+const FISCAL_SETTINGS = "mt_orp_settings";
 
 export const POS_EVENT = "mt:pos-change";
 
@@ -252,14 +262,20 @@ export function cancelFiscalReceiptInStore(id: string) {
 // ---------- Fiscal Settings ----------
 const DEFAULT_FISCAL_SETTINGS: FiscalSettings = {
   mode: "mock",
-  provider: "VRP2",
+  provider: "ORP",
+  orp_provider: "",
   api_url: "",
   api_key: "",
+  client_id: "",
+  client_secret: "",
+  ico: "",
   dic: "",
   ic_dph: "",
   pos_code: "0000",
-  premises: "",
-  connected: false,
+  premises_code: "",
+  premises_name: "",
+  premises_address: "",
+  connection_status: "disconnected",
 };
 export function getFiscalSettings(): FiscalSettings { return read<FiscalSettings>(FISCAL_SETTINGS, DEFAULT_FISCAL_SETTINGS); }
 export function saveFiscalSettings(s: FiscalSettings) { write(FISCAL_SETTINGS, s); emitPos(); }

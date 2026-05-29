@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { getSales, POS_EVENT, voidSale, logAudit, type PosSale } from "@/lib/pos-db";
-import { fiscal } from "@/lib/fiscal-adapter";
+import { getSales, getFiscalReceipts, POS_EVENT, voidSale, logAudit, type PosSale, type FiscalReceipt } from "@/lib/pos-db";
+import { orpAdapter } from "@/lib/fiscal-adapter";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,13 +19,17 @@ export const Route = createFileRoute("/organizer/pos/sales")({
 function SalesPage() {
   const { user } = useAuth();
   const [sales, setSales] = useState<PosSale[]>([]);
+  const [receipts, setReceipts] = useState<FiscalReceipt[]>([]);
   const [q, setQ] = useState("");
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     setSales(getSales().filter((s) => user.role === "admin" || s.organizer_id === user.id));
+    setReceipts(getFiscalReceipts());
   }, [user, tick]);
+
+  const receiptById = (id?: string) => (id ? receipts.find((r) => r.id === id) : undefined);
 
   useEffect(() => {
     const h = () => setTick((t) => t + 1);
@@ -55,7 +59,7 @@ function SalesPage() {
     if (!reason || !user) return;
     const sale = sales.find((s) => s.id === id);
     voidSale(id, reason);
-    if (sale?.fiscal_receipt_id) await fiscal.cancelReceipt(sale.fiscal_receipt_id);
+    if (sale?.fiscal_receipt_id) await orpAdapter.cancelReceipt(sale.fiscal_receipt_id);
     if (sale?.terminal_tx_id) await paymentTerminal.cancelPayment(sale.terminal_tx_id);
     logAudit({ user_id: user.id, user_name: user.full_name || user.email, action: "pos.void", entity: "pos_sales", entity_id: id, meta: { reason } });
     toast.success("Predaj stornovaný");
@@ -98,11 +102,15 @@ function SalesPage() {
                   <th className="text-left">Platba</th>
                   <th className="text-right">Suma</th>
                   <th className="text-left">Stav</th>
+                  <th className="text-left">ORP doklad</th>
+                  <th className="text-left">Fiskalizácia</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s) => (
+                {filtered.map((s) => {
+                  const r = receiptById(s.fiscal_receipt_id);
+                  return (
                   <tr key={s.id} className="border-b border-border/30">
                     <td className="py-2 font-mono text-xs">{s.receipt_number}</td>
                     <td className="text-xs">{new Date(s.created_at).toLocaleString("sk-SK")}</td>
@@ -115,7 +123,20 @@ function SalesPage() {
                         {s.status === "paid" ? "Zaplatené" : "Storno"}
                       </Badge>
                     </td>
+                    <td className="font-mono text-[11px]">{r?.receipt_number || "—"}</td>
                     <td>
+                      {r ? (
+                        <Badge variant={r.status === "issued" ? "default" : "destructive"} className="text-[10px]">
+                          {r.status === "issued" ? "Vystavený" : "Stornovaný"}
+                        </Badge>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                    </td>
+                    <td className="flex gap-1">
+                      {r && (
+                        <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+                          <Link to="/organizer/pos/fiscal">Zobraziť doklad</Link>
+                        </Button>
+                      )}
                       {s.status === "paid" && (
                         <Button size="icon" variant="ghost" className="size-7 text-destructive" onClick={() => onVoid(s.id)}>
                           <Ban className="size-3.5" />
@@ -123,7 +144,8 @@ function SalesPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

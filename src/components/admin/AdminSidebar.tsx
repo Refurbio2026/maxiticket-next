@@ -103,7 +103,7 @@ const groups: Group[] = [
       { title: "Predaje", url: "/admin/pos/sales", icon: ShoppingCart },
       { title: "Uzávierky", url: "/admin/pos/closings", icon: ClipboardList },
       { title: "Terminály", url: "/admin/pos/terminals", icon: Scan },
-      { title: "VRP2 / eKasa", url: "/admin/pos/fiscal", icon: Receipt },
+      { title: "ORP / eKasa", url: "/admin/pos/fiscal", icon: Receipt },
     ],
   },
   {

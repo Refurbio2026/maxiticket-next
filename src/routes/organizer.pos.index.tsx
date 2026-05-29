@@ -7,6 +7,7 @@ import {
 import {
   addSale, getSales, nextReceiptNumber, voidSale, logAudit,
   computeClosing, POS_EVENT, addSession, addTickets,
+  getFiscalSettings, getFiscalReceipts,
   type PaymentMethod, type PosSale, type PosSaleItem, type PosTicket,
 } from "@/lib/pos-db";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
@@ -101,14 +102,18 @@ function PosPage() {
         if (!r.ok) throw new Error(r.error || "Platba zamietnutá");
         terminal_tx_id = r.tx_id;
       }
-      const fr = await fiscal.createReceipt({
-        organizer_id: user.id,
-        sale_id: order_id,
-        total,
-        payment_method: method,
-        items: cart.map((i) => ({ name: i.ticket.name, qty: i.qty, unit_price: i.ticket.price })),
-      });
-      await fiscal.sendReceiptToFiscalSystem(fr);
+      const orpSettings = getFiscalSettings();
+      let fr: Awaited<ReturnType<typeof fiscal.createReceipt>> | null = null;
+      if (orpSettings.connection_status === "connected") {
+        fr = await fiscal.createReceipt({
+          organizer_id: user.id,
+          sale_id: order_id,
+          total,
+          payment_method: method,
+          items: cart.map((i) => ({ name: i.ticket.name, qty: i.qty, unit_price: i.ticket.price })),
+        });
+        await fiscal.sendReceiptToFiscalSystem(fr);
+      }
 
       const items: PosSaleItem[] = cart.map((i) => ({
         ticket_id: i.ticket.id, ticket_name: i.ticket.name,
@@ -145,7 +150,7 @@ function PosPage() {
         total,
         payment_method: method,
         status: "paid",
-        fiscal_receipt_id: fr.id,
+        fiscal_receipt_id: fr?.id,
         terminal_tx_id,
         created_at: new Date().toISOString(),
         qr_codes,
@@ -284,6 +289,10 @@ function PosPage() {
         <Stat label="Vstupeniek" value={String(todayStats?.tickets_count ?? 0)} icon={<TicketIcon className="size-4 text-primary" />} />
         <Stat label="Storná" value={`€${todayStats?.voided_total.toLocaleString("sk-SK") ?? 0}`} icon={<Ban className="size-4 text-destructive" />} />
       </div>
+
+      {/* ORP / eKasa card */}
+      <OrpStatusCard />
+
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* LEFT: event + tickets */}
@@ -498,5 +507,32 @@ function PayBtn({ icon, label, onClick, disabled, primary }: { icon: React.React
       {icon}
       {label}
     </button>
+  );
+}
+
+function OrpStatusCard() {
+  const settings = getFiscalSettings();
+  const receipts = getFiscalReceipts();
+  const last = receipts[0];
+  const status = settings.connection_status;
+  const connected = status === "connected";
+  return (
+    <Card className="p-5 bg-card/60 border-border/50">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <span className={`size-2.5 rounded-full ${connected ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.7)]" : "bg-muted-foreground/40"}`} />
+          <div>
+            <div className="font-display font-semibold">ORP / eKasa</div>
+            <div className="text-xs text-muted-foreground">
+              Stav: <span className={connected ? "text-foreground font-medium" : ""}>{connected ? "Pripojené" : status === "error" ? "Chyba" : "Nepripojené"}</span>
+              {last && <> · Posledný doklad: <span className="font-mono">{last.receipt_number}</span></>}
+            </div>
+          </div>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/organizer/pos/fiscal">Konfigurovať</Link>
+        </Button>
+      </div>
+    </Card>
   );
 }
