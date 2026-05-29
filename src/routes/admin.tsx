@@ -1,8 +1,10 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -16,6 +18,23 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
+  const { user, loading, isAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) navigate({ to: "/login" });
+    else if (!isAdmin) navigate({ to: "/account" });
+  }, [loading, user, isAdmin, navigate]);
+
+  if (loading || !user || !isAdmin) {
+    return (
+      <div className="dark min-h-screen bg-background text-foreground grid place-items-center">
+        <div className="text-sm text-muted-foreground">Overujem prístup…</div>
+      </div>
+    );
+  }
+
   return (
     <div className="dark">
       <SidebarProvider style={{ "--sidebar-width": "16rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties}>
@@ -33,3 +52,4 @@ function AdminLayout() {
     </div>
   );
 }
+

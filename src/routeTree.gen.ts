@@ -9,9 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as OrganizerRouteImport } from './routes/organizer'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as EventsRouteImport } from './routes/events'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
+import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
 import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
 import { Route as AdminSalesSalesRouteImport } from './routes/admin.sales.sales'
@@ -49,9 +58,34 @@ import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerRoute = OrganizerRouteImport.update({
+  id: '/organizer',
+  path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -59,10 +93,30 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const EventsIdRoute = EventsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EventsRoute,
+} as any)
+const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
+  id: '/events/new',
+  path: '/events/new',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
+  id: '/api/public/seed-demo',
+  path: '/api/public/seed-demo',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSystemUsersRoute = AdminSystemUsersRouteImport.update({
   id: '/system/users',
@@ -256,8 +310,15 @@ const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
+  '/events': typeof EventsRouteWithChildren
+  '/login': typeof LoginRoute
+  '/organizer': typeof OrganizerRouteWithChildren
+  '/register': typeof RegisterRoute
+  '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
@@ -294,10 +355,18 @@ export interface FileRoutesByFullPath {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/events': typeof EventsRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/events/$id': typeof EventsIdRoute
   '/admin': typeof AdminIndexRoute
+  '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
@@ -334,12 +403,21 @@ export interface FileRoutesByTo {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
+  '/events': typeof EventsRouteWithChildren
+  '/login': typeof LoginRoute
+  '/organizer': typeof OrganizerRouteWithChildren
+  '/register': typeof RegisterRoute
+  '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
   '/admin/data/content': typeof AdminDataContentRoute
   '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
@@ -376,13 +454,22 @@ export interface FileRoutesById {
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
+  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/organizer/events/new': typeof OrganizerEventsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/admin'
+    | '/events'
+    | '/login'
+    | '/organizer'
+    | '/register'
+    | '/events/$id'
     | '/admin/'
+    | '/organizer/'
     | '/admin/data/categories'
     | '/admin/data/content'
     | '/admin/data/discount-categories'
@@ -419,10 +506,18 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/api/public/seed-demo'
+    | '/organizer/events/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
+    | '/events'
+    | '/login'
+    | '/register'
+    | '/events/$id'
     | '/admin'
+    | '/organizer'
     | '/admin/data/categories'
     | '/admin/data/content'
     | '/admin/data/discount-categories'
@@ -459,11 +554,20 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/api/public/seed-demo'
+    | '/organizer/events/new'
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/admin'
+    | '/events'
+    | '/login'
+    | '/organizer'
+    | '/register'
+    | '/events/$id'
     | '/admin/'
+    | '/organizer/'
     | '/admin/data/categories'
     | '/admin/data/content'
     | '/admin/data/discount-categories'
@@ -500,20 +604,63 @@ export interface FileRouteTypes {
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/users'
+    | '/api/public/seed-demo'
+    | '/organizer/events/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
+  EventsRoute: typeof EventsRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  OrganizerRoute: typeof OrganizerRouteWithChildren
+  RegisterRoute: typeof RegisterRoute
+  ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer': {
+      id: '/organizer'
+      path: '/organizer'
+      fullPath: '/organizer'
+      preLoaderRoute: typeof OrganizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -523,12 +670,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/organizer/': {
+      id: '/organizer/'
+      path: '/'
+      fullPath: '/organizer/'
+      preLoaderRoute: typeof OrganizerIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/events/$id': {
+      id: '/events/$id'
+      path: '/$id'
+      fullPath: '/events/$id'
+      preLoaderRoute: typeof EventsIdRouteImport
+      parentRoute: typeof EventsRoute
+    }
+    '/organizer/events/new': {
+      id: '/organizer/events/new'
+      path: '/events/new'
+      fullPath: '/organizer/events/new'
+      preLoaderRoute: typeof OrganizerEventsNewRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/api/public/seed-demo': {
+      id: '/api/public/seed-demo'
+      path: '/api/public/seed-demo'
+      fullPath: '/api/public/seed-demo'
+      preLoaderRoute: typeof ApiPublicSeedDemoRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/system/users': {
       id: '/admin/system/users'
@@ -867,9 +1042,40 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface EventsRouteChildren {
+  EventsIdRoute: typeof EventsIdRoute
+}
+
+const EventsRouteChildren: EventsRouteChildren = {
+  EventsIdRoute: EventsIdRoute,
+}
+
+const EventsRouteWithChildren =
+  EventsRoute._addFileChildren(EventsRouteChildren)
+
+interface OrganizerRouteChildren {
+  OrganizerIndexRoute: typeof OrganizerIndexRoute
+  OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
+}
+
+const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerIndexRoute: OrganizerIndexRoute,
+  OrganizerEventsNewRoute: OrganizerEventsNewRoute,
+}
+
+const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
+  OrganizerRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
+  EventsRoute: EventsRouteWithChildren,
+  LoginRoute: LoginRoute,
+  OrganizerRoute: OrganizerRouteWithChildren,
+  RegisterRoute: RegisterRoute,
+  ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

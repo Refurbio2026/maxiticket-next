@@ -1,9 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Ticket, Search, Menu } from "lucide-react";
+import { Ticket, Menu, Shield, LayoutDashboard, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Navbar() {
+  const { user, isAdmin, isOrganizer } = useAuth();
+
   return (
     <motion.header
       initial={{ y: -24, opacity: 0 }}
@@ -23,22 +26,39 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
-            {["Podujatia", "Kategórie", "Mestá", "Organizátori", "Blog"].map((i) => (
-              <a key={i} href="#" className="hover:text-foreground transition-colors">
-                {i}
-              </a>
-            ))}
+            <Link to="/events" className="hover:text-foreground transition-colors">Podujatia</Link>
+            <a href="#categories" className="hover:text-foreground transition-colors">Kategórie</a>
+            <a href="#cities" className="hover:text-foreground transition-colors">Mestá</a>
+            <a href="#organizers" className="hover:text-foreground transition-colors">Organizátori</a>
+            {isAdmin && (
+              <Link to="/admin" className="text-primary font-semibold inline-flex items-center gap-1.5">
+                <Shield className="size-4" /> Admin
+              </Link>
+            )}
+            {isOrganizer && (
+              <Link to="/organizer" className="hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+                <LayoutDashboard className="size-4" /> Organizer
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-xl">
-              <Search className="size-4" />
-            </Button>
-            <Button variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
-              Prihlásiť
-            </Button>
-            <Button className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow">
-              Pridať podujatie
+            {user ? (
+              <Button asChild variant="ghost" className="rounded-xl text-sm">
+                <Link to="/account"><User className="size-4 mr-1.5" /> Účet</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
+                  <Link to="/login">Prihlásiť</Link>
+                </Button>
+                <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
+                  <Link to="/register">Registrácia</Link>
+                </Button>
+              </>
+            )}
+            <Button asChild className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow">
+              <Link to={isOrganizer ? "/organizer/events/new" : "/login"}>Pridať podujatie</Link>
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden rounded-xl">
               <Menu className="size-5" />
