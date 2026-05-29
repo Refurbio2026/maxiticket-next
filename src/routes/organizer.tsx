@@ -1,8 +1,11 @@
-import { createFileRoute, Outlet, useNavigate, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Navbar } from "@/components/site/Navbar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { OrganizerSidebar } from "@/components/organizer/OrganizerSidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { Button } from "@/components/ui/button";
+import { LogOut, ShoppingCart, User } from "lucide-react";
 
 export const Route = createFileRoute("/organizer")({
   head: () => ({ meta: [{ title: "Organizer · MAXITICKET" }] }),
@@ -10,9 +13,8 @@ export const Route = createFileRoute("/organizer")({
 });
 
 function OrganizerLayout() {
-  const { user, loading, isOrganizer } = useAuth();
+  const { user, loading, isOrganizer, signOut } = useAuth();
   const navigate = useNavigate();
-  const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     if (loading) return;
@@ -20,38 +22,41 @@ function OrganizerLayout() {
     else if (!isOrganizer) navigate({ to: "/account" });
   }, [loading, user, isOrganizer, navigate]);
 
-  if (loading || !user || !isOrganizer) return null;
-
-  const tabs: { to: string; label: string; exact?: boolean }[] = [
-    { to: "/organizer", label: "Prehľad", exact: true },
-    { to: "/organizer/events/new", label: "Pridať podujatie" },
-    { to: "/organizer/pos", label: "Pokladňa" },
-  ];
-
+  if (loading || !user || !isOrganizer) {
+    return (
+      <div className="dark min-h-screen bg-background text-foreground grid place-items-center">
+        <div className="text-sm text-muted-foreground">Overujem prístup…</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Toaster />
-      <Navbar />
-      <main className="mx-auto max-w-7xl px-4 pt-28 pb-20">
-        <div className="flex items-center gap-2 border-b border-border/40 mb-8 overflow-x-auto">
-          {tabs.map((t) => {
-            const active = t.exact ? path === t.to : path.startsWith(t.to);
-            return (
-              <Link
-                key={t.to}
-                to={t.to}
-                className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition ${
-                  active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t.label}
-              </Link>
-            );
-          })}
+    <div className="dark">
+      <SidebarProvider style={{ "--sidebar-width": "16rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties}>
+        <div className="flex min-h-screen w-full bg-background text-foreground">
+          <OrganizerSidebar />
+          <SidebarInset className="flex flex-1 flex-col">
+            <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl md:px-6">
+              <SidebarTrigger className="-ml-1" />
+              <div className="ml-auto flex items-center gap-2">
+                <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
+                  <Link to="/organizer/pos"><ShoppingCart className="size-4 mr-2" /> Pokladňa</Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/account"><User className="size-4 mr-1.5" /> {user.full_name || user.email}</Link>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => signOut()}>
+                  <LogOut className="size-4 mr-1.5" /> Odhlásiť
+                </Button>
+              </div>
+            </header>
+            <main className="flex-1 p-4 md:p-6 lg:p-8">
+              <Outlet />
+            </main>
+          </SidebarInset>
         </div>
-        <Outlet />
-      </main>
+        <Toaster />
+      </SidebarProvider>
     </div>
   );
 }

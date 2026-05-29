@@ -97,6 +97,16 @@ const groups: Group[] = [
     ],
   },
   {
+    label: "POS / Pokladňa",
+    items: [
+      { title: "Pokladne", url: "/admin/pos/cashiers", icon: Users },
+      { title: "Predaje", url: "/admin/pos/sales", icon: ShoppingCart },
+      { title: "Uzávierky", url: "/admin/pos/closings", icon: ClipboardList },
+      { title: "Terminály", url: "/admin/pos/terminals", icon: Scan },
+      { title: "VRP2 / eKasa", url: "/admin/pos/fiscal", icon: Receipt },
+    ],
+  },
+  {
     label: "Dáta",
     items: [
       { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers },

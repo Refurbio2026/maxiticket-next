@@ -21,7 +21,10 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
+import { Route as OrganizerPosSalesRouteImport } from './routes/organizer.pos.sales'
+import { Route as OrganizerPosDevicesRouteImport } from './routes/organizer.pos.devices'
 import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
+import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
@@ -31,6 +34,11 @@ import { Route as AdminSalesNotesRouteImport } from './routes/admin.sales.notes'
 import { Route as AdminSalesCancellationsRouteImport } from './routes/admin.sales.cancellations'
 import { Route as AdminReportsSalesRouteImport } from './routes/admin.reports.sales'
 import { Route as AdminReportsAvfRouteImport } from './routes/admin.reports.avf'
+import { Route as AdminPosTerminalsRouteImport } from './routes/admin.pos.terminals'
+import { Route as AdminPosSalesRouteImport } from './routes/admin.pos.sales'
+import { Route as AdminPosFiscalRouteImport } from './routes/admin.pos.fiscal'
+import { Route as AdminPosClosingsRouteImport } from './routes/admin.pos.closings'
+import { Route as AdminPosCashiersRouteImport } from './routes/admin.pos.cashiers'
 import { Route as AdminMaxiticketTicketsRouteImport } from './routes/admin.maxiticket.tickets'
 import { Route as AdminMaxiticketRefundTypesRouteImport } from './routes/admin.maxiticket.refund-types'
 import { Route as AdminMaxiticketProtocolsRouteImport } from './routes/admin.maxiticket.protocols'
@@ -121,9 +129,24 @@ const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => OrganizerRoute,
 } as any)
+const OrganizerPosSalesRoute = OrganizerPosSalesRouteImport.update({
+  id: '/pos/sales',
+  path: '/pos/sales',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosDevicesRoute = OrganizerPosDevicesRouteImport.update({
+  id: '/pos/devices',
+  path: '/pos/devices',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 const OrganizerPosClosingRoute = OrganizerPosClosingRouteImport.update({
   id: '/pos/closing',
   path: '/pos/closing',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosCashiersRoute = OrganizerPosCashiersRouteImport.update({
+  id: '/pos/cashiers',
+  path: '/pos/cashiers',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
@@ -170,6 +193,31 @@ const AdminReportsSalesRoute = AdminReportsSalesRouteImport.update({
 const AdminReportsAvfRoute = AdminReportsAvfRouteImport.update({
   id: '/reports/avf',
   path: '/reports/avf',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosTerminalsRoute = AdminPosTerminalsRouteImport.update({
+  id: '/pos/terminals',
+  path: '/pos/terminals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosSalesRoute = AdminPosSalesRouteImport.update({
+  id: '/pos/sales',
+  path: '/pos/sales',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosFiscalRoute = AdminPosFiscalRouteImport.update({
+  id: '/pos/fiscal',
+  path: '/pos/fiscal',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosClosingsRoute = AdminPosClosingsRouteImport.update({
+  id: '/pos/closings',
+  path: '/pos/closings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosCashiersRoute = AdminPosCashiersRouteImport.update({
+  id: '/pos/cashiers',
+  path: '/pos/cashiers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMaxiticketTicketsRoute = AdminMaxiticketTicketsRouteImport.update({
@@ -366,6 +414,11 @@ export interface FileRoutesByFullPath {
   '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
   '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
   '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
+  '/admin/pos/cashiers': typeof AdminPosCashiersRoute
+  '/admin/pos/closings': typeof AdminPosClosingsRoute
+  '/admin/pos/fiscal': typeof AdminPosFiscalRoute
+  '/admin/pos/sales': typeof AdminPosSalesRoute
+  '/admin/pos/terminals': typeof AdminPosTerminalsRoute
   '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
@@ -375,7 +428,10 @@ export interface FileRoutesByFullPath {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
+  '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
+  '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
@@ -417,6 +473,11 @@ export interface FileRoutesByTo {
   '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
   '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
   '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
+  '/admin/pos/cashiers': typeof AdminPosCashiersRoute
+  '/admin/pos/closings': typeof AdminPosClosingsRoute
+  '/admin/pos/fiscal': typeof AdminPosFiscalRoute
+  '/admin/pos/sales': typeof AdminPosSalesRoute
+  '/admin/pos/terminals': typeof AdminPosTerminalsRoute
   '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
@@ -426,7 +487,10 @@ export interface FileRoutesByTo {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
+  '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
+  '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
 }
@@ -471,6 +535,11 @@ export interface FileRoutesById {
   '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
   '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
   '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
+  '/admin/pos/cashiers': typeof AdminPosCashiersRoute
+  '/admin/pos/closings': typeof AdminPosClosingsRoute
+  '/admin/pos/fiscal': typeof AdminPosFiscalRoute
+  '/admin/pos/sales': typeof AdminPosSalesRoute
+  '/admin/pos/terminals': typeof AdminPosTerminalsRoute
   '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
@@ -480,7 +549,10 @@ export interface FileRoutesById {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
+  '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
+  '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
@@ -526,6 +598,11 @@ export interface FileRouteTypes {
     | '/admin/maxiticket/protocols'
     | '/admin/maxiticket/refund-types'
     | '/admin/maxiticket/tickets'
+    | '/admin/pos/cashiers'
+    | '/admin/pos/closings'
+    | '/admin/pos/fiscal'
+    | '/admin/pos/sales'
+    | '/admin/pos/terminals'
     | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
@@ -535,7 +612,10 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
+    | '/organizer/pos/devices'
+    | '/organizer/pos/sales'
     | '/organizer/events/'
     | '/organizer/pos/'
   fileRoutesByTo: FileRoutesByTo
@@ -577,6 +657,11 @@ export interface FileRouteTypes {
     | '/admin/maxiticket/protocols'
     | '/admin/maxiticket/refund-types'
     | '/admin/maxiticket/tickets'
+    | '/admin/pos/cashiers'
+    | '/admin/pos/closings'
+    | '/admin/pos/fiscal'
+    | '/admin/pos/sales'
+    | '/admin/pos/terminals'
     | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
@@ -586,7 +671,10 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
+    | '/organizer/pos/devices'
+    | '/organizer/pos/sales'
     | '/organizer/events'
     | '/organizer/pos'
   id:
@@ -630,6 +718,11 @@ export interface FileRouteTypes {
     | '/admin/maxiticket/protocols'
     | '/admin/maxiticket/refund-types'
     | '/admin/maxiticket/tickets'
+    | '/admin/pos/cashiers'
+    | '/admin/pos/closings'
+    | '/admin/pos/fiscal'
+    | '/admin/pos/sales'
+    | '/admin/pos/terminals'
     | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
@@ -639,7 +732,10 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
+    | '/organizer/pos/devices'
+    | '/organizer/pos/sales'
     | '/organizer/events/'
     | '/organizer/pos/'
   fileRoutesById: FileRoutesById
@@ -741,11 +837,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerEventsIndexRouteImport
       parentRoute: typeof OrganizerRoute
     }
+    '/organizer/pos/sales': {
+      id: '/organizer/pos/sales'
+      path: '/pos/sales'
+      fullPath: '/organizer/pos/sales'
+      preLoaderRoute: typeof OrganizerPosSalesRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/devices': {
+      id: '/organizer/pos/devices'
+      path: '/pos/devices'
+      fullPath: '/organizer/pos/devices'
+      preLoaderRoute: typeof OrganizerPosDevicesRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/organizer/pos/closing': {
       id: '/organizer/pos/closing'
       path: '/pos/closing'
       fullPath: '/organizer/pos/closing'
       preLoaderRoute: typeof OrganizerPosClosingRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/cashiers': {
+      id: '/organizer/pos/cashiers'
+      path: '/pos/cashiers'
+      fullPath: '/organizer/pos/cashiers'
+      preLoaderRoute: typeof OrganizerPosCashiersRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/events/new': {
@@ -809,6 +926,41 @@ declare module '@tanstack/react-router' {
       path: '/reports/avf'
       fullPath: '/admin/reports/avf'
       preLoaderRoute: typeof AdminReportsAvfRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/terminals': {
+      id: '/admin/pos/terminals'
+      path: '/pos/terminals'
+      fullPath: '/admin/pos/terminals'
+      preLoaderRoute: typeof AdminPosTerminalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/sales': {
+      id: '/admin/pos/sales'
+      path: '/pos/sales'
+      fullPath: '/admin/pos/sales'
+      preLoaderRoute: typeof AdminPosSalesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/fiscal': {
+      id: '/admin/pos/fiscal'
+      path: '/pos/fiscal'
+      fullPath: '/admin/pos/fiscal'
+      preLoaderRoute: typeof AdminPosFiscalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/closings': {
+      id: '/admin/pos/closings'
+      path: '/pos/closings'
+      fullPath: '/admin/pos/closings'
+      preLoaderRoute: typeof AdminPosClosingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/cashiers': {
+      id: '/admin/pos/cashiers'
+      path: '/pos/cashiers'
+      fullPath: '/admin/pos/cashiers'
+      preLoaderRoute: typeof AdminPosCashiersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/maxiticket/tickets': {
@@ -1048,6 +1200,11 @@ interface AdminRouteChildren {
   AdminMaxiticketProtocolsRoute: typeof AdminMaxiticketProtocolsRoute
   AdminMaxiticketRefundTypesRoute: typeof AdminMaxiticketRefundTypesRoute
   AdminMaxiticketTicketsRoute: typeof AdminMaxiticketTicketsRoute
+  AdminPosCashiersRoute: typeof AdminPosCashiersRoute
+  AdminPosClosingsRoute: typeof AdminPosClosingsRoute
+  AdminPosFiscalRoute: typeof AdminPosFiscalRoute
+  AdminPosSalesRoute: typeof AdminPosSalesRoute
+  AdminPosTerminalsRoute: typeof AdminPosTerminalsRoute
   AdminReportsAvfRoute: typeof AdminReportsAvfRoute
   AdminReportsSalesRoute: typeof AdminReportsSalesRoute
   AdminSalesCancellationsRoute: typeof AdminSalesCancellationsRoute
@@ -1088,6 +1245,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMaxiticketProtocolsRoute: AdminMaxiticketProtocolsRoute,
   AdminMaxiticketRefundTypesRoute: AdminMaxiticketRefundTypesRoute,
   AdminMaxiticketTicketsRoute: AdminMaxiticketTicketsRoute,
+  AdminPosCashiersRoute: AdminPosCashiersRoute,
+  AdminPosClosingsRoute: AdminPosClosingsRoute,
+  AdminPosFiscalRoute: AdminPosFiscalRoute,
+  AdminPosSalesRoute: AdminPosSalesRoute,
+  AdminPosTerminalsRoute: AdminPosTerminalsRoute,
   AdminReportsAvfRoute: AdminReportsAvfRoute,
   AdminReportsSalesRoute: AdminReportsSalesRoute,
   AdminSalesCancellationsRoute: AdminSalesCancellationsRoute,
@@ -1113,7 +1275,10 @@ const EventsRouteWithChildren =
 interface OrganizerRouteChildren {
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
+  OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
   OrganizerPosClosingRoute: typeof OrganizerPosClosingRoute
+  OrganizerPosDevicesRoute: typeof OrganizerPosDevicesRoute
+  OrganizerPosSalesRoute: typeof OrganizerPosSalesRoute
   OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
   OrganizerPosIndexRoute: typeof OrganizerPosIndexRoute
 }
@@ -1121,7 +1286,10 @@ interface OrganizerRouteChildren {
 const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerEventsNewRoute: OrganizerEventsNewRoute,
+  OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
   OrganizerPosClosingRoute: OrganizerPosClosingRoute,
+  OrganizerPosDevicesRoute: OrganizerPosDevicesRoute,
+  OrganizerPosSalesRoute: OrganizerPosSalesRoute,
   OrganizerEventsIndexRoute: OrganizerEventsIndexRoute,
   OrganizerPosIndexRoute: OrganizerPosIndexRoute,
 }

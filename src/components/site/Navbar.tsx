@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut } from "lucide-react";
+import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -36,9 +36,14 @@ export function Navbar() {
               </Link>
             )}
             {isOrganizer && (
-              <Link to="/organizer" className="hover:text-foreground transition-colors inline-flex items-center gap-1.5">
-                <LayoutDashboard className="size-4" /> Organizer
-              </Link>
+              <>
+                <Link to="/organizer" className="hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+                  <LayoutDashboard className="size-4" /> Organizer
+                </Link>
+                <Link to="/organizer/pos" className="text-primary font-semibold inline-flex items-center gap-1.5">
+                  <ShoppingCart className="size-4" /> Pokladňa
+                </Link>
+              </>
             )}
           </nav>
 
