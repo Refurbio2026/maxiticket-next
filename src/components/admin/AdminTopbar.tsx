@@ -72,6 +72,22 @@ const labels: Record<string, string> = {
 export function AdminTopbar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const segments = path.split("/").filter(Boolean);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const initials = (user?.full_name || user?.email || "AD")
+    .split(/\s+/)
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Odhlásený");
+    navigate({ to: "/login", replace: true });
+  };
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 md:px-6">
