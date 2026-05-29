@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+const NAV_LINKS: { label: string; to: string }[] = [
+  { label: "Podujatia", to: "/events" },
+  { label: "Mestá", to: "/#cities" },
+  { label: "Umelci", to: "/artists" },
+  { label: "Marketing", to: "/marketing" },
+  { label: "Podpora", to: "/support" },
+  { label: "Spolupráca", to: "/partners" },
+  { label: "Kontakt", to: "/contact" },
+];
+
 export function Navbar() {
   const { user, signOut } = useAuth();
 
@@ -16,8 +26,8 @@ export function Navbar() {
       className="fixed top-0 inset-x-0 z-50"
     >
       <div className="mx-auto mt-4 max-w-7xl px-4">
-        <div className="glass rounded-2xl px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
+        <div className="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
             <div className="size-9 rounded-xl bg-gradient-flame grid place-items-center shadow-glow">
               <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
@@ -26,16 +36,18 @@ export function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
-            <Link to="/events" className="hover:text-foreground transition-colors">Podujatia</Link>
-            <a href="/#cities" className="hover:text-foreground transition-colors">Mestá</a>
-            <Link
-              to="/login"
-              search={{ section: "organizer" }}
-              className="hover:text-foreground transition-colors"
-            >
-              Pre organizátorov
-            </Link>
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm text-muted-foreground">
+            {NAV_LINKS.map((l) =>
+              l.to.startsWith("/#") ? (
+                <a key={l.label} href={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
+                  {l.label}
+                </a>
+              ) : (
+                <Link key={l.label} to={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
+                  {l.label}
+                </Link>
+              ),
+            )}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -57,7 +69,7 @@ export function Navbar() {
             <Button asChild className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow">
               <Link to="/login" search={{ section: "organizer" }}>Pridať podujatie</Link>
             </Button>
-            <Button variant="ghost" size="icon" className="md:hidden rounded-xl">
+            <Button variant="ghost" size="icon" className="lg:hidden rounded-xl">
               <Menu className="size-5" />
             </Button>
           </div>
