@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/organizer/marketing")({
+export const Route = createFileRoute("/organizer/marketing/")({
   head: () => ({ meta: [{ title: "Marketing Center · MAXITICKET" }] }),
   component: MarketingCenter,
 });
