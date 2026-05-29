@@ -1,5 +1,7 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Bell, Search, ChevronRight, Settings, LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,6 +72,22 @@ const labels: Record<string, string> = {
 export function AdminTopbar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const segments = path.split("/").filter(Boolean);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const initials = (user?.full_name || user?.email || "AD")
+    .split(/\s+/)
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Odhlásený");
+    navigate({ to: "/login", replace: true });
+  };
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 md:px-6">
@@ -147,24 +165,27 @@ export function AdminTopbar() {
             <button className="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-2 py-1 hover:bg-muted/60 transition">
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-gradient-flame text-primary-foreground text-xs font-bold">
-                  MA
+                  {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left leading-tight md:block">
-                <div className="text-xs font-semibold">Martin Admin</div>
-                <div className="text-[10px] text-muted-foreground">Super Admin</div>
+                <div className="text-xs font-semibold">{user?.full_name || user?.email || "Admin"}</div>
+                <div className="text-[10px] text-muted-foreground">{user?.role === "admin" ? "Super Admin" : user?.role ?? ""}</div>
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Môj účet</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem><User className="mr-2 h-4 w-4" />Profil</DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/account"><User className="mr-2 h-4 w-4" />Profil</Link></DropdownMenuItem>
             <DropdownMenuItem><Settings className="mr-2 h-4 w-4" />Nastavenia</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive"><LogOut className="mr-2 h-4 w-4" />Odhlásiť</DropdownMenuItem>
+            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleLogout(); }} className="text-destructive focus:text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />Odhlásiť sa
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
       </div>
     </header>
   );
