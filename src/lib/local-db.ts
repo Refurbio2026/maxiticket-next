@@ -49,6 +49,19 @@ export type EventItem = {
 const USERS_KEY = "mt_users";
 const CURRENT_KEY = "mt_current_user_id";
 const EVENTS_KEY = "mt_events";
+const CATEGORIES_KEY = "mt_categories";
+
+export type EventCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  created_at: string;
+};
+
+const DEFAULT_CATEGORIES_NAMES = [
+  "Koncert", "Festival", "Šport", "Konferencia", "Divadlo", "Stand-up", "Kultúra",
+];
 
 const isBrowser = () => typeof window !== "undefined";
 
