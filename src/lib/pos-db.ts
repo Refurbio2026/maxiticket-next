@@ -1,6 +1,7 @@
 // POS / Pokladňa local storage layer for MAXITICKET.
 // Architektúra je pripravená na neskoršie napojenie na reálnu DB,
-// VRP2 / eKasa (fiscal-adapter) a USB platobné terminály (payment-terminal-adapter).
+// ORP / eKasa (fiscal-adapter) a USB platobné terminály (payment-terminal-adapter).
+
 
 import { uid } from "./local-db";
 
@@ -134,17 +135,26 @@ export type FiscalReceipt = {
   cancelled_at?: string;
 };
 
+export type OrpConnectionStatus = "connected" | "disconnected" | "error";
+
 export type FiscalSettings = {
   mode: "mock" | "production";
-  provider: "VRP2" | "eKasa";
+  provider: "ORP" | "eKasa";
+  orp_provider: string;
   api_url: string;
   api_key: string;
+  client_id: string;
+  client_secret: string;
+  ico: string;
   dic: string;
   ic_dph: string;
-  pos_code: string; // kód pokladnice / DKP
-  premises: string; // prevádzka
-  connected: boolean;
+  pos_code: string;
+  premises_code: string;
+  premises_name: string;
+  premises_address: string;
+  connection_status: OrpConnectionStatus;
   last_tested_at?: string;
+  last_error?: string;
 };
 
 export type AuditLog = {
