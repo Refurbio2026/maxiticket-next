@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import {
   Banknote, CreditCard, Building2, Gift, Plus, Minus, Trash2,
   Printer, Mail, QrCode, Ticket as TicketIcon, Receipt, Calendar,
-  TrendingUp, Ban, Usb, FileText,
+  TrendingUp, Ban, Usb, FileText, ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
 
