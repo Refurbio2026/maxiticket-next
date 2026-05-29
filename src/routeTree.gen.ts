@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
@@ -108,6 +109,11 @@ const EventsIdRoute = EventsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => EventsRoute,
+} as any)
+const OrganizerPosIndexRoute = OrganizerPosIndexRouteImport.update({
+  id: '/pos/',
+  path: '/pos/',
+  getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
   id: '/events/',
@@ -364,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
+  '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -413,6 +420,7 @@ export interface FileRoutesByTo {
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/events': typeof OrganizerEventsIndexRoute
+  '/organizer/pos': typeof OrganizerPosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -465,6 +473,7 @@ export interface FileRoutesById {
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
+  '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -518,6 +527,7 @@ export interface FileRouteTypes {
     | '/api/public/seed-demo'
     | '/organizer/events/new'
     | '/organizer/events/'
+    | '/organizer/pos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -567,6 +577,7 @@ export interface FileRouteTypes {
     | '/api/public/seed-demo'
     | '/organizer/events/new'
     | '/organizer/events'
+    | '/organizer/pos'
   id:
     | '__root__'
     | '/'
@@ -618,6 +629,7 @@ export interface FileRouteTypes {
     | '/api/public/seed-demo'
     | '/organizer/events/new'
     | '/organizer/events/'
+    | '/organizer/pos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -702,6 +714,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$id'
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof EventsRoute
+    }
+    '/organizer/pos/': {
+      id: '/organizer/pos/'
+      path: '/pos'
+      fullPath: '/organizer/pos/'
+      preLoaderRoute: typeof OrganizerPosIndexRouteImport
+      parentRoute: typeof OrganizerRoute
     }
     '/organizer/events/': {
       id: '/organizer/events/'
@@ -1076,12 +1095,14 @@ interface OrganizerRouteChildren {
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
   OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
+  OrganizerPosIndexRoute: typeof OrganizerPosIndexRoute
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerEventsNewRoute: OrganizerEventsNewRoute,
   OrganizerEventsIndexRoute: OrganizerEventsIndexRoute,
+  OrganizerPosIndexRoute: OrganizerPosIndexRoute,
 }
 
 const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
