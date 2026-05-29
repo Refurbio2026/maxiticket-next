@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as EventsRouteImport } from './routes/events'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
 import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
@@ -70,6 +72,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -94,6 +101,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const EventsIdRoute = EventsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EventsRoute,
 } as any)
 const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
   id: '/events/new',
@@ -294,9 +306,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
+  '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/register': typeof RegisterRoute
+  '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -340,8 +354,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/events/$id': typeof EventsIdRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -387,9 +403,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
+  '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/register': typeof RegisterRoute
+  '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -436,9 +454,11 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/events'
     | '/login'
     | '/organizer'
     | '/register'
+    | '/events/$id'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -482,8 +502,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/events'
     | '/login'
     | '/register'
+    | '/events/$id'
     | '/admin'
     | '/organizer'
     | '/admin/data/categories'
@@ -528,9 +550,11 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/events'
     | '/login'
     | '/organizer'
     | '/register'
+    | '/events/$id'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -576,6 +600,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
+  EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
   RegisterRoute: typeof RegisterRoute
@@ -602,6 +627,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -638,6 +670,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/events/$id': {
+      id: '/events/$id'
+      path: '/$id'
+      fullPath: '/events/$id'
+      preLoaderRoute: typeof EventsIdRouteImport
+      parentRoute: typeof EventsRoute
     }
     '/organizer/events/new': {
       id: '/organizer/events/new'
@@ -983,6 +1022,17 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface EventsRouteChildren {
+  EventsIdRoute: typeof EventsIdRoute
+}
+
+const EventsRouteChildren: EventsRouteChildren = {
+  EventsIdRoute: EventsIdRoute,
+}
+
+const EventsRouteWithChildren =
+  EventsRoute._addFileChildren(EventsRouteChildren)
+
 interface OrganizerRouteChildren {
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
@@ -1001,6 +1051,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
+  EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
   RegisterRoute: RegisterRoute,
@@ -1008,3 +1059,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
