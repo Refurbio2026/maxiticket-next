@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Ticket, Menu, Shield, LayoutDashboard, User, LogOut, ShoppingCart } from "lucide-react";
+import { Ticket, Menu, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
-  const { user, isAdmin, isOrganizer, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <motion.header
@@ -28,24 +28,14 @@ export function Navbar() {
 
           <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
             <Link to="/events" className="hover:text-foreground transition-colors">Podujatia</Link>
-            <a href="#categories" className="hover:text-foreground transition-colors">Kategórie</a>
-            <a href="#cities" className="hover:text-foreground transition-colors">Mestá</a>
-            <a href="#organizers" className="hover:text-foreground transition-colors">Organizátori</a>
-            {isAdmin && (
-              <Link to="/admin" className="text-primary font-semibold inline-flex items-center gap-1.5">
-                <Shield className="size-4" /> Admin
-              </Link>
-            )}
-            {isOrganizer && (
-              <>
-                <Link to="/organizer" className="hover:text-foreground transition-colors inline-flex items-center gap-1.5">
-                  <LayoutDashboard className="size-4" /> Organizer
-                </Link>
-                <Link to="/organizer/pos" className="text-primary font-semibold inline-flex items-center gap-1.5">
-                  <ShoppingCart className="size-4" /> Pokladňa
-                </Link>
-              </>
-            )}
+            <a href="/#cities" className="hover:text-foreground transition-colors">Mestá</a>
+            <Link
+              to="/login"
+              search={{ section: "organizer" }}
+              className="hover:text-foreground transition-colors"
+            >
+              Pre organizátorov
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -60,17 +50,12 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <>
-                <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
-                  <Link to="/login">Prihlásiť</Link>
-                </Button>
-                <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
-                  <Link to="/register">Registrácia</Link>
-                </Button>
-              </>
+              <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
+                <Link to="/login">Prihlásiť sa</Link>
+              </Button>
             )}
             <Button asChild className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow">
-              <Link to={isOrganizer ? "/organizer/events/new" : "/login"}>Pridať podujatie</Link>
+              <Link to="/login" search={{ section: "organizer" }}>Pridať podujatie</Link>
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden rounded-xl">
               <Menu className="size-5" />
