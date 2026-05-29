@@ -23,6 +23,8 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
+import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
@@ -149,6 +151,16 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerEventsRoute = OrganizerEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 const EventsIdRoute = EventsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -165,14 +177,14 @@ const OrganizerPosIndexRoute = OrganizerPosIndexRouteImport.update({
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerMarketingIndexRoute = OrganizerMarketingIndexRouteImport.update({
-  id: '/marketing/',
-  path: '/marketing/',
-  getParentRoute: () => OrganizerRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerMarketingRoute,
 } as any)
 const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
-  id: '/events/',
-  path: '/events/',
-  getParentRoute: () => OrganizerRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerEventsRoute,
 } as any)
 const OrganizerPosSalesRoute = OrganizerPosSalesRouteImport.update({
   id: '/pos/sales',
@@ -200,14 +212,14 @@ const OrganizerPosCashiersRoute = OrganizerPosCashiersRouteImport.update({
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerMarketingNewRoute = OrganizerMarketingNewRouteImport.update({
-  id: '/marketing/new',
-  path: '/marketing/new',
-  getParentRoute: () => OrganizerRoute,
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizerMarketingRoute,
 } as any)
 const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
-  id: '/events/new',
-  path: '/events/new',
-  getParentRoute: () => OrganizerRoute,
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizerEventsRoute,
 } as any)
 const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
   id: '/api/public/seed-demo',
@@ -450,6 +462,8 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/events/$id': typeof EventsIdRoute
+  '/organizer/events': typeof OrganizerEventsRouteWithChildren
+  '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -591,6 +605,8 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/events/$id': typeof EventsIdRoute
+  '/organizer/events': typeof OrganizerEventsRouteWithChildren
+  '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -664,6 +680,8 @@ export interface FileRouteTypes {
     | '/support'
     | '/admin/marketing'
     | '/events/$id'
+    | '/organizer/events'
+    | '/organizer/marketing'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -804,6 +822,8 @@ export interface FileRouteTypes {
     | '/support'
     | '/admin/marketing'
     | '/events/$id'
+    | '/organizer/events'
+    | '/organizer/marketing'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -977,6 +997,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/organizer/marketing': {
+      id: '/organizer/marketing'
+      path: '/marketing'
+      fullPath: '/organizer/marketing'
+      preLoaderRoute: typeof OrganizerMarketingRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/events': {
+      id: '/organizer/events'
+      path: '/events'
+      fullPath: '/organizer/events'
+      preLoaderRoute: typeof OrganizerEventsRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/events/$id': {
       id: '/events/$id'
       path: '/$id'
@@ -1000,17 +1034,17 @@ declare module '@tanstack/react-router' {
     }
     '/organizer/marketing/': {
       id: '/organizer/marketing/'
-      path: '/marketing'
+      path: '/'
       fullPath: '/organizer/marketing/'
       preLoaderRoute: typeof OrganizerMarketingIndexRouteImport
-      parentRoute: typeof OrganizerRoute
+      parentRoute: typeof OrganizerMarketingRoute
     }
     '/organizer/events/': {
       id: '/organizer/events/'
-      path: '/events'
+      path: '/'
       fullPath: '/organizer/events/'
       preLoaderRoute: typeof OrganizerEventsIndexRouteImport
-      parentRoute: typeof OrganizerRoute
+      parentRoute: typeof OrganizerEventsRoute
     }
     '/organizer/pos/sales': {
       id: '/organizer/pos/sales'
@@ -1049,17 +1083,17 @@ declare module '@tanstack/react-router' {
     }
     '/organizer/marketing/new': {
       id: '/organizer/marketing/new'
-      path: '/marketing/new'
+      path: '/new'
       fullPath: '/organizer/marketing/new'
       preLoaderRoute: typeof OrganizerMarketingNewRouteImport
-      parentRoute: typeof OrganizerRoute
+      parentRoute: typeof OrganizerMarketingRoute
     }
     '/organizer/events/new': {
       id: '/organizer/events/new'
-      path: '/events/new'
+      path: '/new'
       fullPath: '/organizer/events/new'
       preLoaderRoute: typeof OrganizerEventsNewRouteImport
-      parentRoute: typeof OrganizerRoute
+      parentRoute: typeof OrganizerEventsRoute
     }
     '/api/public/seed-demo': {
       id: '/api/public/seed-demo'
@@ -1482,31 +1516,54 @@ const EventsRouteChildren: EventsRouteChildren = {
 const EventsRouteWithChildren =
   EventsRoute._addFileChildren(EventsRouteChildren)
 
-interface OrganizerRouteChildren {
-  OrganizerIndexRoute: typeof OrganizerIndexRoute
+interface OrganizerEventsRouteChildren {
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
+  OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
+}
+
+const OrganizerEventsRouteChildren: OrganizerEventsRouteChildren = {
+  OrganizerEventsNewRoute: OrganizerEventsNewRoute,
+  OrganizerEventsIndexRoute: OrganizerEventsIndexRoute,
+}
+
+const OrganizerEventsRouteWithChildren = OrganizerEventsRoute._addFileChildren(
+  OrganizerEventsRouteChildren,
+)
+
+interface OrganizerMarketingRouteChildren {
   OrganizerMarketingNewRoute: typeof OrganizerMarketingNewRoute
+  OrganizerMarketingIndexRoute: typeof OrganizerMarketingIndexRoute
+}
+
+const OrganizerMarketingRouteChildren: OrganizerMarketingRouteChildren = {
+  OrganizerMarketingNewRoute: OrganizerMarketingNewRoute,
+  OrganizerMarketingIndexRoute: OrganizerMarketingIndexRoute,
+}
+
+const OrganizerMarketingRouteWithChildren =
+  OrganizerMarketingRoute._addFileChildren(OrganizerMarketingRouteChildren)
+
+interface OrganizerRouteChildren {
+  OrganizerEventsRoute: typeof OrganizerEventsRouteWithChildren
+  OrganizerMarketingRoute: typeof OrganizerMarketingRouteWithChildren
+  OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
   OrganizerPosClosingRoute: typeof OrganizerPosClosingRoute
   OrganizerPosDevicesRoute: typeof OrganizerPosDevicesRoute
   OrganizerPosFiscalRoute: typeof OrganizerPosFiscalRoute
   OrganizerPosSalesRoute: typeof OrganizerPosSalesRoute
-  OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
-  OrganizerMarketingIndexRoute: typeof OrganizerMarketingIndexRoute
   OrganizerPosIndexRoute: typeof OrganizerPosIndexRoute
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerEventsRoute: OrganizerEventsRouteWithChildren,
+  OrganizerMarketingRoute: OrganizerMarketingRouteWithChildren,
   OrganizerIndexRoute: OrganizerIndexRoute,
-  OrganizerEventsNewRoute: OrganizerEventsNewRoute,
-  OrganizerMarketingNewRoute: OrganizerMarketingNewRoute,
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
   OrganizerPosClosingRoute: OrganizerPosClosingRoute,
   OrganizerPosDevicesRoute: OrganizerPosDevicesRoute,
   OrganizerPosFiscalRoute: OrganizerPosFiscalRoute,
   OrganizerPosSalesRoute: OrganizerPosSalesRoute,
-  OrganizerEventsIndexRoute: OrganizerEventsIndexRoute,
-  OrganizerMarketingIndexRoute: OrganizerMarketingIndexRoute,
   OrganizerPosIndexRoute: OrganizerPosIndexRoute,
 }
 
