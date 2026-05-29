@@ -167,6 +167,71 @@ function PosPage() {
     toast.success("Predaj stornovaný");
   };
 
+  // No events at all
+  if (events.length === 0) {
+    return (
+      <div className="space-y-6">
+        <h1 className="font-display text-4xl font-bold tracking-tight">Pokladňa / POS</h1>
+        <Card className="p-12 text-center bg-card/60 border-dashed border-border/50 max-w-xl mx-auto">
+          <TicketIcon className="size-12 text-muted-foreground mx-auto mb-4" />
+          <div className="font-display text-xl font-bold">Najprv vytvorte podujatie</div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Pokladňu môžete otvoriť až po vytvorení podujatia s nakonfigurovanými vstupenkami.
+          </p>
+          <Button asChild className="mt-6 bg-gradient-flame text-primary-foreground shadow-glow">
+            <Link to="/organizer/events/new">Vytvoriť podujatie</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  // POS not opened yet — show event picker gate
+  if (!eventId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-display text-4xl font-bold tracking-tight">Otvoriť pokladňu</h1>
+          <p className="text-muted-foreground mt-1">Vyber podujatie, pre ktoré chceš predávať vstupenky.</p>
+        </div>
+        <Card className="p-8 bg-card/60 border-border/50 max-w-2xl">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Vyber podujatie</div>
+          <select
+            value={eventId}
+            onChange={(e) => setEventId(e.target.value)}
+            className="w-full h-12 rounded-xl bg-background border border-border/50 px-4 text-base focus:outline-none focus:border-primary"
+          >
+            <option value="">— Vyberte podujatie —</option>
+            {events.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.title} · {e.event_date} · {e.city}
+              </option>
+            ))}
+          </select>
+          <Button
+            size="lg"
+            disabled={!eventId}
+            onClick={() => {
+              if (user && eventId) {
+                logAudit({
+                  user_id: user.id, user_name: user.full_name || user.email,
+                  action: "pos.session_open", entity: "pos_sessions", entity_id: eventId,
+                });
+                toast.success("Pokladňa otvorená");
+              }
+            }}
+            className="w-full mt-5 h-14 text-base bg-gradient-flame text-primary-foreground shadow-glow"
+          >
+            <ShoppingCart className="size-5 mr-2" /> OTVORIŤ POKLADŇU
+          </Button>
+          <p className="text-xs text-muted-foreground mt-4 text-center">
+            Po otvorení sa zobrazí predajná obrazovka s vstupenkami a košíkom.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
