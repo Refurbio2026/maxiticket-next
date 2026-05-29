@@ -125,7 +125,8 @@ function PosPage() {
       for (const i of cart) {
         for (let k = 0; k < i.qty; k++) {
           const tid = uid();
-          const code = `MT-${order_id}-${i.ticket.id}-${k + 1}`;
+          // unikátny QR kód per kus
+          const code = `MT-${order_id}-${i.ticket.id}-${tid}`;
           qr_codes.push(code);
           tickets.push({
             id: tid, code,
