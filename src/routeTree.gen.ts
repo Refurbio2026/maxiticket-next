@@ -23,6 +23,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
@@ -144,6 +145,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => OrganizerRoute,
 } as any)
 const EventsIdRoute = EventsIdRouteImport.update({
   id: '/$id',
@@ -424,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
+  '/organizer/marketing': typeof OrganizerMarketingRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -489,6 +496,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
+  '/organizer/marketing': typeof OrganizerMarketingRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -557,6 +565,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
+  '/organizer/marketing': typeof OrganizerMarketingRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -626,6 +635,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/support'
     | '/events/$id'
+    | '/organizer/marketing'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -691,6 +701,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/support'
     | '/events/$id'
+    | '/organizer/marketing'
     | '/admin'
     | '/organizer'
     | '/admin/data/categories'
@@ -758,6 +769,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/support'
     | '/events/$id'
+    | '/organizer/marketing'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -927,6 +939,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/organizer/marketing': {
+      id: '/organizer/marketing'
+      path: '/marketing'
+      fullPath: '/organizer/marketing'
+      preLoaderRoute: typeof OrganizerMarketingRouteImport
+      parentRoute: typeof OrganizerRoute
     }
     '/events/$id': {
       id: '/events/$id'
@@ -1392,6 +1411,7 @@ const EventsRouteWithChildren =
   EventsRoute._addFileChildren(EventsRouteChildren)
 
 interface OrganizerRouteChildren {
+  OrganizerMarketingRoute: typeof OrganizerMarketingRoute
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
@@ -1404,6 +1424,7 @@ interface OrganizerRouteChildren {
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerMarketingRoute: OrganizerMarketingRoute,
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerEventsNewRoute: OrganizerEventsNewRoute,
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
