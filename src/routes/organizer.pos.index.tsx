@@ -102,14 +102,18 @@ function PosPage() {
         if (!r.ok) throw new Error(r.error || "Platba zamietnutá");
         terminal_tx_id = r.tx_id;
       }
-      const fr = await fiscal.createReceipt({
-        organizer_id: user.id,
-        sale_id: order_id,
-        total,
-        payment_method: method,
-        items: cart.map((i) => ({ name: i.ticket.name, qty: i.qty, unit_price: i.ticket.price })),
-      });
-      await fiscal.sendReceiptToFiscalSystem(fr);
+      const orpSettings = getFiscalSettings();
+      let fr: Awaited<ReturnType<typeof fiscal.createReceipt>> | null = null;
+      if (orpSettings.connection_status === "connected") {
+        fr = await fiscal.createReceipt({
+          organizer_id: user.id,
+          sale_id: order_id,
+          total,
+          payment_method: method,
+          items: cart.map((i) => ({ name: i.ticket.name, qty: i.qty, unit_price: i.ticket.price })),
+        });
+        await fiscal.sendReceiptToFiscalSystem(fr);
+      }
 
       const items: PosSaleItem[] = cart.map((i) => ({
         ticket_id: i.ticket.id, ticket_name: i.ticket.name,
