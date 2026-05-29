@@ -24,14 +24,14 @@ function OrganizerLayout() {
 
   if (loading || !user || !isOrganizer) {
     return (
-      <div className="dark min-h-screen bg-background text-foreground grid place-items-center">
+      <div className="min-h-screen bg-background text-foreground grid place-items-center">
         <div className="text-sm text-muted-foreground">Overujem prístup…</div>
       </div>
     );
   }
 
   return (
-    <div className="dark">
+    <div className="">
       <SidebarProvider style={{ "--sidebar-width": "16rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties}>
         <div className="flex min-h-screen w-full bg-background text-foreground">
           <OrganizerSidebar />
