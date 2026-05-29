@@ -176,8 +176,8 @@ const AUDIT = "mt_audit_logs";
 const SESSIONS = "mt_pos_sessions";
 const TICKETS = "mt_pos_tickets";
 const TERMINAL_TX = "mt_payment_terminal_tx";
-const FISCAL_RECEIPTS = "mt_fiscal_receipts";
-const FISCAL_SETTINGS = "mt_fiscal_settings";
+const FISCAL_RECEIPTS = "mt_orp_receipts";
+const FISCAL_SETTINGS = "mt_orp_settings";
 
 export const POS_EVENT = "mt:pos-change";
 
@@ -262,14 +262,20 @@ export function cancelFiscalReceiptInStore(id: string) {
 // ---------- Fiscal Settings ----------
 const DEFAULT_FISCAL_SETTINGS: FiscalSettings = {
   mode: "mock",
-  provider: "VRP2",
+  provider: "ORP",
+  orp_provider: "",
   api_url: "",
   api_key: "",
+  client_id: "",
+  client_secret: "",
+  ico: "",
   dic: "",
   ic_dph: "",
   pos_code: "0000",
-  premises: "",
-  connected: false,
+  premises_code: "",
+  premises_name: "",
+  premises_address: "",
+  connection_status: "disconnected",
 };
 export function getFiscalSettings(): FiscalSettings { return read<FiscalSettings>(FISCAL_SETTINGS, DEFAULT_FISCAL_SETTINGS); }
 export function saveFiscalSettings(s: FiscalSettings) { write(FISCAL_SETTINGS, s); emitPos(); }

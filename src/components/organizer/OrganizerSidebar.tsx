@@ -31,7 +31,7 @@ const groups: Group[] = [
       { title: "Denné uzávierky", url: "/organizer/pos/closing", icon: ClipboardList },
       { title: "Pokladníci", url: "/organizer/pos/cashiers", icon: Users },
       { title: "Zariadenia", url: "/organizer/pos/devices", icon: Cpu },
-      { title: "VRP2 / eKasa", url: "/organizer/pos/fiscal", icon: ShieldCheck },
+      { title: "ORP / eKasa", url: "/organizer/pos/fiscal", icon: ShieldCheck },
     ],
   },
 ];

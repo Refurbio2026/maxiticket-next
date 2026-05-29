@@ -177,7 +177,7 @@ function ClosingPage() {
       </Card>
       <Separator />
       <p className="text-xs text-muted-foreground">
-        Demo prototyp · Reálne napojenie na VRP2 / eKasa a USB platobný terminál sa doplní podľa
+        Demo prototyp · Reálne napojenie na ORP / eKasa a USB platobný terminál sa doplní podľa
         oficiálnej dokumentácie Finančnej správy SR a poskytovateľa terminálu.
       </p>
     </div>
