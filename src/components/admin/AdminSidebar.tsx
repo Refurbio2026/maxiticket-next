@@ -38,6 +38,7 @@ import {
   FileBarChart,
   TrendingUp,
   Flame,
+  Megaphone,
 } from "lucide-react";
 import {
   Sidebar,
