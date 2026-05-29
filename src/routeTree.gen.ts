@@ -9,10 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as OrganizerRouteImport } from './routes/organizer'
+import { Route as MarketingRouteImport } from './routes/marketing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EventsRouteImport } from './routes/events'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ArtistsRouteImport } from './routes/artists'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
@@ -70,14 +75,29 @@ import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrganizerRoute = OrganizerRouteImport.update({
   id: '/organizer',
   path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingRoute = MarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -88,6 +108,16 @@ const LoginRoute = LoginRouteImport.update({
 const EventsRoute = EventsRouteImport.update({
   id: '/events',
   path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArtistsRoute = ArtistsRouteImport.update({
+  id: '/artists',
+  path: '/artists',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -384,10 +414,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
+  '/artists': typeof ArtistsRoute
+  '/contact': typeof ContactRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
+  '/marketing': typeof MarketingRoute
   '/organizer': typeof OrganizerRouteWithChildren
+  '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -445,9 +480,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/artists': typeof ArtistsRoute
+  '/contact': typeof ContactRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
+  '/marketing': typeof MarketingRoute
+  '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -507,10 +547,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
+  '/artists': typeof ArtistsRoute
+  '/contact': typeof ContactRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
+  '/marketing': typeof MarketingRoute
   '/organizer': typeof OrganizerRouteWithChildren
+  '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -571,10 +616,15 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/artists'
+    | '/contact'
     | '/events'
     | '/login'
+    | '/marketing'
     | '/organizer'
+    | '/partners'
     | '/register'
+    | '/support'
     | '/events/$id'
     | '/admin/'
     | '/organizer/'
@@ -632,9 +682,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/artists'
+    | '/contact'
     | '/events'
     | '/login'
+    | '/marketing'
+    | '/partners'
     | '/register'
+    | '/support'
     | '/events/$id'
     | '/admin'
     | '/organizer'
@@ -693,10 +748,15 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/artists'
+    | '/contact'
     | '/events'
     | '/login'
+    | '/marketing'
     | '/organizer'
+    | '/partners'
     | '/register'
+    | '/support'
     | '/events/$id'
     | '/admin/'
     | '/organizer/'
@@ -756,15 +816,27 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ArtistsRoute: typeof ArtistsRoute
+  ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
+  MarketingRoute: typeof MarketingRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
+  PartnersRoute: typeof PartnersRoute
   RegisterRoute: typeof RegisterRoute
+  SupportRoute: typeof SupportRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -772,11 +844,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/organizer': {
       id: '/organizer'
       path: '/organizer'
       fullPath: '/organizer'
       preLoaderRoute: typeof OrganizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketing': {
+      id: '/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof MarketingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -791,6 +877,20 @@ declare module '@tanstack/react-router' {
       path: '/events'
       fullPath: '/events'
       preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/artists': {
+      id: '/artists'
+      path: '/artists'
+      fullPath: '/artists'
+      preLoaderRoute: typeof ArtistsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1323,10 +1423,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
+  ArtistsRoute: ArtistsRoute,
+  ContactRoute: ContactRoute,
   EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
+  MarketingRoute: MarketingRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
+  PartnersRoute: PartnersRoute,
   RegisterRoute: RegisterRoute,
+  SupportRoute: SupportRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
 }
 export const routeTree = rootRouteImport
