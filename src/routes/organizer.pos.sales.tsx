@@ -1,14 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { getSales, getFiscalReceipts, POS_EVENT, voidSale, logAudit, type PosSale, type FiscalReceipt } from "@/lib/pos-db";
+import { getSales, getFiscalReceipts, getTickets, POS_EVENT, voidSale, logAudit, type PosSale, type FiscalReceipt, type PosTicket } from "@/lib/pos-db";
+import { getEvents, type EventItem } from "@/lib/local-db";
 import { orpAdapter } from "@/lib/fiscal-adapter";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
+import { printTickets } from "@/lib/print-tickets";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Ban, FileDown, Search, Receipt } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Ban, FileDown, Search, Receipt, Printer, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/sales")({
@@ -20,6 +23,9 @@ function SalesPage() {
   const { user } = useAuth();
   const [sales, setSales] = useState<PosSale[]>([]);
   const [receipts, setReceipts] = useState<FiscalReceipt[]>([]);
+  const [tickets, setTickets] = useState<PosTicket[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [detail, setDetail] = useState<PosSale | null>(null);
   const [q, setQ] = useState("");
   const [tick, setTick] = useState(0);
 
@@ -27,6 +33,8 @@ function SalesPage() {
     if (!user) return;
     setSales(getSales().filter((s) => user.role === "admin" || s.organizer_id === user.id));
     setReceipts(getFiscalReceipts());
+    setTickets(getTickets());
+    setEvents(getEvents());
   }, [user, tick]);
 
   const receiptById = (id?: string) => (id ? receipts.find((r) => r.id === id) : undefined);
@@ -132,9 +140,12 @@ function SalesPage() {
                       ) : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
                     <td className="flex gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setDetail(s)}>
+                        <TicketIcon className="size-3.5 mr-1" /> Vstupenky
+                      </Button>
                       {r && (
                         <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
-                          <Link to="/organizer/pos/fiscal">Zobraziť doklad</Link>
+                          <Link to="/organizer/pos/fiscal">Doklad</Link>
                         </Button>
                       )}
                       {s.status === "paid" && (
@@ -151,6 +162,54 @@ function SalesPage() {
           </div>
         )}
       </Card>
+
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Vstupenky · doklad {detail?.receipt_number}</DialogTitle>
+          </DialogHeader>
+          {detail && (() => {
+            const saleTickets = tickets.filter((t) => t.sale_id === detail.id);
+            const ev = events.find((e) => e.id === detail.event_id);
+            return (
+              <div className="space-y-4 text-sm">
+                <div className="text-xs text-muted-foreground">
+                  {new Date(detail.created_at).toLocaleString("sk-SK")} · {detail.cashier_name} · {detail.event_title}
+                </div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Vstupeniek: {saleTickets.length}
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {saleTickets.map((t, idx) => (
+                    <div key={t.id} className="rounded-xl border border-border/50 bg-background p-3 flex gap-3 items-center">
+                      <div className="aspect-square w-20 bg-white rounded-md p-1 flex items-center justify-center shrink-0">
+                        <img alt="QR" className="w-full h-full" src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.code)}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Vstupenka #{idx + 1}</div>
+                        <div className="font-semibold truncate">{t.ticket_type_name}</div>
+                        <div className="text-xs">€{t.price.toFixed(2)}</div>
+                        <div className="font-mono text-[10px] text-muted-foreground truncate mt-1">{t.code}</div>
+                        <Badge variant={t.status === "valid" ? "default" : t.status === "used" ? "outline" : "destructive"} className="mt-1 text-[10px] uppercase">{t.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <DialogFooter>
+                  <Button
+                    size="sm"
+                    className="bg-gradient-flame text-primary-foreground shadow-glow"
+                    onClick={() => printTickets(saleTickets, detail, ev)}
+                    disabled={saleTickets.length === 0}
+                  >
+                    <Printer className="size-4 mr-1.5" /> Vytlačiť všetky vstupenky ({saleTickets.length})
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
