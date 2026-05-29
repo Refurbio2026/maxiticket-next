@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Eye, Trash2, CheckCircle2, FileText, Calendar, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/organizer/events")({
+export const Route = createFileRoute("/organizer/events/")({
   head: () => ({ meta: [{ title: "Moje podujatia · MAXITICKET" }] }),
   component: OrganizerEvents,
 });
