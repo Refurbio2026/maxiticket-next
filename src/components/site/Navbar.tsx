@@ -44,9 +44,14 @@ export function Navbar() {
 
           <div className="flex items-center gap-2">
             {user ? (
-              <Button asChild variant="ghost" className="rounded-xl text-sm">
-                <Link to="/account"><User className="size-4 mr-1.5" /> Účet</Link>
-              </Button>
+              <>
+                <Button asChild variant="ghost" className="rounded-xl text-sm">
+                  <Link to="/account"><User className="size-4 mr-1.5" /> Účet</Link>
+                </Button>
+                <Button variant="ghost" className="rounded-xl text-sm" onClick={() => signOut()}>
+                  <LogOut className="size-4 mr-1.5" /> Odhlásiť
+                </Button>
+              </>
             ) : (
               <>
                 <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
