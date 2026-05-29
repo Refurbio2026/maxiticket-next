@@ -58,7 +58,8 @@ const SECTIONS: Record<Section, {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { section } = Route.useSearch();
+  const search = Route.useSearch();
+  const section = search.section as Section | undefined;
   const { user, loading, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
