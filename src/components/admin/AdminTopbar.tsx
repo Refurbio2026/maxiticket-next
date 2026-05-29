@@ -123,14 +123,14 @@ export function AdminTopbar() {
             <DropdownMenuLabel>Upozornenia</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {[
-              { t: "Nová refundácia čaká na schválenie", s: "pred 2 min", c: "primary" },
-              { t: "Organizátor MeloFest dosiahol limit predaja", s: "pred 14 min", c: "accent" },
-              { t: "Bankový výpis spárovaný (98 položiek)", s: "pred 1 h", c: "muted" },
-              { t: "Zariadenie SCAN-04 offline", s: "pred 3 h", c: "destructive" },
+              { t: "Nová refundácia čaká na schválenie", s: "pred 2 min", c: "bg-primary" },
+              { t: "Organizátor MeloFest dosiahol limit predaja", s: "pred 14 min", c: "bg-accent" },
+              { t: "Bankový výpis spárovaný (98 položiek)", s: "pred 1 h", c: "bg-muted-foreground" },
+              { t: "Zariadenie SCAN-04 offline", s: "pred 3 h", c: "bg-destructive" },
             ].map((n, i) => (
               <DropdownMenuItem key={i} className="flex flex-col items-start gap-1 py-3">
                 <div className="flex w-full items-start gap-2">
-                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-${n.c}`} />
+                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.c}`} />
                   <div className="flex-1 text-sm">{n.t}</div>
                 </div>
                 <span className="ml-3.5 text-xs text-muted-foreground">{n.s}</span>
