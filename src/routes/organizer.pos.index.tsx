@@ -6,8 +6,8 @@ import {
 } from "@/lib/local-db";
 import {
   addSale, getSales, nextReceiptNumber, voidSale, logAudit,
-  computeClosing, POS_EVENT,
-  type PaymentMethod, type PosSale, type PosSaleItem,
+  computeClosing, POS_EVENT, addSession, addTickets,
+  type PaymentMethod, type PosSale, type PosSaleItem, type PosTicket,
 } from "@/lib/pos-db";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { fiscal } from "@/lib/fiscal-adapter";
@@ -97,12 +97,13 @@ function PosPage() {
       let terminal_tx_id: string | undefined;
       if (method === "card") {
         if (terminalStatus !== "connected") await paymentTerminal.connectTerminal();
-        const r = await paymentTerminal.sendPayment(total, "EUR", order_id);
+        const r = await paymentTerminal.sendPayment(total, "EUR", order_id, user.id);
         if (!r.ok) throw new Error(r.error || "Platba zamietnutá");
         terminal_tx_id = r.tx_id;
       }
-      const fr = await fiscal.createFiscalReceipt({
-        organizer_ico: "00000000",
+      const fr = await fiscal.createReceipt({
+        organizer_id: user.id,
+        sale_id: order_id,
         total,
         payment_method: method,
         items: cart.map((i) => ({ name: i.ticket.name, qty: i.qty, unit_price: i.ticket.price })),
@@ -114,7 +115,22 @@ function PosPage() {
         unit_price: i.ticket.price, quantity: i.qty, subtotal: i.ticket.price * i.qty,
       }));
       const qr_codes: string[] = [];
-      for (const it of items) for (let k = 0; k < it.quantity; k++) qr_codes.push(`MT-${order_id}-${it.ticket_id}-${k + 1}`);
+      const tickets: PosTicket[] = [];
+      for (const i of cart) {
+        for (let k = 0; k < i.qty; k++) {
+          const tid = uid();
+          const code = `MT-${order_id}-${i.ticket.id}-${k + 1}`;
+          qr_codes.push(code);
+          tickets.push({
+            id: tid, code,
+            organizer_id: user.id, event_id: selectedEvent.id,
+            sale_id: order_id, ticket_type_id: i.ticket.id, ticket_type_name: i.ticket.name,
+            price: i.ticket.price, status: "valid",
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+      addTickets(tickets);
 
       const sale: PosSale = {
         id: order_id,
@@ -213,6 +229,13 @@ function PosPage() {
             disabled={!eventId}
             onClick={() => {
               if (user && eventId) {
+                const ev = events.find((e) => e.id === eventId);
+                addSession({
+                  id: uid(), organizer_id: user.id,
+                  cashier_id: user.id, cashier_name: user.full_name || user.email,
+                  event_id: eventId, event_title: ev?.title || "",
+                  opened_at: new Date().toISOString(), status: "open",
+                });
                 logAudit({
                   user_id: user.id, user_name: user.full_name || user.email,
                   action: "pos.session_open", entity: "pos_sessions", entity_id: eventId,

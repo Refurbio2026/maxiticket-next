@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { getSales, POS_EVENT, voidSale, logAudit, type PosSale } from "@/lib/pos-db";
+import { fiscal } from "@/lib/fiscal-adapter";
+import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,10 +50,13 @@ function SalesPage() {
     a.download = `predaje.csv`; a.click();
   };
 
-  const onVoid = (id: string) => {
+  const onVoid = async (id: string) => {
     const reason = prompt("Dôvod storna:") || "";
     if (!reason || !user) return;
+    const sale = sales.find((s) => s.id === id);
     voidSale(id, reason);
+    if (sale?.fiscal_receipt_id) await fiscal.cancelReceipt(sale.fiscal_receipt_id);
+    if (sale?.terminal_tx_id) await paymentTerminal.cancelPayment(sale.terminal_tx_id);
     logAudit({ user_id: user.id, user_name: user.full_name || user.email, action: "pos.void", entity: "pos_sales", entity_id: id, meta: { reason } });
     toast.success("Predaj stornovaný");
   };
