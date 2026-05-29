@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, CalendarDays, Plus, ShoppingCart, Receipt,
-  ClipboardList, Users, Cpu, Flame, ShieldCheck,
+  ClipboardList, Users, Cpu, Flame, ShieldCheck, Megaphone,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
