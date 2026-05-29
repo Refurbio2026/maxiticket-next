@@ -34,6 +34,13 @@ const groups: Group[] = [
       { title: "ORP / eKasa", url: "/organizer/pos/fiscal", icon: ShieldCheck },
     ],
   },
+  {
+    label: "Marketing",
+    items: [
+      { title: "Marketing Center", url: "/organizer/marketing", icon: Megaphone, exact: true },
+      { title: "Spustiť reklamu", url: "/organizer/marketing/new", icon: Plus },
+    ],
+  },
 ];
 
 export function OrganizerSidebar() {
