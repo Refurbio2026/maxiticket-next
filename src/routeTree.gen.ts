@@ -24,13 +24,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
+import { Route as OrganizerMarketingIndexRouteImport } from './routes/organizer.marketing.index'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
 import { Route as OrganizerPosSalesRouteImport } from './routes/organizer.pos.sales'
 import { Route as OrganizerPosFiscalRouteImport } from './routes/organizer.pos.fiscal'
 import { Route as OrganizerPosDevicesRouteImport } from './routes/organizer.pos.devices'
 import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
 import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
+import { Route as OrganizerMarketingNewRouteImport } from './routes/organizer.marketing.new'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
@@ -150,9 +153,19 @@ const EventsIdRoute = EventsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => EventsRoute,
 } as any)
+const AdminMarketingRoute = AdminMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AdminRoute,
+} as any)
 const OrganizerPosIndexRoute = OrganizerPosIndexRouteImport.update({
   id: '/pos/',
   path: '/pos/',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerMarketingIndexRoute = OrganizerMarketingIndexRouteImport.update({
+  id: '/marketing/',
+  path: '/marketing/',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
@@ -183,6 +196,11 @@ const OrganizerPosClosingRoute = OrganizerPosClosingRouteImport.update({
 const OrganizerPosCashiersRoute = OrganizerPosCashiersRouteImport.update({
   id: '/pos/cashiers',
   path: '/pos/cashiers',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerMarketingNewRoute = OrganizerMarketingNewRouteImport.update({
+  id: '/marketing/new',
+  path: '/marketing/new',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
@@ -423,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -469,12 +488,14 @@ export interface FileRoutesByFullPath {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
   '/organizer/pos/fiscal': typeof OrganizerPosFiscalRoute
   '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
+  '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -488,6 +509,7 @@ export interface FileRoutesByTo {
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/events/$id': typeof EventsIdRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -534,12 +556,14 @@ export interface FileRoutesByTo {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
   '/organizer/pos/fiscal': typeof OrganizerPosFiscalRoute
   '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events': typeof OrganizerEventsIndexRoute
+  '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
 }
 export interface FileRoutesById {
@@ -556,6 +580,7 @@ export interface FileRoutesById {
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/events/$id': typeof EventsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -602,12 +627,14 @@ export interface FileRoutesById {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
   '/organizer/pos/fiscal': typeof OrganizerPosFiscalRoute
   '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
+  '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
 }
 export interface FileRouteTypes {
@@ -625,6 +652,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/register'
     | '/support'
+    | '/admin/marketing'
     | '/events/$id'
     | '/admin/'
     | '/organizer/'
@@ -671,12 +699,14 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
     | '/organizer/pos/fiscal'
     | '/organizer/pos/sales'
     | '/organizer/events/'
+    | '/organizer/marketing/'
     | '/organizer/pos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -690,6 +720,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/register'
     | '/support'
+    | '/admin/marketing'
     | '/events/$id'
     | '/admin'
     | '/organizer'
@@ -736,12 +767,14 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
     | '/organizer/pos/fiscal'
     | '/organizer/pos/sales'
     | '/organizer/events'
+    | '/organizer/marketing'
     | '/organizer/pos'
   id:
     | '__root__'
@@ -757,6 +790,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/register'
     | '/support'
+    | '/admin/marketing'
     | '/events/$id'
     | '/admin/'
     | '/organizer/'
@@ -803,12 +837,14 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
     | '/organizer/pos/fiscal'
     | '/organizer/pos/sales'
     | '/organizer/events/'
+    | '/organizer/marketing/'
     | '/organizer/pos/'
   fileRoutesById: FileRoutesById
 }
@@ -935,11 +971,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof EventsRoute
     }
+    '/admin/marketing': {
+      id: '/admin/marketing'
+      path: '/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AdminMarketingRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/organizer/pos/': {
       id: '/organizer/pos/'
       path: '/pos'
       fullPath: '/organizer/pos/'
       preLoaderRoute: typeof OrganizerPosIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/marketing/': {
+      id: '/organizer/marketing/'
+      path: '/marketing'
+      fullPath: '/organizer/marketing/'
+      preLoaderRoute: typeof OrganizerMarketingIndexRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/events/': {
@@ -982,6 +1032,13 @@ declare module '@tanstack/react-router' {
       path: '/pos/cashiers'
       fullPath: '/organizer/pos/cashiers'
       preLoaderRoute: typeof OrganizerPosCashiersRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/marketing/new': {
+      id: '/organizer/marketing/new'
+      path: '/marketing/new'
+      fullPath: '/organizer/marketing/new'
+      preLoaderRoute: typeof OrganizerMarketingNewRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/events/new': {
@@ -1289,6 +1346,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminMarketingRoute: typeof AdminMarketingRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminDataCategoriesRoute: typeof AdminDataCategoriesRoute
   AdminDataContentRoute: typeof AdminDataContentRoute
@@ -1334,6 +1392,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminMarketingRoute: AdminMarketingRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminDataCategoriesRoute: AdminDataCategoriesRoute,
   AdminDataContentRoute: AdminDataContentRoute,
@@ -1394,24 +1453,28 @@ const EventsRouteWithChildren =
 interface OrganizerRouteChildren {
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
+  OrganizerMarketingNewRoute: typeof OrganizerMarketingNewRoute
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
   OrganizerPosClosingRoute: typeof OrganizerPosClosingRoute
   OrganizerPosDevicesRoute: typeof OrganizerPosDevicesRoute
   OrganizerPosFiscalRoute: typeof OrganizerPosFiscalRoute
   OrganizerPosSalesRoute: typeof OrganizerPosSalesRoute
   OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
+  OrganizerMarketingIndexRoute: typeof OrganizerMarketingIndexRoute
   OrganizerPosIndexRoute: typeof OrganizerPosIndexRoute
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerEventsNewRoute: OrganizerEventsNewRoute,
+  OrganizerMarketingNewRoute: OrganizerMarketingNewRoute,
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
   OrganizerPosClosingRoute: OrganizerPosClosingRoute,
   OrganizerPosDevicesRoute: OrganizerPosDevicesRoute,
   OrganizerPosFiscalRoute: OrganizerPosFiscalRoute,
   OrganizerPosSalesRoute: OrganizerPosSalesRoute,
   OrganizerEventsIndexRoute: OrganizerEventsIndexRoute,
+  OrganizerMarketingIndexRoute: OrganizerMarketingIndexRoute,
   OrganizerPosIndexRoute: OrganizerPosIndexRoute,
 }
 
@@ -1437,3 +1500,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

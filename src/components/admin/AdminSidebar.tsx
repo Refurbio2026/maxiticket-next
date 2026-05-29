@@ -38,6 +38,7 @@ import {
   FileBarChart,
   TrendingUp,
   Flame,
+  Megaphone,
 } from "lucide-react";
 import {
   Sidebar,
@@ -124,6 +125,10 @@ const groups: Group[] = [
   {
     label: "Financie",
     items: [{ title: "Štatistiky", url: "/admin/finance/stats", icon: BarChart3 }],
+  },
+  {
+    label: "Marketing",
+    items: [{ title: "Reklamné kampane", url: "/admin/marketing", icon: Megaphone }],
   },
   {
     label: "Systém",

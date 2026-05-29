@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, CalendarDays, Plus, ShoppingCart, Receipt,
-  ClipboardList, Users, Cpu, Flame, ShieldCheck,
+  ClipboardList, Users, Cpu, Flame, ShieldCheck, Megaphone,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -32,6 +32,13 @@ const groups: Group[] = [
       { title: "Pokladníci", url: "/organizer/pos/cashiers", icon: Users },
       { title: "Zariadenia", url: "/organizer/pos/devices", icon: Cpu },
       { title: "ORP / eKasa", url: "/organizer/pos/fiscal", icon: ShieldCheck },
+    ],
+  },
+  {
+    label: "Marketing",
+    items: [
+      { title: "Marketing Center", url: "/organizer/marketing", icon: Megaphone, exact: true },
+      { title: "Spustiť reklamu", url: "/organizer/marketing/new", icon: Plus },
     ],
   },
 ];
