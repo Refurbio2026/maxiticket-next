@@ -22,6 +22,7 @@ import { Route as EventsIdRouteImport } from './routes/events.$id'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
 import { Route as OrganizerPosSalesRouteImport } from './routes/organizer.pos.sales'
+import { Route as OrganizerPosFiscalRouteImport } from './routes/organizer.pos.fiscal'
 import { Route as OrganizerPosDevicesRouteImport } from './routes/organizer.pos.devices'
 import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
 import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
@@ -132,6 +133,11 @@ const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
 const OrganizerPosSalesRoute = OrganizerPosSalesRouteImport.update({
   id: '/pos/sales',
   path: '/pos/sales',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosFiscalRoute = OrganizerPosFiscalRouteImport.update({
+  id: '/pos/fiscal',
+  path: '/pos/fiscal',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerPosDevicesRoute = OrganizerPosDevicesRouteImport.update({
@@ -431,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
+  '/organizer/pos/fiscal': typeof OrganizerPosFiscalRoute
   '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
@@ -490,6 +497,7 @@ export interface FileRoutesByTo {
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
+  '/organizer/pos/fiscal': typeof OrganizerPosFiscalRoute
   '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
@@ -552,6 +560,7 @@ export interface FileRoutesById {
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
+  '/organizer/pos/fiscal': typeof OrganizerPosFiscalRoute
   '/organizer/pos/sales': typeof OrganizerPosSalesRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
@@ -615,6 +624,7 @@ export interface FileRouteTypes {
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
+    | '/organizer/pos/fiscal'
     | '/organizer/pos/sales'
     | '/organizer/events/'
     | '/organizer/pos/'
@@ -674,6 +684,7 @@ export interface FileRouteTypes {
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
+    | '/organizer/pos/fiscal'
     | '/organizer/pos/sales'
     | '/organizer/events'
     | '/organizer/pos'
@@ -735,6 +746,7 @@ export interface FileRouteTypes {
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
+    | '/organizer/pos/fiscal'
     | '/organizer/pos/sales'
     | '/organizer/events/'
     | '/organizer/pos/'
@@ -842,6 +854,13 @@ declare module '@tanstack/react-router' {
       path: '/pos/sales'
       fullPath: '/organizer/pos/sales'
       preLoaderRoute: typeof OrganizerPosSalesRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/fiscal': {
+      id: '/organizer/pos/fiscal'
+      path: '/pos/fiscal'
+      fullPath: '/organizer/pos/fiscal'
+      preLoaderRoute: typeof OrganizerPosFiscalRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/pos/devices': {
@@ -1278,6 +1297,7 @@ interface OrganizerRouteChildren {
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
   OrganizerPosClosingRoute: typeof OrganizerPosClosingRoute
   OrganizerPosDevicesRoute: typeof OrganizerPosDevicesRoute
+  OrganizerPosFiscalRoute: typeof OrganizerPosFiscalRoute
   OrganizerPosSalesRoute: typeof OrganizerPosSalesRoute
   OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
   OrganizerPosIndexRoute: typeof OrganizerPosIndexRoute
@@ -1289,6 +1309,7 @@ const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
   OrganizerPosClosingRoute: OrganizerPosClosingRoute,
   OrganizerPosDevicesRoute: OrganizerPosDevicesRoute,
+  OrganizerPosFiscalRoute: OrganizerPosFiscalRoute,
   OrganizerPosSalesRoute: OrganizerPosSalesRoute,
   OrganizerEventsIndexRoute: OrganizerEventsIndexRoute,
   OrganizerPosIndexRoute: OrganizerPosIndexRoute,
