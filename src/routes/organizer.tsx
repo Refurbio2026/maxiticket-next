@@ -22,10 +22,11 @@ function OrganizerLayout() {
 
   if (loading || !user || !isOrganizer) return null;
 
-  const tabs = [
+  const tabs: { to: string; label: string; exact?: boolean }[] = [
     { to: "/organizer", label: "Prehľad", exact: true },
     { to: "/organizer/events/new", label: "Pridať podujatie" },
-  ] as const;
+  ];
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
