@@ -194,11 +194,39 @@ export function deleteEvent(id: string) {
   saveEvents(getEvents().filter((e) => e.id !== id));
 }
 
+// ---------- Categories ----------
+
+export function getCategories(): EventCategory[] {
+  return read<EventCategory[]>(CATEGORIES_KEY, []);
+}
+
+export function saveCategories(cats: EventCategory[]) {
+  write(CATEGORIES_KEY, cats);
+}
+
+export function getCategory(id: string): EventCategory | undefined {
+  return getCategories().find((c) => c.id === id);
+}
+
+export function upsertCategory(cat: EventCategory) {
+  const cats = getCategories();
+  const idx = cats.findIndex((c) => c.id === cat.id);
+  if (idx >= 0) cats[idx] = cat;
+  else cats.unshift(cat);
+  saveCategories(cats);
+}
+
+export function deleteCategory(id: string) {
+  saveCategories(getCategories().filter((c) => c.id !== id));
+}
+
 // Notify listeners (within tab) of localStorage changes.
 export const AUTH_EVENT = "mt:auth-change";
 export const EVENTS_EVENT = "mt:events-change";
+export const CATEGORIES_EVENT = "mt:categories-change";
 
 export function emit(name: string) {
   if (!isBrowser()) return;
   window.dispatchEvent(new Event(name));
 }
+
