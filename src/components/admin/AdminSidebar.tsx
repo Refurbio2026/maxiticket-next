@@ -72,7 +72,7 @@ const groups: Group[] = [
       { title: "Vstupenky organizátorov", url: "/admin/maxiticket/tickets", icon: Ticket },
       { title: "Kontrola zostavy", url: "/admin/maxiticket/control", icon: ShieldCheck },
       { title: "Zariadenia / čítačky", url: "/admin/maxiticket/devices", icon: Scan },
-      { title: "Účtovanie / banka", url: "/admin/maxiticket/accounting-bank", icon: Landmark },
+      { title: "Účtovanie / výpisy z banky", url: "/admin/maxiticket/accounting-bank", icon: Landmark },
       { title: "Účtovanie / report", url: "/admin/maxiticket/accounting-report", icon: ClipboardList },
       { title: "Účtovanie / kontroly", url: "/admin/maxiticket/accounting-checks", icon: CheckSquare },
       { title: "Typy refundácií", url: "/admin/maxiticket/refund-types", icon: RotateCcw },
