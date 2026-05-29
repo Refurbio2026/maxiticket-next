@@ -32,6 +32,7 @@ import { Route as OrganizerPosFiscalRouteImport } from './routes/organizer.pos.f
 import { Route as OrganizerPosDevicesRouteImport } from './routes/organizer.pos.devices'
 import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
 import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
+import { Route as OrganizerMarketingNewRouteImport } from './routes/organizer.marketing.new'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
@@ -190,6 +191,11 @@ const OrganizerPosCashiersRoute = OrganizerPosCashiersRouteImport.update({
   id: '/pos/cashiers',
   path: '/pos/cashiers',
   getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerMarketingNewRoute = OrganizerMarketingNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizerMarketingRoute,
 } as any)
 const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
   id: '/events/new',
@@ -430,7 +436,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
-  '/organizer/marketing': typeof OrganizerMarketingRoute
+  '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -476,6 +482,7 @@ export interface FileRoutesByFullPath {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
@@ -496,7 +503,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
-  '/organizer/marketing': typeof OrganizerMarketingRoute
+  '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -542,6 +549,7 @@ export interface FileRoutesByTo {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
@@ -565,7 +573,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/events/$id': typeof EventsIdRoute
-  '/organizer/marketing': typeof OrganizerMarketingRoute
+  '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRoute
@@ -611,6 +619,7 @@ export interface FileRoutesById {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
+  '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
@@ -681,6 +690,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
@@ -747,6 +757,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
@@ -815,6 +826,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/api/public/seed-demo'
     | '/organizer/events/new'
+    | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
@@ -1002,6 +1014,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/organizer/pos/cashiers'
       preLoaderRoute: typeof OrganizerPosCashiersRouteImport
       parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/marketing/new': {
+      id: '/organizer/marketing/new'
+      path: '/new'
+      fullPath: '/organizer/marketing/new'
+      preLoaderRoute: typeof OrganizerMarketingNewRouteImport
+      parentRoute: typeof OrganizerMarketingRoute
     }
     '/organizer/events/new': {
       id: '/organizer/events/new'
@@ -1410,8 +1429,19 @@ const EventsRouteChildren: EventsRouteChildren = {
 const EventsRouteWithChildren =
   EventsRoute._addFileChildren(EventsRouteChildren)
 
+interface OrganizerMarketingRouteChildren {
+  OrganizerMarketingNewRoute: typeof OrganizerMarketingNewRoute
+}
+
+const OrganizerMarketingRouteChildren: OrganizerMarketingRouteChildren = {
+  OrganizerMarketingNewRoute: OrganizerMarketingNewRoute,
+}
+
+const OrganizerMarketingRouteWithChildren =
+  OrganizerMarketingRoute._addFileChildren(OrganizerMarketingRouteChildren)
+
 interface OrganizerRouteChildren {
-  OrganizerMarketingRoute: typeof OrganizerMarketingRoute
+  OrganizerMarketingRoute: typeof OrganizerMarketingRouteWithChildren
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsNewRoute: typeof OrganizerEventsNewRoute
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
@@ -1424,7 +1454,7 @@ interface OrganizerRouteChildren {
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
-  OrganizerMarketingRoute: OrganizerMarketingRoute,
+  OrganizerMarketingRoute: OrganizerMarketingRouteWithChildren,
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerEventsNewRoute: OrganizerEventsNewRoute,
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
