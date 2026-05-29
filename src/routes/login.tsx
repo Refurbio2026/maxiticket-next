@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,27 +14,35 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+function routeForRole(role: string) {
+  if (role === "admin") return "/admin" as const;
+  if (role === "organizer") return "/organizer" as const;
+  return "/account" as const;
+}
+
 function LoginPage() {
   const navigate = useNavigate();
-  const { user, roles, loading } = useAuth();
+  const { user, loading, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (loading || !user) return;
-    if (roles.includes("admin")) navigate({ to: "/admin" });
-    else if (roles.includes("organizer")) navigate({ to: "/organizer" });
-    else navigate({ to: "/account" });
-  }, [user, roles, loading, navigate]);
+    navigate({ to: routeForRole(user.role) });
+  }, [user, loading, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await signIn(email, password);
     setBusy(false);
-    if (error) toast.error(error.message);
-    else toast.success("Prihlásený");
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Prihlásený");
+    navigate({ to: routeForRole(res.user.role) });
   };
 
   return (
