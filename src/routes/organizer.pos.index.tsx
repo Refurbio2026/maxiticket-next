@@ -229,6 +229,13 @@ function PosPage() {
             disabled={!eventId}
             onClick={() => {
               if (user && eventId) {
+                const ev = events.find((e) => e.id === eventId);
+                addSession({
+                  id: uid(), organizer_id: user.id,
+                  cashier_id: user.id, cashier_name: user.full_name || user.email,
+                  event_id: eventId, event_title: ev?.title || "",
+                  opened_at: new Date().toISOString(), status: "open",
+                });
                 logAudit({
                   user_id: user.id, user_name: user.full_name || user.email,
                   action: "pos.session_open", entity: "pos_sessions", entity_id: eventId,
