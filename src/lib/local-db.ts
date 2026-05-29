@@ -121,7 +121,6 @@ export function ensureSeed() {
   if (users.length === 0) {
     write(USERS_KEY, DEMO_USERS);
   } else {
-    // Ensure demo accounts always exist
     const byEmail = new Map(users.map((u) => [u.email, u]));
     let changed = false;
     for (const d of DEMO_USERS) {
@@ -131,6 +130,16 @@ export function ensureSeed() {
       }
     }
     if (changed) write(USERS_KEY, users);
+  }
+  const cats = read<EventCategory[]>(CATEGORIES_KEY, []);
+  if (cats.length === 0) {
+    const seeded: EventCategory[] = DEFAULT_CATEGORIES_NAMES.map((n) => ({
+      id: uid(),
+      name: n,
+      slug: n.toLowerCase().replace(/\s+/g, "-"),
+      created_at: new Date().toISOString(),
+    }));
+    write(CATEGORIES_KEY, seeded);
   }
 }
 
