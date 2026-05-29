@@ -505,3 +505,30 @@ function PayBtn({ icon, label, onClick, disabled, primary }: { icon: React.React
     </button>
   );
 }
+
+function OrpStatusCard() {
+  const settings = getFiscalSettings();
+  const receipts = getFiscalReceipts();
+  const last = receipts[0];
+  const status = settings.connection_status;
+  const connected = status === "connected";
+  return (
+    <Card className="p-5 bg-card/60 border-border/50">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <span className={`size-2.5 rounded-full ${connected ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.7)]" : "bg-muted-foreground/40"}`} />
+          <div>
+            <div className="font-display font-semibold">ORP / eKasa</div>
+            <div className="text-xs text-muted-foreground">
+              Stav: <span className={connected ? "text-foreground font-medium" : ""}>{connected ? "Pripojené" : status === "error" ? "Chyba" : "Nepripojené"}</span>
+              {last && <> · Posledný doklad: <span className="font-mono">{last.receipt_number}</span></>}
+            </div>
+          </div>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/organizer/pos/fiscal">Konfigurovať</Link>
+        </Button>
+      </div>
+    </Card>
+  );
+}
