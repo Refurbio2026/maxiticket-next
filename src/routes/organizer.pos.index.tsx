@@ -150,7 +150,7 @@ function PosPage() {
         total,
         payment_method: method,
         status: "paid",
-        fiscal_receipt_id: fr.id,
+        fiscal_receipt_id: fr?.id,
         terminal_tx_id,
         created_at: new Date().toISOString(),
         qr_codes,
