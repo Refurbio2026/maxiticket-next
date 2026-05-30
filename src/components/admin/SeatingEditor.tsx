@@ -151,6 +151,15 @@ function buildCurveGroupSeats(group: CurveGroup, previous: Shape[] = []): Shape[
   return seats;
 }
 
+function getCurveBounds(seats: Shape[]) {
+  if (!seats.length) return { x: 0, y: 0, width: 80, height: 80 };
+  const minX = Math.min(...seats.map((seat) => seat.x));
+  const minY = Math.min(...seats.map((seat) => seat.y));
+  const maxX = Math.max(...seats.map((seat) => seat.x + seat.width));
+  const maxY = Math.max(...seats.map((seat) => seat.y + seat.height));
+  return { x: minX - 10, y: minY - 10, width: maxX - minX + 20, height: maxY - minY + 20 };
+}
+
 export function SeatingEditor({
   initial,
   onChange,
