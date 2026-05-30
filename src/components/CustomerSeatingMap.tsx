@@ -189,19 +189,52 @@ export function CustomerSeatingMap({
       ref={containerRef}
       className="relative w-full h-[520px] rounded-xl overflow-hidden border border-border/40 bg-[#f8fafc]"
     >
+      <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-2 rounded-lg border border-border/50 bg-background/95 p-2 shadow-sm backdrop-blur">
+        <MapControlButton onClick={() => zoomBy(1.18)}>+</MapControlButton>
+        <MapControlButton onClick={() => zoomBy(0.85)}>−</MapControlButton>
+        <button
+          type="button"
+          onClick={fitView}
+          className="h-8 rounded-md border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+        >
+          Reset zobrazenia
+        </button>
+        <button
+          type="button"
+          onClick={() => setPanMode((v) => !v)}
+          className={`h-8 rounded-md border px-3 text-xs font-medium transition-colors ${
+            canPan
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border/60 bg-background text-foreground hover:bg-muted"
+          }`}
+        >
+          Presun mapy
+        </button>
+      </div>
       <Stage
         width={size.w}
         height={size.h}
-        draggable
+        draggable={stageCanDrag}
+        dragBoundFunc={(next) => getBoundedPosition(next, scale)}
         x={pos.x}
         y={pos.y}
         scaleX={scale}
         scaleY={scale}
         onWheel={onWheel}
+        onMouseEnter={(e) => {
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = stageCanDrag ? "grab" : "default";
+        }}
+        onDragStart={(e) => {
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = "grabbing";
+        }}
         onDragEnd={(e) => {
           if (e.target === e.target.getStage()) {
-            setPos({ x: e.target.x(), y: e.target.y() });
+            setPos(getBoundedPosition({ x: e.target.x(), y: e.target.y() }, scale));
           }
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = stageCanDrag ? "grab" : "default";
         }}
       >
         <Layer>
@@ -400,9 +433,23 @@ export function CustomerSeatingMap({
         <LegendDot color={COLORS.reserved} label="Rezervované" />
         <LegendDot color={COLORS.sold} label="Predané" />
         <LegendDot color={COLORS.vipAvailable} label="VIP" />
-        <span className="ml-auto text-muted-foreground">Scroll = zoom · drag = posun</span>
+        <span className="ml-auto text-muted-foreground">
+          Scroll = zoom · posun len cez „Presun mapy“ alebo Space
+        </span>
       </div>
     </div>
+  );
+}
+
+function MapControlButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex size-8 items-center justify-center rounded-md border border-border/60 bg-background text-base font-semibold text-foreground hover:bg-muted"
+    >
+      {children}
+    </button>
   );
 }
 
