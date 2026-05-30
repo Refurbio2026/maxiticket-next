@@ -110,6 +110,25 @@ export function SeatingEditor({
     priceCategory: "Regular",
     color: "#22c55e",
   });
+  const [curvedDialog, setCurvedDialog] = useState(false);
+  const [curvedForm, setCurvedForm] = useState({
+    rows: 6,
+    cols: 16,
+    rowLabelMode: "ABC" as "ABC" | "123",
+    startSeat: 1,
+    radius: 280,
+    rowSpacing: 32,
+    seatSpacing: 30,
+    startAngle: 220, // degrees
+    endAngle: 320,
+    direction: "ltr" as "ltr" | "rtl",
+    faceStage: true,
+    seatSize: 22,
+    sectorName: "Sektor A",
+    priceCategory: "Regular",
+    color: "#22c55e",
+  });
+
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
