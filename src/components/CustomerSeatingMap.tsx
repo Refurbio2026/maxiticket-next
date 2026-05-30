@@ -268,7 +268,7 @@ export function CustomerSeatingMap({
                   else if (inv?.status === "reserved") { fill = COLORS.reserved; status = "reserved"; }
                   if (selectedSet.has(seatId)) { fill = COLORS.selected; status = "selected"; }
                   const clickable = status === "available" || status === "selected";
-                  const label = `Rad ${rowLabel(r)} · ${startSeat + c}`;
+                  const label = `${s.label || "Sektor"} · Rad ${rowLabel(r)} · ${startSeat + c}`;
                   nodes.push(
                     <Rect
                       key={seatId}
