@@ -11,7 +11,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, ArrowLeft, Ticket, Minus, Plus } from "lucide-react";
+import { Calendar, MapPin, ArrowLeft, Ticket, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 const CustomerSeatingMap = lazy(() =>
