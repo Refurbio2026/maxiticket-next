@@ -810,13 +810,9 @@ function ShapeNode({
     y: shape.y,
     rotation: shape.rotation ?? 0,
     draggable: true,
-    onClick: (e: Konva.KonvaEventObject<MouseEvent>) => {
+    onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
       e.cancelBubble = true;
       onSelect(e.evt.shiftKey);
-    },
-    onTap: (e: Konva.KonvaEventObject<TouchEvent>) => {
-      e.cancelBubble = true;
-      onSelect(false);
     },
     onDragStart: () => {
       if (!selected) onSelect(false);
