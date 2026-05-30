@@ -65,6 +65,7 @@ import { Route as AdminMaxiticketAccountingChecksRouteImport } from './routes/ad
 import { Route as AdminMaxiticketAccountingBankRouteImport } from './routes/admin.maxiticket.accounting-bank'
 import { Route as AdminFinanceStatsRouteImport } from './routes/admin.finance.stats'
 import { Route as AdminEventsVenuesRouteImport } from './routes/admin.events.venues'
+import { Route as AdminEventsVenueLayoutsRouteImport } from './routes/admin.events.venue-layouts'
 import { Route as AdminEventsEventsRouteImport } from './routes/admin.events.events'
 import { Route as AdminEventsDatesRouteImport } from './routes/admin.events.dates'
 import { Route as AdminEventsCouponsRouteImport } from './routes/admin.events.coupons'
@@ -367,6 +368,11 @@ const AdminEventsVenuesRoute = AdminEventsVenuesRouteImport.update({
   path: '/events/venues',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEventsVenueLayoutsRoute = AdminEventsVenueLayoutsRouteImport.update({
+  id: '/events/venue-layouts',
+  path: '/events/venue-layouts',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEventsEventsRoute = AdminEventsEventsRouteImport.update({
   id: '/events/events',
   path: '/events/events',
@@ -473,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
+  '/admin/events/venue-layouts': typeof AdminEventsVenueLayoutsRoute
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
@@ -541,6 +548,7 @@ export interface FileRoutesByTo {
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
+  '/admin/events/venue-layouts': typeof AdminEventsVenueLayoutsRoute
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
@@ -614,6 +622,7 @@ export interface FileRoutesById {
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
+  '/admin/events/venue-layouts': typeof AdminEventsVenueLayoutsRoute
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
@@ -688,6 +697,7 @@ export interface FileRouteTypes {
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
+    | '/admin/events/venue-layouts'
     | '/admin/events/venues'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
@@ -756,6 +766,7 @@ export interface FileRouteTypes {
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
+    | '/admin/events/venue-layouts'
     | '/admin/events/venues'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
@@ -828,6 +839,7 @@ export interface FileRouteTypes {
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
+    | '/admin/events/venue-layouts'
     | '/admin/events/venues'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
@@ -1279,6 +1291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsVenuesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/events/venue-layouts': {
+      id: '/admin/events/venue-layouts'
+      path: '/events/venue-layouts'
+      fullPath: '/admin/events/venue-layouts'
+      preLoaderRoute: typeof AdminEventsVenueLayoutsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events/events': {
       id: '/admin/events/events'
       path: '/events/events'
@@ -1408,6 +1427,7 @@ interface AdminRouteChildren {
   AdminEventsCouponsRoute: typeof AdminEventsCouponsRoute
   AdminEventsDatesRoute: typeof AdminEventsDatesRoute
   AdminEventsEventsRoute: typeof AdminEventsEventsRoute
+  AdminEventsVenueLayoutsRoute: typeof AdminEventsVenueLayoutsRoute
   AdminEventsVenuesRoute: typeof AdminEventsVenuesRoute
   AdminFinanceStatsRoute: typeof AdminFinanceStatsRoute
   AdminMaxiticketAccountingBankRoute: typeof AdminMaxiticketAccountingBankRoute
@@ -1453,6 +1473,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEventsCouponsRoute: AdminEventsCouponsRoute,
   AdminEventsDatesRoute: AdminEventsDatesRoute,
   AdminEventsEventsRoute: AdminEventsEventsRoute,
+  AdminEventsVenueLayoutsRoute: AdminEventsVenueLayoutsRoute,
   AdminEventsVenuesRoute: AdminEventsVenuesRoute,
   AdminFinanceStatsRoute: AdminFinanceStatsRoute,
   AdminMaxiticketAccountingBankRoute: AdminMaxiticketAccountingBankRoute,
