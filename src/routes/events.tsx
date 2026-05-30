@@ -4,7 +4,8 @@ import { getEvents, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Calendar, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/events")({
@@ -59,13 +60,8 @@ function EventsPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {events.map((e) => (
-              <Card key={e.id} className="relative overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 transition group">
-                <Link
-                  to="/events/$id"
-                  params={{ id: e.id }}
-                  aria-label={`Otvoriť detail podujatia ${e.title}`}
-                  className="absolute inset-0 z-10 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                />
+              <Card key={e.id} className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 transition group">
+                <Link to="/events/$id" params={{ id: e.id }} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                   <div
                     className="aspect-video bg-muted bg-cover bg-center"
                     style={e.image_url ? { backgroundImage: `url(${e.image_url})` } : undefined}
@@ -84,13 +80,10 @@ function EventsPage() {
                         <span className="text-muted-foreground">od </span>
                         <span className="font-display font-bold text-base">€{Number(e.base_price ?? e.tickets?.[0]?.price ?? 0).toFixed(2)}</span>
                       </div>
-                      <Button asChild size="sm" className="relative z-20 bg-gradient-flame text-primary-foreground shadow-glow">
-                        <Link to="/events/$id" params={{ id: e.id }}>
-                          Kúpiť vstupenky
-                        </Link>
-                      </Button>
+                      <span className={cn(buttonVariants({ size: "sm" }), "bg-gradient-flame text-primary-foreground shadow-glow")}>Kúpiť vstupenky</span>
                     </div>
                   </div>
+                </Link>
               </Card>
             ))}
           </div>
