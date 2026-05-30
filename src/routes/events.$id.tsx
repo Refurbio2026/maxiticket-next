@@ -168,6 +168,18 @@ function EventDetail() {
   const isMap = !!layout && event?.sale_type !== "standing";
   const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0);
   const vipPrice = event?.vip_price ?? basePrice;
+  const priceFrom = Math.min(...[basePrice, vipPrice].filter((p) => p > 0)) || basePrice;
+
+  // availability calculation
+  const totalCapacity =
+    layout?.shapes
+      .filter((s) => s.kind === "seats")
+      .reduce((sum, s) => sum + ((s as any).rows ?? 0) * ((s as any).cols ?? 0), 0) ??
+    event?.total_tickets ??
+    0;
+  const takenCount = inventory.filter((r) => r.status !== "available").length;
+  const availableCount = Math.max(0, totalCapacity - takenCount);
+  const lowAvailability = totalCapacity > 0 && availableCount / totalCapacity < 0.2;
 
   const toggleSeat = (s: Selected) => {
     setSelected((prev) =>
