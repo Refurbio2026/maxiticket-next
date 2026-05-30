@@ -698,7 +698,42 @@ export function SeatingEditor({
                 {/* grid */}
                 <GridLayer width={4000} height={3000} step={20} />
 
-                {layout.shapes.map((sh) => (
+                {(layout.curveGroups ?? []).map((group) => {
+                  const seats = layout.shapes.filter((shape) => shape.curveGroupId === group.id);
+                  return (
+                    <CurveGroupNode
+                      key={group.id}
+                      group={group}
+                      seats={seats}
+                      selected={selectedIds.includes(group.id)}
+                      selectedSeatIds={selectedIds.filter((id) => seats.some((seat) => seat.id === id))}
+                      onSelect={(shift) => {
+                        if (tool !== "select") return;
+                        if (shift) {
+                          setSelectedIds((ids) =>
+                            ids.includes(group.id) ? ids.filter((i) => i !== group.id) : [...ids, group.id],
+                          );
+                        } else {
+                          setSelectedIds([group.id]);
+                        }
+                      }}
+                      onSeatSelect={(seatId, shift) => {
+                        if (tool !== "select") return;
+                        if (shift) {
+                          setSelectedIds((ids) =>
+                            ids.includes(seatId) ? ids.filter((i) => i !== seatId) : [...ids.filter((id) => id !== group.id), seatId],
+                          );
+                        } else {
+                          setSelectedIds([group.id]);
+                        }
+                      }}
+                      onMove={(dx, dy) => updateCurveGroup(group.id, { centerX: group.centerX + dx, centerY: group.centerY + dy }, true)}
+                      onCommit={commitChange}
+                    />
+                  );
+                })}
+
+                {layout.shapes.filter((shape) => !shape.curveGroupId).map((sh) => (
                   <ShapeNode
                     key={sh.id}
                     shape={sh}
