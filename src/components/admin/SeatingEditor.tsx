@@ -110,6 +110,25 @@ export function SeatingEditor({
     priceCategory: "Regular",
     color: "#22c55e",
   });
+  const [curvedDialog, setCurvedDialog] = useState(false);
+  const [curvedForm, setCurvedForm] = useState({
+    rows: 6,
+    cols: 16,
+    rowLabelMode: "ABC" as "ABC" | "123",
+    startSeat: 1,
+    radius: 280,
+    rowSpacing: 32,
+    seatSpacing: 30,
+    startAngle: 220, // degrees
+    endAngle: 320,
+    direction: "ltr" as "ltr" | "rtl",
+    faceStage: true,
+    seatSize: 22,
+    sectorName: "Sektor A",
+    priceCategory: "Regular",
+    color: "#22c55e",
+  });
+
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
@@ -282,6 +301,79 @@ export function SeatingEditor({
     setTool("select");
   };
 
+  const rowLabel = (i: number, mode: "ABC" | "123") =>
+    mode === "ABC"
+      ? i < 26
+        ? String.fromCharCode(65 + i)
+        : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26))
+      : String(i + 1);
+
+  const addCurvedRows = (cx: number, cy: number) => {
+    const f = curvedForm;
+    const ss = f.seatSize;
+    const startRad = (f.startAngle * Math.PI) / 180;
+    const endRad = (f.endAngle * Math.PI) / 180;
+    const total = endRad - startRad;
+    const curveGroupId = uid();
+    const newSeats: Shape[] = [];
+    for (let r = 0; r < f.rows; r++) {
+      const radius = f.radius + r * f.rowSpacing;
+      // angular step from seatSpacing (arc length)
+      const stepFromSpacing = f.seatSpacing / radius;
+      const stepFromAngles = f.cols > 1 ? total / (f.cols - 1) : 0;
+      // use the smaller so seats don't overlap; fall back to spacing if angles too tight
+      const step = f.cols > 1 ? Math.min(stepFromAngles, stepFromSpacing) : 0;
+      const arcUsed = step * (f.cols - 1);
+      const midAngle = (startRad + endRad) / 2;
+      const a0 = midAngle - arcUsed / 2;
+      for (let c = 0; c < f.cols; c++) {
+        const colIdx = f.direction === "ltr" ? c : f.cols - 1 - c;
+        const angle = a0 + colIdx * step;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        // seat faces toward center (cx, cy): direction from seat to center
+        // konva rotation 0 = upright; we want the seat top toward center
+        const rotation = f.faceStage
+          ? ((angle * 180) / Math.PI + 90) % 360
+          : 0;
+        const label = rowLabel(r, f.rowLabelMode);
+        newSeats.push({
+          id: uid(),
+          kind: "seats",
+          x: x - ss / 2,
+          y: y - ss / 2,
+          width: ss,
+          height: ss,
+          rotation,
+          rows: 1,
+          cols: 1,
+          seatSize: ss,
+          color: f.color,
+          label: "",
+          priceCategory: f.priceCategory,
+          priceCategoryId: f.priceCategory,
+          row: label,
+          seatNumber: f.startSeat + c,
+          sectorId: f.sectorName,
+          curveGroupId,
+          radius,
+          angle,
+          startAngle: f.startAngle,
+          endAngle: f.endAngle,
+          rowSpacing: f.rowSpacing,
+          seatSpacing: f.seatSpacing,
+          startRow: r + 1,
+          startSeat: f.startSeat,
+        });
+      }
+    }
+    setShapes((arr) => [...arr, ...newSeats]);
+    setSelectedIds(newSeats.map((s) => s.id));
+  };
+
+
+
+
   const addSeatGrid = (cx: number, cy: number) => {
     const f = seatsForm;
     const ss = f.seatSize;
@@ -437,6 +529,10 @@ export function SeatingEditor({
         <ToolBtn icon={Grid3x3} active={false} onClick={() => setSeatsDialog(true)}>
           Rad sedadiel…
         </ToolBtn>
+        <ToolBtn icon={CircleIcon} active={false} onClick={() => setCurvedDialog(true)}>
+          Zakrivený rad sedadiel…
+        </ToolBtn>
+
 
         <div className="my-2 border-t border-border/40" />
 
@@ -717,13 +813,148 @@ export function SeatingEditor({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* CURVED ROW DIALOG */}
+      <Dialog open={curvedDialog} onOpenChange={setCurvedDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Pridať zakrivený rad sedadiel</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-3 py-2">
+            <Field label="Počet radov">
+              <Input type="number" min={1} value={curvedForm.rows}
+                onChange={(e) => setCurvedForm({ ...curvedForm, rows: Math.max(1, +e.target.value || 1) })} />
+            </Field>
+            <Field label="Miest v rade">
+              <Input type="number" min={1} value={curvedForm.cols}
+                onChange={(e) => setCurvedForm({ ...curvedForm, cols: Math.max(1, +e.target.value || 1) })} />
+            </Field>
+            <Field label="Počiatočné č. sedadla">
+              <Input type="number" min={1} value={curvedForm.startSeat}
+                onChange={(e) => setCurvedForm({ ...curvedForm, startSeat: Math.max(1, +e.target.value || 1) })} />
+            </Field>
+            <Field label="Označenie radov">
+              <Select value={curvedForm.rowLabelMode}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, rowLabelMode: v as "ABC" | "123" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ABC">A, B, C…</SelectItem>
+                  <SelectItem value="123">1, 2, 3…</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Polomer (px)">
+              <Input type="number" min={50} value={curvedForm.radius}
+                onChange={(e) => setCurvedForm({ ...curvedForm, radius: Math.max(50, +e.target.value || 280) })} />
+            </Field>
+            <Field label="Vzdialenosť radov">
+              <Input type="number" min={10} value={curvedForm.rowSpacing}
+                onChange={(e) => setCurvedForm({ ...curvedForm, rowSpacing: Math.max(10, +e.target.value || 32) })} />
+            </Field>
+            <Field label="Vzdialenosť sedadiel">
+              <Input type="number" min={10} value={curvedForm.seatSpacing}
+                onChange={(e) => setCurvedForm({ ...curvedForm, seatSpacing: Math.max(10, +e.target.value || 30) })} />
+            </Field>
+            <Field label="Uhol začiatku (°)">
+              <Input type="number" value={curvedForm.startAngle}
+                onChange={(e) => setCurvedForm({ ...curvedForm, startAngle: +e.target.value || 0 })} />
+            </Field>
+            <Field label="Uhol konca (°)">
+              <Input type="number" value={curvedForm.endAngle}
+                onChange={(e) => setCurvedForm({ ...curvedForm, endAngle: +e.target.value || 0 })} />
+            </Field>
+            <Field label="Veľkosť sedadla">
+              <Input type="number" min={10} max={60} value={curvedForm.seatSize}
+                onChange={(e) => setCurvedForm({ ...curvedForm, seatSize: Math.max(10, +e.target.value || 22) })} />
+            </Field>
+            <Field label="Smer číslovania">
+              <Select value={curvedForm.direction}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, direction: v as "ltr" | "rtl" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ltr">Zľava doprava</SelectItem>
+                  <SelectItem value="rtl">Sprava doľava</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Natočiť k pódiu">
+              <Select value={curvedForm.faceStage ? "yes" : "no"}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, faceStage: v === "yes" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Áno</SelectItem>
+                  <SelectItem value="no">Nie</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Sektor" className="col-span-2">
+              <Input value={curvedForm.sectorName}
+                onChange={(e) => setCurvedForm({ ...curvedForm, sectorName: e.target.value })} />
+            </Field>
+            <Field label="Cenová kategória">
+              <Select value={curvedForm.priceCategory}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, priceCategory: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PRICE_CATEGORIES.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Farba" className="col-span-3">
+              <input type="color" value={curvedForm.color}
+                onChange={(e) => setCurvedForm({ ...curvedForm, color: e.target.value })}
+                className="h-9 w-full rounded-md border border-input" />
+            </Field>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Tip: pre polkruh nastav uhly 180° → 360°, pre arénové rozloženie 0° → 360°.
+            Stred oblúka (pódium) je v strede aktuálneho pohľadu.
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCurvedDialog(false)}>Zrušiť</Button>
+            <Button
+              onClick={() => {
+                const stage = stageRef.current;
+                const cx = stage ? (size.w / 2 - stagePos.x) / scale : 400;
+                const cy = stage ? (size.h / 2 - stagePos.y) / scale : 400;
+                addCurvedRows(cx, cy);
+                setCurvedDialog(false);
+                toast.success(`Pridaných ${curvedForm.rows * curvedForm.cols} zakrivených sedadiel`);
+              }}
+            >
+              Vygenerovať
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
 // =================== sub components ===================
 
+function Field({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={["space-y-1.5", className ?? ""].join(" ")}>
+      <Label className="text-xs">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
 function ToolBtn({
+
   icon: Icon,
   active,
   disabled,
