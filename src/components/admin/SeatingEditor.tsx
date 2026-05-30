@@ -1458,6 +1458,91 @@ function ShapeNode({
   );
 }
 
+function CurveGroupPropertiesPanel({
+  group,
+  onChange,
+  onCommit,
+}: {
+  group: CurveGroup;
+  onChange: (patch: Partial<CurveGroup>) => void;
+  onCommit: () => void;
+}) {
+  const numberPatch = (key: keyof CurveGroup, min?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = +e.target.value;
+    const value = Number.isFinite(raw) ? raw : 0;
+    onChange({ [key]: typeof min === "number" ? Math.max(min, value) : value } as Partial<CurveGroup>);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md bg-primary/10 px-2 py-1.5 text-xs text-primary">
+        <span className="text-muted-foreground">Typ: </span>
+        <span className="font-medium uppercase">curve group</span>
+      </div>
+
+      <Field label="Názov skupiny">
+        <Input value={group.name} onChange={(e) => onChange({ name: e.target.value })} onBlur={onCommit} />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="centerX">
+          <Input type="number" value={Math.round(group.centerX)} onChange={numberPatch("centerX")} onBlur={onCommit} />
+        </Field>
+        <Field label="centerY">
+          <Input type="number" value={Math.round(group.centerY)} onChange={numberPatch("centerY")} onBlur={onCommit} />
+        </Field>
+        <Field label="radius">
+          <Input type="number" min={20} value={Math.round(group.radius)} onChange={numberPatch("radius", 20)} onBlur={onCommit} />
+        </Field>
+        <Field label="rotation">
+          <Input type="number" value={Math.round(group.rotation)} onChange={numberPatch("rotation")} onBlur={onCommit} />
+        </Field>
+        <Field label="startAngle">
+          <Input type="number" value={Math.round(group.startAngle)} onChange={numberPatch("startAngle")} onBlur={onCommit} />
+        </Field>
+        <Field label="endAngle">
+          <Input type="number" value={Math.round(group.endAngle)} onChange={numberPatch("endAngle")} onBlur={onCommit} />
+        </Field>
+        <Field label="Počet radov">
+          <Input type="number" min={1} value={group.rows} onChange={numberPatch("rows", 1)} onBlur={onCommit} />
+        </Field>
+        <Field label="Sedadiel v rade">
+          <Input type="number" min={1} value={group.seatsPerRow} onChange={numberPatch("seatsPerRow", 1)} onBlur={onCommit} />
+        </Field>
+        <Field label="rowSpacing">
+          <Input type="number" min={1} value={group.rowSpacing} onChange={numberPatch("rowSpacing", 1)} onBlur={onCommit} />
+        </Field>
+        <Field label="seatSpacing">
+          <Input type="number" min={1} value={group.seatSpacing} onChange={numberPatch("seatSpacing", 1)} onBlur={onCommit} />
+        </Field>
+      </div>
+
+      <Field label="Sektor">
+        <Input value={group.sectorId ?? ""} onChange={(e) => onChange({ sectorId: e.target.value })} onBlur={onCommit} />
+      </Field>
+
+      <Field label="Cenová kategória">
+        <Select value={group.priceCategoryId ?? "Regular"} onValueChange={(v) => onChange({ priceCategoryId: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {PRICE_CATEGORIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>
+
+      <Field label="Farba">
+        <input
+          type="color"
+          value={group.color}
+          onChange={(e) => onChange({ color: e.target.value })}
+          onBlur={onCommit}
+          className="h-9 w-full rounded-md border border-input"
+        />
+      </Field>
+    </div>
+  );
+}
+
 function PropertiesPanel({
   shape,
   onChange,
