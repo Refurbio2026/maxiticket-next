@@ -39,7 +39,8 @@ const COLORS = {
 };
 
 function seatLabel(s: Shape): string {
-  if (s.row && s.seatNumber != null) return `${s.label || "Sektor"} · Rad ${s.row} · ${s.seatNumber}`;
+  if (s.row && s.seatNumber != null)
+    return `${s.label || "Sektor"} · Rad ${s.row} · ${s.seatNumber}`;
   if (s.label) return s.label;
   return "Sedadlo";
 }
