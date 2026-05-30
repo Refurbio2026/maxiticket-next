@@ -12,7 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, MapPin, Clock, CreditCard, ArrowLeft } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  CreditCard,
+  ArrowLeft,
+  ShieldCheck,
+  Lock,
+  Mail,
+  QrCode,
+  Check,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout/$orderId")({
@@ -102,23 +113,58 @@ function CheckoutPage() {
         <ArrowLeft className="size-4" /> Späť na podujatie
       </Link>
 
-      <div className="grid lg:grid-cols-[1fr_360px] gap-8">
+      <Stepper current={2} />
+
+      <div className="grid lg:grid-cols-[1fr_360px] gap-8 mt-6">
         <div className="space-y-6">
           <div>
             <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Pokladňa</h1>
-            <p className="text-muted-foreground mt-1">Dokonči svoju objednávku.</p>
+            <p className="text-muted-foreground mt-1">
+              Dokonči svoju objednávku v 3 jednoduchých krokoch.
+            </p>
           </div>
 
           <Card className="p-6 bg-card/60 border-border/50">
-            <h2 className="font-display font-semibold text-lg mb-4">Kontaktné údaje</h2>
+            <h2 className="font-display font-semibold text-lg mb-4">
+              <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs font-bold mr-2">
+                1
+              </span>
+              Kontaktné údaje
+            </h2>
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Meno"><Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></Field>
-              <Field label="Priezvisko"><Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></Field>
-              <Field label="Email" className="sm:col-span-2"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
-              <Field label="Telefón" className="sm:col-span-2"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+              <Field label="Meno">
+                <Input
+                  autoFocus
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
+              </Field>
+              <Field label="Priezvisko">
+                <Input
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </Field>
+              <Field label="Email (sem pošleme vstupenky)" className="sm:col-span-2">
+                <Input
+                  type="email"
+                  placeholder="meno@email.sk"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </Field>
+              <Field label="Telefón (voliteľné)" className="sm:col-span-2">
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
+              </Field>
             </div>
-            <label className="flex items-start gap-3 mt-5 text-sm">
-              <Checkbox checked={form.consent} onCheckedChange={(v) => setForm({ ...form, consent: !!v })} />
+            <label className="flex items-start gap-3 mt-5 text-sm cursor-pointer">
+              <Checkbox
+                checked={form.consent}
+                onCheckedChange={(v) => setForm({ ...form, consent: !!v })}
+              />
               <span className="text-muted-foreground">
                 Súhlasím s obchodnými podmienkami a so spracovaním osobných údajov.
               </span>
@@ -126,10 +172,16 @@ function CheckoutPage() {
           </Card>
 
           <Card className="p-6 bg-card/60 border-border/50">
-            <h2 className="font-display font-semibold text-lg mb-3">Platba</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Toto je demo režim — žiadne reálne peniaze sa nestrhnú.
-            </p>
+            <h2 className="font-display font-semibold text-lg mb-3">
+              <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs font-bold mr-2">
+                2
+              </span>
+              Platba
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+              <Lock className="size-3.5" />
+              Šifrované SSL pripojenie · Demo režim – žiadne reálne peniaze
+            </div>
             <Button
               onClick={pay}
               disabled={expired}
@@ -137,10 +189,31 @@ function CheckoutPage() {
               size="lg"
             >
               <CreditCard className="size-4 mr-2" />
-              {expired ? "Rezervácia vypršala" : "Simulovať úspešnú platbu"}
+              {expired
+                ? "Rezervácia vypršala"
+                : `Zaplatiť €${order.total_amount.toFixed(2)}`}
             </Button>
+
+            <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+              <div className="flex flex-col items-center text-center gap-1 p-2 rounded-md border border-border/40">
+                <ShieldCheck className="size-4 text-emerald-500" />
+                Bezpečná platba
+              </div>
+              <div className="flex flex-col items-center text-center gap-1 p-2 rounded-md border border-border/40">
+                <QrCode className="size-4 text-primary" />
+                QR vstupenka
+              </div>
+              <div className="flex flex-col items-center text-center gap-1 p-2 rounded-md border border-border/40">
+                <Mail className="size-4 text-primary" />
+                Email potvrdenie
+              </div>
+            </div>
+
             {!expired && (
-              <button onClick={cancel} className="block w-full text-center text-xs text-muted-foreground hover:text-foreground mt-3">
+              <button
+                onClick={cancel}
+                className="block w-full text-center text-xs text-muted-foreground hover:text-foreground mt-4"
+              >
                 Zrušiť objednávku a uvoľniť sedadlá
               </button>
             )}
@@ -198,6 +271,47 @@ function Shell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto max-w-6xl px-4 pt-28 pb-20">{children}</main>
       <Footer />
     </div>
+  );
+}
+
+function Stepper({ current }: { current: number }) {
+  const steps = ["Výber", "Kontakt", "Platba", "Hotovo"];
+  return (
+    <ol className="flex items-center gap-2 text-xs">
+      {steps.map((label, i) => {
+        const step = i + 1;
+        const done = step < current;
+        const active = step === current;
+        return (
+          <li key={label} className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center justify-center size-6 rounded-full font-bold ${
+                done
+                  ? "bg-emerald-500 text-white"
+                  : active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {done ? <Check className="size-3.5" /> : step}
+            </span>
+            <span
+              className={
+                active ? "font-semibold text-foreground" : "text-muted-foreground hidden sm:inline"
+              }
+            >
+              {label}
+            </span>
+            {step < steps.length && (
+              <span
+                className={`w-6 sm:w-10 h-px ${done ? "bg-emerald-500" : "bg-border"}`}
+                aria-hidden
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
