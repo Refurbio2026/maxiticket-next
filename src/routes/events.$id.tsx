@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { getEvent, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
-import { getLayout, type HallLayout } from "@/lib/layouts-db";
+import { getLayout, listLayouts, type HallLayout } from "@/lib/layouts-db";
 import {
   getInventory, INV_EVENT, releaseExpired,
   createOrder, reserveSeats,
@@ -41,11 +41,13 @@ function EventDetail() {
       releaseExpired();
       const e = getEvent(id);
       setEvent(e);
-      if (e?.venue_layout_id) {
-        setLayout(getLayout(e.venue_layout_id) ?? null);
-      } else {
-        setLayout(null);
-      }
+      const layouts = listLayouts();
+      const explicitLayout = e?.venue_layout_id ? getLayout(e.venue_layout_id) : undefined;
+      const matchedLayout = e
+        ? layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase())
+        : undefined;
+      const fallbackLayout = e?.sale_type !== "standing" && layouts.length === 1 ? layouts[0] : undefined;
+      setLayout(explicitLayout ?? matchedLayout ?? fallbackLayout ?? null);
       setInventory(getInventory(id));
       setLoaded(true);
     };
@@ -62,7 +64,7 @@ function EventDetail() {
     };
   }, [id]);
 
-  const isMap = event?.sale_type === "seating_map" && !!layout;
+  const isMap = !!layout && event?.sale_type !== "standing";
   const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0) ?? 0;
   const vipPrice = event?.vip_price ?? basePrice;
 
@@ -159,7 +161,7 @@ function EventDetail() {
 
                 {isMap && layout ? (
                   <div>
-                    <h2 className="font-display font-semibold text-lg mb-3">Vyber sedadlá</h2>
+                    <h2 className="font-display font-semibold text-lg mb-3">Vyber sedadlá v hale</h2>
                     <Suspense fallback={<div className="h-[520px] rounded-xl bg-muted animate-pulse" />}>
                       <CustomerSeatingMap
                         layout={layout}
