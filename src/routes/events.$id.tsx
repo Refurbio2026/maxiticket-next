@@ -65,7 +65,7 @@ function EventDetail() {
       const matchedLayout = e
         ? layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase())
         : undefined;
-      const fallbackLayout = e?.sale_type !== "standing" ? layouts[0] ?? defaultLayoutForEvent(e) : undefined;
+      const fallbackLayout = e && e.sale_type !== "standing" ? layouts[0] ?? defaultLayoutForEvent(e) : undefined;
       setLayout(explicitLayout ?? matchedLayout ?? fallbackLayout ?? null);
       setInventory(getInventory(id));
       setLoaded(true);
