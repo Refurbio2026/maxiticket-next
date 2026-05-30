@@ -164,7 +164,12 @@ function normalizeLayout(input: HallLayout): HallLayout {
   const curveGroups = [...(input.curveGroups ?? [])];
   const known = new Set(curveGroups.map((group) => group.id));
   const missingGroupIds = Array.from(
-    new Set(input.shapes.map((shape) => shape.curveGroupId).filter((id): id is string => Boolean(id) && !known.has(id))),
+    new Set(
+      input.shapes
+        .map((shape) => shape.curveGroupId)
+        .filter((id): id is string => Boolean(id))
+        .filter((id) => !known.has(id)),
+    ),
   );
 
   for (const id of missingGroupIds) {
