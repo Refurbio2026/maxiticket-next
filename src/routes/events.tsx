@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getEvents, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Calendar, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/events")({
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/events")({
 });
 
 function EventsPage() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [events, setEvents] = useState<EventItem[]>([]);
 
   useEffect(() => {
@@ -34,6 +37,10 @@ function EventsPage() {
       window.removeEventListener("storage", load);
     };
   }, []);
+
+  if (pathname !== "/events") {
+    return <Outlet />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -53,8 +60,8 @@ function EventsPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {events.map((e) => (
-              <Link key={e.id} to="/events/$id" params={{ id: e.id }} className="group">
-                <Card className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 transition">
+              <Card key={e.id} className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 transition group">
+                <Link to="/events/$id" params={{ id: e.id }} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                   <div
                     className="aspect-video bg-muted bg-cover bg-center"
                     style={e.image_url ? { backgroundImage: `url(${e.image_url})` } : undefined}
@@ -73,12 +80,11 @@ function EventsPage() {
                         <span className="text-muted-foreground">od </span>
                         <span className="font-display font-bold text-base">€{Number(e.base_price ?? e.tickets?.[0]?.price ?? 0).toFixed(2)}</span>
                       </div>
-                      <span className="text-xs font-semibold text-primary group-hover:underline">Kúpiť vstupenky →</span>
+                      <span className={cn(buttonVariants({ size: "sm" }), "bg-gradient-flame text-primary-foreground shadow-glow")}>Kúpiť vstupenky</span>
                     </div>
                   </div>
-
-                </Card>
-              </Link>
+                </Link>
+              </Card>
             ))}
           </div>
         )}
