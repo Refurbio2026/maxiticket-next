@@ -21,10 +21,6 @@ function EventsPage() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [events, setEvents] = useState<EventItem[]>([]);
 
-  if (pathname !== "/events") {
-    return <Outlet />;
-  }
-
   useEffect(() => {
     const load = () =>
       setEvents(
@@ -40,6 +36,10 @@ function EventsPage() {
       window.removeEventListener("storage", load);
     };
   }, []);
+
+  if (pathname !== "/events") {
+    return <Outlet />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
