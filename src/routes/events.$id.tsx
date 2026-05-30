@@ -259,32 +259,84 @@ function EventDetail() {
         ) : (
           <>
             <div
-              className="aspect-[21/9] rounded-2xl bg-muted bg-cover bg-center mb-8"
+              className="relative aspect-[21/9] rounded-2xl bg-muted bg-cover bg-center mb-8 overflow-hidden"
               style={event.image_url ? { backgroundImage: `url(${event.image_url})` } : undefined}
-            />
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-              <div className="min-w-0 space-y-6">
-                <div>
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 text-white">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <Badge className="bg-primary text-primary-foreground border-0">
                     {event.category}
-                  </span>
-                  <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-2">
-                    {event.title}
-                  </h1>
-                  <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Calendar className="size-4" /> {event.event_date} · {event.event_time}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <MapPin className="size-4" /> {event.venue}, {event.city}
-                    </span>
-                  </div>
-                  {event.description && (
-                    <p className="text-foreground/80 leading-relaxed mt-6 whitespace-pre-line">
-                      {event.description}
-                    </p>
+                  </Badge>
+                  {lowAvailability && availableCount > 0 && (
+                    <Badge variant="destructive" className="border-0">
+                      Posledné vstupenky
+                    </Badge>
+                  )}
+                  {availableCount === 0 && totalCapacity > 0 && (
+                    <Badge variant="secondary" className="border-0">
+                      Vypredané
+                    </Badge>
                   )}
                 </div>
+                <h1 className="font-display text-3xl md:text-5xl font-bold tracking-tight drop-shadow">
+                  {event.title}
+                </h1>
+                <div className="flex flex-wrap gap-4 mt-3 text-sm text-white/90">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Calendar className="size-4" /> {event.event_date}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock className="size-4" /> {event.event_time}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-4" /> {event.venue}, {event.city}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Key info strip */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+              <InfoTile
+                icon={<Ticket className="size-4" />}
+                label="Cena od"
+                value={`€${priceFrom.toFixed(2)}`}
+              />
+              <InfoTile
+                icon={<Info className="size-4" />}
+                label="Dostupnosť"
+                value={
+                  totalCapacity > 0
+                    ? availableCount === 0
+                      ? "Vypredané"
+                      : `${availableCount} voľných`
+                    : "K dispozícii"
+                }
+                accent={lowAvailability ? "warn" : undefined}
+              />
+              <InfoTile
+                icon={<User className="size-4" />}
+                label="Organizátor"
+                value={event.organizer_name || "MAXITICKET partner"}
+              />
+              <InfoTile
+                icon={<MapPin className="size-4" />}
+                label="Miesto"
+                value={event.venue}
+              />
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+              <div className="min-w-0 space-y-6">
+                {event.description && (
+                  <div>
+                    <h2 className="font-display font-semibold text-lg mb-2">O podujatí</h2>
+                    <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
+                      {event.description}
+                    </p>
+                  </div>
+                )}
 
                 {isMap && layout ? (
                   <div className="min-w-0">
