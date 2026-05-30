@@ -28,6 +28,18 @@ export const Route = createFileRoute("/events/$id")({
 
 type Selected = { seat_id: string; label: string; price: number; is_vip: boolean };
 
+function parseSeatLabel(label: string) {
+  const parts = label.split("·").map((part) => part.trim());
+  const sector = parts.find((part) => !part.toLowerCase().startsWith("rad")) ?? "Sektor";
+  const row =
+    parts.find((part) => part.toLowerCase().startsWith("rad"))?.replace(/^Rad\s*/i, "") ?? "—";
+  const number =
+    parts[parts.length - 1] && /^\d+$/.test(parts[parts.length - 1])
+      ? parts[parts.length - 1]
+      : "—";
+  return { sector, row, number };
+}
+
 function defaultLayoutForEvent(event: EventItem): HallLayout {
   const now = new Date().toISOString();
   return {
@@ -217,8 +229,8 @@ function EventDetail() {
               className="aspect-[21/9] rounded-2xl bg-muted bg-cover bg-center mb-8"
               style={event.image_url ? { backgroundImage: `url(${event.image_url})` } : undefined}
             />
-            <div className="grid lg:grid-cols-[1fr_360px] gap-8">
-              <div className="space-y-6">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+              <div className="min-w-0 space-y-6">
                 <div>
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
                     {event.category}
@@ -242,7 +254,7 @@ function EventDetail() {
                 </div>
 
                 {isMap && layout ? (
-                  <div>
+                  <div className="min-w-0">
                     <h2 className="font-display font-semibold text-lg mb-3">
                       Vyber sedadlá v hale
                     </h2>
@@ -256,6 +268,7 @@ function EventDetail() {
                         inventory={inventory}
                         selected={selected.map((s) => s.seat_id)}
                         onToggle={toggleSeat}
+                        customerSeatMapMode
                       />
                     </Suspense>
                   </div>
@@ -289,57 +302,79 @@ function EventDetail() {
                 )}
               </div>
 
-              <Card className="p-6 bg-card/60 border-border/50 h-fit lg:sticky lg:top-28">
+              <Card className="hidden p-6 bg-card/60 border-border/50 h-fit lg:sticky lg:top-[120px] lg:block">
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="font-display font-semibold text-lg">Tvoja objednávka</h2>
-                  {isMap && (
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {selected.length} ks
-                    </span>
-                  )}
+                  <h2 className="font-display font-semibold text-xl">Košík</h2>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                    {isMap ? selected.length : qty} ks
+                  </span>
                 </div>
                 <div className="text-xs text-muted-foreground mb-4 line-clamp-1">{event.title}</div>
 
                 {isMap ? (
                   selected.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Klikni na voľné sedadlo v mape.</p>
+                    <p className="rounded-lg border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
+                      Vyberte sedadlo z mapy
+                    </p>
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                      {sortedSelected.map((s) => (
-                        <div
-                          key={s.seat_id}
-                          className="flex items-center justify-between gap-2 p-2 rounded-md border border-border/40 bg-muted/20"
-                        >
-                          <div className="text-sm min-w-0">
-                            <div className="font-medium truncate">{s.label}</div>
-                            {s.is_vip && (
-                              <div className="text-[10px] font-semibold text-yellow-500">VIP</div>
-                            )}
+                      {sortedSelected.map((s) => {
+                        const meta = parseSeatLabel(s.label);
+                        return (
+                          <div
+                            key={s.seat_id}
+                            className="rounded-md border border-border/40 bg-muted/20 p-3"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 text-sm">
+                                <div className="font-medium truncate">{meta.sector}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                  Rad {meta.row} · Sedadlo {meta.number}
+                                </div>
+                                {s.is_vip && (
+                                  <div className="mt-1 text-[10px] font-semibold text-yellow-500">
+                                    VIP
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                aria-label="Odstrániť sedadlo"
+                                onClick={() => toggleSeat(s)}
+                                className="size-7 inline-flex shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <X className="size-4" />
+                              </button>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">Cena sedadla</span>
+                              <span className="font-display font-semibold">
+                                €{s.price.toFixed(2)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="font-display font-semibold text-sm">
-                              €{s.price.toFixed(2)}
-                            </span>
-                            <button
-                              aria-label="Odstrániť sedadlo"
-                              onClick={() => toggleSeat(s)}
-                              className="size-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <X className="size-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )
                 ) : (
-                  <div className="text-sm">
-                    Počet vstupeniek: <span className="font-semibold">{qty}</span>
+                  <div className="rounded-md border border-border/40 bg-muted/20 p-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Počet vstupeniek</span>
+                      <span className="font-semibold">{qty}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-muted-foreground">Cena za kus</span>
+                      <span className="font-display font-semibold">€{basePrice.toFixed(2)}</span>
+                    </div>
                   </div>
                 )}
 
+                <div className="mt-4 flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Počet vstupeniek</span>
+                  <span className="font-semibold">{isMap ? selected.length : qty}</span>
+                </div>
                 <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Spolu</span>
+                  <span className="text-sm text-muted-foreground">Celková cena</span>
                   <span className="font-display text-2xl font-bold">€{total.toFixed(2)}</span>
                 </div>
 

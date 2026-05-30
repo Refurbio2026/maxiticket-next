@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Stage, Layer, Rect, Text as KText, Group } from "react-konva";
 import type Konva from "konva";
 import type { HallLayout, Shape } from "@/lib/layouts-db";
@@ -18,6 +18,7 @@ type Props = {
   inventory: SeatInventoryRow[];
   selected: string[];
   onToggle: (seat: CustomerSeat) => void;
+  customerSeatMapMode?: boolean;
 };
 
 const COLORS = {
@@ -38,7 +39,8 @@ const COLORS = {
 };
 
 function seatLabel(s: Shape): string {
-  if (s.row && s.seatNumber != null) return `Rad ${s.row} · ${s.seatNumber}`;
+  if (s.row && s.seatNumber != null)
+    return `${s.label || "Sektor"} · Rad ${s.row} · ${s.seatNumber}`;
   if (s.label) return s.label;
   return "Sedadlo";
 }
@@ -50,11 +52,16 @@ export function CustomerSeatingMap({
   inventory,
   selected,
   onToggle,
+  customerSeatMapMode = true,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 800, h: 520 });
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [panMode, setPanMode] = useState(false);
+  const [spaceDown, setSpaceDown] = useState(false);
+  const canPan = panMode || spaceDown;
+  const stageCanDrag = customerSeatMapMode ? canPan : true;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -74,24 +81,95 @@ export function CustomerSeatingMap({
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
-  // Auto-fit on first render
-  useEffect(() => {
+  const bounds = useMemo(() => {
     const shapes = layout.shapes;
-    if (!shapes.length) return;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    if (!shapes.length) return null;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
     for (const s of shapes) {
       minX = Math.min(minX, s.x);
       minY = Math.min(minY, s.y);
       maxX = Math.max(maxX, s.x + s.width);
       maxY = Math.max(maxY, s.y + s.height);
     }
-    const pad = 40;
-    const cw = maxX - minX + pad * 2;
-    const ch = maxY - minY + pad * 2;
+    return { minX, minY, maxX, maxY };
+  }, [layout.shapes]);
+
+  const getBoundedPosition = useCallback(
+    (next: { x: number; y: number }, targetScale: number) => {
+      if (!bounds) return next;
+      const pad = 28;
+      const contentW = (bounds.maxX - bounds.minX) * targetScale;
+      const contentH = (bounds.maxY - bounds.minY) * targetScale;
+
+      const boundAxis = (
+        value: number,
+        containerSize: number,
+        contentSize: number,
+        minContent: number,
+        maxContent: number,
+      ) => {
+        if (contentSize + pad * 2 <= containerSize) {
+          return (containerSize - contentSize) / 2 - minContent * targetScale;
+        }
+        const min = containerSize - pad - maxContent * targetScale;
+        const max = pad - minContent * targetScale;
+        return Math.min(max, Math.max(min, value));
+      };
+
+      return {
+        x: boundAxis(next.x, size.w, contentW, bounds.minX, bounds.maxX),
+        y: boundAxis(next.y, size.h, contentH, bounds.minY, bounds.maxY),
+      };
+    },
+    [bounds, size.h, size.w],
+  );
+
+  const fitView = useCallback(() => {
+    if (!bounds) return;
+    const pad = 48;
+    const cw = bounds.maxX - bounds.minX + pad * 2;
+    const ch = bounds.maxY - bounds.minY + pad * 2;
     const k = Math.min(size.w / cw, size.h / ch, 1.5);
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
     setScale(k);
-    setPos({ x: -minX * k + pad, y: -minY * k + pad });
-  }, [layout.id, size.w, size.h]);
+    setPos(getBoundedPosition({ x: size.w / 2 - centerX * k, y: size.h / 2 - centerY * k }, k));
+  }, [bounds, getBoundedPosition, size.h, size.w]);
+
+  useEffect(() => {
+    fitView();
+  }, [fitView, layout.id]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const target = e.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      e.preventDefault();
+      setSpaceDown(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") setSpaceDown(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
+
+  const zoomBy = (factor: number) => {
+    const oldScale = scale;
+    const ns = Math.max(0.3, Math.min(4, oldScale * factor));
+    const ptr = { x: size.w / 2, y: size.h / 2 };
+    const mp = { x: (ptr.x - pos.x) / oldScale, y: (ptr.y - pos.y) / oldScale };
+    setScale(ns);
+    setPos(getBoundedPosition({ x: ptr.x - mp.x * ns, y: ptr.y - mp.y * ns }, ns));
+  };
 
   const onWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
@@ -104,7 +182,7 @@ export function CustomerSeatingMap({
     const dir = e.evt.deltaY > 0 ? -1 : 1;
     const ns = Math.max(0.3, Math.min(4, oldScale * (1 + dir * 0.1)));
     setScale(ns);
-    setPos({ x: ptr.x - mp.x * ns, y: ptr.y - mp.y * ns });
+    setPos(getBoundedPosition({ x: ptr.x - mp.x * ns, y: ptr.y - mp.y * ns }, ns));
   };
 
   return (
@@ -112,19 +190,52 @@ export function CustomerSeatingMap({
       ref={containerRef}
       className="relative w-full h-[520px] rounded-xl overflow-hidden border border-border/40 bg-[#f8fafc]"
     >
+      <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-2 rounded-lg border border-border/50 bg-background/95 p-2 shadow-sm backdrop-blur">
+        <MapControlButton onClick={() => zoomBy(1.18)}>+</MapControlButton>
+        <MapControlButton onClick={() => zoomBy(0.85)}>−</MapControlButton>
+        <button
+          type="button"
+          onClick={fitView}
+          className="h-8 rounded-md border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+        >
+          Reset zobrazenia
+        </button>
+        <button
+          type="button"
+          onClick={() => setPanMode((v) => !v)}
+          className={`h-8 rounded-md border px-3 text-xs font-medium transition-colors ${
+            canPan
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border/60 bg-background text-foreground hover:bg-muted"
+          }`}
+        >
+          Presun mapy
+        </button>
+      </div>
       <Stage
         width={size.w}
         height={size.h}
-        draggable
+        draggable={stageCanDrag}
+        dragBoundFunc={(next) => getBoundedPosition(next, scale)}
         x={pos.x}
         y={pos.y}
         scaleX={scale}
         scaleY={scale}
         onWheel={onWheel}
+        onMouseEnter={(e) => {
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = stageCanDrag ? "grab" : "default";
+        }}
+        onDragStart={(e) => {
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = "grabbing";
+        }}
         onDragEnd={(e) => {
           if (e.target === e.target.getStage()) {
-            setPos({ x: e.target.x(), y: e.target.y() });
+            setPos(getBoundedPosition({ x: e.target.x(), y: e.target.y() }, scale));
           }
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = stageCanDrag ? "grab" : "default";
         }}
       >
         <Layer>
@@ -144,7 +255,15 @@ export function CustomerSeatingMap({
               const nodes: React.ReactNode[] = [];
               if (s.label) {
                 nodes.push(
-                  <KText key={`hdr-${s.id}`} x={padX} y={2} text={s.label} fontSize={11} fontStyle="bold" fill="#0f172a" />,
+                  <KText
+                    key={`hdr-${s.id}`}
+                    x={padX}
+                    y={2}
+                    text={s.label}
+                    fontSize={11}
+                    fontStyle="bold"
+                    fill="#0f172a"
+                  />,
                 );
               }
               for (let r = 0; r < rows; r++) {
@@ -154,11 +273,19 @@ export function CustomerSeatingMap({
                   const isVip = !!inv?.is_vip || isVipGrid;
                   let fill = isVip ? COLORS.vipAvailable : COLORS.available;
                   let status: "available" | "reserved" | "sold" | "selected" = "available";
-                  if (inv?.status === "sold") { fill = COLORS.sold; status = "sold"; }
-                  else if (inv?.status === "reserved") { fill = COLORS.reserved; status = "reserved"; }
-                  if (selectedSet.has(seatId)) { fill = COLORS.selected; status = "selected"; }
+                  if (inv?.status === "sold") {
+                    fill = COLORS.sold;
+                    status = "sold";
+                  } else if (inv?.status === "reserved") {
+                    fill = COLORS.reserved;
+                    status = "reserved";
+                  }
+                  if (selectedSet.has(seatId)) {
+                    fill = COLORS.selected;
+                    status = "selected";
+                  }
                   const clickable = status === "available" || status === "selected";
-                  const label = `Rad ${rowLabel(r)} · ${startSeat + c}`;
+                  const label = `${s.label || "Sektor"} · Rad ${rowLabel(r)} · ${startSeat + c}`;
                   nodes.push(
                     <Rect
                       key={seatId}
@@ -181,11 +308,21 @@ export function CustomerSeatingMap({
                       }}
                       onClick={() => {
                         if (!clickable) return;
-                        onToggle({ seat_id: seatId, label, price: isVip ? vipPrice : basePrice, is_vip: isVip });
+                        onToggle({
+                          seat_id: seatId,
+                          label,
+                          price: isVip ? vipPrice : basePrice,
+                          is_vip: isVip,
+                        });
                       }}
                       onTap={() => {
                         if (!clickable) return;
-                        onToggle({ seat_id: seatId, label, price: isVip ? vipPrice : basePrice, is_vip: isVip });
+                        onToggle({
+                          seat_id: seatId,
+                          label,
+                          price: isVip ? vipPrice : basePrice,
+                          is_vip: isVip,
+                        });
                       }}
                     />,
                   );
@@ -273,15 +410,23 @@ export function CustomerSeatingMap({
             }
             // non-seat shapes (sector, stage, standing, vip area, label, etc.)
             const fill =
-              s.kind === "stage" ? COLORS.stage :
-              s.kind === "standing" ? COLORS.standing :
-              s.kind === "vip" ? COLORS.vipArea :
-              s.kind === "entrance" ? COLORS.entrance :
-              s.kind === "bar" ? COLORS.bar :
-              s.kind === "wc" ? COLORS.wc :
-              s.kind === "tech" ? COLORS.tech :
-              s.kind === "label" ? "transparent" :
-              s.color ?? COLORS.sector;
+              s.kind === "stage"
+                ? COLORS.stage
+                : s.kind === "standing"
+                  ? COLORS.standing
+                  : s.kind === "vip"
+                    ? COLORS.vipArea
+                    : s.kind === "entrance"
+                      ? COLORS.entrance
+                      : s.kind === "bar"
+                        ? COLORS.bar
+                        : s.kind === "wc"
+                          ? COLORS.wc
+                          : s.kind === "tech"
+                            ? COLORS.tech
+                            : s.kind === "label"
+                              ? "transparent"
+                              : (s.color ?? COLORS.sector);
             return (
               <Group key={s.id} x={s.x} y={s.y} rotation={s.rotation ?? 0}>
                 <Rect
@@ -304,7 +449,10 @@ export function CustomerSeatingMap({
                     fontStyle="bold"
                     fontSize={Math.max(12, Math.min(22, s.height / 4))}
                     fill={
-                      s.kind === "stage" || s.kind === "standing" || s.kind === "vip" || s.kind === "tech"
+                      s.kind === "stage" ||
+                      s.kind === "standing" ||
+                      s.kind === "vip" ||
+                      s.kind === "tech"
                         ? "#fff"
                         : "#0f172a"
                     }
@@ -323,9 +471,23 @@ export function CustomerSeatingMap({
         <LegendDot color={COLORS.reserved} label="Rezervované" />
         <LegendDot color={COLORS.sold} label="Predané" />
         <LegendDot color={COLORS.vipAvailable} label="VIP" />
-        <span className="ml-auto text-muted-foreground">Scroll = zoom · drag = posun</span>
+        <span className="ml-auto text-muted-foreground">
+          Scroll = zoom · posun len cez „Presun mapy“ alebo Space
+        </span>
       </div>
     </div>
+  );
+}
+
+function MapControlButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex size-8 items-center justify-center rounded-md border border-border/60 bg-background text-base font-semibold text-foreground hover:bg-muted"
+    >
+      {children}
+    </button>
   );
 }
 
