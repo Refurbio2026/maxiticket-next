@@ -160,6 +160,53 @@ function getCurveBounds(seats: Shape[]) {
   return { x: minX - 10, y: minY - 10, width: maxX - minX + 20, height: maxY - minY + 20 };
 }
 
+function normalizeLayout(input: HallLayout): HallLayout {
+  const curveGroups = [...(input.curveGroups ?? [])];
+  const known = new Set(curveGroups.map((group) => group.id));
+  const missingGroupIds = Array.from(
+    new Set(input.shapes.map((shape) => shape.curveGroupId).filter((id): id is string => Boolean(id) && !known.has(id))),
+  );
+
+  for (const id of missingGroupIds) {
+    const seats = input.shapes.filter((shape) => shape.curveGroupId === id);
+    const first = seats[0];
+    if (!first) continue;
+    const firstAngle = typeof first.angle === "number" ? first.angle : 0;
+    const angleDeg = Math.abs(firstAngle) <= Math.PI * 2 ? (firstAngle * 180) / Math.PI : firstAngle;
+    const radius = first.radius ?? first.relativeRadius ?? 280;
+    const centerX = first.x + first.width / 2 - radius * Math.cos((angleDeg * Math.PI) / 180);
+    const centerY = first.y + first.height / 2 - radius * Math.sin((angleDeg * Math.PI) / 180);
+    const rows = new Set(seats.map((seat) => seat.startRow ?? seat.row ?? "1")).size || 1;
+    const seatsPerRow = Math.max(...Object.values(seats.reduce<Record<string, number>>((acc, seat) => {
+      const key = String(seat.startRow ?? seat.row ?? "1");
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {})), 1);
+    curveGroups.push({
+      id,
+      name: first.sectorId ?? "Zakrivený blok",
+      centerX,
+      centerY,
+      radius,
+      startAngle: first.startAngle ?? 220,
+      endAngle: first.endAngle ?? 320,
+      rows,
+      seatsPerRow,
+      rowSpacing: first.rowSpacing ?? 32,
+      seatSpacing: first.seatSpacing ?? 30,
+      rotation: 0,
+      sectorId: first.sectorId,
+      priceCategoryId: first.priceCategoryId ?? first.priceCategory,
+      color: first.color ?? "#22c55e",
+      rowLabelMode: "ABC",
+      startSeat: first.startSeat ?? 1,
+      seatSize: first.seatSize ?? first.width ?? 22,
+    });
+  }
+
+  return { ...input, curveGroups };
+}
+
 export function SeatingEditor({
   initial,
   onChange,
