@@ -301,6 +301,76 @@ export function SeatingEditor({
     setTool("select");
   };
 
+  const rowLabel = (i: number, mode: "ABC" | "123") =>
+    mode === "ABC"
+      ? i < 26
+        ? String.fromCharCode(65 + i)
+        : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26))
+      : String(i + 1);
+
+  const addCurvedRows = (cx: number, cy: number) => {
+    const f = curvedForm;
+    const ss = f.seatSize;
+    const startRad = (f.startAngle * Math.PI) / 180;
+    const endRad = (f.endAngle * Math.PI) / 180;
+    const total = endRad - startRad;
+    const curveGroupId = uid();
+    const newSeats: Shape[] = [];
+    for (let r = 0; r < f.rows; r++) {
+      const radius = f.radius + r * f.rowSpacing;
+      // angular step from seatSpacing (arc length)
+      const stepFromSpacing = f.seatSpacing / radius;
+      const stepFromAngles = f.cols > 1 ? total / (f.cols - 1) : 0;
+      // use the smaller so seats don't overlap; fall back to spacing if angles too tight
+      const step = f.cols > 1 ? Math.min(stepFromAngles, stepFromSpacing) : 0;
+      const arcUsed = step * (f.cols - 1);
+      const midAngle = (startRad + endRad) / 2;
+      const a0 = midAngle - arcUsed / 2;
+      for (let c = 0; c < f.cols; c++) {
+        const colIdx = f.direction === "ltr" ? c : f.cols - 1 - c;
+        const angle = a0 + colIdx * step;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        // seat faces toward center (cx, cy): direction from seat to center
+        // konva rotation 0 = upright; we want the seat top toward center
+        const rotation = f.faceStage
+          ? ((angle * 180) / Math.PI + 90) % 360
+          : 0;
+        const label = rowLabel(r, f.rowLabelMode);
+        newSeats.push({
+          id: uid(),
+          kind: "seats",
+          x: x - ss / 2,
+          y: y - ss / 2,
+          width: ss,
+          height: ss,
+          rotation,
+          rows: 1,
+          cols: 1,
+          seatSize: ss,
+          color: f.color,
+          label: "",
+          priceCategory: f.priceCategory,
+          priceCategoryId: f.priceCategory,
+          row: label,
+          seatNumber: f.startSeat + c,
+          sectorId: f.sectorName,
+          curveGroupId,
+          radius,
+          angle,
+          startAngle: f.startAngle,
+          endAngle: f.endAngle,
+          rowSpacing: f.rowSpacing,
+          seatSpacing: f.seatSpacing,
+          startRow: r + 1,
+          startSeat: f.startSeat,
+        });
+      }
+    }
+    setShapes((arr) => [...arr, ...newSeats]);
+    setSelectedIds(newSeats.map((s) => s.id));
+
+
   const addSeatGrid = (cx: number, cy: number) => {
     const f = seatsForm;
     const ss = f.seatSize;
