@@ -25,6 +25,25 @@ export const Route = createFileRoute("/events/$id")({
 
 type Selected = { seat_id: string; label: string; price: number; is_vip: boolean };
 
+function defaultLayoutForEvent(event: EventItem): HallLayout {
+  const now = new Date().toISOString();
+  return {
+    id: `default-layout-${event.id}`,
+    name: event.venue || "Sála",
+    type: "koncertna-hala",
+    city: event.city,
+    capacity: 120,
+    shapes: [
+      { id: `stage-${event.id}`, kind: "stage", x: 120, y: 20, width: 420, height: 58, label: "PÓDIUM" },
+      { id: `sector-main-${event.id}`, kind: "sector", x: 80, y: 110, width: 500, height: 330, label: "Hlavný sektor" },
+      { id: `seats-main-${event.id}`, kind: "seats", x: 125, y: 140, width: 390, height: 300, rows: 10, cols: 12, seatSize: 22, startRow: 1, startSeat: 1, label: "Sektor A", priceCategory: "Regular" },
+    ],
+    curveGroups: [],
+    created_at: now,
+    updated_at: now,
+  };
+}
+
 function EventDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -46,7 +65,7 @@ function EventDetail() {
       const matchedLayout = e
         ? layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase())
         : undefined;
-      const fallbackLayout = e?.sale_type !== "standing" && layouts.length === 1 ? layouts[0] : undefined;
+      const fallbackLayout = e?.sale_type !== "standing" ? layouts[0] ?? defaultLayoutForEvent(e) : undefined;
       setLayout(explicitLayout ?? matchedLayout ?? fallbackLayout ?? null);
       setInventory(getInventory(id));
       setLoaded(true);
