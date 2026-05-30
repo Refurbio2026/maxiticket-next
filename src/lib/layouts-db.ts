@@ -32,7 +32,20 @@ export type Shape = {
   priceCategory?: string;
   capacity?: number;
   blocked?: boolean;
+  // individual seat metadata (curved rows etc.)
+  row?: string;
+  seatNumber?: number;
+  sectorId?: string;
+  priceCategoryId?: string;
+  curveGroupId?: string;
+  radius?: number;
+  angle?: number;
+  startAngle?: number;
+  endAngle?: number;
+  rowSpacing?: number;
+  seatSpacing?: number;
 };
+
 
 export type HallType =
   | "stadion"
