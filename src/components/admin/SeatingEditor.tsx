@@ -369,6 +369,9 @@ export function SeatingEditor({
     }
     setShapes((arr) => [...arr, ...newSeats]);
     setSelectedIds(newSeats.map((s) => s.id));
+  };
+
+
 
 
   const addSeatGrid = (cx: number, cy: number) => {
