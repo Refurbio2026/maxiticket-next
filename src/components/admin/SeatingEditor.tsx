@@ -816,7 +816,7 @@ export function SeatingEditor({
 
                 <Transformer
                   ref={trRef}
-                  rotateEnabled
+                  rotateEnabled={!selectedCurveGroup}
                   resizeEnabled={!selectedCurveGroup}
                   flipEnabled={false}
                   anchorSize={8}
@@ -1244,6 +1244,7 @@ function CurveGroupNode({
       />
       {seats.map((seat) => (
         <Circle
+          id={seat.id}
           key={seat.id}
           x={seat.x - bounds.x + seat.width / 2}
           y={seat.y - bounds.y + seat.height / 2}
