@@ -727,6 +727,10 @@ export function SeatingEditor({
                           setSelectedIds([group.id]);
                         }
                       }}
+                      onSeatEdit={(seatId: string) => {
+                        if (tool !== "select") return;
+                        setSelectedIds([seatId]);
+                      }}
                       onMove={(dx: number, dy: number) => updateCurveGroup(group.id, { centerX: group.centerX + dx, centerY: group.centerY + dy }, true)}
                       onCommit={commitChange}
                     />
@@ -781,7 +785,7 @@ export function SeatingEditor({
         <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Vlastnosti
         </div>
-        {!selectedShape && (
+        {!selectedShape && !selectedCurveGroup && (
           <p className="text-sm text-muted-foreground">
             {selectedIds.length > 1
               ? `${selectedIds.length} objektov označených`
@@ -793,6 +797,13 @@ export function SeatingEditor({
             shape={selectedShape}
             onChange={(patch) => updateSelected(patch)}
             onCommit={commitChange}
+          />
+        )}
+        {selectedCurveGroup && (
+          <CurveGroupPropertiesPanel
+            group={selectedCurveGroup}
+            onChange={(patch) => updateCurveGroup(selectedCurveGroup.id, patch)}
+            onCommit={() => pushHistory(layout)}
           />
         )}
 
