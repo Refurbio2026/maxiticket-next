@@ -254,7 +254,15 @@ export function CustomerSeatingMap({
               const nodes: React.ReactNode[] = [];
               if (s.label) {
                 nodes.push(
-                  <KText key={`hdr-${s.id}`} x={padX} y={2} text={s.label} fontSize={11} fontStyle="bold" fill="#0f172a" />,
+                  <KText
+                    key={`hdr-${s.id}`}
+                    x={padX}
+                    y={2}
+                    text={s.label}
+                    fontSize={11}
+                    fontStyle="bold"
+                    fill="#0f172a"
+                  />,
                 );
               }
               for (let r = 0; r < rows; r++) {
@@ -264,9 +272,17 @@ export function CustomerSeatingMap({
                   const isVip = !!inv?.is_vip || isVipGrid;
                   let fill = isVip ? COLORS.vipAvailable : COLORS.available;
                   let status: "available" | "reserved" | "sold" | "selected" = "available";
-                  if (inv?.status === "sold") { fill = COLORS.sold; status = "sold"; }
-                  else if (inv?.status === "reserved") { fill = COLORS.reserved; status = "reserved"; }
-                  if (selectedSet.has(seatId)) { fill = COLORS.selected; status = "selected"; }
+                  if (inv?.status === "sold") {
+                    fill = COLORS.sold;
+                    status = "sold";
+                  } else if (inv?.status === "reserved") {
+                    fill = COLORS.reserved;
+                    status = "reserved";
+                  }
+                  if (selectedSet.has(seatId)) {
+                    fill = COLORS.selected;
+                    status = "selected";
+                  }
                   const clickable = status === "available" || status === "selected";
                   const label = `${s.label || "Sektor"} · Rad ${rowLabel(r)} · ${startSeat + c}`;
                   nodes.push(
@@ -291,11 +307,21 @@ export function CustomerSeatingMap({
                       }}
                       onClick={() => {
                         if (!clickable) return;
-                        onToggle({ seat_id: seatId, label, price: isVip ? vipPrice : basePrice, is_vip: isVip });
+                        onToggle({
+                          seat_id: seatId,
+                          label,
+                          price: isVip ? vipPrice : basePrice,
+                          is_vip: isVip,
+                        });
                       }}
                       onTap={() => {
                         if (!clickable) return;
-                        onToggle({ seat_id: seatId, label, price: isVip ? vipPrice : basePrice, is_vip: isVip });
+                        onToggle({
+                          seat_id: seatId,
+                          label,
+                          price: isVip ? vipPrice : basePrice,
+                          is_vip: isVip,
+                        });
                       }}
                     />,
                   );
@@ -383,15 +409,23 @@ export function CustomerSeatingMap({
             }
             // non-seat shapes (sector, stage, standing, vip area, label, etc.)
             const fill =
-              s.kind === "stage" ? COLORS.stage :
-              s.kind === "standing" ? COLORS.standing :
-              s.kind === "vip" ? COLORS.vipArea :
-              s.kind === "entrance" ? COLORS.entrance :
-              s.kind === "bar" ? COLORS.bar :
-              s.kind === "wc" ? COLORS.wc :
-              s.kind === "tech" ? COLORS.tech :
-              s.kind === "label" ? "transparent" :
-              s.color ?? COLORS.sector;
+              s.kind === "stage"
+                ? COLORS.stage
+                : s.kind === "standing"
+                  ? COLORS.standing
+                  : s.kind === "vip"
+                    ? COLORS.vipArea
+                    : s.kind === "entrance"
+                      ? COLORS.entrance
+                      : s.kind === "bar"
+                        ? COLORS.bar
+                        : s.kind === "wc"
+                          ? COLORS.wc
+                          : s.kind === "tech"
+                            ? COLORS.tech
+                            : s.kind === "label"
+                              ? "transparent"
+                              : (s.color ?? COLORS.sector);
             return (
               <Group key={s.id} x={s.x} y={s.y} rotation={s.rotation ?? 0}>
                 <Rect
@@ -414,7 +448,10 @@ export function CustomerSeatingMap({
                     fontStyle="bold"
                     fontSize={Math.max(12, Math.min(22, s.height / 4))}
                     fill={
-                      s.kind === "stage" || s.kind === "standing" || s.kind === "vip" || s.kind === "tech"
+                      s.kind === "stage" ||
+                      s.kind === "standing" ||
+                      s.kind === "vip" ||
+                      s.kind === "tech"
                         ? "#fff"
                         : "#0f172a"
                     }
