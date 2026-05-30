@@ -16,8 +16,10 @@ import {
   Mail,
   ShieldCheck,
   QrCode,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/WalletButtons";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
   head: () => ({ meta: [{ title: "Ďakujeme za nákup · MAXITICKET" }] }),
