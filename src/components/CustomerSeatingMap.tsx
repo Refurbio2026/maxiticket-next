@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Stage, Layer, Rect, Text as KText, Group } from "react-konva";
 import type Konva from "konva";
 import type { HallLayout, Shape } from "@/lib/layouts-db";
@@ -18,6 +18,7 @@ type Props = {
   inventory: SeatInventoryRow[];
   selected: string[];
   onToggle: (seat: CustomerSeat) => void;
+  customerSeatMapMode?: boolean;
 };
 
 const COLORS = {
@@ -50,11 +51,16 @@ export function CustomerSeatingMap({
   inventory,
   selected,
   onToggle,
+  customerSeatMapMode = true,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 800, h: 520 });
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [panMode, setPanMode] = useState(false);
+  const [spaceDown, setSpaceDown] = useState(false);
+  const canPan = panMode || spaceDown;
+  const stageCanDrag = customerSeatMapMode ? canPan : true;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -74,24 +80,95 @@ export function CustomerSeatingMap({
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
-  // Auto-fit on first render
-  useEffect(() => {
+  const bounds = useMemo(() => {
     const shapes = layout.shapes;
-    if (!shapes.length) return;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    if (!shapes.length) return null;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
     for (const s of shapes) {
       minX = Math.min(minX, s.x);
       minY = Math.min(minY, s.y);
       maxX = Math.max(maxX, s.x + s.width);
       maxY = Math.max(maxY, s.y + s.height);
     }
-    const pad = 40;
-    const cw = maxX - minX + pad * 2;
-    const ch = maxY - minY + pad * 2;
+    return { minX, minY, maxX, maxY };
+  }, [layout.shapes]);
+
+  const getBoundedPosition = useCallback(
+    (next: { x: number; y: number }, targetScale: number) => {
+      if (!bounds) return next;
+      const pad = 28;
+      const contentW = (bounds.maxX - bounds.minX) * targetScale;
+      const contentH = (bounds.maxY - bounds.minY) * targetScale;
+
+      const boundAxis = (
+        value: number,
+        containerSize: number,
+        contentSize: number,
+        minContent: number,
+        maxContent: number,
+      ) => {
+        if (contentSize + pad * 2 <= containerSize) {
+          return (containerSize - contentSize) / 2 - minContent * targetScale;
+        }
+        const min = containerSize - pad - maxContent * targetScale;
+        const max = pad - minContent * targetScale;
+        return Math.min(max, Math.max(min, value));
+      };
+
+      return {
+        x: boundAxis(next.x, size.w, contentW, bounds.minX, bounds.maxX),
+        y: boundAxis(next.y, size.h, contentH, bounds.minY, bounds.maxY),
+      };
+    },
+    [bounds, size.h, size.w],
+  );
+
+  const fitView = useCallback(() => {
+    if (!bounds) return;
+    const pad = 48;
+    const cw = bounds.maxX - bounds.minX + pad * 2;
+    const ch = bounds.maxY - bounds.minY + pad * 2;
     const k = Math.min(size.w / cw, size.h / ch, 1.5);
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
     setScale(k);
-    setPos({ x: -minX * k + pad, y: -minY * k + pad });
-  }, [layout.id, size.w, size.h]);
+    setPos(getBoundedPosition({ x: size.w / 2 - centerX * k, y: size.h / 2 - centerY * k }, k));
+  }, [bounds, getBoundedPosition, size.h, size.w]);
+
+  useEffect(() => {
+    fitView();
+  }, [fitView, layout.id]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const target = e.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      e.preventDefault();
+      setSpaceDown(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") setSpaceDown(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
+
+  const zoomBy = (factor: number) => {
+    const oldScale = scale;
+    const ns = Math.max(0.3, Math.min(4, oldScale * factor));
+    const ptr = { x: size.w / 2, y: size.h / 2 };
+    const mp = { x: (ptr.x - pos.x) / oldScale, y: (ptr.y - pos.y) / oldScale };
+    setScale(ns);
+    setPos(getBoundedPosition({ x: ptr.x - mp.x * ns, y: ptr.y - mp.y * ns }, ns));
+  };
 
   const onWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
@@ -104,7 +181,7 @@ export function CustomerSeatingMap({
     const dir = e.evt.deltaY > 0 ? -1 : 1;
     const ns = Math.max(0.3, Math.min(4, oldScale * (1 + dir * 0.1)));
     setScale(ns);
-    setPos({ x: ptr.x - mp.x * ns, y: ptr.y - mp.y * ns });
+    setPos(getBoundedPosition({ x: ptr.x - mp.x * ns, y: ptr.y - mp.y * ns }, ns));
   };
 
   return (
