@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { getEvents, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
 import { Navbar } from "@/components/site/Navbar";
