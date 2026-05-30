@@ -452,7 +452,7 @@ function EventDetail() {
               </div>
 
 
-              <Card className="hidden p-6 bg-card/60 border-border/50 h-fit lg:sticky lg:top-[120px] lg:block">
+              <Card className="hidden lg:block p-6 bg-card/60 border-border/50 h-fit lg:sticky lg:top-[120px]">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="font-display font-semibold text-xl">Košík</h2>
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
