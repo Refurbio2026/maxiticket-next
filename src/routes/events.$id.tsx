@@ -519,29 +519,38 @@ function EventDetail() {
                   </div>
                 )}
 
-                <div className="mt-4 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Počet vstupeniek</span>
-                  <span className="font-semibold">{isMap ? selected.length : qty}</span>
-                </div>
                 <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Celková cena</span>
                   <span className="font-display text-2xl font-bold">€{total.toFixed(2)}</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground text-right mt-0.5">
+                  vrátane DPH · žiadne skryté poplatky
                 </div>
 
                 <Button
                   onClick={checkout}
                   disabled={submitting || (isMap && selected.length === 0)}
                   className="w-full mt-5 bg-gradient-flame text-primary-foreground shadow-glow"
+                  size="lg"
                 >
                   <Ticket className="size-4 mr-2" />
-                  Pokračovať do checkoutu
+                  Kúpiť vstupenky
                 </Button>
 
-                {isMap && (
-                  <div className="mt-3 text-[11px] text-muted-foreground text-center">
-                    Vybrané miesta: {selected.length}
+                <div className="mt-4 grid grid-cols-3 gap-2 text-[10px] text-muted-foreground">
+                  <div className="flex flex-col items-center text-center gap-1 p-1.5 rounded-md border border-border/40">
+                    <ShieldCheck className="size-3.5 text-emerald-500" />
+                    Bezpečná platba
                   </div>
-                )}
+                  <div className="flex flex-col items-center text-center gap-1 p-1.5 rounded-md border border-border/40">
+                    <QrCode className="size-3.5 text-primary" />
+                    QR vstupenka
+                  </div>
+                  <div className="flex flex-col items-center text-center gap-1 p-1.5 rounded-md border border-border/40">
+                    <Mail className="size-3.5 text-primary" />
+                    Email do 1 min.
+                  </div>
+                </div>
               </Card>
             </div>
 
