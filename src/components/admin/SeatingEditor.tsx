@@ -220,7 +220,7 @@ export function SeatingEditor({
   onChange?: (l: HallLayout) => void;
 }) {
   // ---------- state ----------
-  const [layout, setLayout] = useState<HallLayout>({ ...initial, curveGroups: initial.curveGroups ?? [] });
+  const [layout, setLayout] = useState<HallLayout>(normalizeLayout(initial));
   const [tool, setTool] = useState<Tool>("select");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -854,7 +854,7 @@ export function SeatingEditor({
         {selectedCurveGroup && (
           <CurveGroupPropertiesPanel
             group={selectedCurveGroup}
-            onChange={(patch) => updateCurveGroup(selectedCurveGroup.id, patch)}
+            onChange={(patch: Partial<CurveGroup>) => updateCurveGroup(selectedCurveGroup.id, patch)}
             onCommit={() => pushHistory(layout)}
           />
         )}
