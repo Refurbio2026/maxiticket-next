@@ -230,7 +230,7 @@ function EventDetail() {
               style={event.image_url ? { backgroundImage: `url(${event.image_url})` } : undefined}
             />
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-              <div className="space-y-6">
+              <div className="min-w-0 space-y-6">
                 <div>
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
                     {event.category}
@@ -254,7 +254,7 @@ function EventDetail() {
                 </div>
 
                 {isMap && layout ? (
-                  <div>
+                  <div className="min-w-0">
                     <h2 className="font-display font-semibold text-lg mb-3">
                       Vyber sedadlá v hale
                     </h2>
