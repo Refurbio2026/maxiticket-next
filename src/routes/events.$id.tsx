@@ -44,6 +44,10 @@ function defaultLayoutForEvent(event: EventItem): HallLayout {
   };
 }
 
+function hasSelectableSeats(layout?: HallLayout | null): layout is HallLayout {
+  return !!layout?.shapes.some((shape) => shape.kind === "seats" && !shape.blocked);
+}
+
 function EventDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -66,7 +70,8 @@ function EventDetail() {
         ? layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase())
         : undefined;
       const fallbackLayout = e && e.sale_type !== "standing" ? layouts[0] ?? defaultLayoutForEvent(e) : undefined;
-      setLayout(explicitLayout ?? matchedLayout ?? fallbackLayout ?? null);
+      const resolvedLayout = explicitLayout ?? matchedLayout ?? fallbackLayout ?? null;
+      setLayout(hasSelectableSeats(resolvedLayout) ? resolvedLayout : e && e.sale_type !== "standing" ? defaultLayoutForEvent(e) : null);
       setInventory(getInventory(id));
       setLoaded(true);
     };
