@@ -1,6 +1,13 @@
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, MapPin, Calendar, Sparkles, ArrowRight } from "lucide-react";
+import { Search, MapPin, Calendar as CalIcon, Sparkles, ArrowRight, ChevronDown } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { getEvents, EVENTS_EVENT } from "@/lib/local-db";
 import hero from "@/assets/hero-concert.jpg";
 
 const stats = [
@@ -10,9 +17,43 @@ const stats = [
 ];
 
 export function Hero() {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const [city, setCity] = useState<string>("");
+  const [date, setDate] = useState<Date | undefined>();
+  const [cities, setCities] = useState<string[]>([]);
+
+  useEffect(() => {
+    const load = () => {
+      const set = new Set<string>();
+      getEvents()
+        .filter((e) => e.status === "published")
+        .forEach((e) => e.city && set.add(e.city));
+      setCities(Array.from(set).sort());
+    };
+    load();
+    window.addEventListener(EVENTS_EVENT, load);
+    window.addEventListener("storage", load);
+    return () => {
+      window.removeEventListener(EVENTS_EVENT, load);
+      window.removeEventListener("storage", load);
+    };
+  }, []);
+
+  const submit = () => {
+    const search: Record<string, string> = {};
+    if (q.trim()) search.q = q.trim();
+    if (city) search.city = city;
+    if (date) search.date = format(date, "yyyy-MM-dd");
+    navigate({ to: "/events", search });
+  };
+
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") submit();
+  };
+
   return (
     <section className="relative overflow-hidden pt-32 pb-24 noise">
-      {/* background */}
       <div className="absolute inset-0 bg-hero" />
       <img
         src={hero}
@@ -24,7 +65,6 @@ export function Hero() {
       />
       <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-background" />
 
-      {/* floating chips */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -74,39 +114,99 @@ export function Hero() {
             <div className="flex items-center gap-3 px-4 flex-1 min-h-12">
               <Search className="size-4 text-muted-foreground shrink-0" />
               <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={onKey}
                 placeholder="Hľadaj koncert, festival, klub..."
                 className="bg-transparent outline-none w-full text-sm placeholder:text-muted-foreground"
               />
             </div>
-            <div className="hidden md:flex items-center gap-3 px-4 border-l border-border min-h-12">
-              <MapPin className="size-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Bratislava</span>
-            </div>
-            <div className="hidden md:flex items-center gap-3 px-4 border-l border-border min-h-12">
-              <Calendar className="size-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Tento víkend</span>
-            </div>
-            <Button className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 px-6 h-12">
+
+            {/* City */}
+            <CityPicker city={city} setCity={setCity} cities={cities} />
+
+            {/* Date */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="hidden md:flex items-center gap-3 px-4 border-l border-border min-h-12 text-sm hover:text-foreground transition-colors"
+                >
+                  <CalIcon className="size-4 text-muted-foreground" />
+                  <span className={cn(date ? "text-foreground" : "text-muted-foreground")}>
+                    {date ? format(date, "d. M. yyyy") : "Vyber dátum"}
+                  </span>
+                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+                {date && (
+                  <div className="p-2 border-t border-border">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => setDate(undefined)}
+                    >
+                      Vyčistiť
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              onClick={submit}
+              className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 px-6 h-12"
+            >
               Nájsť
               <ArrowRight className="size-4" />
             </Button>
           </motion.div>
 
+          {/* mobile filter summary */}
+          <div className="mt-3 md:hidden flex flex-wrap gap-2">
+            <CityPicker city={city} setCity={setCity} cities={cities} mobile />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <CalIcon className="size-3.5" />
+                  {date ? format(date, "d. M.") : "Dátum"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* quick tags */}
           <div className="mt-6 flex flex-wrap gap-2 text-xs">
             <span className="text-muted-foreground mr-1">Trending:</span>
             {["Pohoda 2026", "Calypso Bratislava", "HC Slovan", "Lúčnica", "Iné Kafe"].map((t) => (
-              <a
+              <button
                 key={t}
-                href="#"
+                onClick={() => navigate({ to: "/events", search: { q: t } })}
                 className="rounded-full border border-border px-3 py-1 hover:border-primary hover:text-primary transition-colors"
               >
                 {t}
-              </a>
+              </button>
             ))}
           </div>
 
-          {/* stats */}
           <div className="mt-16 grid grid-cols-3 gap-6 max-w-xl">
             {stats.map((s) => (
               <div key={s.l}>
@@ -120,5 +220,67 @@ export function Hero() {
         </motion.div>
       </div>
     </section>
+  );
+}
+
+function CityPicker({
+  city, setCity, cities, mobile = false,
+}: {
+  city: string;
+  setCity: (v: string) => void;
+  cities: string[];
+  mobile?: boolean;
+}) {
+  const triggerDesktop = (
+    <button
+      type="button"
+      className="hidden md:flex items-center gap-3 px-4 border-l border-border min-h-12 text-sm hover:text-foreground transition-colors"
+    >
+      <MapPin className="size-4 text-muted-foreground" />
+      <span className={cn(city ? "text-foreground" : "text-muted-foreground")}>
+        {city || "Všetky mestá"}
+      </span>
+      <ChevronDown className="size-3.5 text-muted-foreground" />
+    </button>
+  );
+  const triggerMobile = (
+    <Button variant="outline" size="sm" className="gap-1.5">
+      <MapPin className="size-3.5" />
+      {city || "Mesto"}
+    </Button>
+  );
+  return (
+    <Popover>
+      <PopoverTrigger asChild>{mobile ? triggerMobile : triggerDesktop}</PopoverTrigger>
+      <PopoverContent className="w-56 p-1" align="start">
+        <button
+          onClick={() => setCity("")}
+          className={cn(
+            "w-full text-left text-sm px-3 py-2 rounded hover:bg-accent",
+            !city && "bg-accent/50 font-medium",
+          )}
+        >
+          Všetky mestá
+        </button>
+        <div className="max-h-72 overflow-y-auto">
+          {cities.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-muted-foreground">Žiadne mestá</div>
+          ) : (
+            cities.map((c) => (
+              <button
+                key={c}
+                onClick={() => setCity(c)}
+                className={cn(
+                  "w-full text-left text-sm px-3 py-2 rounded hover:bg-accent",
+                  city === c && "bg-accent/50 font-medium",
+                )}
+              >
+                {c}
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
