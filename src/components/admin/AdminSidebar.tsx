@@ -133,6 +133,7 @@ const groups: Group[] = [
   {
     label: "Systém",
     items: [
+      { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet },
       { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail },
       { title: "Používatelia", url: "/admin/system/users", icon: UserCog },
     ],

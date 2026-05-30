@@ -16,8 +16,10 @@ import {
   Mail,
   ShieldCheck,
   QrCode,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/WalletButtons";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
   head: () => ({ meta: [{ title: "Ďakujeme za nákup · MAXITICKET" }] }),
@@ -103,22 +105,46 @@ function SuccessPage() {
               </Card>
             )}
 
+            {/* Mobile wallet CTA */}
+            <Card className="p-5 mb-6 bg-gradient-to-br from-primary/10 via-card/60 to-card/60 border-primary/30">
+              <div className="flex items-start gap-4">
+                <div className="size-12 rounded-xl bg-primary/15 text-primary grid place-items-center shrink-0">
+                  <Smartphone className="size-6" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-display text-lg font-semibold">
+                    Pridajte si vstupenku do mobilu
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Netreba tlačiť. Ulož si vstupenku do Apple Wallet alebo Google Wallet a pri vstupe ukáž QR kód z telefónu.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
             <div className="space-y-4">
               {tickets.map((t, i) => (
                 <Card
                   key={t.id}
-                  className="p-5 bg-card/60 border-border/50 flex items-center gap-5 print:break-inside-avoid"
+                  className="p-5 bg-card/60 border-border/50 print:break-inside-avoid"
                 >
-                  <div className="bg-white p-2 rounded-md">
-                    <QRCodeSVG value={t.qr_code} size={108} level="M" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      Vstupenka #{i + 1}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                    <div className="bg-white p-2 rounded-md self-center sm:self-start">
+                      <QRCodeSVG value={t.qr_code} size={108} level="M" />
                     </div>
-                    <div className="font-display text-lg font-semibold mt-0.5">{t.seat_label}</div>
-                    <div className="text-xs font-mono text-muted-foreground mt-1 break-all">
-                      {t.qr_code}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        Vstupenka #{i + 1}
+                      </div>
+                      <div className="font-display text-lg font-semibold mt-0.5">{t.seat_label}</div>
+                      <div className="text-xs font-mono text-muted-foreground mt-1 break-all">
+                        {t.qr_code}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-4 print:hidden">
+                        <AppleWalletButton ticket={t} size="sm" compact />
+                        <GoogleWalletButton ticket={t} size="sm" compact />
+                      </div>
                     </div>
                   </div>
                 </Card>
