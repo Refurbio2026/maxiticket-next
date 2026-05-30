@@ -38,12 +38,36 @@ export type Shape = {
   sectorId?: string;
   priceCategoryId?: string;
   curveGroupId?: string;
+  relativeAngle?: number;
+  relativeRadius?: number;
+  rowLabel?: string;
   radius?: number;
   angle?: number;
   startAngle?: number;
   endAngle?: number;
   rowSpacing?: number;
   seatSpacing?: number;
+};
+
+export type CurveGroup = {
+  id: string;
+  name: string;
+  centerX: number;
+  centerY: number;
+  radius: number;
+  startAngle: number;
+  endAngle: number;
+  rows: number;
+  seatsPerRow: number;
+  rowSpacing: number;
+  seatSpacing: number;
+  rotation: number;
+  sectorId?: string;
+  priceCategoryId?: string;
+  color: string;
+  rowLabelMode?: "ABC" | "123";
+  startSeat?: number;
+  seatSize?: number;
 };
 
 
@@ -77,6 +101,7 @@ export type HallLayout = {
   capacity?: number;
   note?: string;
   shapes: Shape[];
+  curveGroups?: CurveGroup[];
   created_at: string;
   updated_at: string;
 };
@@ -131,13 +156,26 @@ export function deleteLayout(id: string) {
 export function duplicateLayout(id: string): HallLayout | undefined {
   const src = getLayout(id);
   if (!src) return;
+  const groupIdMap = new Map((src.curveGroups ?? []).map((group) => [group.id, uid()]));
   const copy: HallLayout = {
     ...src,
     id: uid(),
     name: src.name + " (kópia)",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    shapes: src.shapes.map((s) => ({ ...s, id: uid() })),
+    curveGroups: (src.curveGroups ?? []).map((group) => ({
+      ...group,
+      id: groupIdMap.get(group.id) ?? uid(),
+      centerX: group.centerX + 20,
+      centerY: group.centerY + 20,
+    })),
+    shapes: src.shapes.map((s) => ({
+      ...s,
+      id: uid(),
+      curveGroupId: s.curveGroupId ? groupIdMap.get(s.curveGroupId) ?? s.curveGroupId : undefined,
+      x: s.x + 20,
+      y: s.y + 20,
+    })),
   };
   upsertLayout(copy);
   return copy;
@@ -150,6 +188,7 @@ export function emptyLayout(name = "Nová hala"): HallLayout {
     name,
     type: "koncertna-hala",
     shapes: [],
+    curveGroups: [],
     created_at: now,
     updated_at: now,
   };
@@ -159,7 +198,7 @@ export function computeCapacity(shapes: Shape[]): number {
   let total = 0;
   for (const s of shapes) {
     if (s.kind === "seats") {
-      total += (s.rows ?? 0) * (s.cols ?? 0);
+      total += Math.max(1, (s.rows ?? 1) * (s.cols ?? 1));
     } else if (s.kind === "standing" || s.kind === "vip") {
       total += s.capacity ?? 0;
     }

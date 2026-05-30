@@ -13,6 +13,7 @@ import {
   computeCapacity,
   uid,
   upsertLayout,
+  type CurveGroup,
   type HallLayout,
   type Shape,
   type ShapeKind,
@@ -83,6 +84,144 @@ const PRICE_CATEGORIES = ["Regular", "VIP", "Premium", "Early Bird", "ZŤP"];
 
 const CANVAS_BG = "#f8fafc";
 
+const formatRowLabel = (i: number, mode: "ABC" | "123" = "ABC") =>
+  mode === "ABC"
+    ? i < 26
+      ? String.fromCharCode(65 + i)
+      : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26))
+    : String(i + 1);
+
+function buildCurveGroupSeats(group: CurveGroup, previous: Shape[] = []): Shape[] {
+  const ss = group.seatSize ?? 22;
+  const startSeat = group.startSeat ?? 1;
+  const existing = new Map(previous.map((seat) => [`${seat.startRow ?? 1}:${seat.seatNumber ?? 1}`, seat]));
+  const seats: Shape[] = [];
+  const totalAngle = group.endAngle - group.startAngle;
+  const fullArc = Math.abs(totalAngle) >= 360;
+
+  for (let r = 0; r < Math.max(1, group.rows); r++) {
+    const rowRadius = group.radius + r * group.rowSpacing;
+    const rowLabel = formatRowLabel(r, group.rowLabelMode ?? "ABC");
+    for (let c = 0; c < Math.max(1, group.seatsPerRow); c++) {
+      const relativeAngle =
+        group.seatsPerRow === 1
+          ? group.startAngle + totalAngle / 2
+          : group.startAngle + (totalAngle * c) / (fullArc ? group.seatsPerRow : group.seatsPerRow - 1);
+      const worldAngle = relativeAngle + group.rotation;
+      const rad = (worldAngle * Math.PI) / 180;
+      const x = group.centerX + rowRadius * Math.cos(rad);
+      const y = group.centerY + rowRadius * Math.sin(rad);
+      const seatNumber = startSeat + c;
+      const old = existing.get(`${r + 1}:${seatNumber}`);
+
+      seats.push({
+        id: old?.id ?? uid(),
+        kind: "seats",
+        x: x - ss / 2,
+        y: y - ss / 2,
+        width: ss,
+        height: ss,
+        rotation: (worldAngle + 90) % 360,
+        rows: 1,
+        cols: 1,
+        seatSize: ss,
+        color: group.color,
+        label: old?.label ?? "",
+        priceCategory: group.priceCategoryId ?? "Regular",
+        priceCategoryId: group.priceCategoryId,
+        row: rowLabel,
+        rowLabel,
+        seatNumber,
+        sectorId: group.sectorId,
+        curveGroupId: group.id,
+        relativeAngle,
+        relativeRadius: rowRadius,
+        radius: rowRadius,
+        angle: worldAngle,
+        startAngle: group.startAngle,
+        endAngle: group.endAngle,
+        rowSpacing: group.rowSpacing,
+        seatSpacing: group.seatSpacing,
+        startRow: r + 1,
+        startSeat,
+      });
+    }
+  }
+
+  return seats;
+}
+
+function getCurveBounds(seats: Shape[]) {
+  if (!seats.length) return { x: 0, y: 0, width: 80, height: 80 };
+  const minX = Math.min(...seats.map((seat) => seat.x));
+  const minY = Math.min(...seats.map((seat) => seat.y));
+  const maxX = Math.max(...seats.map((seat) => seat.x + seat.width));
+  const maxY = Math.max(...seats.map((seat) => seat.y + seat.height));
+  return { x: minX - 10, y: minY - 10, width: maxX - minX + 20, height: maxY - minY + 20 };
+}
+
+function normalizeLayout(input: HallLayout): HallLayout {
+  const curveGroups = [...(input.curveGroups ?? [])];
+  const known = new Set(curveGroups.map((group) => group.id));
+  const missingGroupIds = Array.from(
+    new Set(
+      input.shapes
+        .map((shape) => shape.curveGroupId)
+        .filter((id): id is string => Boolean(id))
+        .filter((id) => !known.has(id)),
+    ),
+  );
+
+  for (const id of missingGroupIds) {
+    const seats = input.shapes.filter((shape) => shape.curveGroupId === id);
+    const first = seats[0];
+    if (!first) continue;
+    const firstAngle = typeof first.angle === "number" ? first.angle : 0;
+    const angleDeg = Math.abs(firstAngle) <= Math.PI * 2 ? (firstAngle * 180) / Math.PI : firstAngle;
+    const radius = first.radius ?? first.relativeRadius ?? 280;
+    const centerX = first.x + first.width / 2 - radius * Math.cos((angleDeg * Math.PI) / 180);
+    const centerY = first.y + first.height / 2 - radius * Math.sin((angleDeg * Math.PI) / 180);
+    const rows = new Set(seats.map((seat) => seat.startRow ?? seat.row ?? "1")).size || 1;
+    const seatsPerRow = Math.max(...Object.values(seats.reduce<Record<string, number>>((acc, seat) => {
+      const key = String(seat.startRow ?? seat.row ?? "1");
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {})), 1);
+    curveGroups.push({
+      id,
+      name: first.sectorId ?? "Zakrivený blok",
+      centerX,
+      centerY,
+      radius,
+      startAngle: first.startAngle ?? 220,
+      endAngle: first.endAngle ?? 320,
+      rows,
+      seatsPerRow,
+      rowSpacing: first.rowSpacing ?? 32,
+      seatSpacing: first.seatSpacing ?? 30,
+      rotation: 0,
+      sectorId: first.sectorId,
+      priceCategoryId: first.priceCategoryId ?? first.priceCategory,
+      color: first.color ?? "#22c55e",
+      rowLabelMode: "ABC",
+      startSeat: first.startSeat ?? 1,
+      seatSize: first.seatSize ?? first.width ?? 22,
+    });
+  }
+
+  const curveGroupIds = new Set(curveGroups.map((group) => group.id));
+  return {
+    ...input,
+    curveGroups,
+    shapes: [
+      ...input.shapes.filter((shape) => !shape.curveGroupId || !curveGroupIds.has(shape.curveGroupId)),
+      ...curveGroups.flatMap((group) =>
+        buildCurveGroupSeats(group, input.shapes.filter((shape) => shape.curveGroupId === group.id)),
+      ),
+    ],
+  };
+}
+
 export function SeatingEditor({
   initial,
   onChange,
@@ -91,13 +230,14 @@ export function SeatingEditor({
   onChange?: (l: HallLayout) => void;
 }) {
   // ---------- state ----------
-  const [layout, setLayout] = useState<HallLayout>(initial);
+  const normalizedInitial = useMemo(() => normalizeLayout(initial), [initial]);
+  const [layout, setLayout] = useState<HallLayout>(normalizedInitial);
   const [tool, setTool] = useState<Tool>("select");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [size, setSize] = useState({ w: 800, h: 600 });
-  const [history, setHistory] = useState<HallLayout[]>([initial]);
+  const [history, setHistory] = useState<HallLayout[]>([normalizedInitial]);
   const [hIdx, setHIdx] = useState(0);
   const [seatsDialog, setSeatsDialog] = useState(false);
   const [seatsForm, setSeatsForm] = useState({
@@ -203,7 +343,7 @@ export function SeatingEditor({
       .filter(Boolean) as Konva.Node[];
     trRef.current.nodes(nodes);
     trRef.current.getLayer()?.batchDraw();
-  }, [selectedIds, layout.shapes]);
+  }, [selectedIds, layout.shapes, layout.curveGroups]);
 
   // ---------- keyboard ----------
   useEffect(() => {
@@ -301,74 +441,44 @@ export function SeatingEditor({
     setTool("select");
   };
 
-  const rowLabel = (i: number, mode: "ABC" | "123") =>
-    mode === "ABC"
-      ? i < 26
-        ? String.fromCharCode(65 + i)
-        : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26))
-      : String(i + 1);
+  const getVisibleCenter = () => ({
+    x: (size.w / 2 - stagePos.x) / scale,
+    y: (size.h / 2 - stagePos.y) / scale,
+  });
 
   const addCurvedRows = (cx: number, cy: number) => {
     const f = curvedForm;
-    const ss = f.seatSize;
-    const startRad = (f.startAngle * Math.PI) / 180;
-    const endRad = (f.endAngle * Math.PI) / 180;
-    const total = endRad - startRad;
-    const curveGroupId = uid();
-    const newSeats: Shape[] = [];
-    for (let r = 0; r < f.rows; r++) {
-      const radius = f.radius + r * f.rowSpacing;
-      // angular step from seatSpacing (arc length)
-      const stepFromSpacing = f.seatSpacing / radius;
-      const stepFromAngles = f.cols > 1 ? total / (f.cols - 1) : 0;
-      // use the smaller so seats don't overlap; fall back to spacing if angles too tight
-      const step = f.cols > 1 ? Math.min(stepFromAngles, stepFromSpacing) : 0;
-      const arcUsed = step * (f.cols - 1);
-      const midAngle = (startRad + endRad) / 2;
-      const a0 = midAngle - arcUsed / 2;
-      for (let c = 0; c < f.cols; c++) {
-        const colIdx = f.direction === "ltr" ? c : f.cols - 1 - c;
-        const angle = a0 + colIdx * step;
-        const x = cx + radius * Math.cos(angle);
-        const y = cy + radius * Math.sin(angle);
-        // seat faces toward center (cx, cy): direction from seat to center
-        // konva rotation 0 = upright; we want the seat top toward center
-        const rotation = f.faceStage
-          ? ((angle * 180) / Math.PI + 90) % 360
-          : 0;
-        const label = rowLabel(r, f.rowLabelMode);
-        newSeats.push({
-          id: uid(),
-          kind: "seats",
-          x: x - ss / 2,
-          y: y - ss / 2,
-          width: ss,
-          height: ss,
-          rotation,
-          rows: 1,
-          cols: 1,
-          seatSize: ss,
-          color: f.color,
-          label: "",
-          priceCategory: f.priceCategory,
-          priceCategoryId: f.priceCategory,
-          row: label,
-          seatNumber: f.startSeat + c,
-          sectorId: f.sectorName,
-          curveGroupId,
-          radius,
-          angle,
-          startAngle: f.startAngle,
-          endAngle: f.endAngle,
-          rowSpacing: f.rowSpacing,
-          seatSpacing: f.seatSpacing,
-          startRow: r + 1,
-          startSeat: f.startSeat,
-        });
-      }
-    }
-    setShapes((arr) => [...arr, ...newSeats]);
-    setSelectedIds(newSeats.map((s) => s.id));
+    const group: CurveGroup = {
+      id: uid(),
+      name: f.sectorName || "Zakrivený blok",
+      centerX: cx,
+      centerY: cy,
+      radius: f.radius,
+      startAngle: f.direction === "rtl" ? f.endAngle : f.startAngle,
+      endAngle: f.direction === "rtl" ? f.startAngle : f.endAngle,
+      rows: f.rows,
+      seatsPerRow: f.cols,
+      rowSpacing: f.rowSpacing,
+      seatSpacing: f.seatSpacing,
+      rotation: f.faceStage ? 0 : -90,
+      sectorId: f.sectorName,
+      priceCategoryId: f.priceCategory,
+      color: f.color,
+      rowLabelMode: f.rowLabelMode,
+      startSeat: f.startSeat,
+      seatSize: f.seatSize,
+    };
+    const newSeats = buildCurveGroupSeats(group);
+    setLayout((prev) => {
+      const next = {
+        ...prev,
+        curveGroups: [...(prev.curveGroups ?? []), group],
+        shapes: [...prev.shapes, ...newSeats],
+      };
+      setTimeout(() => pushHistory(next), 0);
+      return next;
+    });
+    setSelectedIds([group.id]);
   };
 
 
@@ -402,22 +512,44 @@ export function SeatingEditor({
 
   const deleteSelected = () => {
     if (!selectedIds.length) return;
-    setShapes((arr) => arr.filter((s) => !selectedIds.includes(s.id)));
+    setLayout((prev) => {
+      const selectedGroups = new Set((prev.curveGroups ?? []).filter((group) => selectedIds.includes(group.id)).map((group) => group.id));
+      const next = {
+        ...prev,
+        curveGroups: (prev.curveGroups ?? []).filter((group) => !selectedGroups.has(group.id)),
+        shapes: prev.shapes.filter((s) => !selectedIds.includes(s.id) && !selectedGroups.has(s.curveGroupId ?? "")),
+      };
+      setTimeout(() => pushHistory(next), 0);
+      return next;
+    });
     setSelectedIds([]);
   };
 
   const duplicateSelected = () => {
     if (!selectedIds.length) return;
     const copies: Shape[] = [];
-    setShapes((arr) => {
-      arr.forEach((s) => {
-        if (selectedIds.includes(s.id)) {
+    const groupCopies: CurveGroup[] = [];
+    setLayout((prev) => {
+      const selectedGroups = (prev.curveGroups ?? []).filter((group) => selectedIds.includes(group.id));
+      selectedGroups.forEach((group) => {
+        const nextGroup = { ...group, id: uid(), name: `${group.name} (kópia)`, centerX: group.centerX + 30, centerY: group.centerY + 30 };
+        groupCopies.push(nextGroup);
+        copies.push(...buildCurveGroupSeats(nextGroup));
+      });
+      prev.shapes.forEach((s) => {
+        if (selectedIds.includes(s.id) && !s.curveGroupId) {
           copies.push({ ...s, id: uid(), x: s.x + 20, y: s.y + 20 });
         }
       });
-      return [...arr, ...copies];
+      const next = {
+        ...prev,
+        curveGroups: [...(prev.curveGroups ?? []), ...groupCopies],
+        shapes: [...prev.shapes, ...copies],
+      };
+      setTimeout(() => pushHistory(next), 0);
+      return next;
     });
-    setTimeout(() => setSelectedIds(copies.map((c) => c.id)), 0);
+    setTimeout(() => setSelectedIds(groupCopies.length ? groupCopies.map((g) => g.id) : copies.map((c) => c.id)), 0);
   };
 
   const updateSelected = (patch: Partial<Shape>) => {
@@ -425,6 +557,23 @@ export function SeatingEditor({
       (arr) => arr.map((s) => (selectedIds.includes(s.id) ? { ...s, ...patch } : s)),
       false,
     );
+  };
+
+  const updateCurveGroup = (groupId: string, patch: Partial<CurveGroup>, commit = false) => {
+    setLayout((prev) => {
+      const current = (prev.curveGroups ?? []).find((group) => group.id === groupId);
+      if (!current) return prev;
+      const nextGroup = { ...current, ...patch };
+      const previousSeats = prev.shapes.filter((shape) => shape.curveGroupId === groupId);
+      const nextSeats = buildCurveGroupSeats(nextGroup, previousSeats);
+      const next = {
+        ...prev,
+        curveGroups: (prev.curveGroups ?? []).map((group) => (group.id === groupId ? nextGroup : group)),
+        shapes: [...prev.shapes.filter((shape) => shape.curveGroupId !== groupId), ...nextSeats],
+      };
+      if (commit) setTimeout(() => pushHistory(next), 0);
+      return next;
+    });
   };
 
   const commitChange = () => {
@@ -490,6 +639,10 @@ export function SeatingEditor({
   const selectedShape = useMemo(
     () => (selectedIds.length === 1 ? layout.shapes.find((s) => s.id === selectedIds[0]) : null),
     [selectedIds, layout.shapes],
+  );
+  const selectedCurveGroup = useMemo(
+    () => (selectedIds.length === 1 ? (layout.curveGroups ?? []).find((group) => group.id === selectedIds[0]) : null),
+    [selectedIds, layout.curveGroups],
   );
 
   const capacity = useMemo(() => computeCapacity(layout.shapes), [layout.shapes]);
@@ -608,7 +761,46 @@ export function SeatingEditor({
                 {/* grid */}
                 <GridLayer width={4000} height={3000} step={20} />
 
-                {layout.shapes.map((sh) => (
+                {(layout.curveGroups ?? []).map((group) => {
+                  const seats = layout.shapes.filter((shape) => shape.curveGroupId === group.id);
+                  return (
+                    <CurveGroupNode
+                      key={group.id}
+                      group={group}
+                      seats={seats}
+                      selected={selectedIds.includes(group.id)}
+                      selectedSeatIds={selectedIds.filter((id) => seats.some((seat) => seat.id === id))}
+                      onSelect={(shift: boolean) => {
+                        if (tool !== "select") return;
+                        if (shift) {
+                          setSelectedIds((ids) =>
+                            ids.includes(group.id) ? ids.filter((i) => i !== group.id) : [...ids, group.id],
+                          );
+                        } else {
+                          setSelectedIds([group.id]);
+                        }
+                      }}
+                      onSeatSelect={(seatId: string, shift: boolean) => {
+                        if (tool !== "select") return;
+                        if (shift) {
+                          setSelectedIds((ids) =>
+                            ids.includes(seatId) ? ids.filter((i) => i !== seatId) : [...ids.filter((id) => id !== group.id), seatId],
+                          );
+                        } else {
+                          setSelectedIds([group.id]);
+                        }
+                      }}
+                      onSeatEdit={(seatId: string) => {
+                        if (tool !== "select") return;
+                        setSelectedIds([seatId]);
+                      }}
+                      onMove={(dx: number, dy: number) => updateCurveGroup(group.id, { centerX: group.centerX + dx, centerY: group.centerY + dy }, true)}
+                      onCommit={commitChange}
+                    />
+                  );
+                })}
+
+                {layout.shapes.filter((shape) => !shape.curveGroupId).map((sh) => (
                   <ShapeNode
                     key={sh.id}
                     shape={sh}
@@ -635,7 +827,8 @@ export function SeatingEditor({
 
                 <Transformer
                   ref={trRef}
-                  rotateEnabled
+                  rotateEnabled={!selectedCurveGroup}
+                  resizeEnabled={!selectedCurveGroup}
                   flipEnabled={false}
                   anchorSize={8}
                   anchorStroke="#3b82f6"
@@ -656,7 +849,7 @@ export function SeatingEditor({
         <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Vlastnosti
         </div>
-        {!selectedShape && (
+        {!selectedShape && !selectedCurveGroup && (
           <p className="text-sm text-muted-foreground">
             {selectedIds.length > 1
               ? `${selectedIds.length} objektov označených`
@@ -668,6 +861,13 @@ export function SeatingEditor({
             shape={selectedShape}
             onChange={(patch) => updateSelected(patch)}
             onCommit={commitChange}
+          />
+        )}
+        {selectedCurveGroup && (
+          <CurveGroupPropertiesPanel
+            group={selectedCurveGroup}
+            onChange={(patch: Partial<CurveGroup>) => updateCurveGroup(selectedCurveGroup.id, patch)}
+            onCommit={() => pushHistory(layout)}
           />
         )}
 
@@ -800,10 +1000,8 @@ export function SeatingEditor({
             </Button>
             <Button
               onClick={() => {
-                const stage = stageRef.current;
-                const cx = stage ? (size.w / 2 - stagePos.x) / scale : 200;
-                const cy = stage ? (size.h / 2 - stagePos.y) / scale : 200;
-                addSeatGrid(cx, cy);
+                const center = getVisibleCenter();
+                addSeatGrid(center.x, center.y);
                 setSeatsDialog(false);
                 toast.success(`Pridaných ${seatsForm.rows * seatsForm.cols} sedadiel`);
               }}
@@ -916,10 +1114,8 @@ export function SeatingEditor({
             <Button variant="ghost" onClick={() => setCurvedDialog(false)}>Zrušiť</Button>
             <Button
               onClick={() => {
-                const stage = stageRef.current;
-                const cx = stage ? (size.w / 2 - stagePos.x) / scale : 400;
-                const cy = stage ? (size.h / 2 - stagePos.y) / scale : 400;
-                addCurvedRows(cx, cy);
+                const center = getVisibleCenter();
+                addCurvedRows(center.x, center.y);
                 setCurvedDialog(false);
                 toast.success(`Pridaných ${curvedForm.rows * curvedForm.cols} zakrivených sedadiel`);
               }}
@@ -999,6 +1195,92 @@ function GridLayer({ width, height, step }: { width: number; height: number; ste
     );
   }
   return <Group listening={false}>{lines}</Group>;
+}
+
+function CurveGroupNode({
+  group,
+  seats,
+  selected,
+  selectedSeatIds,
+  onSelect,
+  onSeatSelect,
+  onSeatEdit,
+  onMove,
+}: {
+  group: CurveGroup;
+  seats: Shape[];
+  selected: boolean;
+  selectedSeatIds: string[];
+  onSelect: (shift: boolean) => void;
+  onSeatSelect: (seatId: string, shift: boolean) => void;
+  onSeatEdit: (seatId: string) => void;
+  onMove: (dx: number, dy: number) => void;
+  onCommit: () => void;
+}) {
+  const groupRef = useRef<Konva.Group | null>(null);
+  const bounds = getCurveBounds(seats);
+
+  return (
+    <Group
+      id={group.id}
+      ref={groupRef}
+      x={bounds.x}
+      y={bounds.y}
+      draggable
+      onMouseDown={(e) => {
+        e.cancelBubble = true;
+        onSelect(e.evt.shiftKey);
+      }}
+      onDragStart={() => {
+        if (!selected) onSelect(false);
+      }}
+      onDragEnd={(e) => {
+        onMove(e.target.x() - bounds.x, e.target.y() - bounds.y);
+      }}
+    >
+      <Rect
+        x={0}
+        y={0}
+        width={bounds.width}
+        height={bounds.height}
+        fill="rgba(15,23,42,0.01)"
+        stroke={selected ? "#3b82f6" : "transparent"}
+        strokeWidth={1.5}
+        dash={[6, 4]}
+        cornerRadius={6}
+      />
+      {seats.map((seat) => (
+        <Circle
+          id={seat.id}
+          key={seat.id}
+          x={seat.x - bounds.x + seat.width / 2}
+          y={seat.y - bounds.y + seat.height / 2}
+          radius={Math.min(seat.width, seat.height) / 2}
+          fill={seat.color || group.color}
+          stroke={selectedSeatIds.includes(seat.id) ? "#f97316" : "#0f172a"}
+          strokeWidth={selectedSeatIds.includes(seat.id) ? 2 : 0.8}
+          rotation={seat.rotation ?? 0}
+          onMouseDown={(e) => {
+            e.cancelBubble = true;
+            onSeatSelect(seat.id, e.evt.shiftKey);
+          }}
+          onDblClick={(e) => {
+            e.cancelBubble = true;
+            onSeatEdit(seat.id);
+          }}
+        />
+      ))}
+      <KText
+        x={8}
+        y={6}
+        text={group.name}
+        fontSize={11}
+        fontStyle="bold"
+        fill="#0f172a"
+        listening={false}
+      />
+    </Group>
+  );
 }
 
 function ShapeNode({
@@ -1180,6 +1462,91 @@ function ShapeNode({
         padding={6}
       />
     </Group>
+  );
+}
+
+function CurveGroupPropertiesPanel({
+  group,
+  onChange,
+  onCommit,
+}: {
+  group: CurveGroup;
+  onChange: (patch: Partial<CurveGroup>) => void;
+  onCommit: () => void;
+}) {
+  const numberPatch = (key: keyof CurveGroup, min?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = +e.target.value;
+    const value = Number.isFinite(raw) ? raw : 0;
+    onChange({ [key]: typeof min === "number" ? Math.max(min, value) : value } as Partial<CurveGroup>);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md bg-primary/10 px-2 py-1.5 text-xs text-primary">
+        <span className="text-muted-foreground">Typ: </span>
+        <span className="font-medium uppercase">curve group</span>
+      </div>
+
+      <Field label="Názov skupiny">
+        <Input value={group.name} onChange={(e) => onChange({ name: e.target.value })} onBlur={onCommit} />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="centerX">
+          <Input type="number" value={Math.round(group.centerX)} onChange={numberPatch("centerX")} onBlur={onCommit} />
+        </Field>
+        <Field label="centerY">
+          <Input type="number" value={Math.round(group.centerY)} onChange={numberPatch("centerY")} onBlur={onCommit} />
+        </Field>
+        <Field label="radius">
+          <Input type="number" min={20} value={Math.round(group.radius)} onChange={numberPatch("radius", 20)} onBlur={onCommit} />
+        </Field>
+        <Field label="rotation">
+          <Input type="number" value={Math.round(group.rotation)} onChange={numberPatch("rotation")} onBlur={onCommit} />
+        </Field>
+        <Field label="startAngle">
+          <Input type="number" value={Math.round(group.startAngle)} onChange={numberPatch("startAngle")} onBlur={onCommit} />
+        </Field>
+        <Field label="endAngle">
+          <Input type="number" value={Math.round(group.endAngle)} onChange={numberPatch("endAngle")} onBlur={onCommit} />
+        </Field>
+        <Field label="Počet radov">
+          <Input type="number" min={1} value={group.rows} onChange={numberPatch("rows", 1)} onBlur={onCommit} />
+        </Field>
+        <Field label="Sedadiel v rade">
+          <Input type="number" min={1} value={group.seatsPerRow} onChange={numberPatch("seatsPerRow", 1)} onBlur={onCommit} />
+        </Field>
+        <Field label="rowSpacing">
+          <Input type="number" min={1} value={group.rowSpacing} onChange={numberPatch("rowSpacing", 1)} onBlur={onCommit} />
+        </Field>
+        <Field label="seatSpacing">
+          <Input type="number" min={1} value={group.seatSpacing} onChange={numberPatch("seatSpacing", 1)} onBlur={onCommit} />
+        </Field>
+      </div>
+
+      <Field label="Sektor">
+        <Input value={group.sectorId ?? ""} onChange={(e) => onChange({ sectorId: e.target.value })} onBlur={onCommit} />
+      </Field>
+
+      <Field label="Cenová kategória">
+        <Select value={group.priceCategoryId ?? "Regular"} onValueChange={(v) => onChange({ priceCategoryId: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {PRICE_CATEGORIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>
+
+      <Field label="Farba">
+        <input
+          type="color"
+          value={group.color}
+          onChange={(e) => onChange({ color: e.target.value })}
+          onBlur={onCommit}
+          className="h-9 w-full rounded-md border border-input"
+        />
+      </Field>
+    </div>
   );
 }
 
