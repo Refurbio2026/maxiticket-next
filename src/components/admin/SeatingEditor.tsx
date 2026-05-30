@@ -813,7 +813,124 @@ export function SeatingEditor({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* CURVED ROW DIALOG */}
+      <Dialog open={curvedDialog} onOpenChange={setCurvedDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Pridať zakrivený rad sedadiel</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-3 py-2">
+            <Field label="Počet radov">
+              <Input type="number" min={1} value={curvedForm.rows}
+                onChange={(e) => setCurvedForm({ ...curvedForm, rows: Math.max(1, +e.target.value || 1) })} />
+            </Field>
+            <Field label="Miest v rade">
+              <Input type="number" min={1} value={curvedForm.cols}
+                onChange={(e) => setCurvedForm({ ...curvedForm, cols: Math.max(1, +e.target.value || 1) })} />
+            </Field>
+            <Field label="Počiatočné č. sedadla">
+              <Input type="number" min={1} value={curvedForm.startSeat}
+                onChange={(e) => setCurvedForm({ ...curvedForm, startSeat: Math.max(1, +e.target.value || 1) })} />
+            </Field>
+            <Field label="Označenie radov">
+              <Select value={curvedForm.rowLabelMode}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, rowLabelMode: v as "ABC" | "123" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ABC">A, B, C…</SelectItem>
+                  <SelectItem value="123">1, 2, 3…</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Polomer (px)">
+              <Input type="number" min={50} value={curvedForm.radius}
+                onChange={(e) => setCurvedForm({ ...curvedForm, radius: Math.max(50, +e.target.value || 280) })} />
+            </Field>
+            <Field label="Vzdialenosť radov">
+              <Input type="number" min={10} value={curvedForm.rowSpacing}
+                onChange={(e) => setCurvedForm({ ...curvedForm, rowSpacing: Math.max(10, +e.target.value || 32) })} />
+            </Field>
+            <Field label="Vzdialenosť sedadiel">
+              <Input type="number" min={10} value={curvedForm.seatSpacing}
+                onChange={(e) => setCurvedForm({ ...curvedForm, seatSpacing: Math.max(10, +e.target.value || 30) })} />
+            </Field>
+            <Field label="Uhol začiatku (°)">
+              <Input type="number" value={curvedForm.startAngle}
+                onChange={(e) => setCurvedForm({ ...curvedForm, startAngle: +e.target.value || 0 })} />
+            </Field>
+            <Field label="Uhol konca (°)">
+              <Input type="number" value={curvedForm.endAngle}
+                onChange={(e) => setCurvedForm({ ...curvedForm, endAngle: +e.target.value || 0 })} />
+            </Field>
+            <Field label="Veľkosť sedadla">
+              <Input type="number" min={10} max={60} value={curvedForm.seatSize}
+                onChange={(e) => setCurvedForm({ ...curvedForm, seatSize: Math.max(10, +e.target.value || 22) })} />
+            </Field>
+            <Field label="Smer číslovania">
+              <Select value={curvedForm.direction}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, direction: v as "ltr" | "rtl" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ltr">Zľava doprava</SelectItem>
+                  <SelectItem value="rtl">Sprava doľava</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Natočiť k pódiu">
+              <Select value={curvedForm.faceStage ? "yes" : "no"}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, faceStage: v === "yes" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Áno</SelectItem>
+                  <SelectItem value="no">Nie</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Sektor" className="col-span-2">
+              <Input value={curvedForm.sectorName}
+                onChange={(e) => setCurvedForm({ ...curvedForm, sectorName: e.target.value })} />
+            </Field>
+            <Field label="Cenová kategória">
+              <Select value={curvedForm.priceCategory}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, priceCategory: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PRICE_CATEGORIES.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Farba" className="col-span-3">
+              <input type="color" value={curvedForm.color}
+                onChange={(e) => setCurvedForm({ ...curvedForm, color: e.target.value })}
+                className="h-9 w-full rounded-md border border-input" />
+            </Field>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Tip: pre polkruh nastav uhly 180° → 360°, pre arénové rozloženie 0° → 360°.
+            Stred oblúka (pódium) je v strede aktuálneho pohľadu.
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCurvedDialog(false)}>Zrušiť</Button>
+            <Button
+              onClick={() => {
+                const stage = stageRef.current;
+                const cx = stage ? (size.w / 2 - stagePos.x) / scale : 400;
+                const cy = stage ? (size.h / 2 - stagePos.y) / scale : 400;
+                addCurvedRows(cx, cy);
+                setCurvedDialog(false);
+                toast.success(`Pridaných ${curvedForm.rows * curvedForm.cols} zakrivených sedadiel`);
+              }}
+            >
+              Vygenerovať
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
