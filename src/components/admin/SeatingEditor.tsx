@@ -990,10 +990,8 @@ export function SeatingEditor({
             </Button>
             <Button
               onClick={() => {
-                const stage = stageRef.current;
-                const cx = stage ? (size.w / 2 - stagePos.x) / scale : 200;
-                const cy = stage ? (size.h / 2 - stagePos.y) / scale : 200;
-                addSeatGrid(cx, cy);
+                const center = getVisibleCenter();
+                addSeatGrid(center.x, center.y);
                 setSeatsDialog(false);
                 toast.success(`Pridaných ${seatsForm.rows * seatsForm.cols} sedadiel`);
               }}
@@ -1106,10 +1104,8 @@ export function SeatingEditor({
             <Button variant="ghost" onClick={() => setCurvedDialog(false)}>Zrušiť</Button>
             <Button
               onClick={() => {
-                const stage = stageRef.current;
-                const cx = stage ? (size.w / 2 - stagePos.x) / scale : 400;
-                const cy = stage ? (size.h / 2 - stagePos.y) / scale : 400;
-                addCurvedRows(cx, cy);
+                const center = getVisibleCenter();
+                addCurvedRows(center.x, center.y);
                 setCurvedDialog(false);
                 toast.success(`Pridaných ${curvedForm.rows * curvedForm.cols} zakrivených sedadiel`);
               }}
