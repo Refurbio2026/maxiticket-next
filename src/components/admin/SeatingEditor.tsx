@@ -707,7 +707,7 @@ export function SeatingEditor({
                       seats={seats}
                       selected={selectedIds.includes(group.id)}
                       selectedSeatIds={selectedIds.filter((id) => seats.some((seat) => seat.id === id))}
-                      onSelect={(shift) => {
+                      onSelect={(shift: boolean) => {
                         if (tool !== "select") return;
                         if (shift) {
                           setSelectedIds((ids) =>
@@ -717,7 +717,7 @@ export function SeatingEditor({
                           setSelectedIds([group.id]);
                         }
                       }}
-                      onSeatSelect={(seatId, shift) => {
+                      onSeatSelect={(seatId: string, shift: boolean) => {
                         if (tool !== "select") return;
                         if (shift) {
                           setSelectedIds((ids) =>
@@ -727,7 +727,7 @@ export function SeatingEditor({
                           setSelectedIds([group.id]);
                         }
                       }}
-                      onMove={(dx, dy) => updateCurveGroup(group.id, { centerX: group.centerX + dx, centerY: group.centerY + dy }, true)}
+                      onMove={(dx: number, dy: number) => updateCurveGroup(group.id, { centerX: group.centerX + dx, centerY: group.centerY + dy }, true)}
                       onCommit={commitChange}
                     />
                   );
