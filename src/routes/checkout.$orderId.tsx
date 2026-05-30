@@ -274,6 +274,47 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function Stepper({ current }: { current: number }) {
+  const steps = ["Výber", "Kontakt", "Platba", "Hotovo"];
+  return (
+    <ol className="flex items-center gap-2 text-xs">
+      {steps.map((label, i) => {
+        const step = i + 1;
+        const done = step < current;
+        const active = step === current;
+        return (
+          <li key={label} className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center justify-center size-6 rounded-full font-bold ${
+                done
+                  ? "bg-emerald-500 text-white"
+                  : active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {done ? <Check className="size-3.5" /> : step}
+            </span>
+            <span
+              className={
+                active ? "font-semibold text-foreground" : "text-muted-foreground hidden sm:inline"
+              }
+            >
+              {label}
+            </span>
+            {step < steps.length && (
+              <span
+                className={`w-6 sm:w-10 h-px ${done ? "bg-emerald-500" : "bg-border"}`}
+                aria-hidden
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`space-y-1.5 ${className}`}>
