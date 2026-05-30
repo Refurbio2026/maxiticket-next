@@ -817,6 +817,7 @@ export function SeatingEditor({
                 <Transformer
                   ref={trRef}
                   rotateEnabled
+                  resizeEnabled={!selectedCurveGroup}
                   flipEnabled={false}
                   anchorSize={8}
                   anchorStroke="#3b82f6"
@@ -1187,6 +1188,91 @@ function GridLayer({ width, height, step }: { width: number; height: number; ste
     );
   }
   return <Group listening={false}>{lines}</Group>;
+}
+
+function CurveGroupNode({
+  group,
+  seats,
+  selected,
+  selectedSeatIds,
+  onSelect,
+  onSeatSelect,
+  onSeatEdit,
+  onMove,
+}: {
+  group: CurveGroup;
+  seats: Shape[];
+  selected: boolean;
+  selectedSeatIds: string[];
+  onSelect: (shift: boolean) => void;
+  onSeatSelect: (seatId: string, shift: boolean) => void;
+  onSeatEdit: (seatId: string) => void;
+  onMove: (dx: number, dy: number) => void;
+  onCommit: () => void;
+}) {
+  const groupRef = useRef<Konva.Group | null>(null);
+  const bounds = getCurveBounds(seats);
+
+  return (
+    <Group
+      id={group.id}
+      ref={groupRef}
+      x={bounds.x}
+      y={bounds.y}
+      draggable
+      onMouseDown={(e) => {
+        e.cancelBubble = true;
+        onSelect(e.evt.shiftKey);
+      }}
+      onDragStart={() => {
+        if (!selected) onSelect(false);
+      }}
+      onDragEnd={(e) => {
+        onMove(e.target.x() - bounds.x, e.target.y() - bounds.y);
+      }}
+    >
+      <Rect
+        x={0}
+        y={0}
+        width={bounds.width}
+        height={bounds.height}
+        fill="rgba(15,23,42,0.01)"
+        stroke={selected ? "#3b82f6" : "transparent"}
+        strokeWidth={1.5}
+        dash={[6, 4]}
+        cornerRadius={6}
+      />
+      {seats.map((seat) => (
+        <Circle
+          key={seat.id}
+          x={seat.x - bounds.x + seat.width / 2}
+          y={seat.y - bounds.y + seat.height / 2}
+          radius={Math.min(seat.width, seat.height) / 2}
+          fill={seat.color || group.color}
+          stroke={selectedSeatIds.includes(seat.id) ? "#f97316" : "#0f172a"}
+          strokeWidth={selectedSeatIds.includes(seat.id) ? 2 : 0.8}
+          rotation={seat.rotation ?? 0}
+          onMouseDown={(e) => {
+            e.cancelBubble = true;
+            onSeatSelect(seat.id, e.evt.shiftKey);
+          }}
+          onDblClick={(e) => {
+            e.cancelBubble = true;
+            onSeatEdit(seat.id);
+          }}
+        />
+      ))}
+      <KText
+        x={8}
+        y={6}
+        text={group.name}
+        fontSize={11}
+        fontStyle="bold"
+        fill="#0f172a"
+        listening={false}
+      />
+    </Group>
+  );
 }
 
 function ShapeNode({
