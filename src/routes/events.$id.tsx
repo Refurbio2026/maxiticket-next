@@ -129,7 +129,7 @@ function EventDetail() {
   }, [id]);
 
   const isMap = !!layout && event?.sale_type !== "standing";
-  const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0) ?? 0;
+  const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0);
   const vipPrice = event?.vip_price ?? basePrice;
 
   const toggleSeat = (s: Selected) => {
