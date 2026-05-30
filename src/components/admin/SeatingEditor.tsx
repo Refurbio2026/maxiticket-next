@@ -459,10 +459,8 @@ export function SeatingEditor({
     const groupCopies: CurveGroup[] = [];
     setLayout((prev) => {
       const selectedGroups = (prev.curveGroups ?? []).filter((group) => selectedIds.includes(group.id));
-      const groupIdMap = new Map<string, string>();
       selectedGroups.forEach((group) => {
         const nextGroup = { ...group, id: uid(), name: `${group.name} (kópia)`, centerX: group.centerX + 30, centerY: group.centerY + 30 };
-        groupIdMap.set(group.id, nextGroup.id);
         groupCopies.push(nextGroup);
         copies.push(...buildCurveGroupSeats(nextGroup));
       });
@@ -567,7 +565,7 @@ export function SeatingEditor({
 
   // ---------- selected shape ----------
   const selectedShape = useMemo(
-    () => (selectedIds.length === 1 ? layout.shapes.find((s) => s.id === selectedIds[0] && !s.curveGroupId) : null),
+    () => (selectedIds.length === 1 ? layout.shapes.find((s) => s.id === selectedIds[0]) : null),
     [selectedIds, layout.shapes],
   );
   const selectedCurveGroup = useMemo(
