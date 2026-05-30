@@ -159,7 +159,7 @@ export function SeatingEditor({
   onChange?: (l: HallLayout) => void;
 }) {
   // ---------- state ----------
-  const [layout, setLayout] = useState<HallLayout>(initial);
+  const [layout, setLayout] = useState<HallLayout>({ ...initial, curveGroups: initial.curveGroups ?? [] });
   const [tool, setTool] = useState<Tool>("select");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -369,74 +369,44 @@ export function SeatingEditor({
     setTool("select");
   };
 
-  const rowLabel = (i: number, mode: "ABC" | "123") =>
-    mode === "ABC"
-      ? i < 26
-        ? String.fromCharCode(65 + i)
-        : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26))
-      : String(i + 1);
+  const getVisibleCenter = () => ({
+    x: (size.w / 2 - stagePos.x) / scale,
+    y: (size.h / 2 - stagePos.y) / scale,
+  });
 
   const addCurvedRows = (cx: number, cy: number) => {
     const f = curvedForm;
-    const ss = f.seatSize;
-    const startRad = (f.startAngle * Math.PI) / 180;
-    const endRad = (f.endAngle * Math.PI) / 180;
-    const total = endRad - startRad;
-    const curveGroupId = uid();
-    const newSeats: Shape[] = [];
-    for (let r = 0; r < f.rows; r++) {
-      const radius = f.radius + r * f.rowSpacing;
-      // angular step from seatSpacing (arc length)
-      const stepFromSpacing = f.seatSpacing / radius;
-      const stepFromAngles = f.cols > 1 ? total / (f.cols - 1) : 0;
-      // use the smaller so seats don't overlap; fall back to spacing if angles too tight
-      const step = f.cols > 1 ? Math.min(stepFromAngles, stepFromSpacing) : 0;
-      const arcUsed = step * (f.cols - 1);
-      const midAngle = (startRad + endRad) / 2;
-      const a0 = midAngle - arcUsed / 2;
-      for (let c = 0; c < f.cols; c++) {
-        const colIdx = f.direction === "ltr" ? c : f.cols - 1 - c;
-        const angle = a0 + colIdx * step;
-        const x = cx + radius * Math.cos(angle);
-        const y = cy + radius * Math.sin(angle);
-        // seat faces toward center (cx, cy): direction from seat to center
-        // konva rotation 0 = upright; we want the seat top toward center
-        const rotation = f.faceStage
-          ? ((angle * 180) / Math.PI + 90) % 360
-          : 0;
-        const label = rowLabel(r, f.rowLabelMode);
-        newSeats.push({
-          id: uid(),
-          kind: "seats",
-          x: x - ss / 2,
-          y: y - ss / 2,
-          width: ss,
-          height: ss,
-          rotation,
-          rows: 1,
-          cols: 1,
-          seatSize: ss,
-          color: f.color,
-          label: "",
-          priceCategory: f.priceCategory,
-          priceCategoryId: f.priceCategory,
-          row: label,
-          seatNumber: f.startSeat + c,
-          sectorId: f.sectorName,
-          curveGroupId,
-          radius,
-          angle,
-          startAngle: f.startAngle,
-          endAngle: f.endAngle,
-          rowSpacing: f.rowSpacing,
-          seatSpacing: f.seatSpacing,
-          startRow: r + 1,
-          startSeat: f.startSeat,
-        });
-      }
-    }
-    setShapes((arr) => [...arr, ...newSeats]);
-    setSelectedIds(newSeats.map((s) => s.id));
+    const group: CurveGroup = {
+      id: uid(),
+      name: f.sectorName || "Zakrivený blok",
+      centerX: cx,
+      centerY: cy,
+      radius: f.radius,
+      startAngle: f.direction === "rtl" ? f.endAngle : f.startAngle,
+      endAngle: f.direction === "rtl" ? f.startAngle : f.endAngle,
+      rows: f.rows,
+      seatsPerRow: f.cols,
+      rowSpacing: f.rowSpacing,
+      seatSpacing: f.seatSpacing,
+      rotation: f.faceStage ? 0 : -90,
+      sectorId: f.sectorName,
+      priceCategoryId: f.priceCategory,
+      color: f.color,
+      rowLabelMode: f.rowLabelMode,
+      startSeat: f.startSeat,
+      seatSize: f.seatSize,
+    };
+    const newSeats = buildCurveGroupSeats(group);
+    setLayout((prev) => {
+      const next = {
+        ...prev,
+        curveGroups: [...(prev.curveGroups ?? []), group],
+        shapes: [...prev.shapes, ...newSeats],
+      };
+      setTimeout(() => pushHistory(next), 0);
+      return next;
+    });
+    setSelectedIds([group.id]);
   };
 
 
