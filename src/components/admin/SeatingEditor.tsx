@@ -209,7 +209,17 @@ function normalizeLayout(input: HallLayout): HallLayout {
     });
   }
 
-  return { ...input, curveGroups };
+  const curveGroupIds = new Set(curveGroups.map((group) => group.id));
+  return {
+    ...input,
+    curveGroups,
+    shapes: [
+      ...input.shapes.filter((shape) => !shape.curveGroupId || !curveGroupIds.has(shape.curveGroupId)),
+      ...curveGroups.flatMap((group) =>
+        buildCurveGroupSeats(group, input.shapes.filter((shape) => shape.curveGroupId === group.id)),
+      ),
+    ],
+  };
 }
 
 export function SeatingEditor({
