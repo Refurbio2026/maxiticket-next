@@ -65,7 +65,6 @@ import { Route as AdminMaxiticketAccountingChecksRouteImport } from './routes/ad
 import { Route as AdminMaxiticketAccountingBankRouteImport } from './routes/admin.maxiticket.accounting-bank'
 import { Route as AdminFinanceStatsRouteImport } from './routes/admin.finance.stats'
 import { Route as AdminEventsVenuesRouteImport } from './routes/admin.events.venues'
-import { Route as AdminEventsHallLayoutsRouteImport } from './routes/admin.events.hall-layouts'
 import { Route as AdminEventsEventsRouteImport } from './routes/admin.events.events'
 import { Route as AdminEventsDatesRouteImport } from './routes/admin.events.dates'
 import { Route as AdminEventsCouponsRouteImport } from './routes/admin.events.coupons'
@@ -79,7 +78,6 @@ import { Route as AdminDataDiscountsRouteImport } from './routes/admin.data.disc
 import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.data.discount-categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
-import { Route as AdminEventsHallLayoutsIdRouteImport } from './routes/admin.events.hall-layouts.$id'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
 const SupportRoute = SupportRouteImport.update({
@@ -369,11 +367,6 @@ const AdminEventsVenuesRoute = AdminEventsVenuesRouteImport.update({
   path: '/events/venues',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminEventsHallLayoutsRoute = AdminEventsHallLayoutsRouteImport.update({
-  id: '/events/hall-layouts',
-  path: '/events/hall-layouts',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminEventsEventsRoute = AdminEventsEventsRouteImport.update({
   id: '/events/events',
   path: '/events/events',
@@ -441,12 +434,6 @@ const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
   path: '/data/categories',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminEventsHallLayoutsIdRoute =
-  AdminEventsHallLayoutsIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AdminEventsHallLayoutsRoute,
-  } as any)
 const AdminDataCategoriesCategoryIdEventsNewRoute =
   AdminDataCategoriesCategoryIdEventsNewRouteImport.update({
     id: '/$categoryId/events/new',
@@ -486,7 +473,6 @@ export interface FileRoutesByFullPath {
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
-  '/admin/events/hall-layouts': typeof AdminEventsHallLayoutsRouteWithChildren
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
@@ -525,7 +511,6 @@ export interface FileRoutesByFullPath {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
-  '/admin/events/hall-layouts/$id': typeof AdminEventsHallLayoutsIdRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesByTo {
@@ -556,7 +541,6 @@ export interface FileRoutesByTo {
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
-  '/admin/events/hall-layouts': typeof AdminEventsHallLayoutsRouteWithChildren
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
@@ -595,7 +579,6 @@ export interface FileRoutesByTo {
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
-  '/admin/events/hall-layouts/$id': typeof AdminEventsHallLayoutsIdRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesById {
@@ -631,7 +614,6 @@ export interface FileRoutesById {
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
-  '/admin/events/hall-layouts': typeof AdminEventsHallLayoutsRouteWithChildren
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
@@ -670,7 +652,6 @@ export interface FileRoutesById {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
-  '/admin/events/hall-layouts/$id': typeof AdminEventsHallLayoutsIdRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRouteTypes {
@@ -707,7 +688,6 @@ export interface FileRouteTypes {
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
-    | '/admin/events/hall-layouts'
     | '/admin/events/venues'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
@@ -746,7 +726,6 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
-    | '/admin/events/hall-layouts/$id'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -777,7 +756,6 @@ export interface FileRouteTypes {
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
-    | '/admin/events/hall-layouts'
     | '/admin/events/venues'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
@@ -816,7 +794,6 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/pos'
-    | '/admin/events/hall-layouts/$id'
     | '/admin/data/categories/$categoryId/events/new'
   id:
     | '__root__'
@@ -851,7 +828,6 @@ export interface FileRouteTypes {
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
-    | '/admin/events/hall-layouts'
     | '/admin/events/venues'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
@@ -890,7 +866,6 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
-    | '/admin/events/hall-layouts/$id'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesById: FileRoutesById
 }
@@ -1304,13 +1279,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsVenuesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/events/hall-layouts': {
-      id: '/admin/events/hall-layouts'
-      path: '/events/hall-layouts'
-      fullPath: '/admin/events/hall-layouts'
-      preLoaderRoute: typeof AdminEventsHallLayoutsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/events/events': {
       id: '/admin/events/events'
       path: '/events/events'
@@ -1402,13 +1370,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/events/hall-layouts/$id': {
-      id: '/admin/events/hall-layouts/$id'
-      path: '/$id'
-      fullPath: '/admin/events/hall-layouts/$id'
-      preLoaderRoute: typeof AdminEventsHallLayoutsIdRouteImport
-      parentRoute: typeof AdminEventsHallLayoutsRoute
-    }
     '/admin/data/categories/$categoryId/events/new': {
       id: '/admin/data/categories/$categoryId/events/new'
       path: '/$categoryId/events/new'
@@ -1431,20 +1392,6 @@ const AdminDataCategoriesRouteChildren: AdminDataCategoriesRouteChildren = {
 const AdminDataCategoriesRouteWithChildren =
   AdminDataCategoriesRoute._addFileChildren(AdminDataCategoriesRouteChildren)
 
-interface AdminEventsHallLayoutsRouteChildren {
-  AdminEventsHallLayoutsIdRoute: typeof AdminEventsHallLayoutsIdRoute
-}
-
-const AdminEventsHallLayoutsRouteChildren: AdminEventsHallLayoutsRouteChildren =
-  {
-    AdminEventsHallLayoutsIdRoute: AdminEventsHallLayoutsIdRoute,
-  }
-
-const AdminEventsHallLayoutsRouteWithChildren =
-  AdminEventsHallLayoutsRoute._addFileChildren(
-    AdminEventsHallLayoutsRouteChildren,
-  )
-
 interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1461,7 +1408,6 @@ interface AdminRouteChildren {
   AdminEventsCouponsRoute: typeof AdminEventsCouponsRoute
   AdminEventsDatesRoute: typeof AdminEventsDatesRoute
   AdminEventsEventsRoute: typeof AdminEventsEventsRoute
-  AdminEventsHallLayoutsRoute: typeof AdminEventsHallLayoutsRouteWithChildren
   AdminEventsVenuesRoute: typeof AdminEventsVenuesRoute
   AdminFinanceStatsRoute: typeof AdminFinanceStatsRoute
   AdminMaxiticketAccountingBankRoute: typeof AdminMaxiticketAccountingBankRoute
@@ -1507,7 +1453,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEventsCouponsRoute: AdminEventsCouponsRoute,
   AdminEventsDatesRoute: AdminEventsDatesRoute,
   AdminEventsEventsRoute: AdminEventsEventsRoute,
-  AdminEventsHallLayoutsRoute: AdminEventsHallLayoutsRouteWithChildren,
   AdminEventsVenuesRoute: AdminEventsVenuesRoute,
   AdminFinanceStatsRoute: AdminFinanceStatsRoute,
   AdminMaxiticketAccountingBankRoute: AdminMaxiticketAccountingBankRoute,
