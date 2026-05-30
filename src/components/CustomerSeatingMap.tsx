@@ -129,6 +129,85 @@ export function CustomerSeatingMap({
       >
         <Layer>
           {layout.shapes.map((s) => {
+            // Expand a "seats" grid (rows x cols) into individual clickable seats
+            if (s.kind === "seats" && (s.rows ?? 0) * (s.cols ?? 0) > 1) {
+              const rows = s.rows ?? 1;
+              const cols = s.cols ?? 1;
+              const ss = s.seatSize ?? 22;
+              const gap = 6;
+              const padX = 10;
+              const padY = 20;
+              const startRow = s.startRow ?? 1;
+              const startSeat = s.startSeat ?? 1;
+              const rowLabel = (i: number) => String.fromCharCode(64 + startRow + i);
+              const isVipGrid = s.priceCategory === "VIP";
+              const nodes: React.ReactNode[] = [];
+              if (s.label) {
+                nodes.push(
+                  <KText key={`hdr-${s.id}`} x={padX} y={2} text={s.label} fontSize={11} fontStyle="bold" fill="#0f172a" />,
+                );
+              }
+              for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                  const seatId = `${s.id}::r${r}c${c}`;
+                  const inv = invMap.get(seatId);
+                  const isVip = !!inv?.is_vip || isVipGrid;
+                  let fill = isVip ? COLORS.vipAvailable : COLORS.available;
+                  let status: "available" | "reserved" | "sold" | "selected" = "available";
+                  if (inv?.status === "sold") { fill = COLORS.sold; status = "sold"; }
+                  else if (inv?.status === "reserved") { fill = COLORS.reserved; status = "reserved"; }
+                  if (selectedSet.has(seatId)) { fill = COLORS.selected; status = "selected"; }
+                  const clickable = status === "available" || status === "selected";
+                  const label = `Rad ${rowLabel(r)} · ${startSeat + c}`;
+                  nodes.push(
+                    <Rect
+                      key={seatId}
+                      x={padX + c * (ss + gap)}
+                      y={padY + r * (ss + gap)}
+                      width={ss}
+                      height={ss}
+                      fill={fill}
+                      cornerRadius={3}
+                      stroke={status === "selected" ? "#1d4ed8" : "rgba(0,0,0,0.18)"}
+                      strokeWidth={status === "selected" ? 1.6 : 0.5}
+                      onMouseEnter={(e) => {
+                        if (!clickable) return;
+                        const stage = e.target.getStage();
+                        if (stage) stage.container().style.cursor = "pointer";
+                      }}
+                      onMouseLeave={(e) => {
+                        const stage = e.target.getStage();
+                        if (stage) stage.container().style.cursor = "default";
+                      }}
+                      onClick={() => {
+                        if (!clickable) return;
+                        onToggle({ seat_id: seatId, label, price: isVip ? vipPrice : basePrice, is_vip: isVip });
+                      }}
+                      onTap={() => {
+                        if (!clickable) return;
+                        onToggle({ seat_id: seatId, label, price: isVip ? vipPrice : basePrice, is_vip: isVip });
+                      }}
+                    />,
+                  );
+                }
+                nodes.push(
+                  <KText
+                    key={`lbl-${s.id}-${r}`}
+                    x={padX - 14}
+                    y={padY + r * (ss + gap) + ss / 2 - 6}
+                    text={rowLabel(r)}
+                    fontSize={10}
+                    fill="#64748b"
+                  />,
+                );
+              }
+              return (
+                <Group key={s.id} x={s.x} y={s.y} rotation={s.rotation ?? 0}>
+                  {nodes}
+                </Group>
+              );
+            }
+
             if (s.kind === "seats") {
               const inv = invMap.get(s.id);
               const isVip = !!inv?.is_vip || s.priceCategory === "VIP";
