@@ -1,10 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { getEvent, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
-import { getLayout, type HallLayout } from "@/lib/layouts-db";
+import { getLayout, listLayouts, type HallLayout } from "@/lib/layouts-db";
 import {
-  getInventory, INV_EVENT, releaseExpired,
-  createOrder, reserveSeats,
+  getInventory,
+  INV_EVENT,
+  releaseExpired,
+  createOrder,
+  reserveSeats,
   type SeatInventoryRow,
 } from "@/lib/ticketing-db";
 import { Navbar } from "@/components/site/Navbar";
@@ -25,6 +28,59 @@ export const Route = createFileRoute("/events/$id")({
 
 type Selected = { seat_id: string; label: string; price: number; is_vip: boolean };
 
+function defaultLayoutForEvent(event: EventItem): HallLayout {
+  const now = new Date().toISOString();
+  return {
+    id: `default-layout-${event.id}`,
+    name: event.venue || "Sála",
+    type: "koncertna-hala",
+    city: event.city,
+    capacity: 120,
+    shapes: [
+      {
+        id: `stage-${event.id}`,
+        kind: "stage",
+        x: 120,
+        y: 20,
+        width: 420,
+        height: 58,
+        label: "PÓDIUM",
+      },
+      {
+        id: `sector-main-${event.id}`,
+        kind: "sector",
+        x: 80,
+        y: 110,
+        width: 500,
+        height: 330,
+        label: "Hlavný sektor",
+      },
+      {
+        id: `seats-main-${event.id}`,
+        kind: "seats",
+        x: 125,
+        y: 140,
+        width: 390,
+        height: 300,
+        rows: 10,
+        cols: 12,
+        seatSize: 22,
+        startRow: 1,
+        startSeat: 1,
+        label: "Sektor A",
+        priceCategory: "Regular",
+      },
+    ],
+    curveGroups: [],
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+function hasSelectableSeats(layout?: HallLayout | null): layout is HallLayout {
+  return !!layout?.shapes.some((shape) => shape.kind === "seats" && !shape.blocked);
+}
+
 function EventDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -41,11 +97,25 @@ function EventDetail() {
       releaseExpired();
       const e = getEvent(id);
       setEvent(e);
-      if (e?.venue_layout_id) {
-        setLayout(getLayout(e.venue_layout_id) ?? null);
-      } else {
+      if (!e) {
         setLayout(null);
+        setInventory([]);
+        setLoaded(true);
+        return;
       }
+      const layouts = listLayouts();
+      const explicitLayout = e.venue_layout_id ? getLayout(e.venue_layout_id) : undefined;
+      const matchedLayout = layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase());
+      const fallbackLayout =
+        e.sale_type !== "standing" ? (layouts[0] ?? defaultLayoutForEvent(e)) : undefined;
+      const resolvedLayout = explicitLayout ?? matchedLayout ?? fallbackLayout ?? null;
+      setLayout(
+        hasSelectableSeats(resolvedLayout)
+          ? resolvedLayout
+          : e.sale_type !== "standing"
+            ? defaultLayoutForEvent(e)
+            : null,
+      );
       setInventory(getInventory(id));
       setLoaded(true);
     };
@@ -62,8 +132,8 @@ function EventDetail() {
     };
   }, [id]);
 
-  const isMap = event?.sale_type === "seating_map" && !!layout;
-  const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0) ?? 0;
+  const isMap = !!layout && event?.sale_type !== "standing";
+  const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0);
   const vipPrice = event?.vip_price ?? basePrice;
 
   const toggleSeat = (s: Selected) => {
@@ -74,9 +144,7 @@ function EventDetail() {
     );
   };
 
-  const total = isMap
-    ? selected.reduce((sum, s) => sum + s.price, 0)
-    : qty * basePrice;
+  const total = isMap ? selected.reduce((sum, s) => sum + s.price, 0) : qty * basePrice;
 
   const checkout = () => {
     if (!event) return;
@@ -122,13 +190,19 @@ function EventDetail() {
     }
   };
 
-  const sortedSelected = useMemo(() => [...selected].sort((a, b) => a.label.localeCompare(b.label)), [selected]);
+  const sortedSelected = useMemo(
+    () => [...selected].sort((a, b) => a.label.localeCompare(b.label)),
+    [selected],
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <main className="mx-auto max-w-6xl px-4 pt-28 pb-20">
-        <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6">
+        <Link
+          to="/events"
+          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6"
+        >
           <ArrowLeft className="size-4" /> Späť na podujatia
         </Link>
         {!loaded ? (
@@ -146,21 +220,35 @@ function EventDetail() {
             <div className="grid lg:grid-cols-[1fr_360px] gap-8">
               <div className="space-y-6">
                 <div>
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">{event.category}</span>
-                  <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-2">{event.title}</h1>
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                    {event.category}
+                  </span>
+                  <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-2">
+                    {event.title}
+                  </h1>
                   <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5"><Calendar className="size-4" /> {event.event_date} · {event.event_time}</span>
-                    <span className="inline-flex items-center gap-1.5"><MapPin className="size-4" /> {event.venue}, {event.city}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Calendar className="size-4" /> {event.event_date} · {event.event_time}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPin className="size-4" /> {event.venue}, {event.city}
+                    </span>
                   </div>
                   {event.description && (
-                    <p className="text-foreground/80 leading-relaxed mt-6 whitespace-pre-line">{event.description}</p>
+                    <p className="text-foreground/80 leading-relaxed mt-6 whitespace-pre-line">
+                      {event.description}
+                    </p>
                   )}
                 </div>
 
                 {isMap && layout ? (
                   <div>
-                    <h2 className="font-display font-semibold text-lg mb-3">Vyber sedadlá</h2>
-                    <Suspense fallback={<div className="h-[520px] rounded-xl bg-muted animate-pulse" />}>
+                    <h2 className="font-display font-semibold text-lg mb-3">
+                      Vyber sedadlá v hale
+                    </h2>
+                    <Suspense
+                      fallback={<div className="h-[520px] rounded-xl bg-muted animate-pulse" />}
+                    >
                       <CustomerSeatingMap
                         layout={layout}
                         basePrice={basePrice}
@@ -176,11 +264,19 @@ function EventDetail() {
                     <h2 className="font-display font-semibold text-lg mb-3">Vstupenky</h2>
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-medium">{event.sale_type === "standing" ? "Státie" : "Sedenie"}</div>
-                        <div className="text-sm text-muted-foreground">€{basePrice.toFixed(2)} / ks</div>
+                        <div className="font-medium">
+                          {event.sale_type === "standing" ? "Státie" : "Sedenie"}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          €{basePrice.toFixed(2)} / ks
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button size="icon" variant="outline" onClick={() => setQty(Math.max(1, qty - 1))}>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          onClick={() => setQty(Math.max(1, qty - 1))}
+                        >
                           <Minus className="size-4" />
                         </Button>
                         <div className="w-10 text-center font-semibold">{qty}</div>
@@ -210,13 +306,20 @@ function EventDetail() {
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                       {sortedSelected.map((s) => (
-                        <div key={s.seat_id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border/40 bg-muted/20">
+                        <div
+                          key={s.seat_id}
+                          className="flex items-center justify-between gap-2 p-2 rounded-md border border-border/40 bg-muted/20"
+                        >
                           <div className="text-sm min-w-0">
                             <div className="font-medium truncate">{s.label}</div>
-                            {s.is_vip && <div className="text-[10px] font-semibold text-yellow-500">VIP</div>}
+                            {s.is_vip && (
+                              <div className="text-[10px] font-semibold text-yellow-500">VIP</div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="font-display font-semibold text-sm">€{s.price.toFixed(2)}</span>
+                            <span className="font-display font-semibold text-sm">
+                              €{s.price.toFixed(2)}
+                            </span>
                             <button
                               aria-label="Odstrániť sedadlo"
                               onClick={() => toggleSeat(s)}
@@ -263,7 +366,9 @@ function EventDetail() {
                 <div className="text-[11px] text-muted-foreground">
                   {isMap ? `${selected.length} sedadiel vybraných` : `${qty} ks vstupeniek`}
                 </div>
-                <div className="font-display text-xl font-bold leading-none">€{total.toFixed(2)}</div>
+                <div className="font-display text-xl font-bold leading-none">
+                  €{total.toFixed(2)}
+                </div>
               </div>
               <Button
                 onClick={checkout}
