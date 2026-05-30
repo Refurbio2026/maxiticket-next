@@ -31,8 +31,12 @@ type Selected = { seat_id: string; label: string; price: number; is_vip: boolean
 function parseSeatLabel(label: string) {
   const parts = label.split("·").map((part) => part.trim());
   const sector = parts.find((part) => !part.toLowerCase().startsWith("rad")) ?? "Sektor";
-  const row = parts.find((part) => part.toLowerCase().startsWith("rad"))?.replace(/^Rad\s*/i, "") ?? "—";
-  const number = parts[parts.length - 1] && /^\d+$/.test(parts[parts.length - 1]) ? parts[parts.length - 1] : "—";
+  const row =
+    parts.find((part) => part.toLowerCase().startsWith("rad"))?.replace(/^Rad\s*/i, "") ?? "—";
+  const number =
+    parts[parts.length - 1] && /^\d+$/.test(parts[parts.length - 1])
+      ? parts[parts.length - 1]
+      : "—";
   return { sector, row, number };
 }
 
@@ -328,7 +332,9 @@ function EventDetail() {
                                   Rad {meta.row} · Sedadlo {meta.number}
                                 </div>
                                 {s.is_vip && (
-                                  <div className="mt-1 text-[10px] font-semibold text-yellow-500">VIP</div>
+                                  <div className="mt-1 text-[10px] font-semibold text-yellow-500">
+                                    VIP
+                                  </div>
                                 )}
                               </div>
                               <button
@@ -341,7 +347,9 @@ function EventDetail() {
                             </div>
                             <div className="mt-2 flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">Cena sedadla</span>
-                              <span className="font-display font-semibold">€{s.price.toFixed(2)}</span>
+                              <span className="font-display font-semibold">
+                                €{s.price.toFixed(2)}
+                              </span>
                             </div>
                           </div>
                         );
