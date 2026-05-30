@@ -28,6 +28,8 @@ export type Ticket = {
   quantity: number;
 };
 
+export type SaleType = "standing" | "seating" | "seating_map";
+
 export type EventItem = {
   id: string;
   organizer_id: string;
@@ -44,6 +46,12 @@ export type EventItem = {
   status: "draft" | "published";
   created_at: string;
   tickets: Ticket[];
+  // ticketing extensions
+  sale_type?: SaleType;
+  venue_layout_id?: string;
+  base_price?: number;
+  total_tickets?: number;
+  vip_price?: number;
 };
 
 const USERS_KEY = "mt_users";

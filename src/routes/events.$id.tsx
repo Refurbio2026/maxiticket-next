@@ -1,40 +1,133 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { getEvent, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
+import { getLayout, type HallLayout } from "@/lib/layouts-db";
+import {
+  getInventory, INV_EVENT, releaseExpired,
+  createOrder, reserveSeats,
+  type SeatInventoryRow,
+} from "@/lib/ticketing-db";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, ArrowLeft, Ticket } from "lucide-react";
+import { Calendar, MapPin, ArrowLeft, Ticket, Minus, Plus } from "lucide-react";
+import { toast } from "sonner";
+
+const CustomerSeatingMap = lazy(() =>
+  import("@/components/CustomerSeatingMap").then((m) => ({ default: m.CustomerSeatingMap })),
+);
 
 export const Route = createFileRoute("/events/$id")({
   head: () => ({ meta: [{ title: "Podujatie · MAXITICKET" }] }),
   component: EventDetail,
 });
 
+type Selected = { seat_id: string; label: string; price: number; is_vip: boolean };
+
 function EventDetail() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<EventItem | undefined>(undefined);
+  const [layout, setLayout] = useState<HallLayout | null>(null);
+  const [inventory, setInventory] = useState<SeatInventoryRow[]>([]);
+  const [selected, setSelected] = useState<Selected[]>([]);
+  const [qty, setQty] = useState(1);
   const [loaded, setLoaded] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const load = () => {
-      setEvent(getEvent(id));
+      releaseExpired();
+      const e = getEvent(id);
+      setEvent(e);
+      if (e?.venue_layout_id) {
+        setLayout(getLayout(e.venue_layout_id) ?? null);
+      } else {
+        setLayout(null);
+      }
+      setInventory(getInventory(id));
       setLoaded(true);
     };
     load();
+    const t = setInterval(load, 15000);
     window.addEventListener(EVENTS_EVENT, load);
+    window.addEventListener(INV_EVENT, load);
     window.addEventListener("storage", load);
     return () => {
+      clearInterval(t);
       window.removeEventListener(EVENTS_EVENT, load);
+      window.removeEventListener(INV_EVENT, load);
       window.removeEventListener("storage", load);
     };
   }, [id]);
 
+  const isMap = event?.sale_type === "seating_map" && !!layout;
+  const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0) ?? 0;
+  const vipPrice = event?.vip_price ?? basePrice;
+
+  const toggleSeat = (s: Selected) => {
+    setSelected((prev) =>
+      prev.some((x) => x.seat_id === s.seat_id)
+        ? prev.filter((x) => x.seat_id !== s.seat_id)
+        : [...prev, s],
+    );
+  };
+
+  const total = isMap
+    ? selected.reduce((sum, s) => sum + s.price, 0)
+    : qty * basePrice;
+
+  const checkout = () => {
+    if (!event) return;
+    setSubmitting(true);
+    try {
+      const items = isMap
+        ? selected.map((s) => ({ seat_id: s.seat_id, label: s.label, price: s.price }))
+        : Array.from({ length: qty }).map((_, i) => ({
+            label: `Vstupenka ${i + 1}`,
+            price: basePrice,
+          }));
+      if (items.length === 0) {
+        toast.error("Vyber aspoň jednu vstupenku");
+        setSubmitting(false);
+        return;
+      }
+      const order = createOrder({
+        event_id: event.id,
+        items,
+        total_amount: total,
+      });
+      if (isMap) {
+        const ok = reserveSeats(
+          event.id,
+          selected.map((s) => ({
+            seat_id: s.seat_id,
+            label: s.label,
+            price: s.price,
+            is_vip: s.is_vip,
+          })),
+          order.id,
+          10,
+        );
+        if (!ok) {
+          toast.error("Niektoré sedadlá už nie sú dostupné. Skús znova.");
+          setSubmitting(false);
+          return;
+        }
+      }
+      navigate({ to: "/checkout/$orderId", params: { orderId: order.id } });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const sortedSelected = useMemo(() => [...selected].sort((a, b) => a.label.localeCompare(b.label)), [selected]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
-      <main className="mx-auto max-w-5xl px-4 pt-28 pb-20">
+      <main className="mx-auto max-w-6xl px-4 pt-28 pb-20">
         <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6">
           <ArrowLeft className="size-4" /> Späť na podujatia
         </Link>
@@ -50,40 +143,100 @@ function EventDetail() {
               className="aspect-[21/9] rounded-2xl bg-muted bg-cover bg-center mb-8"
               style={event.image_url ? { backgroundImage: `url(${event.image_url})` } : undefined}
             />
-            <div className="grid lg:grid-cols-[1fr_360px] gap-10">
-              <div>
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">{event.category}</span>
-                <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-2">{event.title}</h1>
-                <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5"><Calendar className="size-4" /> {event.event_date} · {event.event_time}</span>
-                  <span className="inline-flex items-center gap-1.5"><MapPin className="size-4" /> {event.venue}, {event.city}</span>
+            <div className="grid lg:grid-cols-[1fr_360px] gap-8">
+              <div className="space-y-6">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">{event.category}</span>
+                  <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-2">{event.title}</h1>
+                  <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5"><Calendar className="size-4" /> {event.event_date} · {event.event_time}</span>
+                    <span className="inline-flex items-center gap-1.5"><MapPin className="size-4" /> {event.venue}, {event.city}</span>
+                  </div>
+                  {event.description && (
+                    <p className="text-foreground/80 leading-relaxed mt-6 whitespace-pre-line">{event.description}</p>
+                  )}
                 </div>
-                {event.organizer_name && (
-                  <div className="text-sm text-muted-foreground mt-2">Organizátor: {event.organizer_name}</div>
-                )}
-                {event.description && (
-                  <p className="text-foreground/80 leading-relaxed mt-8 whitespace-pre-line">{event.description}</p>
+
+                {isMap && layout ? (
+                  <div>
+                    <h2 className="font-display font-semibold text-lg mb-3">Vyber sedadlá</h2>
+                    <Suspense fallback={<div className="h-[520px] rounded-xl bg-muted animate-pulse" />}>
+                      <CustomerSeatingMap
+                        layout={layout}
+                        basePrice={basePrice}
+                        vipPrice={vipPrice}
+                        inventory={inventory}
+                        selected={selected.map((s) => s.seat_id)}
+                        onToggle={toggleSeat}
+                      />
+                    </Suspense>
+                  </div>
+                ) : (
+                  <Card className="p-6 bg-card/60 border-border/50">
+                    <h2 className="font-display font-semibold text-lg mb-3">Vstupenky</h2>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{event.sale_type === "standing" ? "Státie" : "Sedenie"}</div>
+                        <div className="text-sm text-muted-foreground">€{basePrice.toFixed(2)} / ks</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="icon" variant="outline" onClick={() => setQty(Math.max(1, qty - 1))}>
+                          <Minus className="size-4" />
+                        </Button>
+                        <div className="w-10 text-center font-semibold">{qty}</div>
+                        <Button size="icon" variant="outline" onClick={() => setQty(qty + 1)}>
+                          <Plus className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
                 )}
               </div>
-              <Card className="p-6 bg-card/60 border-border/50 h-fit sticky top-28">
-                <h2 className="font-display font-semibold text-lg mb-4">Vstupenky</h2>
-                {event.tickets.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Vstupenky budú onedlho v predaji.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {event.tickets.map((t) => (
-                      <div key={t.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/20">
-                        <div>
-                          <div className="font-medium text-sm">{t.name}</div>
-                          <div className="text-xs text-muted-foreground">Dostupné: {t.quantity}</div>
+
+              <Card className="p-6 bg-card/60 border-border/50 h-fit lg:sticky lg:top-28">
+                <h2 className="font-display font-semibold text-lg mb-4">Tvoja objednávka</h2>
+                {isMap ? (
+                  selected.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Klikni na voľné sedadlo v mape.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {sortedSelected.map((s) => (
+                        <div key={s.seat_id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border/40 bg-muted/20">
+                          <div className="text-sm">
+                            <div className="font-medium">{s.label}</div>
+                            {s.is_vip && <div className="text-[10px] font-semibold text-yellow-500">VIP</div>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-display font-semibold text-sm">€{s.price.toFixed(2)}</span>
+                            <button
+                              onClick={() => toggleSeat(s)}
+                              className="text-xs text-destructive hover:underline"
+                            >
+                              Zrušiť
+                            </button>
+                          </div>
                         </div>
-                        <div className="font-display font-bold">€{Number(t.price).toFixed(2)}</div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <div className="text-sm">
+                    Počet vstupeniek: <span className="font-semibold">{qty}</span>
                   </div>
                 )}
-                <Button className="w-full mt-5 bg-gradient-flame text-primary-foreground shadow-glow">
-                  <Ticket className="size-4 mr-2" /> Kúpiť vstupenky
+
+                <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Spolu</span>
+                  <span className="font-display text-2xl font-bold">€{total.toFixed(2)}</span>
+                </div>
+
+                <Button
+                  onClick={checkout}
+                  disabled={submitting || (isMap && selected.length === 0)}
+                  className="w-full mt-5 bg-gradient-flame text-primary-foreground shadow-glow"
+                >
+                  <Ticket className="size-4 mr-2" />
+                  Pokračovať do checkoutu
                 </Button>
               </Card>
             </div>
