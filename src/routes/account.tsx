@@ -7,7 +7,7 @@ import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  User, Ticket, LogOut, Calendar, MapPin, Download, Mail, Smartphone,
+  User, Ticket, LogOut, Calendar, MapPin, Download, Mail,
 } from "lucide-react";
 import {
   getOrders, getTickets, ORDERS_EVENT,
