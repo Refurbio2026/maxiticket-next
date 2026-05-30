@@ -13,6 +13,7 @@ import {
   computeCapacity,
   uid,
   upsertLayout,
+  type CurveGroup,
   type HallLayout,
   type Shape,
   type ShapeKind,
@@ -82,6 +83,73 @@ const SHAPE_COLOR: Record<ShapeKind, string> = {
 const PRICE_CATEGORIES = ["Regular", "VIP", "Premium", "Early Bird", "ZŤP"];
 
 const CANVAS_BG = "#f8fafc";
+
+const formatRowLabel = (i: number, mode: "ABC" | "123" = "ABC") =>
+  mode === "ABC"
+    ? i < 26
+      ? String.fromCharCode(65 + i)
+      : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26))
+    : String(i + 1);
+
+function buildCurveGroupSeats(group: CurveGroup, previous: Shape[] = []): Shape[] {
+  const ss = group.seatSize ?? 22;
+  const startSeat = group.startSeat ?? 1;
+  const existing = new Map(previous.map((seat) => [`${seat.startRow ?? 1}:${seat.seatNumber ?? 1}`, seat]));
+  const seats: Shape[] = [];
+  const totalAngle = group.endAngle - group.startAngle;
+  const fullArc = Math.abs(totalAngle) >= 360;
+
+  for (let r = 0; r < Math.max(1, group.rows); r++) {
+    const rowRadius = group.radius + r * group.rowSpacing;
+    const rowLabel = formatRowLabel(r, group.rowLabelMode ?? "ABC");
+    for (let c = 0; c < Math.max(1, group.seatsPerRow); c++) {
+      const relativeAngle =
+        group.seatsPerRow === 1
+          ? group.startAngle + totalAngle / 2
+          : group.startAngle + (totalAngle * c) / (fullArc ? group.seatsPerRow : group.seatsPerRow - 1);
+      const worldAngle = relativeAngle + group.rotation;
+      const rad = (worldAngle * Math.PI) / 180;
+      const x = group.centerX + rowRadius * Math.cos(rad);
+      const y = group.centerY + rowRadius * Math.sin(rad);
+      const seatNumber = startSeat + c;
+      const old = existing.get(`${r + 1}:${seatNumber}`);
+
+      seats.push({
+        id: old?.id ?? uid(),
+        kind: "seats",
+        x: x - ss / 2,
+        y: y - ss / 2,
+        width: ss,
+        height: ss,
+        rotation: (worldAngle + 90) % 360,
+        rows: 1,
+        cols: 1,
+        seatSize: ss,
+        color: group.color,
+        label: old?.label ?? "",
+        priceCategory: group.priceCategoryId ?? "Regular",
+        priceCategoryId: group.priceCategoryId,
+        row: rowLabel,
+        rowLabel,
+        seatNumber,
+        sectorId: group.sectorId,
+        curveGroupId: group.id,
+        relativeAngle,
+        relativeRadius: rowRadius,
+        radius: rowRadius,
+        angle: worldAngle,
+        startAngle: group.startAngle,
+        endAngle: group.endAngle,
+        rowSpacing: group.rowSpacing,
+        seatSpacing: group.seatSpacing,
+        startRow: r + 1,
+        startSeat,
+      });
+    }
+  }
+
+  return seats;
+}
 
 export function SeatingEditor({
   initial,
