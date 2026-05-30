@@ -14,7 +14,28 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, ArrowLeft, Ticket, Minus, Plus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Calendar,
+  MapPin,
+  ArrowLeft,
+  Ticket,
+  Minus,
+  Plus,
+  X,
+  Clock,
+  User,
+  ShieldCheck,
+  QrCode,
+  Mail,
+  Info,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const CustomerSeatingMap = lazy(() =>
