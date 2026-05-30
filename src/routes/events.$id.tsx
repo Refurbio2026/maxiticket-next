@@ -580,3 +580,34 @@ function EventDetail() {
     </div>
   );
 }
+
+function InfoTile({
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent?: "warn";
+}) {
+  return (
+    <div
+      className={`rounded-xl border bg-card/50 p-3 ${
+        accent === "warn" ? "border-amber-500/50" : "border-border/50"
+      }`}
+    >
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5">
+        <span className="text-primary">{icon}</span> {label}
+      </div>
+      <div
+        className={`font-display font-semibold text-base md:text-lg mt-1 truncate ${
+          accent === "warn" ? "text-amber-600 dark:text-amber-400" : ""
+        }`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
