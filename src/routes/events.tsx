@@ -32,16 +32,30 @@ function priceOf(e: EventItem) {
 
 function EventsPage() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const search = useSearch({ strict: false }) as {
+    q?: string; city?: string; category?: string; date?: string;
+  };
   const [events, setEvents] = useState<EventItem[]>([]);
 
-  // filters
-  const [q, setQ] = useState("");
-  const [city, setCity] = useState<string>(ALL);
-  const [category, setCategory] = useState<string>(ALL);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  // filters (prefilled from URL search params on first render)
+  const [q, setQ] = useState(search.q ?? "");
+  const [city, setCity] = useState<string>(search.city || ALL);
+  const [category, setCategory] = useState<string>(search.category || ALL);
+  const [dateFrom, setDateFrom] = useState(search.date ?? "");
+  const [dateTo, setDateTo] = useState(search.date ?? "");
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  // keep filters in sync if user navigates with new search params
+  useEffect(() => {
+    if (search.q !== undefined) setQ(search.q);
+    if (search.city !== undefined) setCity(search.city || ALL);
+    if (search.category !== undefined) setCategory(search.category || ALL);
+    if (search.date !== undefined) {
+      setDateFrom(search.date);
+      setDateTo(search.date);
+    }
+  }, [search.q, search.city, search.category, search.date]);
 
   useEffect(() => {
     const load = () =>
