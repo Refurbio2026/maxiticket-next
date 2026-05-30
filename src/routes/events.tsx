@@ -68,7 +68,15 @@ function EventsPage() {
                     <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                       <MapPin className="size-3.5" /> {e.venue}, {e.city}
                     </div>
+                    <div className="pt-2 flex items-center justify-between">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">od </span>
+                        <span className="font-display font-bold text-base">€{Number(e.base_price ?? e.tickets?.[0]?.price ?? 0).toFixed(2)}</span>
+                      </div>
+                      <span className="text-xs font-semibold text-primary group-hover:underline">Kúpiť vstupenky →</span>
+                    </div>
                   </div>
+
                 </Card>
               </Link>
             ))}

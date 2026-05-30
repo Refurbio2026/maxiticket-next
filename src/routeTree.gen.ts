@@ -26,6 +26,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
 import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
 import { Route as OrganizerMarketingIndexRouteImport } from './routes/organizer.marketing.index'
@@ -37,6 +38,7 @@ import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.
 import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
 import { Route as OrganizerMarketingNewRouteImport } from './routes/organizer.marketing.new'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
+import { Route as CheckoutSuccessOrderIdRouteImport } from './routes/checkout.success.$orderId'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
 import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
@@ -166,6 +168,11 @@ const EventsIdRoute = EventsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => EventsRoute,
 } as any)
+const CheckoutOrderIdRoute = CheckoutOrderIdRouteImport.update({
+  id: '/checkout/$orderId',
+  path: '/checkout/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMarketingRoute = AdminMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
@@ -220,6 +227,11 @@ const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
   id: '/new',
   path: '/new',
   getParentRoute: () => OrganizerEventsRoute,
+} as any)
+const CheckoutSuccessOrderIdRoute = CheckoutSuccessOrderIdRouteImport.update({
+  id: '/checkout/success/$orderId',
+  path: '/checkout/success/$orderId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
   id: '/api/public/seed-demo',
@@ -461,6 +473,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
+  '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
@@ -508,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
@@ -532,6 +546,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
+  '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/events/$id': typeof EventsIdRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -577,6 +592,7 @@ export interface FileRoutesByTo {
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
@@ -604,6 +620,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
+  '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
@@ -651,6 +668,7 @@ export interface FileRoutesById {
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
@@ -679,6 +697,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/support'
     | '/admin/marketing'
+    | '/checkout/$orderId'
     | '/events/$id'
     | '/organizer/events'
     | '/organizer/marketing'
@@ -726,6 +745,7 @@ export interface FileRouteTypes {
     | '/admin/system/email-templates'
     | '/admin/system/users'
     | '/api/public/seed-demo'
+    | '/checkout/success/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
@@ -750,6 +770,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/support'
     | '/admin/marketing'
+    | '/checkout/$orderId'
     | '/events/$id'
     | '/admin'
     | '/organizer'
@@ -795,6 +816,7 @@ export interface FileRouteTypes {
     | '/admin/system/email-templates'
     | '/admin/system/users'
     | '/api/public/seed-demo'
+    | '/checkout/success/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
@@ -821,6 +843,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/support'
     | '/admin/marketing'
+    | '/checkout/$orderId'
     | '/events/$id'
     | '/organizer/events'
     | '/organizer/marketing'
@@ -868,6 +891,7 @@ export interface FileRouteTypes {
     | '/admin/system/email-templates'
     | '/admin/system/users'
     | '/api/public/seed-demo'
+    | '/checkout/success/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
     | '/organizer/pos/cashiers'
@@ -894,7 +918,9 @@ export interface RootRouteChildren {
   PartnersRoute: typeof PartnersRoute
   RegisterRoute: typeof RegisterRoute
   SupportRoute: typeof SupportRoute
+  CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
+  CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1018,6 +1044,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof EventsRoute
     }
+    '/checkout/$orderId': {
+      id: '/checkout/$orderId'
+      path: '/checkout/$orderId'
+      fullPath: '/checkout/$orderId'
+      preLoaderRoute: typeof CheckoutOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/marketing': {
       id: '/admin/marketing'
       path: '/marketing'
@@ -1094,6 +1127,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/organizer/events/new'
       preLoaderRoute: typeof OrganizerEventsNewRouteImport
       parentRoute: typeof OrganizerEventsRoute
+    }
+    '/checkout/success/$orderId': {
+      id: '/checkout/success/$orderId'
+      path: '/checkout/success/$orderId'
+      fullPath: '/checkout/success/$orderId'
+      preLoaderRoute: typeof CheckoutSuccessOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/seed-demo': {
       id: '/api/public/seed-demo'
@@ -1584,7 +1624,9 @@ const rootRouteChildren: RootRouteChildren = {
   PartnersRoute: PartnersRoute,
   RegisterRoute: RegisterRoute,
   SupportRoute: SupportRoute,
+  CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
+  CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
