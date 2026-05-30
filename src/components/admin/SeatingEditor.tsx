@@ -440,22 +440,46 @@ export function SeatingEditor({
 
   const deleteSelected = () => {
     if (!selectedIds.length) return;
-    setShapes((arr) => arr.filter((s) => !selectedIds.includes(s.id)));
+    setLayout((prev) => {
+      const selectedGroups = new Set((prev.curveGroups ?? []).filter((group) => selectedIds.includes(group.id)).map((group) => group.id));
+      const next = {
+        ...prev,
+        curveGroups: (prev.curveGroups ?? []).filter((group) => !selectedGroups.has(group.id)),
+        shapes: prev.shapes.filter((s) => !selectedIds.includes(s.id) && !selectedGroups.has(s.curveGroupId ?? "")),
+      };
+      setTimeout(() => pushHistory(next), 0);
+      return next;
+    });
     setSelectedIds([]);
   };
 
   const duplicateSelected = () => {
     if (!selectedIds.length) return;
     const copies: Shape[] = [];
-    setShapes((arr) => {
-      arr.forEach((s) => {
-        if (selectedIds.includes(s.id)) {
+    const groupCopies: CurveGroup[] = [];
+    setLayout((prev) => {
+      const selectedGroups = (prev.curveGroups ?? []).filter((group) => selectedIds.includes(group.id));
+      const groupIdMap = new Map<string, string>();
+      selectedGroups.forEach((group) => {
+        const nextGroup = { ...group, id: uid(), name: `${group.name} (kópia)`, centerX: group.centerX + 30, centerY: group.centerY + 30 };
+        groupIdMap.set(group.id, nextGroup.id);
+        groupCopies.push(nextGroup);
+        copies.push(...buildCurveGroupSeats(nextGroup));
+      });
+      prev.shapes.forEach((s) => {
+        if (selectedIds.includes(s.id) && !s.curveGroupId) {
           copies.push({ ...s, id: uid(), x: s.x + 20, y: s.y + 20 });
         }
       });
-      return [...arr, ...copies];
+      const next = {
+        ...prev,
+        curveGroups: [...(prev.curveGroups ?? []), ...groupCopies],
+        shapes: [...prev.shapes, ...copies],
+      };
+      setTimeout(() => pushHistory(next), 0);
+      return next;
     });
-    setTimeout(() => setSelectedIds(copies.map((c) => c.id)), 0);
+    setTimeout(() => setSelectedIds(groupCopies.length ? groupCopies.map((g) => g.id) : copies.map((c) => c.id)), 0);
   };
 
   const updateSelected = (patch: Partial<Shape>) => {
@@ -463,6 +487,23 @@ export function SeatingEditor({
       (arr) => arr.map((s) => (selectedIds.includes(s.id) ? { ...s, ...patch } : s)),
       false,
     );
+  };
+
+  const updateCurveGroup = (groupId: string, patch: Partial<CurveGroup>, commit = false) => {
+    setLayout((prev) => {
+      const current = (prev.curveGroups ?? []).find((group) => group.id === groupId);
+      if (!current) return prev;
+      const nextGroup = { ...current, ...patch };
+      const previousSeats = prev.shapes.filter((shape) => shape.curveGroupId === groupId);
+      const nextSeats = buildCurveGroupSeats(nextGroup, previousSeats);
+      const next = {
+        ...prev,
+        curveGroups: (prev.curveGroups ?? []).map((group) => (group.id === groupId ? nextGroup : group)),
+        shapes: [...prev.shapes.filter((shape) => shape.curveGroupId !== groupId), ...nextSeats],
+      };
+      if (commit) setTimeout(() => pushHistory(next), 0);
+      return next;
+    });
   };
 
   const commitChange = () => {
@@ -526,8 +567,12 @@ export function SeatingEditor({
 
   // ---------- selected shape ----------
   const selectedShape = useMemo(
-    () => (selectedIds.length === 1 ? layout.shapes.find((s) => s.id === selectedIds[0]) : null),
+    () => (selectedIds.length === 1 ? layout.shapes.find((s) => s.id === selectedIds[0] && !s.curveGroupId) : null),
     [selectedIds, layout.shapes],
+  );
+  const selectedCurveGroup = useMemo(
+    () => (selectedIds.length === 1 ? (layout.curveGroups ?? []).find((group) => group.id === selectedIds[0]) : null),
+    [selectedIds, layout.curveGroups],
   );
 
   const capacity = useMemo(() => computeCapacity(layout.shapes), [layout.shapes]);
