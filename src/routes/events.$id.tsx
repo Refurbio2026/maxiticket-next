@@ -194,25 +194,35 @@ function EventDetail() {
               </div>
 
               <Card className="p-6 bg-card/60 border-border/50 h-fit lg:sticky lg:top-28">
-                <h2 className="font-display font-semibold text-lg mb-4">Tvoja objednávka</h2>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="font-display font-semibold text-lg">Tvoja objednávka</h2>
+                  {isMap && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {selected.length} ks
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mb-4 line-clamp-1">{event.title}</div>
+
                 {isMap ? (
                   selected.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Klikni na voľné sedadlo v mape.</p>
                   ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                       {sortedSelected.map((s) => (
                         <div key={s.seat_id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border/40 bg-muted/20">
-                          <div className="text-sm">
-                            <div className="font-medium">{s.label}</div>
+                          <div className="text-sm min-w-0">
+                            <div className="font-medium truncate">{s.label}</div>
                             {s.is_vip && <div className="text-[10px] font-semibold text-yellow-500">VIP</div>}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <span className="font-display font-semibold text-sm">€{s.price.toFixed(2)}</span>
                             <button
+                              aria-label="Odstrániť sedadlo"
                               onClick={() => toggleSeat(s)}
-                              className="text-xs text-destructive hover:underline"
+                              className="size-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             >
-                              Zrušiť
+                              <X className="size-4" />
                             </button>
                           </div>
                         </div>
@@ -238,7 +248,31 @@ function EventDetail() {
                   <Ticket className="size-4 mr-2" />
                   Pokračovať do checkoutu
                 </Button>
+
+                {isMap && (
+                  <div className="mt-3 text-[11px] text-muted-foreground text-center">
+                    Vybrané miesta: {selected.length}
+                  </div>
+                )}
               </Card>
+            </div>
+
+            {/* Mobile sticky bottom bar */}
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur px-4 py-3 flex items-center gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.15)]">
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-muted-foreground">
+                  {isMap ? `${selected.length} sedadiel vybraných` : `${qty} ks vstupeniek`}
+                </div>
+                <div className="font-display text-xl font-bold leading-none">€{total.toFixed(2)}</div>
+              </div>
+              <Button
+                onClick={checkout}
+                disabled={submitting || (isMap && selected.length === 0)}
+                className="bg-gradient-flame text-primary-foreground shadow-glow"
+              >
+                <Ticket className="size-4 mr-2" />
+                Do checkoutu
+              </Button>
             </div>
           </>
         )}
