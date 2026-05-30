@@ -220,13 +220,14 @@ export function SeatingEditor({
   onChange?: (l: HallLayout) => void;
 }) {
   // ---------- state ----------
-  const [layout, setLayout] = useState<HallLayout>(normalizeLayout(initial));
+  const normalizedInitial = useMemo(() => normalizeLayout(initial), [initial]);
+  const [layout, setLayout] = useState<HallLayout>(normalizedInitial);
   const [tool, setTool] = useState<Tool>("select");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [size, setSize] = useState({ w: 800, h: 600 });
-  const [history, setHistory] = useState<HallLayout[]>([initial]);
+  const [history, setHistory] = useState<HallLayout[]>([normalizedInitial]);
   const [hIdx, setHIdx] = useState(0);
   const [seatsDialog, setSeatsDialog] = useState(false);
   const [seatsForm, setSeatsForm] = useState({
@@ -332,7 +333,7 @@ export function SeatingEditor({
       .filter(Boolean) as Konva.Node[];
     trRef.current.nodes(nodes);
     trRef.current.getLayer()?.batchDraw();
-  }, [selectedIds, layout.shapes]);
+  }, [selectedIds, layout.shapes, layout.curveGroups]);
 
   // ---------- keyboard ----------
   useEffect(() => {
