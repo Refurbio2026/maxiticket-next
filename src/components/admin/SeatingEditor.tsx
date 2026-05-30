@@ -507,7 +507,6 @@ export function SeatingEditor({
               }}
               onWheel={handleWheel}
               onMouseDown={handleStageMouseDown}
-              onTouchStart={handleStageMouseDown}
             >
               <Layer ref={layerRef}>
                 {/* grid */}
