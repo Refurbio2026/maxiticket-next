@@ -529,6 +529,10 @@ export function SeatingEditor({
         <ToolBtn icon={Grid3x3} active={false} onClick={() => setSeatsDialog(true)}>
           Rad sedadiel…
         </ToolBtn>
+        <ToolBtn icon={CircleIcon} active={false} onClick={() => setCurvedDialog(true)}>
+          Zakrivený rad sedadiel…
+        </ToolBtn>
+
 
         <div className="my-2 border-t border-border/40" />
 
