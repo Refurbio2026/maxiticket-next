@@ -106,7 +106,8 @@ function EventDetail() {
       const layouts = listLayouts();
       const explicitLayout = e.venue_layout_id ? getLayout(e.venue_layout_id) : undefined;
       const matchedLayout = layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase());
-      const fallbackLayout = e.sale_type !== "standing" ? (layouts[0] ?? defaultLayoutForEvent(e)) : undefined;
+      const fallbackLayout =
+        e.sale_type !== "standing" ? (layouts[0] ?? defaultLayoutForEvent(e)) : undefined;
       const resolvedLayout = explicitLayout ?? matchedLayout ?? fallbackLayout ?? null;
       setLayout(
         hasSelectableSeats(resolvedLayout)
