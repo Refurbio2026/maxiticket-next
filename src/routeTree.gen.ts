@@ -36,6 +36,7 @@ import { Route as OrganizerPosFiscalRouteImport } from './routes/organizer.pos.f
 import { Route as OrganizerPosDevicesRouteImport } from './routes/organizer.pos.devices'
 import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
 import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
+import { Route as OrganizerPosCashierSalesRouteImport } from './routes/organizer.pos.cashier-sales'
 import { Route as OrganizerMarketingNewRouteImport } from './routes/organizer.marketing.new'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as CheckoutSuccessOrderIdRouteImport } from './routes/checkout.success.$orderId'
@@ -219,6 +220,12 @@ const OrganizerPosCashiersRoute = OrganizerPosCashiersRouteImport.update({
   path: '/pos/cashiers',
   getParentRoute: () => OrganizerRoute,
 } as any)
+const OrganizerPosCashierSalesRoute =
+  OrganizerPosCashierSalesRouteImport.update({
+    id: '/pos/cashier-sales',
+    path: '/pos/cashier-sales',
+    getParentRoute: () => OrganizerRoute,
+  } as any)
 const OrganizerMarketingNewRoute = OrganizerMarketingNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -531,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
+  '/organizer/pos/cashier-sales': typeof OrganizerPosCashierSalesRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
@@ -603,6 +611,7 @@ export interface FileRoutesByTo {
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
+  '/organizer/pos/cashier-sales': typeof OrganizerPosCashierSalesRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
@@ -680,6 +689,7 @@ export interface FileRoutesById {
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
+  '/organizer/pos/cashier-sales': typeof OrganizerPosCashierSalesRoute
   '/organizer/pos/cashiers': typeof OrganizerPosCashiersRoute
   '/organizer/pos/closing': typeof OrganizerPosClosingRoute
   '/organizer/pos/devices': typeof OrganizerPosDevicesRoute
@@ -758,6 +768,7 @@ export interface FileRouteTypes {
     | '/checkout/success/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
+    | '/organizer/pos/cashier-sales'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
@@ -830,6 +841,7 @@ export interface FileRouteTypes {
     | '/checkout/success/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
+    | '/organizer/pos/cashier-sales'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
@@ -906,6 +918,7 @@ export interface FileRouteTypes {
     | '/checkout/success/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
+    | '/organizer/pos/cashier-sales'
     | '/organizer/pos/cashiers'
     | '/organizer/pos/closing'
     | '/organizer/pos/devices'
@@ -1124,6 +1137,13 @@ declare module '@tanstack/react-router' {
       path: '/pos/cashiers'
       fullPath: '/organizer/pos/cashiers'
       preLoaderRoute: typeof OrganizerPosCashiersRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/cashier-sales': {
+      id: '/organizer/pos/cashier-sales'
+      path: '/pos/cashier-sales'
+      fullPath: '/organizer/pos/cashier-sales'
+      preLoaderRoute: typeof OrganizerPosCashierSalesRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/marketing/new': {
@@ -1608,6 +1628,7 @@ interface OrganizerRouteChildren {
   OrganizerEventsRoute: typeof OrganizerEventsRouteWithChildren
   OrganizerMarketingRoute: typeof OrganizerMarketingRouteWithChildren
   OrganizerIndexRoute: typeof OrganizerIndexRoute
+  OrganizerPosCashierSalesRoute: typeof OrganizerPosCashierSalesRoute
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
   OrganizerPosClosingRoute: typeof OrganizerPosClosingRoute
   OrganizerPosDevicesRoute: typeof OrganizerPosDevicesRoute
@@ -1620,6 +1641,7 @@ const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerEventsRoute: OrganizerEventsRouteWithChildren,
   OrganizerMarketingRoute: OrganizerMarketingRouteWithChildren,
   OrganizerIndexRoute: OrganizerIndexRoute,
+  OrganizerPosCashierSalesRoute: OrganizerPosCashierSalesRoute,
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
   OrganizerPosClosingRoute: OrganizerPosClosingRoute,
   OrganizerPosDevicesRoute: OrganizerPosDevicesRoute,

@@ -22,9 +22,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import {
   Banknote, CreditCard, Building2, Gift, Plus, Minus, Trash2,
   Printer, Mail, Ticket as TicketIcon, Receipt, Calendar,
-  TrendingUp, Ban, Usb, FileText, ShoppingCart,
+  TrendingUp, Ban, Usb, FileText, ShoppingCart, LogOut, UserCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CashierLoginGate } from "@/components/pos/CashierLoginGate";
+import {
+  getActiveSession, getActiveCashier, closeSession as closeCashierSession,
+  setActiveSessionId, type Cashier, type CashierSession,
+} from "@/lib/cashier-db";
 
 export const Route = createFileRoute("/organizer/pos/")({
   head: () => ({ meta: [{ title: "Pokladňa · MAXITICKET" }] }),
@@ -44,6 +49,14 @@ function PosPage() {
   const [processing, setProcessing] = useState(false);
   const [lastSale, setLastSale] = useState<PosSale | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [activeCashier, setActiveCashier] = useState<Cashier | null>(null);
+  const [activeSession, setActiveSession] = useState<CashierSession | null>(null);
+
+  // Hydrate active cashier session from localStorage
+  useEffect(() => {
+    setActiveCashier(getActiveCashier());
+    setActiveSession(getActiveSession());
+  }, [refresh]);
 
   useEffect(() => {
     const load = () => {
@@ -93,6 +106,14 @@ function PosPage() {
 
   const checkout = async (method: PaymentMethod) => {
     if (!user || !selectedEvent || cart.length === 0) return;
+    if (!activeCashier || !activeSession) {
+      toast.error("Najprv sa prihláste ako pokladník");
+      return;
+    }
+    if (!activeCashier.permissions.includes("sale")) {
+      toast.error("Tento pokladník nemá oprávnenie predávať");
+      return;
+    }
     setProcessing(true);
     try {
       const order_id = uid();
@@ -143,8 +164,9 @@ function PosPage() {
         id: order_id,
         receipt_number: nextReceiptNumber(),
         organizer_id: user.id,
-        cashier_id: user.id,
-        cashier_name: user.full_name || user.email,
+        cashier_id: activeCashier.id,
+        cashier_name: activeCashier.display_name,
+        cashier_session_id: activeSession.id,
         event_id: selectedEvent.id,
         event_title: selectedEvent.title,
         items, subtotal, discount,
@@ -188,6 +210,30 @@ function PosPage() {
       action: "pos.void", entity: "pos_sales", entity_id: id, meta: { reason },
     });
     toast.success("Predaj stornovaný");
+  };
+
+  // Cashier login gate — must happen before everything else.
+  if (user && (!activeCashier || !activeSession)) {
+    return (
+      <div className="space-y-6">
+        <h1 className="font-display text-4xl font-bold tracking-tight">Pokladňa / eKasa</h1>
+        <CashierLoginGate
+          organizerId={user.id}
+          onAuthed={(c, s) => { setActiveCashier(c); setActiveSession(s); }}
+        />
+      </div>
+    );
+  }
+
+  const logoutCashier = () => {
+    if (!activeSession) return;
+    if (!confirm("Odhlásiť pokladníka a uzavrieť jeho session?")) return;
+    closeCashierSession(activeSession.id);
+    setActiveSessionId(null);
+    setActiveCashier(null);
+    setActiveSession(null);
+    setCart([]); setEventId("");
+    toast.success("Pokladník odhlásený");
   };
 
   // No events at all
@@ -269,7 +315,12 @@ function PosPage() {
           <h1 className="font-display text-4xl font-bold tracking-tight">Pokladňa / POS</h1>
           <p className="text-muted-foreground mt-1">Fyzický predaj vstupeniek na mieste podujatia.</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
+          {activeCashier && (
+            <Badge variant="default" className="gap-1.5 bg-primary/15 text-primary border-primary/30">
+              <UserCircle2 className="size-3.5" /> {activeCashier.display_name}
+            </Badge>
+          )}
           <Badge variant="outline" className="gap-1.5">
             <Usb className="size-3.5" />
             Terminál: {terminalStatus === "connected" ? "pripojený" : terminalStatus === "busy" ? "spracovanie…" : "odpojený"}
@@ -279,6 +330,9 @@ function PosPage() {
           )}
           <Button asChild variant="outline" size="sm">
             <Link to="/organizer/pos/closing"><FileText className="size-4 mr-2" /> Denná uzávierka</Link>
+          </Button>
+          <Button size="sm" variant="outline" onClick={logoutCashier}>
+            <LogOut className="size-4 mr-2" /> Odhlásiť pokladníka
           </Button>
         </div>
       </div>

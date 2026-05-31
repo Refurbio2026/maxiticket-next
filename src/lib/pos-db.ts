@@ -21,6 +21,7 @@ export type PosSale = {
   organizer_id: string;
   cashier_id: string;
   cashier_name: string;
+  cashier_session_id?: string;
   event_id: string;
   event_title: string;
   items: PosSaleItem[];
