@@ -22,9 +22,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import {
   Banknote, CreditCard, Building2, Gift, Plus, Minus, Trash2,
   Printer, Mail, Ticket as TicketIcon, Receipt, Calendar,
-  TrendingUp, Ban, Usb, FileText, ShoppingCart,
+  TrendingUp, Ban, Usb, FileText, ShoppingCart, LogOut, UserCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CashierLoginGate } from "@/components/pos/CashierLoginGate";
+import {
+  getActiveSession, getActiveCashier, closeSession as closeCashierSession,
+  setActiveSessionId, type Cashier, type CashierSession,
+} from "@/lib/cashier-db";
 
 export const Route = createFileRoute("/organizer/pos/")({
   head: () => ({ meta: [{ title: "Pokladňa · MAXITICKET" }] }),
