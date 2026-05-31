@@ -106,6 +106,14 @@ function PosPage() {
 
   const checkout = async (method: PaymentMethod) => {
     if (!user || !selectedEvent || cart.length === 0) return;
+    if (!activeCashier || !activeSession) {
+      toast.error("Najprv sa prihláste ako pokladník");
+      return;
+    }
+    if (!activeCashier.permissions.includes("sale")) {
+      toast.error("Tento pokladník nemá oprávnenie predávať");
+      return;
+    }
     setProcessing(true);
     try {
       const order_id = uid();
