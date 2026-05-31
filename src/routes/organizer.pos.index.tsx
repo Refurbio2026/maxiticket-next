@@ -315,12 +315,26 @@ function PosPage() {
           <h1 className="font-display text-4xl font-bold tracking-tight">Pokladňa / POS</h1>
           <p className="text-muted-foreground mt-1">Fyzický predaj vstupeniek na mieste podujatia.</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
+          {activeCashier && (
+            <Badge variant="default" className="gap-1.5 bg-primary/15 text-primary border-primary/30">
+              <UserCircle2 className="size-3.5" /> {activeCashier.display_name}
+            </Badge>
+          )}
           <Badge variant="outline" className="gap-1.5">
             <Usb className="size-3.5" />
             Terminál: {terminalStatus === "connected" ? "pripojený" : terminalStatus === "busy" ? "spracovanie…" : "odpojený"}
           </Badge>
           {terminalStatus !== "connected" && (
+            <Button size="sm" variant="outline" onClick={connect}>Pripojiť terminál</Button>
+          )}
+          <Button asChild variant="outline" size="sm">
+            <Link to="/organizer/pos/closing"><FileText className="size-4 mr-2" /> Denná uzávierka</Link>
+          </Button>
+          <Button size="sm" variant="outline" onClick={logoutCashier}>
+            <LogOut className="size-4 mr-2" /> Odhlásiť pokladníka
+          </Button>
+        </div>
             <Button size="sm" variant="outline" onClick={connect}>Pripojiť terminál</Button>
           )}
           <Button asChild variant="outline" size="sm">
