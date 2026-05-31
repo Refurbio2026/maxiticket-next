@@ -212,6 +212,30 @@ function PosPage() {
     toast.success("Predaj stornovaný");
   };
 
+  // Cashier login gate — must happen before everything else.
+  if (user && (!activeCashier || !activeSession)) {
+    return (
+      <div className="space-y-6">
+        <h1 className="font-display text-4xl font-bold tracking-tight">Pokladňa / eKasa</h1>
+        <CashierLoginGate
+          organizerId={user.id}
+          onAuthed={(c, s) => { setActiveCashier(c); setActiveSession(s); }}
+        />
+      </div>
+    );
+  }
+
+  const logoutCashier = () => {
+    if (!activeSession) return;
+    if (!confirm("Odhlásiť pokladníka a uzavrieť jeho session?")) return;
+    closeCashierSession(activeSession.id);
+    setActiveSessionId(null);
+    setActiveCashier(null);
+    setActiveSession(null);
+    setCart([]); setEventId("");
+    toast.success("Pokladník odhlásený");
+  };
+
   // No events at all
   if (events.length === 0) {
     return (
