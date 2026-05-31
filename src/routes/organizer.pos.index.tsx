@@ -49,6 +49,14 @@ function PosPage() {
   const [processing, setProcessing] = useState(false);
   const [lastSale, setLastSale] = useState<PosSale | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [activeCashier, setActiveCashier] = useState<Cashier | null>(null);
+  const [activeSession, setActiveSession] = useState<CashierSession | null>(null);
+
+  // Hydrate active cashier session from localStorage
+  useEffect(() => {
+    setActiveCashier(getActiveCashier());
+    setActiveSession(getActiveSession());
+  }, [refresh]);
 
   useEffect(() => {
     const load = () => {
