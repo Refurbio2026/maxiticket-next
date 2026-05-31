@@ -335,12 +335,6 @@ function PosPage() {
             <LogOut className="size-4 mr-2" /> Odhlásiť pokladníka
           </Button>
         </div>
-            <Button size="sm" variant="outline" onClick={connect}>Pripojiť terminál</Button>
-          )}
-          <Button asChild variant="outline" size="sm">
-            <Link to="/organizer/pos/closing"><FileText className="size-4 mr-2" /> Denná uzávierka</Link>
-          </Button>
-        </div>
       </div>
 
       {/* Dashboard tiles */}
