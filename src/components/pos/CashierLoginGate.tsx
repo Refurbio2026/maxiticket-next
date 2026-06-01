@@ -39,18 +39,29 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
     setPin((p) => p + k);
   };
 
-  const submitPin = async () => {
+  const submitPin = async (pinValue?: string) => {
     if (!selected) return;
-    if (pin.length < 4) return toast.error("PIN musí mať aspoň 4 znaky");
+    const value = pinValue ?? pin;
+    if (value.length < 4) return toast.error("PIN musí mať aspoň 4 znaky");
     setBusy(true);
     try {
-      const ok = await verifyPin(pin, selected.pin_hash);
+      const ok = await verifyPin(value, selected.pin_hash);
       if (!ok) { toast.error("Nesprávny PIN"); setPin(""); return; }
       setStep("cash");
     } finally {
       setBusy(false);
     }
   };
+
+  // Auto-submit when PIN reaches 4 digits (typical eKasa UX).
+  useEffect(() => {
+    if (step !== "pin" || !selected) return;
+    if (pin.length === 4 && !busy) {
+      void submitPin(pin);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin, step, selected]);
+
 
   const finishLogin = () => {
     if (!selected) return;
