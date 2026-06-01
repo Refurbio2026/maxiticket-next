@@ -186,12 +186,36 @@ function EventDetail() {
   const lowAvailability = totalCapacity > 0 && availableCount / totalCapacity < 0.2;
 
   const toggleSeat = (s: Selected) => {
-    setSelected((prev) =>
-      prev.some((x) => x.seat_id === s.seat_id)
-        ? prev.filter((x) => x.seat_id !== s.seat_id)
-        : [...prev, s],
-    );
+    if (!event) return;
+    const already = selected.some((x) => x.seat_id === s.seat_id);
+    if (already) {
+      releaseHeldSeat(event.id, s.seat_id);
+      setSelected((prev) => prev.filter((x) => x.seat_id !== s.seat_id));
+      return;
+    }
+    const ok = holdSeat(event.id, s, 2);
+    if (!ok) {
+      toast.error("Sedadlo si práve berie iný kupujúci. Vyber prosím iné.");
+      return;
+    }
+    setSelected((prev) => [...prev, s]);
   };
+
+  // Refresh holds every 60s while the cart is open, and release them when
+  // the user leaves the page without proceeding to checkout.
+  useEffect(() => {
+    if (!event || selected.length === 0) return;
+    const t = setInterval(() => extendHolds(event.id, 2), 60_000);
+    const onUnload = () => releaseAllHolds(event.id);
+    window.addEventListener("beforeunload", onUnload);
+    window.addEventListener("pagehide", onUnload);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("beforeunload", onUnload);
+      window.removeEventListener("pagehide", onUnload);
+    };
+  }, [event, selected.length]);
+
 
   const total = isMap ? selected.reduce((sum, s) => sum + s.price, 0) : qty * basePrice;
 
