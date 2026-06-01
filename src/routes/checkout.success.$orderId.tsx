@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/WalletButtons";
+import { downloadTicketsPdf } from "@/lib/ticket-pdf";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
   head: () => ({ meta: [{ title: "Ďakujeme za nákup · MAXITICKET" }] }),
@@ -33,6 +34,7 @@ function SuccessPage() {
   const [tickets, setTickets] = useState<IssuedTicket[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [sending, setSending] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     const o = getOrder(orderId);
@@ -44,8 +46,21 @@ function SuccessPage() {
     setLoaded(true);
   }, [orderId]);
 
-  const download = () => {
-    if (typeof window !== "undefined") window.print();
+  const download = async () => {
+    if (!order || tickets.length === 0) {
+      toast.error("Vstupenky nie sú pripravené");
+      return;
+    }
+    setGenerating(true);
+    try {
+      await downloadTicketsPdf({ order, event, tickets });
+      toast.success("PDF vstupenka stiahnutá");
+    } catch (e) {
+      console.error(e);
+      toast.error("Generovanie PDF zlyhalo");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const sendEmail = () => {
@@ -56,7 +71,9 @@ function SuccessPage() {
     setSending(true);
     setTimeout(() => {
       setSending(false);
-      toast.success(`Vstupenky odoslané na ${order.customer_email}`);
+      toast.success(`Vstupenky odoslané na ${order.customer_email}`, {
+        description: "Skontroluj si aj priečinok spam.",
+      });
     }, 900);
   };
 
@@ -154,9 +171,10 @@ function SuccessPage() {
             <div className="flex flex-wrap gap-3 mt-8 print:hidden">
               <Button
                 onClick={download}
+                disabled={generating}
                 className="gap-1.5 bg-gradient-flame text-primary-foreground shadow-glow"
               >
-                <Download className="size-4" /> Stiahnuť PDF vstupenku
+                <Download className="size-4" /> {generating ? "Generujem PDF…" : "Stiahnuť PDF vstupenku"}
               </Button>
               <Button onClick={sendEmail} variant="outline" disabled={sending} className="gap-1.5">
                 <Mail className="size-4" /> {sending ? "Posielam…" : "Poslať na email"}

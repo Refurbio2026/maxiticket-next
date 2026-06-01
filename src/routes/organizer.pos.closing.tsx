@@ -5,6 +5,9 @@ import {
   getSales, computeClosing, addClosing, getAuditLogs, POS_EVENT,
   type PosSale,
 } from "@/lib/pos-db";
+import {
+  getActiveSession, closeSession, addClosure, computeSessionTotals,
+} from "@/lib/cashier-db";
 import { uid } from "@/lib/local-db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   Banknote, CreditCard, Building2, Gift, Ban, FileDown, Printer,
-  ArrowLeft, Receipt, ShieldCheck,
+  ArrowLeft, Receipt, ShieldCheck, LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,6 +75,44 @@ function ClosingPage() {
     toast.success("Denná uzávierka vytvorená");
   };
 
+  const closeShift = () => {
+    const active = getActiveSession();
+    if (!active) {
+      toast.info("Žiadna aktívna pokladničná zmena.");
+      return;
+    }
+    const cashStr = prompt(
+      `Spočítaj hotovosť v zásuvke pre pokladníka ${active.cashier_display_name} (€):`,
+      "0",
+    );
+    if (cashStr === null) return;
+    const closingCash = Number(cashStr) || 0;
+    const totals = computeSessionTotals(active.id);
+    const expected = active.opening_cash_amount + totals.total_cash_sales;
+    addClosure({
+      id: uid(),
+      cashier_id: active.cashier_id,
+      cashier_display_name: active.cashier_display_name,
+      cashier_session_id: active.id,
+      organizer_id: active.organizer_id,
+      closing_cash_amount: closingCash,
+      expected_cash_amount: expected,
+      cash_difference: closingCash - expected,
+      total_card_sales: totals.total_card_sales,
+      total_cash_sales: totals.total_cash_sales,
+      total_sales: totals.total_sales,
+      order_count: totals.order_count,
+      created_at: new Date().toISOString(),
+    });
+    closeSession(active.id, closingCash);
+    const diff = closingCash - expected;
+    toast.success(
+      diff === 0
+        ? "Pokladničná zmena uzavretá — hotovosť sedí."
+        : `Pokladničná zmena uzavretá. Rozdiel: ${diff > 0 ? "+" : ""}€${diff.toFixed(2)}`,
+    );
+  };
+
   const audit = getAuditLogs().filter((a) => a.created_at.startsWith(date)).slice(0, 10);
 
   return (
@@ -91,6 +132,9 @@ function ClosingPage() {
           </div>
           <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> CSV</Button>
           <Button variant="outline" onClick={exportPdf}><Printer className="size-4 mr-2" /> PDF</Button>
+          <Button variant="outline" onClick={closeShift}>
+            <LogOut className="size-4 mr-2" /> Uzavrieť zmenu
+          </Button>
           <Button onClick={closeDay} className="bg-gradient-flame text-primary-foreground shadow-glow">
             <ShieldCheck className="size-4 mr-2" /> Uzavrieť deň
           </Button>

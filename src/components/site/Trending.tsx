@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "@tanstack/react-router";
 import { Calendar, MapPin, Flame } from "lucide-react";
 import e1 from "@/assets/event-1.jpg";
 import e2 from "@/assets/event-2.jpg";
@@ -11,6 +12,8 @@ const events = [
   { img: e3, title: "Comedy Night: Evelyn", city: "Trnava", date: "08. Jún", price: "od 18 €", tag: "Stand-up", left: 41 },
   { img: e4, title: "HC Slovan vs. Sparta", city: "Bratislava", date: "29. Máj", price: "od 14 €", tag: "Šport", left: 230 },
 ];
+
+const MotionLink = motion(Link);
 
 export function Trending() {
   return (
@@ -25,16 +28,16 @@ export function Trending() {
               Práve frčia
             </h2>
           </div>
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">
+          <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">
             Všetky podujatia →
-          </a>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {events.map((e, i) => (
-            <motion.a
+            <MotionLink
               key={e.title}
-              href="#"
+              to="/events"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
@@ -70,7 +73,7 @@ export function Trending() {
                   <span className="text-xs text-muted-foreground">{e.left} voľných</span>
                 </div>
               </div>
-            </motion.a>
+            </MotionLink>
           ))}
         </div>
       </div>
