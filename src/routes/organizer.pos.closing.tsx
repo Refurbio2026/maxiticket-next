@@ -5,6 +5,9 @@ import {
   getSales, computeClosing, addClosing, getAuditLogs, POS_EVENT,
   type PosSale,
 } from "@/lib/pos-db";
+import {
+  getActiveSession, closeSession, addClosure, computeSessionTotals,
+} from "@/lib/cashier-db";
 import { uid } from "@/lib/local-db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   Banknote, CreditCard, Building2, Gift, Ban, FileDown, Printer,
-  ArrowLeft, Receipt, ShieldCheck,
+  ArrowLeft, Receipt, ShieldCheck, LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 
