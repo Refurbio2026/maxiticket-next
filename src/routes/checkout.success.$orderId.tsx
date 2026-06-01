@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/WalletButtons";
+import { downloadTicketsPdf } from "@/lib/ticket-pdf";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
   head: () => ({ meta: [{ title: "Ďakujeme za nákup · MAXITICKET" }] }),
