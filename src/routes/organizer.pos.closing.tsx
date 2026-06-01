@@ -132,6 +132,9 @@ function ClosingPage() {
           </div>
           <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> CSV</Button>
           <Button variant="outline" onClick={exportPdf}><Printer className="size-4 mr-2" /> PDF</Button>
+          <Button variant="outline" onClick={closeShift}>
+            <LogOut className="size-4 mr-2" /> Uzavrieť zmenu
+          </Button>
           <Button onClick={closeDay} className="bg-gradient-flame text-primary-foreground shadow-glow">
             <ShieldCheck className="size-4 mr-2" /> Uzavrieť deň
           </Button>
