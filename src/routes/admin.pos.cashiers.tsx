@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getCashiers, POS_EVENT, type Cashier } from "@/lib/cashier-db";
+import { getCashiers, type Cashier } from "@/lib/cashier-db";
+import { POS_EVENT } from "@/lib/pos-db";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
