@@ -30,9 +30,10 @@ export function Categories() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {cats.map((c, i) => (
-            <motion.a
+            <MotionLink
               key={c.label}
-              href="#"
+              to="/events"
+              search={{ category: c.slug } as never}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -48,7 +49,7 @@ export function Categories() {
                 <div className="font-display text-lg font-semibold">{c.label}</div>
                 <div className="text-xs text-muted-foreground mt-1">{c.count} podujatí</div>
               </div>
-            </motion.a>
+            </MotionLink>
           ))}
         </div>
       </div>
