@@ -34,6 +34,7 @@ function SuccessPage() {
   const [tickets, setTickets] = useState<IssuedTicket[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [sending, setSending] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     const o = getOrder(orderId);
@@ -45,8 +46,21 @@ function SuccessPage() {
     setLoaded(true);
   }, [orderId]);
 
-  const download = () => {
-    if (typeof window !== "undefined") window.print();
+  const download = async () => {
+    if (!order || tickets.length === 0) {
+      toast.error("Vstupenky nie sú pripravené");
+      return;
+    }
+    setGenerating(true);
+    try {
+      await downloadTicketsPdf({ order, event, tickets });
+      toast.success("PDF vstupenka stiahnutá");
+    } catch (e) {
+      console.error(e);
+      toast.error("Generovanie PDF zlyhalo");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const sendEmail = () => {
@@ -57,7 +71,9 @@ function SuccessPage() {
     setSending(true);
     setTimeout(() => {
       setSending(false);
-      toast.success(`Vstupenky odoslané na ${order.customer_email}`);
+      toast.success(`Vstupenky odoslané na ${order.customer_email}`, {
+        description: "Skontroluj si aj priečinok spam.",
+      });
     }, 900);
   };
 
