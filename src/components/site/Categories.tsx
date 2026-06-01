@@ -33,7 +33,6 @@ export function Categories() {
             <MotionLink
               key={c.label}
               to="/events"
-              search={{ category: c.slug } as never}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
