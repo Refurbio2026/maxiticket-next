@@ -73,7 +73,7 @@ export function Trending() {
                   <span className="text-xs text-muted-foreground">{e.left} voľných</span>
                 </div>
               </div>
-            </motion.a>
+            </MotionLink>
           ))}
         </div>
       </div>
