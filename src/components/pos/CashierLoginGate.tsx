@@ -170,7 +170,7 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
             </div>
 
             <Button
-              onClick={submitPin}
+              onClick={() => submitPin()}
               disabled={busy || pin.length < 4}
               className="w-full mt-5 h-12 bg-gradient-flame text-primary-foreground shadow-glow"
             >
