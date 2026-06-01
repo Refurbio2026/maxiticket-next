@@ -100,9 +100,21 @@ function ContactPage() {
           <Card className="p-6 bg-card/60 border-border/60">
             <div className="font-display font-bold mb-3">Sociálne siete</div>
             <div className="flex gap-2">
-              {[Instagram, Facebook, Youtube, Twitter].map((I, i) => (
-                <a key={i} href="#" className="size-10 rounded-xl glass grid place-items-center hover:text-primary transition-colors">
-                  <I className="size-4" />
+              {[
+                { Icon: Instagram, href: "https://instagram.com/maxiticket", label: "Instagram" },
+                { Icon: Facebook, href: "https://facebook.com/maxiticket", label: "Facebook" },
+                { Icon: Youtube, href: "https://youtube.com/@maxiticket", label: "YouTube" },
+                { Icon: Twitter, href: "https://twitter.com/maxiticket", label: "Twitter" },
+              ].map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="size-10 rounded-xl glass grid place-items-center hover:text-primary transition-colors"
+                >
+                  <Icon className="size-4" />
                 </a>
               ))}
             </div>
