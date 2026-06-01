@@ -171,9 +171,10 @@ function SuccessPage() {
             <div className="flex flex-wrap gap-3 mt-8 print:hidden">
               <Button
                 onClick={download}
+                disabled={generating}
                 className="gap-1.5 bg-gradient-flame text-primary-foreground shadow-glow"
               >
-                <Download className="size-4" /> Stiahnuť PDF vstupenku
+                <Download className="size-4" /> {generating ? "Generujem PDF…" : "Stiahnuť PDF vstupenku"}
               </Button>
               <Button onClick={sendEmail} variant="outline" disabled={sending} className="gap-1.5">
                 <Mail className="size-4" /> {sending ? "Posielam…" : "Poslať na email"}
