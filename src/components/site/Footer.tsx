@@ -1,9 +1,41 @@
+import { Link } from "@tanstack/react-router";
 import { Ticket, Instagram, Facebook, Youtube, Twitter } from "lucide-react";
 
-const cols = [
-  { t: "Platforma", l: ["Podujatia", "Kategórie", "Mestá", "Organizátori", "Blog"] },
-  { t: "Spoločnosť", l: ["O nás", "Kariéra", "Tlačové centrum", "Kontakt"] },
-  { t: "Právne", l: ["Obchodné podmienky", "Ochrana údajov", "Cookies", "GDPR"] },
+type Col = { t: string; l: { label: string; to: string }[] };
+
+const cols: Col[] = [
+  {
+    t: "Platforma",
+    l: [
+      { label: "Podujatia", to: "/events" },
+      { label: "Umelci", to: "/artists" },
+      { label: "Partneri", to: "/partners" },
+      { label: "Pre organizátorov", to: "/organizer" },
+    ],
+  },
+  {
+    t: "Spoločnosť",
+    l: [
+      { label: "O nás", to: "/about" },
+      { label: "Kontakt", to: "/contact" },
+      { label: "Podpora", to: "/support" },
+    ],
+  },
+  {
+    t: "Účet",
+    l: [
+      { label: "Prihlásenie", to: "/login" },
+      { label: "Registrácia", to: "/register" },
+      { label: "Môj účet", to: "/account" },
+    ],
+  },
+];
+
+const socials: { Icon: typeof Instagram; href: string; label: string }[] = [
+  { Icon: Instagram, href: "https://instagram.com/maxiticket", label: "Instagram" },
+  { Icon: Facebook, href: "https://facebook.com/maxiticket", label: "Facebook" },
+  { Icon: Youtube, href: "https://youtube.com/@maxiticket", label: "YouTube" },
+  { Icon: Twitter, href: "https://twitter.com/maxiticket", label: "Twitter" },
 ];
 
 export function Footer() {
@@ -12,21 +44,28 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="grid lg:grid-cols-5 gap-10">
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <div className="size-9 rounded-xl bg-gradient-flame grid place-items-center">
                 <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
               </div>
               <span className="font-display text-xl font-bold">
                 maxi<span className="text-gradient-flame">ticket</span>
               </span>
-            </div>
+            </Link>
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">
               Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.
             </p>
             <div className="mt-6 flex gap-2">
-              {[Instagram, Facebook, Youtube, Twitter].map((I, i) => (
-                <a key={i} href="#" className="size-10 rounded-xl glass grid place-items-center hover:text-primary transition-colors">
-                  <I className="size-4" />
+              {socials.map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="size-10 rounded-xl glass grid place-items-center hover:text-primary transition-colors"
+                >
+                  <Icon className="size-4" />
                 </a>
               ))}
             </div>
@@ -37,8 +76,10 @@ export function Footer() {
               <div className="font-display font-semibold mb-4 text-sm">{c.t}</div>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
                 {c.l.map((i) => (
-                  <li key={i}>
-                    <a href="#" className="hover:text-foreground transition-colors">{i}</a>
+                  <li key={i.label}>
+                    <Link to={i.to} className="hover:text-foreground transition-colors">
+                      {i.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
