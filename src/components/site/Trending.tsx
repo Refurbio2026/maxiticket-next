@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "@tanstack/react-router";
 import { Calendar, MapPin, Flame } from "lucide-react";
 import e1 from "@/assets/event-1.jpg";
 import e2 from "@/assets/event-2.jpg";
@@ -11,6 +12,8 @@ const events = [
   { img: e3, title: "Comedy Night: Evelyn", city: "Trnava", date: "08. Jún", price: "od 18 €", tag: "Stand-up", left: 41 },
   { img: e4, title: "HC Slovan vs. Sparta", city: "Bratislava", date: "29. Máj", price: "od 14 €", tag: "Šport", left: 230 },
 ];
+
+const MotionLink = motion(Link);
 
 export function Trending() {
   return (
