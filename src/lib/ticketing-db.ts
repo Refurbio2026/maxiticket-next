@@ -100,7 +100,7 @@ export function releaseExpired() {
   if (changed) setAllInventory(all);
 }
 
-/** Reserves seats. Returns false on conflict. */
+/** Reserves seats. Accepts rows already held by the same cart session. Returns false on conflict. */
 export function reserveSeats(
   eventId: string,
   seats: Array<{ seat_id: string; price: number; label: string; is_vip?: boolean }>,
@@ -108,12 +108,16 @@ export function reserveSeats(
   minutes = 10,
 ): boolean {
   releaseExpired();
+  const myHoldKey = `hold:${getCartSessionId()}`;
   const all = read<SeatInventoryRow[]>(INV_KEY, []);
   const byKey = new Map(all.map((r) => [`${r.event_id}::${r.seat_id}`, r]));
-  // conflict check
+  // conflict check — allow rows we already hold in this session
   for (const s of seats) {
     const row = byKey.get(`${eventId}::${s.seat_id}`);
-    if (row && row.status !== "available") return false;
+    if (!row) continue;
+    if (row.status === "available") continue;
+    if (row.status === "reserved" && row.order_id === myHoldKey) continue;
+    return false;
   }
   const until = new Date(Date.now() + minutes * 60_000).toISOString();
   for (const s of seats) {
@@ -135,6 +139,94 @@ export function reserveSeats(
   setAllInventory(all);
   return true;
 }
+
+// -------- Cart-phase soft locks --------
+// While a user is selecting seats (before checkout), each picked seat is
+// immediately reserved under a synthetic order_id `hold:<sessionId>` so
+// concurrent shoppers see it as taken. Hold TTL is short (default 2 min)
+// and is refreshed by the page while the cart is open.
+
+const CART_SID_KEY = "mt_cart_sid";
+
+export function getCartSessionId(): string {
+  if (!isBrowser()) return "ssr";
+  try {
+    let sid = window.sessionStorage.getItem(CART_SID_KEY);
+    if (!sid) {
+      sid = uid();
+      window.sessionStorage.setItem(CART_SID_KEY, sid);
+    }
+    return sid;
+  } catch {
+    return "anon";
+  }
+}
+
+function holdKey() {
+  return `hold:${getCartSessionId()}`;
+}
+
+/** Soft-lock a single seat for the current cart session. Returns false on conflict. */
+export function holdSeat(
+  eventId: string,
+  seat: { seat_id: string; price: number; label: string; is_vip?: boolean },
+  minutes = 2,
+): boolean {
+  return reserveSeats(eventId, [seat], holdKey(), minutes);
+}
+
+/** Release a single held seat (only if held by this session). */
+export function releaseHeldSeat(eventId: string, seatId: string) {
+  const mine = holdKey();
+  const all = read<SeatInventoryRow[]>(INV_KEY, []);
+  let changed = false;
+  for (const r of all) {
+    if (
+      r.event_id === eventId &&
+      r.seat_id === seatId &&
+      r.order_id === mine &&
+      r.status === "reserved"
+    ) {
+      r.status = "available";
+      r.reserved_until = undefined;
+      r.order_id = undefined;
+      changed = true;
+    }
+  }
+  if (changed) setAllInventory(all);
+}
+
+/** Extend reservation deadline on all seats currently held by this session. */
+export function extendHolds(eventId: string, minutes = 2) {
+  const mine = holdKey();
+  const until = new Date(Date.now() + minutes * 60_000).toISOString();
+  const all = read<SeatInventoryRow[]>(INV_KEY, []);
+  let changed = false;
+  for (const r of all) {
+    if (r.event_id === eventId && r.order_id === mine && r.status === "reserved") {
+      r.reserved_until = until;
+      changed = true;
+    }
+  }
+  if (changed) setAllInventory(all);
+}
+
+/** Release every seat currently held by this session for the given event. */
+export function releaseAllHolds(eventId: string) {
+  const mine = holdKey();
+  const all = read<SeatInventoryRow[]>(INV_KEY, []);
+  let changed = false;
+  for (const r of all) {
+    if (r.event_id === eventId && r.order_id === mine && r.status === "reserved") {
+      r.status = "available";
+      r.reserved_until = undefined;
+      r.order_id = undefined;
+      changed = true;
+    }
+  }
+  if (changed) setAllInventory(all);
+}
+
 
 export function markSold(eventId: string, orderId: string) {
   const all = read<SeatInventoryRow[]>(INV_KEY, []);
