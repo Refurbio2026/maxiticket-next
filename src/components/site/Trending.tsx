@@ -28,16 +28,16 @@ export function Trending() {
               Práve frčia
             </h2>
           </div>
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">
+          <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">
             Všetky podujatia →
-          </a>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {events.map((e, i) => (
-            <motion.a
+            <MotionLink
               key={e.title}
-              href="#"
+              to="/events"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
