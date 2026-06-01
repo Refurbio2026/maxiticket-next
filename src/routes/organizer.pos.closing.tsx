@@ -75,6 +75,44 @@ function ClosingPage() {
     toast.success("Denná uzávierka vytvorená");
   };
 
+  const closeShift = () => {
+    const active = getActiveSession();
+    if (!active) {
+      toast.info("Žiadna aktívna pokladničná zmena.");
+      return;
+    }
+    const cashStr = prompt(
+      `Spočítaj hotovosť v zásuvke pre pokladníka ${active.cashier_display_name} (€):`,
+      "0",
+    );
+    if (cashStr === null) return;
+    const closingCash = Number(cashStr) || 0;
+    const totals = computeSessionTotals(active.id);
+    const expected = active.opening_cash_amount + totals.total_cash_sales;
+    addClosure({
+      id: uid(),
+      cashier_id: active.cashier_id,
+      cashier_display_name: active.cashier_display_name,
+      cashier_session_id: active.id,
+      organizer_id: active.organizer_id,
+      closing_cash_amount: closingCash,
+      expected_cash_amount: expected,
+      cash_difference: closingCash - expected,
+      total_card_sales: totals.total_card_sales,
+      total_cash_sales: totals.total_cash_sales,
+      total_sales: totals.total_sales,
+      order_count: totals.order_count,
+      created_at: new Date().toISOString(),
+    });
+    closeSession(active.id, closingCash);
+    const diff = closingCash - expected;
+    toast.success(
+      diff === 0
+        ? "Pokladničná zmena uzavretá — hotovosť sedí."
+        : `Pokladničná zmena uzavretá. Rozdiel: ${diff > 0 ? "+" : ""}€${diff.toFixed(2)}`,
+    );
+  };
+
   const audit = getAuditLogs().filter((a) => a.created_at.startsWith(date)).slice(0, 10);
 
   return (
