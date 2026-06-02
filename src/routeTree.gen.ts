@@ -26,6 +26,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
 import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
@@ -68,6 +69,7 @@ import { Route as AdminMaxiticketAccountingReportRouteImport } from './routes/ad
 import { Route as AdminMaxiticketAccountingChecksRouteImport } from './routes/admin.maxiticket.accounting-checks'
 import { Route as AdminMaxiticketAccountingBankRouteImport } from './routes/admin.maxiticket.accounting-bank'
 import { Route as AdminFinanceStatsRouteImport } from './routes/admin.finance.stats'
+import { Route as AdminFinancePaymentsRouteImport } from './routes/admin.finance.payments'
 import { Route as AdminEventsVenuesRouteImport } from './routes/admin.events.venues'
 import { Route as AdminEventsVenueLayoutsRouteImport } from './routes/admin.events.venue-layouts'
 import { Route as AdminEventsEventsRouteImport } from './routes/admin.events.events'
@@ -83,6 +85,7 @@ import { Route as AdminDataDiscountsRouteImport } from './routes/admin.data.disc
 import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.data.discount-categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
+import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
 const SupportRoute = SupportRouteImport.update({
@@ -169,6 +172,11 @@ const EventsIdRoute = EventsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => EventsRoute,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutOrderIdRoute = CheckoutOrderIdRouteImport.update({
   id: '/checkout/$orderId',
@@ -388,6 +396,11 @@ const AdminFinanceStatsRoute = AdminFinanceStatsRouteImport.update({
   path: '/finance/stats',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFinancePaymentsRoute = AdminFinancePaymentsRouteImport.update({
+  id: '/finance/payments',
+  path: '/finance/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEventsVenuesRoute = AdminEventsVenuesRouteImport.update({
   id: '/events/venues',
   path: '/events/venues',
@@ -465,6 +478,12 @@ const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
   path: '/data/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicPaymentsGopayWebhookRoute =
+  ApiPublicPaymentsGopayWebhookRouteImport.update({
+    id: '/api/public/payments/gopay/webhook',
+    path: '/api/public/payments/gopay/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminDataCategoriesCategoryIdEventsNewRoute =
   AdminDataCategoriesCategoryIdEventsNewRouteImport.update({
     id: '/$categoryId/events/new',
@@ -487,6 +506,7 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
@@ -507,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/events': typeof AdminEventsEventsRoute
   '/admin/events/venue-layouts': typeof AdminEventsVenueLayoutsRoute
   '/admin/events/venues': typeof AdminEventsVenuesRoute
+  '/admin/finance/payments': typeof AdminFinancePaymentsRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
   '/admin/maxiticket/accounting-checks': typeof AdminMaxiticketAccountingChecksRoute
@@ -547,6 +568,7 @@ export interface FileRoutesByFullPath {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesByTo {
@@ -562,6 +584,7 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -580,6 +603,7 @@ export interface FileRoutesByTo {
   '/admin/events/events': typeof AdminEventsEventsRoute
   '/admin/events/venue-layouts': typeof AdminEventsVenueLayoutsRoute
   '/admin/events/venues': typeof AdminEventsVenuesRoute
+  '/admin/finance/payments': typeof AdminFinancePaymentsRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
   '/admin/maxiticket/accounting-checks': typeof AdminMaxiticketAccountingChecksRoute
@@ -620,6 +644,7 @@ export interface FileRoutesByTo {
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
+  '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesById {
@@ -638,6 +663,7 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
@@ -658,6 +684,7 @@ export interface FileRoutesById {
   '/admin/events/events': typeof AdminEventsEventsRoute
   '/admin/events/venue-layouts': typeof AdminEventsVenueLayoutsRoute
   '/admin/events/venues': typeof AdminEventsVenuesRoute
+  '/admin/finance/payments': typeof AdminFinancePaymentsRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
   '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
   '/admin/maxiticket/accounting-checks': typeof AdminMaxiticketAccountingChecksRoute
@@ -698,6 +725,7 @@ export interface FileRoutesById {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRouteTypes {
@@ -717,6 +745,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
+    | '/checkout/return'
     | '/events/$id'
     | '/organizer/events'
     | '/organizer/marketing'
@@ -737,6 +766,7 @@ export interface FileRouteTypes {
     | '/admin/events/events'
     | '/admin/events/venue-layouts'
     | '/admin/events/venues'
+    | '/admin/finance/payments'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
     | '/admin/maxiticket/accounting-checks'
@@ -777,6 +807,7 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -792,6 +823,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
+    | '/checkout/return'
     | '/events/$id'
     | '/admin'
     | '/organizer'
@@ -810,6 +842,7 @@ export interface FileRouteTypes {
     | '/admin/events/events'
     | '/admin/events/venue-layouts'
     | '/admin/events/venues'
+    | '/admin/finance/payments'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
     | '/admin/maxiticket/accounting-checks'
@@ -850,6 +883,7 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/pos'
+    | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   id:
     | '__root__'
@@ -867,6 +901,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
+    | '/checkout/return'
     | '/events/$id'
     | '/organizer/events'
     | '/organizer/marketing'
@@ -887,6 +922,7 @@ export interface FileRouteTypes {
     | '/admin/events/events'
     | '/admin/events/venue-layouts'
     | '/admin/events/venues'
+    | '/admin/finance/payments'
     | '/admin/finance/stats'
     | '/admin/maxiticket/accounting-bank'
     | '/admin/maxiticket/accounting-checks'
@@ -927,6 +963,7 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesById: FileRoutesById
 }
@@ -944,8 +981,10 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SupportRoute: typeof SupportRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
+  ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1068,6 +1107,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$id'
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof EventsRoute
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/checkout/$orderId': {
       id: '/checkout/$orderId'
@@ -1363,6 +1409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFinanceStatsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/finance/payments': {
+      id: '/admin/finance/payments'
+      path: '/finance/payments'
+      fullPath: '/admin/finance/payments'
+      preLoaderRoute: typeof AdminFinancePaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events/venues': {
       id: '/admin/events/venues'
       path: '/events/venues'
@@ -1468,6 +1521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/payments/gopay/webhook': {
+      id: '/api/public/payments/gopay/webhook'
+      path: '/api/public/payments/gopay/webhook'
+      fullPath: '/api/public/payments/gopay/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsGopayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/data/categories/$categoryId/events/new': {
       id: '/admin/data/categories/$categoryId/events/new'
       path: '/$categoryId/events/new'
@@ -1508,6 +1568,7 @@ interface AdminRouteChildren {
   AdminEventsEventsRoute: typeof AdminEventsEventsRoute
   AdminEventsVenueLayoutsRoute: typeof AdminEventsVenueLayoutsRoute
   AdminEventsVenuesRoute: typeof AdminEventsVenuesRoute
+  AdminFinancePaymentsRoute: typeof AdminFinancePaymentsRoute
   AdminFinanceStatsRoute: typeof AdminFinanceStatsRoute
   AdminMaxiticketAccountingBankRoute: typeof AdminMaxiticketAccountingBankRoute
   AdminMaxiticketAccountingChecksRoute: typeof AdminMaxiticketAccountingChecksRoute
@@ -1555,6 +1616,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEventsEventsRoute: AdminEventsEventsRoute,
   AdminEventsVenueLayoutsRoute: AdminEventsVenueLayoutsRoute,
   AdminEventsVenuesRoute: AdminEventsVenuesRoute,
+  AdminFinancePaymentsRoute: AdminFinancePaymentsRoute,
   AdminFinanceStatsRoute: AdminFinanceStatsRoute,
   AdminMaxiticketAccountingBankRoute: AdminMaxiticketAccountingBankRoute,
   AdminMaxiticketAccountingChecksRoute: AdminMaxiticketAccountingChecksRoute,
@@ -1668,8 +1730,10 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SupportRoute: SupportRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
+  ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

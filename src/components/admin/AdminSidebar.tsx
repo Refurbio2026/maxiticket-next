@@ -124,7 +124,10 @@ const groups: Group[] = [
   },
   {
     label: "Financie",
-    items: [{ title: "Štatistiky", url: "/admin/finance/stats", icon: BarChart3 }],
+    items: [
+      { title: "Platby (GoPay)", url: "/admin/finance/payments", icon: CreditCard },
+      { title: "Štatistiky", url: "/admin/finance/stats", icon: BarChart3 },
+    ],
   },
   {
     label: "Marketing",
