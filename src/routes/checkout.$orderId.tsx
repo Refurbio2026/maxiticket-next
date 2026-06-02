@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
-  getOrder, simulatePayment, releaseExpired, releaseOrder, upsertOrder,
+  getOrder, releaseExpired, releaseOrder, upsertOrder,
   type Order,
 } from "@/lib/ticketing-db";
+import { submitOrder, createGoPayPaymentForOrder } from "@/lib/payments.functions";
 import { getEvent, type EventItem } from "@/lib/local-db";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
@@ -62,7 +64,11 @@ function CheckoutPage() {
   const mins = Math.max(0, Math.floor(expiresMs / 60000));
   const secs = Math.max(0, Math.floor((expiresMs % 60000) / 1000));
 
-  const pay = () => {
+  const [paying, setPaying] = useState(false);
+  const submit = useServerFn(submitOrder);
+  const createPayment = useServerFn(createGoPayPaymentForOrder);
+
+  const pay = async () => {
     if (!order) return;
     if (!form.first_name || !form.last_name || !form.email) {
       toast.error("Vyplň meno, priezvisko a email");
@@ -72,20 +78,38 @@ function CheckoutPage() {
       toast.error("Musíš súhlasiť s obchodnými podmienkami");
       return;
     }
-    // save customer info onto order before paying
     upsertOrder({
       ...order,
       customer_name: `${form.first_name} ${form.last_name}`.trim(),
       customer_email: form.email,
       customer_phone: form.phone,
     });
-    const paid = simulatePayment(order.id);
-    if (!paid) {
-      toast.error("Platba zlyhala");
-      return;
+    setPaying(true);
+    try {
+      const { order_id: supabaseOrderId } = await submit({
+        data: {
+          event_id: order.event_id,
+          customer: {
+            first_name: form.first_name,
+            last_name: form.last_name,
+            email: form.email,
+            phone: form.phone || undefined,
+          },
+          items: order.items.map((it) => ({
+            seat_id: it.seat_id || undefined,
+            label: it.label,
+            unit_price: it.price,
+            quantity: 1,
+          })),
+        },
+      });
+      const { payment_url } = await createPayment({ data: { order_id: supabaseOrderId } });
+      window.location.href = payment_url;
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Vytvorenie platby zlyhalo");
+      setPaying(false);
     }
-    toast.success("Platba úspešná");
-    navigate({ to: "/checkout/success/$orderId", params: { orderId: order.id } });
   };
 
   const cancel = () => {
