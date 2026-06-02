@@ -204,7 +204,7 @@ function CheckoutPage() {
             </h2>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
               <Lock className="size-3.5" />
-              Šifrované SSL pripojenie · Demo režim – žiadne reálne peniaze
+              Šifrované SSL pripojenie · Platby spracuje GoPay
             </div>
             <Button
               onClick={pay}
