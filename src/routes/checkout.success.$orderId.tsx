@@ -36,19 +36,83 @@ function SuccessPage() {
   const [order, setOrder] = useState<Order | undefined>();
   const [event, setEvent] = useState<EventItem | undefined>();
   const [tickets, setTickets] = useState<IssuedTicket[]>([]);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [sending, setSending] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const fetchSummary = useServerFn(getOrderSummary);
 
   useEffect(() => {
-    const o = getOrder(orderId);
-    setOrder(o);
-    if (o) {
-      setEvent(getEvent(o.event_id));
-      setTickets(getTicketsForOrder(o.id));
-    }
-    setLoaded(true);
-  }, [orderId]);
+    let cancelled = false;
+    (async () => {
+      // 1) Try Supabase order (real GoPay flow)
+      try {
+        const s = await fetchSummary({ data: { order_id: orderId } });
+        if (cancelled) return;
+        if (s.order) {
+          const sb = s.order as any;
+          setOrder({
+            id: sb.id,
+            event_id: sb.event_id,
+            customer_name: sb.customer_name || undefined,
+            customer_email: sb.customer_email || undefined,
+            customer_phone: sb.customer_phone || undefined,
+            items: (s.items || []).map((it: any) => ({
+              seat_id: it.seat_id || undefined,
+              label: it.label,
+              price: Number(it.unit_price),
+            })),
+            total_amount: Number(sb.total_amount),
+            status: sb.status,
+            expires_at: sb.expires_at || new Date().toISOString(),
+            created_at: sb.created_at,
+            paid_at: sb.paid_at || undefined,
+          });
+          setTickets(
+            (s.tickets || []).map((t: any) => ({
+              id: t.id,
+              order_id: t.order_id,
+              event_id: t.event_id,
+              seat_label: t.seat_label,
+              qr_code: t.qr_code,
+              issued_at: t.issued_at,
+            })),
+          );
+          setInvoiceUrl(sb.superfaktura_invoice_pdf_url || null);
+          setInvoiceNumber(sb.superfaktura_invoice_number || null);
+          if (s.event) {
+            setEvent({
+              id: s.event.id,
+              title: s.event.title,
+              category: s.event.category,
+              event_date: s.event.event_date,
+              event_time: s.event.event_time,
+              venue: s.event.venue,
+              city: s.event.city,
+            } as EventItem);
+          } else {
+            setEvent(getEvent(sb.event_id));
+          }
+          setLoaded(true);
+          return;
+        }
+      } catch {
+        /* fall through to localStorage */
+      }
+      // 2) Fallback: legacy localStorage order (demo/POS path)
+      const o = getOrder(orderId);
+      setOrder(o);
+      if (o) {
+        setEvent(getEvent(o.event_id));
+        setTickets(getTicketsForOrder(o.id));
+      }
+      setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, fetchSummary]);
 
   const download = async () => {
     if (!order || tickets.length === 0) {
