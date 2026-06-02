@@ -62,6 +62,216 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          order_id: string
+          quantity: number
+          seat_id: string | null
+          ticket_type_id: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          order_id: string
+          quantity?: number
+          seat_id?: string | null
+          ticket_type_id?: string | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          order_id?: string
+          quantity?: number
+          seat_id?: string | null
+          ticket_type_id?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          currency: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          event_id: string
+          expires_at: string | null
+          gopay_payment_id: string | null
+          gopay_payment_url: string | null
+          id: string
+          paid_at: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          superfaktura_invoice_id: string | null
+          superfaktura_invoice_number: string | null
+          superfaktura_invoice_pdf_url: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          event_id: string
+          expires_at?: string | null
+          gopay_payment_id?: string | null
+          gopay_payment_url?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          superfaktura_invoice_id?: string | null
+          superfaktura_invoice_number?: string | null
+          superfaktura_invoice_pdf_url?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          event_id?: string
+          expires_at?: string | null
+          gopay_payment_id?: string | null
+          gopay_payment_url?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          superfaktura_invoice_id?: string | null
+          superfaktura_invoice_number?: string | null
+          superfaktura_invoice_pdf_url?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_logs: {
+        Row: {
+          created_at: string
+          endpoint: string | null
+          error_message: string | null
+          id: string
+          order_id: string | null
+          provider: Database["public"]["Enums"]["payment_provider"]
+          request_payload: Json | null
+          response_payload: Json | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          order_id: string
+          provider: Database["public"]["Enums"]["payment_provider"]
+          provider_payment_id: string | null
+          raw_response: Json | null
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          order_id: string
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          provider_payment_id?: string | null
+          raw_response?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          order_id?: string
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          provider_payment_id?: string | null
+          raw_response?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -82,6 +292,107 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      seat_inventory: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          is_vip: boolean
+          label: string | null
+          order_id: string | null
+          price: number
+          reserved_until: string | null
+          seat_id: string
+          status: Database["public"]["Enums"]["seat_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          is_vip?: boolean
+          label?: string | null
+          order_id?: string | null
+          price?: number
+          reserved_until?: string | null
+          seat_id: string
+          status?: Database["public"]["Enums"]["seat_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_vip?: boolean
+          label?: string | null
+          order_id?: string | null
+          price?: number
+          reserved_until?: string | null
+          seat_id?: string
+          status?: Database["public"]["Enums"]["seat_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_inventory_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_inventory_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      superfaktura_logs: {
+        Row: {
+          created_at: string
+          endpoint: string | null
+          error_message: string | null
+          id: string
+          invoice_id: string | null
+          order_id: string | null
+          request_payload: Json | null
+          response_payload: Json | null
+          status: Database["public"]["Enums"]["sf_log_status"]
+        }
+        Insert: {
+          created_at?: string
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_id?: string | null
+          order_id?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: Database["public"]["Enums"]["sf_log_status"]
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_id?: string | null
+          order_id?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: Database["public"]["Enums"]["sf_log_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "superfaktura_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_types: {
         Row: {
@@ -114,6 +425,54 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          event_id: string
+          id: string
+          issued_at: string
+          order_id: string
+          qr_code: string
+          seat_id: string | null
+          seat_label: string
+          used_at: string | null
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          issued_at?: string
+          order_id: string
+          qr_code: string
+          seat_id?: string | null
+          seat_label: string
+          used_at?: string | null
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          issued_at?: string
+          order_id?: string
+          qr_code?: string
+          seat_id?: string | null
+          seat_label?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -155,6 +514,24 @@ export type Database = {
     Enums: {
       app_role: "user" | "organizer" | "admin"
       event_status: "draft" | "published"
+      order_status:
+        | "pending"
+        | "awaiting_payment"
+        | "paid"
+        | "failed"
+        | "cancelled"
+        | "refunded"
+        | "expired"
+      payment_provider: "gopay"
+      payment_status:
+        | "pending"
+        | "authorized"
+        | "paid"
+        | "failed"
+        | "cancelled"
+        | "refunded"
+      seat_status: "available" | "reserved" | "sold"
+      sf_log_status: "ok" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -284,6 +661,26 @@ export const Constants = {
     Enums: {
       app_role: ["user", "organizer", "admin"],
       event_status: ["draft", "published"],
+      order_status: [
+        "pending",
+        "awaiting_payment",
+        "paid",
+        "failed",
+        "cancelled",
+        "refunded",
+        "expired",
+      ],
+      payment_provider: ["gopay"],
+      payment_status: [
+        "pending",
+        "authorized",
+        "paid",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
+      seat_status: ["available", "reserved", "sold"],
+      sf_log_status: ["ok", "error"],
     },
   },
 } as const
