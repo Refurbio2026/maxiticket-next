@@ -247,6 +247,15 @@ function SuccessPage() {
               <Button onClick={sendEmail} variant="outline" disabled={sending} className="gap-1.5">
                 <Mail className="size-4" /> {sending ? "Posielam…" : "Poslať na email"}
               </Button>
+              {invoiceUrl && (
+                <a href={invoiceUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="gap-1.5">
+                    <FileText className="size-4" />
+                    {invoiceNumber ? `Doklad ${invoiceNumber}` : "Stiahnuť doklad"}
+                    <ExternalLink className="size-3.5 opacity-60" />
+                  </Button>
+                </a>
+              )}
               <Link to="/events">
                 <Button variant="ghost" className="gap-1.5">
                   <ArrowLeft className="size-4" /> Späť na podujatia
