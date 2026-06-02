@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import { getOrder, getTicketsForOrder, type Order, type IssuedTicket } from "@/lib/ticketing-db";
 import { getEvent, type EventItem } from "@/lib/local-db";
+import { getOrderSummary } from "@/lib/payments.functions";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
@@ -17,6 +19,8 @@ import {
   ShieldCheck,
   QrCode,
   Smartphone,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/WalletButtons";
