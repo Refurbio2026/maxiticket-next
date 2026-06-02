@@ -208,14 +208,16 @@ function CheckoutPage() {
             </div>
             <Button
               onClick={pay}
-              disabled={expired}
+              disabled={expired || paying}
               className="w-full bg-gradient-flame text-primary-foreground shadow-glow"
               size="lg"
             >
               <CreditCard className="size-4 mr-2" />
-              {expired
-                ? "Rezervácia vypršala"
-                : `Zaplatiť €${order.total_amount.toFixed(2)}`}
+              {paying
+                ? "Pripravujem GoPay…"
+                : expired
+                  ? "Rezervácia vypršala"
+                  : `Zaplatiť cez GoPay €${order.total_amount.toFixed(2)}`}
             </Button>
 
             <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
