@@ -25,6 +25,7 @@ export type Database = {
           id: string
           image_url: string | null
           organizer_id: string
+          scanner_token: string
           status: Database["public"]["Enums"]["event_status"]
           title: string
           updated_at: string
@@ -40,6 +41,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           organizer_id: string
+          scanner_token?: string
           status?: Database["public"]["Enums"]["event_status"]
           title: string
           updated_at?: string
@@ -55,6 +57,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           organizer_id?: string
+          scanner_token?: string
           status?: Database["public"]["Enums"]["event_status"]
           title?: string
           updated_at?: string
