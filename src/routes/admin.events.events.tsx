@@ -24,7 +24,10 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Sparkles, ExternalLink } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, QrCode, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { getEventSoldTickets } from "@/lib/event-tickets.functions";
+import { downloadEventSoldTicketsPdf } from "@/lib/ticket-pdf";
 
 export const Route = createFileRoute("/admin/events/events")({
   head: () => ({ meta: [{ title: "Podujatia · MAXITICKET Admin" }] }),
