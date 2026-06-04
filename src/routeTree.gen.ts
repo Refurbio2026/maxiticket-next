@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as OrganizerRouteImport } from './routes/organizer'
@@ -93,6 +94,11 @@ import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './ro
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScannerRoute = ScannerRouteImport.update({
+  id: '/scanner',
+  path: '/scanner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -515,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/scanner': typeof ScannerRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -595,6 +602,7 @@ export interface FileRoutesByTo {
   '/marketing': typeof MarketingRoute
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/scanner': typeof ScannerRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -676,6 +684,7 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/scanner': typeof ScannerRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -760,6 +769,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/partners'
     | '/register'
+    | '/scanner'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -840,6 +850,7 @@ export interface FileRouteTypes {
     | '/marketing'
     | '/partners'
     | '/register'
+    | '/scanner'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -920,6 +931,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/partners'
     | '/register'
+    | '/scanner'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -1003,6 +1015,7 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   PartnersRoute: typeof PartnersRoute
   RegisterRoute: typeof RegisterRoute
+  ScannerRoute: typeof ScannerRoute
   SupportRoute: typeof SupportRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
@@ -1020,6 +1033,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scanner': {
+      id: '/scanner'
+      path: '/scanner'
+      fullPath: '/scanner'
+      preLoaderRoute: typeof ScannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -1768,6 +1788,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   PartnersRoute: PartnersRoute,
   RegisterRoute: RegisterRoute,
+  ScannerRoute: ScannerRoute,
   SupportRoute: SupportRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,

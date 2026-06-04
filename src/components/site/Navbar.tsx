@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Ticket, Menu, X, User, LogOut } from "lucide-react";
+import { Ticket, Menu, X, User, LogOut, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -68,6 +68,9 @@ export function Navbar() {
                 <Link to="/login">Prihlásiť sa</Link>
               </Button>
             )}
+            <Button asChild variant="outline" className="hidden sm:inline-flex rounded-xl text-sm">
+              <Link to="/scanner"><ScanLine className="size-4 mr-1.5" /> Čítačka QR</Link>
+            </Button>
             <Button asChild className="hidden sm:inline-flex rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow">
               <Link to="/login" search={{ section: "organizer" }}>Pridať podujatie</Link>
             </Button>
@@ -139,6 +142,13 @@ export function Navbar() {
                   Prihlásiť sa
                 </Link>
               )}
+              <Link
+                to="/scanner"
+                onClick={() => setOpen(false)}
+                className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40 flex items-center gap-2"
+              >
+                <ScanLine className="size-4" /> Čítačka QR
+              </Link>
               <Link
                 to="/login"
                 search={{ section: "organizer" }}
