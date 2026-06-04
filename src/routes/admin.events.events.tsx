@@ -24,7 +24,10 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Sparkles, ExternalLink } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, QrCode, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { getEventSoldTickets } from "@/lib/event-tickets.functions";
+import { downloadEventSoldTicketsPdf } from "@/lib/ticket-pdf";
 
 export const Route = createFileRoute("/admin/events/events")({
   head: () => ({ meta: [{ title: "Podujatia · MAXITICKET Admin" }] }),
@@ -74,6 +77,29 @@ function Page() {
   const [layouts, setLayouts] = useState<HallLayout[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(blankForm());
+  const [qrLoading, setQrLoading] = useState<string | null>(null);
+  const fetchSold = useServerFn(getEventSoldTickets);
+
+  const downloadQrs = async (e: EventItem) => {
+    setQrLoading(e.id);
+    try {
+      const res = await fetchSold({ data: { title: e.title, event_date: e.event_date } });
+      if (!res.event) {
+        toast.error("Podujatie sa nenašlo v databáze.");
+        return;
+      }
+      if (!res.tickets.length) {
+        toast.info("Pre toto podujatie zatiaľ neexistujú žiadne predané lístky.");
+        return;
+      }
+      await downloadEventSoldTicketsPdf({ event: res.event, tickets: res.tickets });
+      toast.success(`Stiahnutých ${res.tickets.length} vstupeniek.`);
+    } catch (err: any) {
+      toast.error(err?.message || "Nepodarilo sa vygenerovať PDF.");
+    } finally {
+      setQrLoading(null);
+    }
+  };
 
   useEffect(() => {
     const load = () => {
@@ -237,6 +263,17 @@ function Page() {
                     <Link to="/events/$id" params={{ id: e.id }} target="_blank">
                       <Button size="sm" variant="ghost" className="gap-1"><ExternalLink className="size-3.5" /></Button>
                     </Link>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => downloadQrs(e)}
+                      disabled={qrLoading === e.id}
+                      title="Stiahnuť QR kódy predaných lístkov (PDF)"
+                    >
+                      {qrLoading === e.id ? <Loader2 className="size-3.5 animate-spin" /> : <QrCode className="size-3.5" />}
+                      QR lístky
+                    </Button>
                     {e.status === "draft" ? (
                       <Button size="sm" variant="outline" onClick={() => setStatus(e, "published")}>Publikovať</Button>
                     ) : (
@@ -244,6 +281,7 @@ function Page() {
                     )}
                     <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(e.id)}>Zmazať</Button>
                   </td>
+
                 </tr>
               ))}
             </tbody>
