@@ -67,6 +67,7 @@ function ScannerPage() {
     recent: [],
   });
   const lockRef = useRef<string>("");
+  const lastTokenRef = useRef<string>("");
   const queueRef = useRef<Array<{ token: string; ts: number }>>([]);
 
   const allowed = useMemo(
