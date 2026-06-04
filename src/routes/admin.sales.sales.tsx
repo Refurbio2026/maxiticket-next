@@ -2,13 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, RefreshCw, ExternalLink, Search } from "lucide-react";
-import { listAdminOrders } from "@/lib/admin-stats.functions";
+import { Loader2, RefreshCw, ExternalLink, Search, Undo2 } from "lucide-react";
+import { listAdminOrders, type AdminOrderRow } from "@/lib/admin-stats.functions";
+import { refundOrder } from "@/lib/refunds.functions";
 
 export const Route = createFileRoute("/admin/sales/sales")({
   head: () => ({ meta: [{ title: "Predaj · MAXITICKET Admin" }] }),
@@ -30,9 +38,15 @@ const STATUSES: { value: string; label: string; cls?: string }[] = [
 
 function Page() {
   const fetchOrders = useServerFn(listAdminOrders);
+  const doRefund = useServerFn(refundOrder);
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
+  const [refundFor, setRefundFor] = useState<AdminOrderRow | null>(null);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [notifyCustomer, setNotifyCustomer] = useState(true);
+  const [refunding, setRefunding] = useState(false);
 
   const q = useQuery({
     queryKey: ["admin-orders", status, activeSearch],
@@ -41,6 +55,43 @@ function Page() {
 
   const rows = q.data || [];
   const totalAmount = rows.filter((r) => r.status === "paid").reduce((s, r) => s + r.total_amount, 0);
+
+  function openRefund(r: AdminOrderRow) {
+    setRefundFor(r);
+    setRefundAmount(r.total_amount.toFixed(2));
+    setRefundReason("");
+    setNotifyCustomer(true);
+  }
+
+  async function submitRefund() {
+    if (!refundFor) return;
+    const amt = Number(refundAmount.replace(",", "."));
+    if (!Number.isFinite(amt) || amt <= 0) {
+      toast.error("Zadaj platnú sumu");
+      return;
+    }
+    setRefunding(true);
+    try {
+      const res = await doRefund({
+        data: {
+          order_id: refundFor.id,
+          amount: amt,
+          reason: refundReason || null,
+          notify_customer: notifyCustomer,
+        },
+      });
+      toast.success(
+        `${res.full ? "Plný" : "Čiastočný"} refund ${amt.toFixed(2)} ${refundFor.currency} spracovaný.` +
+          (notifyCustomer ? (res.email_queued ? " Email odoslaný." : ` Email preskočený: ${res.email_skipped_reason || "—"}`) : ""),
+      );
+      setRefundFor(null);
+      q.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Refund zlyhal");
+    } finally {
+      setRefunding(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -95,15 +146,16 @@ function Page() {
                 <th className="text-left p-3 font-medium">Stav</th>
                 <th className="text-left p-3 font-medium">Faktúra</th>
                 <th className="text-left p-3 font-medium">Dátum</th>
+                <th className="text-right p-3 font-medium">Akcie</th>
               </tr>
             </thead>
             <tbody>
               {q.isLoading ? (
-                <tr><td colSpan={8} className="p-10 text-center text-muted-foreground"><Loader2 className="size-5 inline animate-spin mr-2" /> Načítavam…</td></tr>
+                <tr><td colSpan={9} className="p-10 text-center text-muted-foreground"><Loader2 className="size-5 inline animate-spin mr-2" /> Načítavam…</td></tr>
               ) : q.isError ? (
-                <tr><td colSpan={8} className="p-10 text-center text-destructive">{(q.error as any)?.message || "Chyba"}</td></tr>
+                <tr><td colSpan={9} className="p-10 text-center text-destructive">{(q.error as any)?.message || "Chyba"}</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={8} className="p-10 text-center text-muted-foreground">Žiadne objednávky.</td></tr>
+                <tr><td colSpan={9} className="p-10 text-center text-muted-foreground">Žiadne objednávky.</td></tr>
               ) : rows.map((r) => {
                 const st = STATUSES.find((s) => s.value === r.status);
                 return (
@@ -127,6 +179,17 @@ function Page() {
                       ) : <span className="text-muted-foreground text-xs">—</span>}
                     </td>
                     <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{new Date(r.paid_at || r.created_at).toLocaleString("sk")}</td>
+                    <td className="p-3 text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={r.status !== "paid"}
+                        onClick={() => openRefund(r)}
+                        className="gap-1.5"
+                      >
+                        <Undo2 className="size-3.5" /> Refund
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}
@@ -134,6 +197,66 @@ function Page() {
           </table>
         </div>
       </Card>
+
+      <Dialog open={!!refundFor} onOpenChange={(o) => !o && setRefundFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refund objednávky</DialogTitle>
+            <DialogDescription>
+              {refundFor && (
+                <>
+                  Objednávka <span className="font-mono">#{refundFor.id.slice(0, 8).toUpperCase()}</span> ·{" "}
+                  {refundFor.customer_email} · spolu <strong>{fmtEur(refundFor.total_amount, refundFor.currency)}</strong>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="refund-amount">Suma refundu ({refundFor?.currency || "EUR"})</Label>
+              <Input
+                id="refund-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={refundFor?.total_amount}
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Pre plný refund nechaj celú sumu. Pre čiastočný zadaj menej.
+              </p>
+              <div className="flex gap-2 mt-2">
+                <Button type="button" size="sm" variant="ghost" onClick={() => refundFor && setRefundAmount(refundFor.total_amount.toFixed(2))}>100 %</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => refundFor && setRefundAmount((refundFor.total_amount / 2).toFixed(2))}>50 %</Button>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="refund-reason">Dôvod (voliteľné)</Label>
+              <Textarea
+                id="refund-reason"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="napr. zrušené podujatie, požiadavka zákazníka…"
+                rows={3}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="notify" checked={notifyCustomer} onCheckedChange={(v) => setNotifyCustomer(!!v)} />
+              <Label htmlFor="notify" className="cursor-pointer">Odoslať potvrdenie zákazníkovi emailom</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRefundFor(null)} disabled={refunding}>Zrušiť</Button>
+            <Button onClick={submitRefund} disabled={refunding} className="gap-1.5">
+              {refunding && <Loader2 className="size-4 animate-spin" />}
+              Spracovať refund
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
