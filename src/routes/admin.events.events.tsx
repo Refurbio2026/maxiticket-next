@@ -263,6 +263,17 @@ function Page() {
                     <Link to="/events/$id" params={{ id: e.id }} target="_blank">
                       <Button size="sm" variant="ghost" className="gap-1"><ExternalLink className="size-3.5" /></Button>
                     </Link>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => downloadQrs(e)}
+                      disabled={qrLoading === e.id}
+                      title="Stiahnuť QR kódy predaných lístkov (PDF)"
+                    >
+                      {qrLoading === e.id ? <Loader2 className="size-3.5 animate-spin" /> : <QrCode className="size-3.5" />}
+                      QR lístky
+                    </Button>
                     {e.status === "draft" ? (
                       <Button size="sm" variant="outline" onClick={() => setStatus(e, "published")}>Publikovať</Button>
                     ) : (
@@ -270,6 +281,7 @@ function Page() {
                     )}
                     <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(e.id)}>Zmazať</Button>
                   </td>
+
                 </tr>
               ))}
             </tbody>
