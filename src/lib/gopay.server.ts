@@ -148,6 +148,35 @@ export async function getGoPayPaymentStatus(paymentId: string | number): Promise
   };
 }
 
+export type RefundResult = {
+  id?: number;
+  result: string;
+  raw: unknown;
+};
+
+export async function refundGoPayPayment(
+  paymentId: string | number,
+  amountCents: number,
+): Promise<RefundResult> {
+  const { apiUrl } = env();
+  const token = await getAccessToken("payment-all");
+  const res = await fetch(`${apiUrl}/payments/payment/${paymentId}/refund`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams({ amount: String(amountCents) }).toString(),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`GoPay refund zlyhal (${res.status}): ${text}`);
+  }
+  const data = JSON.parse(text);
+  return { id: data.id, result: data.result || "FINISHED", raw: data };
+}
+
 export function mapGoPayStateToOrder(state: string): "paid" | "failed" | "cancelled" | "awaiting_payment" | "refunded" {
   switch (state) {
     case "PAID":
