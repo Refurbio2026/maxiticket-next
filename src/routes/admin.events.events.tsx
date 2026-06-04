@@ -77,6 +77,29 @@ function Page() {
   const [layouts, setLayouts] = useState<HallLayout[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(blankForm());
+  const [qrLoading, setQrLoading] = useState<string | null>(null);
+  const fetchSold = useServerFn(getEventSoldTickets);
+
+  const downloadQrs = async (e: EventItem) => {
+    setQrLoading(e.id);
+    try {
+      const res = await fetchSold({ data: { title: e.title, event_date: e.event_date } });
+      if (!res.event) {
+        toast.error("Podujatie sa nenašlo v databáze.");
+        return;
+      }
+      if (!res.tickets.length) {
+        toast.info("Pre toto podujatie zatiaľ neexistujú žiadne predané lístky.");
+        return;
+      }
+      await downloadEventSoldTicketsPdf({ event: res.event, tickets: res.tickets });
+      toast.success(`Stiahnutých ${res.tickets.length} vstupeniek.`);
+    } catch (err: any) {
+      toast.error(err?.message || "Nepodarilo sa vygenerovať PDF.");
+    } finally {
+      setQrLoading(null);
+    }
+  };
 
   useEffect(() => {
     const load = () => {
