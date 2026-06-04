@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as OrganizerRouteImport } from './routes/organizer'
@@ -85,12 +86,19 @@ import { Route as AdminDataDiscountsRouteImport } from './routes/admin.data.disc
 import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.data.discount-categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
+import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
+import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScannerRoute = ScannerRouteImport.update({
+  id: '/scanner',
+  path: '/scanner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -478,6 +486,16 @@ const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
   path: '/data/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicTicketsStatsRoute = ApiPublicTicketsStatsRouteImport.update({
+  id: '/api/public/tickets/stats',
+  path: '/api/public/tickets/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTicketsScanRoute = ApiPublicTicketsScanRouteImport.update({
+  id: '/api/public/tickets/scan',
+  path: '/api/public/tickets/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsGopayWebhookRoute =
   ApiPublicPaymentsGopayWebhookRouteImport.update({
     id: '/api/public/payments/gopay/webhook',
@@ -503,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/scanner': typeof ScannerRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -568,6 +587,8 @@ export interface FileRoutesByFullPath {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
+  '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -581,6 +602,7 @@ export interface FileRoutesByTo {
   '/marketing': typeof MarketingRoute
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/scanner': typeof ScannerRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -644,6 +666,8 @@ export interface FileRoutesByTo {
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
+  '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
+  '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -660,6 +684,7 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/scanner': typeof ScannerRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -725,6 +750,8 @@ export interface FileRoutesById {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
+  '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -742,6 +769,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/partners'
     | '/register'
+    | '/scanner'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -807,6 +835,8 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/tickets/scan'
+    | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesByTo: FileRoutesByTo
@@ -820,6 +850,7 @@ export interface FileRouteTypes {
     | '/marketing'
     | '/partners'
     | '/register'
+    | '/scanner'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -883,6 +914,8 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/pos'
+    | '/api/public/tickets/scan'
+    | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   id:
@@ -898,6 +931,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/partners'
     | '/register'
+    | '/scanner'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -963,6 +997,8 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/tickets/scan'
+    | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesById: FileRoutesById
@@ -979,11 +1015,14 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   PartnersRoute: typeof PartnersRoute
   RegisterRoute: typeof RegisterRoute
+  ScannerRoute: typeof ScannerRoute
   SupportRoute: typeof SupportRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
+  ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
+  ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
 }
 
@@ -994,6 +1033,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scanner': {
+      id: '/scanner'
+      path: '/scanner'
+      fullPath: '/scanner'
+      preLoaderRoute: typeof ScannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -1521,6 +1567,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/tickets/stats': {
+      id: '/api/public/tickets/stats'
+      path: '/api/public/tickets/stats'
+      fullPath: '/api/public/tickets/stats'
+      preLoaderRoute: typeof ApiPublicTicketsStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/tickets/scan': {
+      id: '/api/public/tickets/scan'
+      path: '/api/public/tickets/scan'
+      fullPath: '/api/public/tickets/scan'
+      preLoaderRoute: typeof ApiPublicTicketsScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/gopay/webhook': {
       id: '/api/public/payments/gopay/webhook'
       path: '/api/public/payments/gopay/webhook'
@@ -1728,11 +1788,14 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   PartnersRoute: PartnersRoute,
   RegisterRoute: RegisterRoute,
+  ScannerRoute: ScannerRoute,
   SupportRoute: SupportRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
+  ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
+  ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,
 }
 export const routeTree = rootRouteImport

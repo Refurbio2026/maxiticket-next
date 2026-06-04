@@ -394,6 +394,42 @@ export type Database = {
           },
         ]
       }
+      ticket_scans: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          id: string
+          qr_token: string | null
+          result: Database["public"]["Enums"]["ticket_scan_result"]
+          scanned_by: string | null
+          scanner_name: string | null
+          ticket_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          qr_token?: string | null
+          result: Database["public"]["Enums"]["ticket_scan_result"]
+          scanned_by?: string | null
+          scanner_name?: string | null
+          ticket_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          qr_token?: string | null
+          result?: Database["public"]["Enums"]["ticket_scan_result"]
+          scanned_by?: string | null
+          scanner_name?: string | null
+          ticket_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       ticket_types: {
         Row: {
           created_at: string
@@ -431,31 +467,46 @@ export type Database = {
       }
       tickets: {
         Row: {
+          allow_reentry: boolean
           event_id: string
           id: string
           issued_at: string
+          last_scan_at: string | null
           order_id: string
           qr_code: string
+          qr_token: string | null
+          scan_count: number
+          scanned_by: string | null
           seat_id: string | null
           seat_label: string
           used_at: string | null
         }
         Insert: {
+          allow_reentry?: boolean
           event_id: string
           id?: string
           issued_at?: string
+          last_scan_at?: string | null
           order_id: string
           qr_code: string
+          qr_token?: string | null
+          scan_count?: number
+          scanned_by?: string | null
           seat_id?: string | null
           seat_label: string
           used_at?: string | null
         }
         Update: {
+          allow_reentry?: boolean
           event_id?: string
           id?: string
           issued_at?: string
+          last_scan_at?: string | null
           order_id?: string
           qr_code?: string
+          qr_token?: string | null
+          scan_count?: number
+          scanned_by?: string | null
           seat_id?: string | null
           seat_label?: string
           used_at?: string | null
@@ -532,6 +583,7 @@ export type Database = {
         | "refunded"
       seat_status: "available" | "reserved" | "sold"
       sf_log_status: "ok" | "error"
+      ticket_scan_result: "valid" | "duplicate" | "invalid" | "reentry"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -681,6 +733,7 @@ export const Constants = {
       ],
       seat_status: ["available", "reserved", "sold"],
       sf_log_status: ["ok", "error"],
+      ticket_scan_result: ["valid", "duplicate", "invalid", "reentry"],
     },
   },
 } as const
