@@ -134,6 +134,7 @@ function ScannerPage() {
 
   async function submitScan(token: string, opts?: { allowReentry?: boolean }) {
     if (!eventId) return;
+    lastTokenRef.current = token;
     if (busy) return;
     setBusy(true);
     const payload = {
