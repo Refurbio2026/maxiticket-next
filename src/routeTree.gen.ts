@@ -85,6 +85,8 @@ import { Route as AdminDataDiscountsRouteImport } from './routes/admin.data.disc
 import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.data.discount-categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
+import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
+import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
@@ -478,6 +480,16 @@ const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
   path: '/data/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicTicketsStatsRoute = ApiPublicTicketsStatsRouteImport.update({
+  id: '/api/public/tickets/stats',
+  path: '/api/public/tickets/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTicketsScanRoute = ApiPublicTicketsScanRouteImport.update({
+  id: '/api/public/tickets/scan',
+  path: '/api/public/tickets/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsGopayWebhookRoute =
   ApiPublicPaymentsGopayWebhookRouteImport.update({
     id: '/api/public/payments/gopay/webhook',
@@ -568,6 +580,8 @@ export interface FileRoutesByFullPath {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
+  '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -644,6 +658,8 @@ export interface FileRoutesByTo {
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
+  '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
+  '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -725,6 +741,8 @@ export interface FileRoutesById {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
+  '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -807,6 +825,8 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/tickets/scan'
+    | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesByTo: FileRoutesByTo
@@ -883,6 +903,8 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/pos'
+    | '/api/public/tickets/scan'
+    | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   id:
@@ -963,6 +985,8 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/tickets/scan'
+    | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesById: FileRoutesById
@@ -984,6 +1008,8 @@ export interface RootRouteChildren {
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
+  ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
+  ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
 }
 
@@ -1521,6 +1547,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/tickets/stats': {
+      id: '/api/public/tickets/stats'
+      path: '/api/public/tickets/stats'
+      fullPath: '/api/public/tickets/stats'
+      preLoaderRoute: typeof ApiPublicTicketsStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/tickets/scan': {
+      id: '/api/public/tickets/scan'
+      path: '/api/public/tickets/scan'
+      fullPath: '/api/public/tickets/scan'
+      preLoaderRoute: typeof ApiPublicTicketsScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/gopay/webhook': {
       id: '/api/public/payments/gopay/webhook'
       path: '/api/public/payments/gopay/webhook'
@@ -1733,18 +1773,10 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutReturnRoute: CheckoutReturnRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
+  ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
+  ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

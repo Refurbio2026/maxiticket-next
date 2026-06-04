@@ -6,6 +6,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getGoPayPaymentStatus, mapGoPayStateToOrder } from "@/lib/gopay.server";
 import { createPaidInvoice } from "@/lib/superfaktura.server";
+import { signTicket } from "@/lib/qr-token.server";
+import crypto from "crypto";
 
 async function settle(orderId: string) {
   const { data: order } = await supabaseAdmin
@@ -53,13 +55,19 @@ async function settle(orderId: string) {
         .select("*")
         .eq("order_id", order.id);
       const tickets = (items || []).flatMap((it) =>
-        Array.from({ length: it.quantity || 1 }).map((_, i) => ({
-          order_id: order.id,
-          event_id: order.event_id,
-          seat_id: it.seat_id,
-          seat_label: it.label + (it.quantity > 1 ? ` #${i + 1}` : ""),
-          qr_code: `MAXI-${order.id.slice(0, 8).toUpperCase()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}-${i}`,
-        })),
+        Array.from({ length: it.quantity || 1 }).map((_, i) => {
+          const id = crypto.randomUUID();
+          const token = signTicket(id);
+          return {
+            id,
+            order_id: order.id,
+            event_id: order.event_id,
+            seat_id: it.seat_id,
+            seat_label: it.label + (it.quantity > 1 ? ` #${i + 1}` : ""),
+            qr_code: token,
+            qr_token: token,
+          };
+        }),
       );
       if (tickets.length > 0) await supabaseAdmin.from("tickets").insert(tickets);
     }
