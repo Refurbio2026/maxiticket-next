@@ -353,7 +353,7 @@ function ScannerPage() {
                         )}
                         <div className="mt-4 flex gap-2 flex-wrap">
                           {last.result === "duplicate" && last.ticket?.id && (
-                            <Button size="sm" className="rounded-xl" onClick={() => submitScan(last.ticket?.qr_code || manualCode, { allowReentry: true })}>
+                            <Button size="sm" className="rounded-xl" onClick={() => submitScan(lastTokenRef.current, { allowReentry: true })}>
                               Povoliť opätovný vstup
                             </Button>
                           )}
