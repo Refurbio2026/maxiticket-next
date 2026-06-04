@@ -1,5 +1,5 @@
-// GET /api/public/tickets/stats?event_id=...
-// Returns sold / used / remaining + last 20 scans.
+// GET /api/public/tickets/stats?event_id=... OR ?event_token=...
+// Returns sold / used / remaining + last 20 scans. No auth required.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -8,8 +8,18 @@ export const Route = createFileRoute("/api/public/tickets/stats")({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const eventId = url.searchParams.get("event_id");
-        if (!eventId) return Response.json({ error: "event_id required" }, { status: 400 });
+        let eventId = url.searchParams.get("event_id");
+        const token = url.searchParams.get("event_token");
+
+        if (!eventId && token) {
+          const { data } = await supabaseAdmin
+            .from("events")
+            .select("id")
+            .eq("scanner_token", token)
+            .maybeSingle();
+          eventId = (data as any)?.id || null;
+        }
+        if (!eventId) return Response.json({ error: "event_id or event_token required" }, { status: 400 });
 
         const [{ count: sold }, { count: used }, scansRes] = await Promise.all([
           supabaseAdmin
@@ -30,6 +40,7 @@ export const Route = createFileRoute("/api/public/tickets/stats")({
         ]);
 
         return Response.json({
+          event_id: eventId,
           sold: sold || 0,
           used: used || 0,
           remaining: Math.max(0, (sold || 0) - (used || 0)),

@@ -88,6 +88,7 @@ import { Route as AdminDataContentRouteImport } from './routes/admin.data.conten
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
 import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
+import { Route as ApiPublicEventsByTokenRouteImport } from './routes/api.public.events.by-token'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
@@ -496,6 +497,11 @@ const ApiPublicTicketsScanRoute = ApiPublicTicketsScanRouteImport.update({
   path: '/api/public/tickets/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEventsByTokenRoute = ApiPublicEventsByTokenRouteImport.update({
+  id: '/api/public/events/by-token',
+  path: '/api/public/events/by-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsGopayWebhookRoute =
   ApiPublicPaymentsGopayWebhookRouteImport.update({
     id: '/api/public/payments/gopay/webhook',
@@ -587,6 +593,7 @@ export interface FileRoutesByFullPath {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
@@ -666,6 +673,7 @@ export interface FileRoutesByTo {
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
+  '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
@@ -750,6 +758,7 @@ export interface FileRoutesById {
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
+  '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
@@ -835,6 +844,7 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/events/by-token'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
@@ -914,6 +924,7 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/pos'
+    | '/api/public/events/by-token'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
@@ -997,6 +1008,7 @@ export interface FileRouteTypes {
     | '/organizer/events/'
     | '/organizer/marketing/'
     | '/organizer/pos/'
+    | '/api/public/events/by-token'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
@@ -1021,6 +1033,7 @@ export interface RootRouteChildren {
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
+  ApiPublicEventsByTokenRoute: typeof ApiPublicEventsByTokenRoute
   ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
   ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
@@ -1581,6 +1594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTicketsScanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/events/by-token': {
+      id: '/api/public/events/by-token'
+      path: '/api/public/events/by-token'
+      fullPath: '/api/public/events/by-token'
+      preLoaderRoute: typeof ApiPublicEventsByTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/gopay/webhook': {
       id: '/api/public/payments/gopay/webhook'
       path: '/api/public/payments/gopay/webhook'
@@ -1794,6 +1814,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutReturnRoute: CheckoutReturnRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
+  ApiPublicEventsByTokenRoute: ApiPublicEventsByTokenRoute,
   ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
   ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,

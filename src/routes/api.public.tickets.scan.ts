@@ -33,10 +33,27 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
           body = await request.json();
         } catch {}
         const token = String(body?.token || "").trim();
-        const eventId = String(body?.event_id || "").trim() || null;
+        let eventId: string | null = body?.event_id ? String(body.event_id).trim() : null;
+        const eventToken = body?.event_token ? String(body.event_token).trim() : null;
         const scannedBy = body?.scanner_user_id ? String(body.scanner_user_id) : null;
         const scannerName = body?.scanner_name ? String(body.scanner_name) : null;
         const allowReentry = Boolean(body?.allow_reentry);
+
+        // Resolve event by public scanner token (no auth required)
+        if (!eventId && eventToken) {
+          const { data: ev } = await supabaseAdmin
+            .from("events")
+            .select("id")
+            .eq("scanner_token", eventToken)
+            .maybeSingle();
+          eventId = (ev as any)?.id || null;
+          if (!eventId) {
+            return Response.json(
+              { ok: false, result: "invalid" as const, message: "Neplatný kód podujatia" },
+              { status: 200 },
+            );
+          }
+        }
 
         // Accept legacy plaintext qr_code too (fallback)
         let ticketId = verifyTicket(token);

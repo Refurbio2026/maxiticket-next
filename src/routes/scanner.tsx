@@ -1,29 +1,21 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Scanner, type IDetectedBarcode } from "@yudiel/react-qr-scanner";
+import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
   Camera,
-  Flashlight,
   RefreshCcw,
   Keyboard,
   Ticket as TicketIcon,
   Loader2,
+  QrCode,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -37,8 +29,22 @@ type ScanResponse = {
   order?: any;
   event?: any;
 };
+type EventInfo = {
+  id: string;
+  title: string;
+  event_date: string;
+  event_time: string;
+  venue: string;
+  city: string;
+  image_url: string | null;
+  scanner_token: string;
+};
 
 export const Route = createFileRoute("/scanner")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    t: typeof s.t === "string" ? s.t : undefined,
+    e: typeof s.e === "string" ? s.e : undefined,
+  }),
   component: ScannerPage,
   head: () => ({
     meta: [
@@ -49,12 +55,13 @@ export const Route = createFileRoute("/scanner")({
 });
 
 function ScannerPage() {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [events, setEvents] = useState<Array<{ id: string; title: string; event_date: string }>>([]);
-  const [eventId, setEventId] = useState<string>("");
+  const search = useSearch({ from: "/scanner" });
+  const initialToken = (search.t || search.e || "").trim();
+  const [eventToken, setEventToken] = useState<string>(initialToken);
+  const [event, setEvent] = useState<EventInfo | null>(null);
+  const [loadingEvent, setLoadingEvent] = useState(false);
+  const [tokenInput, setTokenInput] = useState("");
   const [scanning, setScanning] = useState(true);
-  const [torch, setTorch] = useState(false);
   const [facing, setFacing] = useState<"environment" | "user">("environment");
   const [manualOpen, setManualOpen] = useState(false);
   const [manualCode, setManualCode] = useState("");
@@ -68,34 +75,39 @@ function ScannerPage() {
   });
   const lockRef = useRef<string>("");
   const lastTokenRef = useRef<string>("");
-  const queueRef = useRef<Array<{ token: string; ts: number }>>([]);
 
-  const allowed = useMemo(
-    () => !!user && (user.role === "admin" || user.role === "organizer"),
-    [user],
-  );
-
+  // Load event by token
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/login" });
-  }, [authLoading, user, navigate]);
-
-  useEffect(() => {
+    if (!eventToken) {
+      setEvent(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingEvent(true);
     (async () => {
-      const { data } = await supabase
-        .from("events")
-        .select("id, title, event_date")
-        .order("event_date", { ascending: true });
-      setEvents((data as any) || []);
-      if (data && data.length && !eventId) setEventId((data[0] as any).id);
+      try {
+        const r = await fetch(`/api/public/events/by-token?token=${encodeURIComponent(eventToken)}`);
+        if (!r.ok) throw new Error("not found");
+        const j = await r.json();
+        if (!cancelled) setEvent(j.event);
+      } catch {
+        if (!cancelled) setEvent(null);
+      } finally {
+        if (!cancelled) setLoadingEvent(false);
+      }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [eventToken]);
 
+  // Live stats
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventToken || !event) return;
     let stop = false;
     const load = async () => {
       try {
-        const r = await fetch(`/api/public/tickets/stats?event_id=${eventId}`);
+        const r = await fetch(`/api/public/tickets/stats?event_token=${encodeURIComponent(eventToken)}`);
         if (r.ok && !stop) setStats(await r.json());
       } catch {}
     };
@@ -105,9 +117,9 @@ function ScannerPage() {
       stop = true;
       clearInterval(t);
     };
-  }, [eventId]);
+  }, [eventToken, event]);
 
-  // Online/offline queue replay
+  // Offline replay
   useEffect(() => {
     const replay = async () => {
       if (!navigator.onLine) return;
@@ -132,16 +144,16 @@ function ScannerPage() {
     return () => window.removeEventListener("online", replay);
   }, []);
 
-  async function submitScan(token: string, opts?: { allowReentry?: boolean }) {
-    if (!eventId) return;
-    lastTokenRef.current = token;
+  async function submitScan(ticketToken: string, opts?: { allowReentry?: boolean }) {
+    if (!eventToken || !event) return;
+    lastTokenRef.current = ticketToken;
     if (busy) return;
     setBusy(true);
     const payload = {
-      token,
-      event_id: eventId,
-      scanner_user_id: user?.id,
-      scanner_name: user?.full_name || user?.email,
+      token: ticketToken,
+      event_token: eventToken,
+      event_id: event.id,
+      scanner_name: "Vstupná čítačka",
       allow_reentry: opts?.allowReentry || false,
     };
     try {
@@ -163,10 +175,9 @@ function ScannerPage() {
         });
         const j: ScanResponse = await r.json();
         setLast(j);
-        // haptic + sound
         if (navigator.vibrate) navigator.vibrate(j.result === "valid" || j.result === "reentry" ? 80 : [60, 40, 60]);
       }
-    } catch (e) {
+    } catch {
       setLast({ ok: false, result: "invalid", message: "Chyba spojenia" });
     } finally {
       setBusy(false);
@@ -181,20 +192,85 @@ function ScannerPage() {
     setTimeout(() => {
       if (lockRef.current === raw) lockRef.current = "";
     }, 1800);
+
+    // If no event yet, try to interpret as event QR (URL with ?t= or raw token)
+    if (!event) {
+      const tok = extractEventToken(raw);
+      if (tok) setEventToken(tok);
+      return;
+    }
     submitScan(raw);
   }
 
-  if (authLoading) return null;
-  if (!allowed) {
+  // ----- Event picker view -----
+  if (!event) {
     return (
-      <div className="min-h-screen grid place-items-center bg-background p-6">
-        <Card className="p-8 max-w-md text-center space-y-3">
-          <AlertTriangle className="size-10 mx-auto text-amber-500" />
-          <h1 className="text-xl font-bold">Prístup zamietnutý</h1>
-          <p className="text-sm text-muted-foreground">
-            Čítačka QR je dostupná len pre adminov a organizátorov.
-          </p>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
+        <div className="max-w-3xl mx-auto px-4 pt-24 pb-16">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="size-12 rounded-2xl bg-gradient-flame grid place-items-center shadow-glow">
+              <TicketIcon className="size-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-display font-bold">Čítačka QR vstupeniek</h1>
+              <p className="text-sm text-muted-foreground">
+                Naskenuj QR kód podujatia alebo zadaj jeho kód pre spustenie čítačky.
+              </p>
+            </div>
+          </div>
+
+          {loadingEvent && eventToken ? (
+            <Card className="p-10 text-center">
+              <Loader2 className="size-6 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-sm mt-3 text-muted-foreground">Načítavam podujatie…</p>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card className="overflow-hidden border-border/60">
+                <div className="aspect-square bg-black relative">
+                  <Scanner
+                    onScan={handleDetected}
+                    constraints={{ facingMode: "environment" }}
+                    formats={["qr_code"]}
+                    components={{ finder: true, torch: false }}
+                    styles={{ container: { height: "100%", width: "100%" } }}
+                  />
+                </div>
+                <div className="p-3 text-center text-xs text-muted-foreground border-t border-border/40">
+                  Nasmeruj kameru na QR kód podujatia
+                </div>
+              </Card>
+              <Card className="p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <QrCode className="size-5 text-primary" />
+                  <h2 className="font-semibold">Zadaj kód podujatia</h2>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Kód získaš od organizátora podujatia. Po zadaní sa otvorí čítačka pre dané podujatie.
+                </p>
+                <Input
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  placeholder="napr. K7f-9bX2..."
+                  className="rounded-xl"
+                />
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={() => tokenInput.trim() && setEventToken(tokenInput.trim())}
+                  disabled={!tokenInput.trim()}
+                >
+                  Načítať podujatie
+                </Button>
+                {eventToken && !loadingEvent && (
+                  <div className="rounded-lg border border-rose-500/40 bg-rose-500/5 p-3 text-sm text-rose-500 flex items-start gap-2">
+                    <AlertTriangle className="size-4 mt-0.5 shrink-0" />
+                    <span>Kód <code className="font-mono">{eventToken}</code> nepatrí žiadnemu podujatiu.</span>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -219,29 +295,31 @@ function ScannerPage() {
               <TicketIcon className="size-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-display font-bold">Čítačka QR vstupeniek</h1>
-              <p className="text-xs text-muted-foreground">Skenuje vo vstupenkách priradených k podujatiu</p>
+              <h1 className="text-2xl font-display font-bold">{event.title}</h1>
+              <p className="text-xs text-muted-foreground">
+                {new Date(event.event_date).toLocaleDateString("sk")} · {event.event_time} · {event.venue}, {event.city}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 min-w-[260px]">
-            <Select value={eventId} onValueChange={setEventId}>
-              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Vyber podujatie" /></SelectTrigger>
-              <SelectContent>
-                {events.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.title} — {new Date(e.event_date).toLocaleDateString("sk")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            onClick={() => {
+              setEvent(null);
+              setEventToken("");
+              setTokenInput("");
+              setLast(null);
+            }}
+          >
+            Zmeniť podujatie
+          </Button>
         </div>
 
         <div className="grid md:grid-cols-[1.2fr_1fr] gap-6">
-          {/* Scanner */}
           <Card className="overflow-hidden border-border/60 bg-card">
             <div className="relative aspect-square sm:aspect-video bg-black">
-              {scanning && eventId ? (
+              {scanning ? (
                 <Scanner
                   onScan={handleDetected}
                   constraints={{ facingMode: facing }}
@@ -253,7 +331,7 @@ function ScannerPage() {
                 <div className="absolute inset-0 grid place-items-center text-muted-foreground">
                   <div className="text-center space-y-2">
                     <Camera className="size-10 mx-auto" />
-                    <p>{!eventId ? "Vyber podujatie" : "Kamera vypnutá"}</p>
+                    <p>Kamera vypnutá</p>
                   </div>
                 </div>
               )}
@@ -270,9 +348,6 @@ function ScannerPage() {
                 </Button>
                 <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}>
                   <RefreshCcw className="size-4 mr-1.5" /> Kamera
-                </Button>
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setTorch((t) => !t)} disabled>
-                  <Flashlight className="size-4 mr-1.5" /> Svetlo
                 </Button>
               </div>
               <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setManualOpen((v) => !v)}>
@@ -299,7 +374,6 @@ function ScannerPage() {
             )}
           </Card>
 
-          {/* Side panel */}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <Stat label="Predané" value={stats.sold} tone="primary" />
@@ -342,12 +416,10 @@ function ScannerPage() {
                         </div>
                         {last.ticket && (
                           <dl className="mt-3 grid grid-cols-[110px_1fr] gap-x-3 gap-y-1 text-sm">
-                            {last.event?.title && (<><dt className="text-muted-foreground">Podujatie</dt><dd>{last.event.title}</dd></>)}
                             {last.ticket.seat_label && (<><dt className="text-muted-foreground">Sedadlo</dt><dd className="font-medium">{last.ticket.seat_label}</dd></>)}
                             {last.order?.customer_name && (<><dt className="text-muted-foreground">Meno</dt><dd>{last.order.customer_name}</dd></>)}
-                            {last.order?.customer_email && (<><dt className="text-muted-foreground">Email</dt><dd className="truncate">{last.order.customer_email}</dd></>)}
                             {last.order?.id && (<><dt className="text-muted-foreground">Objednávka</dt><dd className="font-mono text-xs">{String(last.order.id).slice(0, 8).toUpperCase()}</dd></>)}
-                            {last.ticket.last_scan_at && (<><dt className="text-muted-foreground">1. sken</dt><dd>{new Date(last.ticket.last_scan_at).toLocaleString("sk")}</dd></>)}
+                            {last.ticket.last_scan_at && (<><dt className="text-muted-foreground">Posl. sken</dt><dd>{new Date(last.ticket.last_scan_at).toLocaleString("sk")}</dd></>)}
                             {typeof last.ticket.scan_count === "number" && (<><dt className="text-muted-foreground">Skenov</dt><dd>{last.ticket.scan_count}</dd></>)}
                           </dl>
                         )}
@@ -370,10 +442,25 @@ function ScannerPage() {
 
             <Card className="p-4">
               <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">QR podujatia</h3>
+                <Badge variant="outline" className="font-mono text-[10px]">{event.scanner_token.slice(0, 10)}…</Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="bg-white p-2 rounded-lg">
+                  <QRCodeSVG value={buildEventScannerUrl(event.scanner_token)} size={96} level="M" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Vytlač a daj obsluhe — naskenovaním tohto QR sa čítačka automaticky napojí na podujatie.
+                </p>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-sm">Posledné skeny</h3>
                 <Badge variant="outline">{stats.recent.length}</Badge>
               </div>
-              <ul className="space-y-2 max-h-[260px] overflow-auto pr-1 text-sm">
+              <ul className="space-y-2 max-h-[220px] overflow-auto pr-1 text-sm">
                 {stats.recent.length === 0 && <li className="text-muted-foreground text-xs">Zatiaľ žiadne</li>}
                 {stats.recent.map((s) => (
                   <li key={s.id} className="flex items-center gap-2 border-b border-border/40 last:border-0 pb-2">
@@ -393,6 +480,26 @@ function ScannerPage() {
       </div>
     </div>
   );
+}
+
+function buildEventScannerUrl(token: string) {
+  if (typeof window === "undefined") return `/scanner?t=${token}`;
+  return `${window.location.origin}/scanner?t=${token}`;
+}
+
+function extractEventToken(raw: string): string | null {
+  // Accept full URL with ?t= or ?e=, or a bare token string
+  try {
+    const u = new URL(raw);
+    const t = u.searchParams.get("t") || u.searchParams.get("e");
+    if (t) return t.trim();
+  } catch {
+    // not a URL
+  }
+  // Bare token heuristic: no spaces, reasonable length, not a ticket token (which starts with MT2.)
+  if (raw.startsWith("MT2.")) return null;
+  if (/^[A-Za-z0-9_-]{16,64}$/.test(raw.trim())) return raw.trim();
+  return null;
 }
 
 function Stat({ label, value, tone }: { label: string; value: number; tone: "primary" | "emerald" | "amber" }) {
