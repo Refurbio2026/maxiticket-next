@@ -27,8 +27,9 @@ export function Navbar() {
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="fixed top-0 inset-x-0 z-50"
     >
-      <div className="mx-auto mt-4 max-w-7xl px-4">
-        <div className="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
+      <div className="glass border-x-0 border-t-0">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4">
+
           <Link to="/" className="flex items-center gap-2 group shrink-0" onClick={() => setOpen(false)}>
             <div className="size-9 rounded-xl bg-gradient-flame grid place-items-center shadow-glow">
               <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
@@ -93,7 +94,7 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="lg:hidden mt-2 glass rounded-2xl p-4 flex flex-col gap-1"
+              className="lg:hidden mx-auto max-w-7xl px-4 pb-4 flex flex-col gap-1"
             >
               {NAV_LINKS.map((l) =>
                 l.to.startsWith("/#") ? (
