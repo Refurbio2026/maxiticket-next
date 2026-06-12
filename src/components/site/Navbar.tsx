@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Ticket, Menu, X, User, LogOut, ScanLine } from "lucide-react";
+import { Menu, X, User, LogOut, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
+import logo from "@/assets/logo.png";
+
 
 const NAV_LINKS: { label: string; to: string }[] = [
   { label: "Podujatia", to: "/events" },
