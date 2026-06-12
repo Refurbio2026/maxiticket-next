@@ -2,13 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, MapPin, Calendar as CalIcon, Sparkles, ArrowRight, ChevronDown } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { getEvents, EVENTS_EVENT } from "@/lib/local-db";
+import { getLiveBuyersCount } from "@/lib/live-stats.functions";
 import hero from "@/assets/hero-concert.jpg";
+
 
 const stats = [
   { v: "1.2M+", l: "predaných vstupeniek" },
