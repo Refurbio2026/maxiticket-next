@@ -27,6 +27,14 @@ export function Hero() {
   const [date, setDate] = useState<Date | undefined>();
   const [cities, setCities] = useState<string[]>([]);
 
+  const fetchBuyers = useServerFn(getLiveBuyersCount);
+  const { data: live } = useQuery({
+    queryKey: ["live-buyers"],
+    queryFn: () => fetchBuyers(),
+    refetchInterval: 30_000,
+  });
+
+
   useEffect(() => {
     const load = () => {
       const set = new Set<string>();
