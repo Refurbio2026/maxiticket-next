@@ -38,7 +38,7 @@ export function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm text-muted-foreground">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-foreground/80">
             {NAV_LINKS.map((l) =>
               l.to.startsWith("/#") ? (
                 <a key={l.label} href={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
