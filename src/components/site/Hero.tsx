@@ -2,13 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, MapPin, Calendar as CalIcon, Sparkles, ArrowRight, ChevronDown } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { getEvents, EVENTS_EVENT } from "@/lib/local-db";
+import { getLiveBuyersCount } from "@/lib/live-stats.functions";
 import hero from "@/assets/hero-concert.jpg";
+
 
 const stats = [
   { v: "1.2M+", l: "predaných vstupeniek" },
@@ -22,6 +26,14 @@ export function Hero() {
   const [city, setCity] = useState<string>("");
   const [date, setDate] = useState<Date | undefined>();
   const [cities, setCities] = useState<string[]>([]);
+
+  const fetchBuyers = useServerFn(getLiveBuyersCount);
+  const { data: live } = useQuery({
+    queryKey: ["live-buyers"],
+    queryFn: () => fetchBuyers(),
+    refetchInterval: 30_000,
+  });
+
 
   useEffect(() => {
     const load = () => {
@@ -77,7 +89,7 @@ export function Hero() {
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Práve teraz</div>
-            <div className="text-sm font-medium">238 ľudí kupuje lístky</div>
+            <div className="text-sm font-medium">{live?.count ?? 0} ľudí kupuje lístky</div>
           </div>
         </div>
       </motion.div>
