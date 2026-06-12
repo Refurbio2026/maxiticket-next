@@ -8,7 +8,7 @@ import {
 import { listAccounts, listTransactions } from "@/lib/bank-db";
 
 export const Route = createFileRoute("/admin/maxiticket/accounting-report")({
-  head: () => ({ meta: [{ title: "Účtovanie · report · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Účtovanie · report · vstupenky.sk" }] }),
   component: Page,
 });
 

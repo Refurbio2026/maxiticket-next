@@ -115,7 +115,7 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
     try {
       result = await createGoPayPayment({
         orderNumber: orderShort,
-        orderDescription: `Vstupenky MAXITICKET ${orderShort}`,
+        orderDescription: `Vstupenky vstupenky.sk ${orderShort}`,
         amountCents: Math.round(Number(order.total_amount) * 100),
         currency: order.currency || "EUR",
         customer: {

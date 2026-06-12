@@ -123,7 +123,7 @@ export function connectGoogleAds(organizerId: string): GoogleAdsAccount {
     id: uid(),
     organizer_id: organizerId,
     customer_id: `${rand(3)}-${rand(3)}-${rand(4)}`,
-    account_name: "MaxiTicket Organizer Ads",
+    account_name: "vstupenky.sk Organizer Ads",
     status: "connected",
     credit_eur: 250,
     last_sync_at: new Date().toISOString(),
@@ -158,7 +158,7 @@ export function connectMetaAds(organizerId: string): MetaAdsAccount {
     business_account_id: rand(15),
     ad_account_id: `act_${rand(12)}`,
     pixel_id: rand(15),
-    page_name: "MaxiTicket Events",
+    page_name: "vstupenky.sk Events",
     status: "connected",
     credit_eur: 180,
     last_sync_at: new Date().toISOString(),
@@ -248,7 +248,7 @@ export function generateCreative(event: { title: string; city: string; venue: st
     `${t} ${event.city} 2026`,
     `Najlepší ${event.category} – ${t}`,
     `Kúp vstupenky online`,
-    `${t} – MaxiTicket`,
+    `${t} – vstupenky.sk`,
   ];
   const descriptions = [
     `Oficiálne vstupenky na ${t} v ${event.venue}. Rýchle a bezpečné platby.`,

@@ -16,7 +16,7 @@ import { ShieldCheck, Wifi, Receipt, Ban, Save, Power, PowerOff } from "lucide-r
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/fiscal")({
-  head: () => ({ meta: [{ title: "ORP / eKasa · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "ORP / eKasa · vstupenky.sk" }] }),
   component: FiscalPage,
 });
 

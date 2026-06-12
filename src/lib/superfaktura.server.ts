@@ -18,7 +18,7 @@ function env() {
 
 function authHeader() {
   const { email, apiKey, companyId } = env();
-  return `SFAPI email=${email}&apikey=${apiKey}&company_id=${companyId}&module=Lovable+MaxiTicket`;
+  return `SFAPI email=${email}&apikey=${apiKey}&company_id=${companyId}&module=Lovable+vstupenky.sk`;
 }
 
 export type SfCustomer = {

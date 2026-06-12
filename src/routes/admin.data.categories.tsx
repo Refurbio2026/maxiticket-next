@@ -17,7 +17,7 @@ import { Plus, Pencil, Trash2, Eye, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/data/categories")({
-  head: () => ({ meta: [{ title: "Kategórie podujatí · MAXITICKET Admin" }] }),
+  head: () => ({ meta: [{ title: "Kategórie podujatí · vstupenky.sk Admin" }] }),
   component: Page,
 });
 

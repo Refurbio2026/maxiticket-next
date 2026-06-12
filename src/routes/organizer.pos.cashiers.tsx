@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/cashiers")({
-  head: () => ({ meta: [{ title: "Pokladníci · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Pokladníci · vstupenky.sk" }] }),
   component: CashiersPage,
 });
 

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/system/wallet")({
-  head: () => ({ meta: [{ title: "Wallet nastavenia · Admin · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Wallet nastavenia · Admin · vstupenky.sk" }] }),
   component: WalletSettingsPage,
 });
 
@@ -94,13 +94,13 @@ function WalletSettingsPage() {
         <Separator />
 
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Pass Type Identifier" hint="napr. pass.com.maxiticket.event">
+          <Field label="Pass Type Identifier" hint="napr. pass.com.vstupenky.event">
             <Input
               value={s.apple.pass_type_identifier}
               onChange={(e) =>
                 save({ ...s, apple: { ...s.apple, pass_type_identifier: e.target.value } })
               }
-              placeholder="pass.com.maxiticket.event"
+              placeholder="pass.com.vstupenky.event"
             />
           </Field>
           <Field label="Team Identifier" hint="10-znakové ID z Apple Developer">
