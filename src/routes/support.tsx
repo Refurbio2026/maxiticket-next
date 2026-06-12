@@ -12,9 +12,9 @@ import { Search, Ticket, RefreshCcw, ShieldQuestion, CreditCard, LifeBuoy, Messa
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Podpora · MAXITICKET" },
+      { title: "Podpora · vstupenky.sk" },
       { name: "description", content: "FAQ, reklamácie, refundácie a technická podpora pre kupujúcich aj organizátorov." },
-      { property: "og:title", content: "Podpora · MAXITICKET" },
+      { property: "og:title", content: "Podpora · vstupenky.sk" },
       { property: "og:description", content: "Pomoc s nákupom vstupeniek a technická podpora." },
     ],
   }),
@@ -27,7 +27,7 @@ const FAQ = [
   { cat: "Reklamácie", q: "Podujatie bolo zrušené, čo teraz?", a: "Pri zrušení podujatia organizátorom dostanete automatický e-mail a 100 % vrátenie peňazí na pôvodný spôsob platby." },
   { cat: "Platba", q: "Aké spôsoby platby podporujete?", a: "Akceptujeme platobné karty (Visa, Mastercard), Apple Pay, Google Pay, Tatra Pay a bankový prevod." },
   { cat: "Vstupenky", q: "Môžem vstupenku preniesť na inú osobu?", a: "Áno, vstupenku môžete preposlať e-mailom – QR kód je platný pre prvého návštevníka, ktorý ho použije." },
-  { cat: "Technické", q: "Nefunguje mi QR kód pri vstupe.", a: "Kontaktujte personál na vstupe alebo nás napíšte na support@maxiticket.sk – overíme vás podľa e-mailu objednávky." },
+  { cat: "Technické", q: "Nefunguje mi QR kód pri vstupe.", a: "Kontaktujte personál na vstupe alebo nás napíšte na support@vstupenky.sk – overíme vás podľa e-mailu objednávky." },
 ];
 
 function SupportPage() {
@@ -110,8 +110,8 @@ function SupportPage() {
           <div>
             <div className="font-display font-bold">Technická podpora</div>
             <p className="text-sm text-muted-foreground mt-1">Po–Pi 9:00–18:00, víkendy 12:00–22:00 počas podujatí.</p>
-            <a href="mailto:support@maxiticket.sk" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
-              support@maxiticket.sk
+            <a href="mailto:support@vstupenky.sk" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
+              support@vstupenky.sk
             </a>
           </div>
         </Card>

@@ -12,7 +12,7 @@ function ticketHtml(t: PosTicket, sale: PosSale, ev?: EventItem, index?: number,
   return `
   <section class="ticket">
     <header>
-      <div class="brand">MAXITICKET</div>
+      <div class="brand">vstupenky.sk</div>
       <div class="seq">${index ?? ""}${total ? " / " + total : ""}</div>
     </header>
     <h1>${escapeHtml(ev?.title || sale.event_title)}</h1>

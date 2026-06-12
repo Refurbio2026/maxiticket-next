@@ -3,7 +3,7 @@ import { DataTablePage, type Column } from "@/components/admin/DataTablePage";
 import { buildRows, commonColumns } from "@/lib/admin-mock";
 
 export const Route = createFileRoute("/admin/maxiticket/balances")({
-  head: () => ({ meta: [{ title: "Bilancie · MAXITICKET Admin" }] }),
+  head: () => ({ meta: [{ title: "Bilancie · vstupenky.sk Admin" }] }),
   component: Page,
 });
 

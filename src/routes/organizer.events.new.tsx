@@ -14,7 +14,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/events/new")({
-  head: () => ({ meta: [{ title: "Nové podujatie · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Nové podujatie · vstupenky.sk" }] }),
   component: NewEventPage,
 });
 

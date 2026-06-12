@@ -1,4 +1,4 @@
-// Cashier / eKasa session layer for MAXITICKET POS.
+// Cashier / eKasa session layer for vstupenky.sk POS.
 // LocalStorage prototype — pripravené na napojenie na reálnu DB.
 //
 // Bezpečnosť: PIN sa NIKDY neukladá v plain texte, iba ako SHA-256 hash

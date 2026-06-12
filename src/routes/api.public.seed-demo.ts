@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const DEMO = [
-  { email: "admin@maxiticket.sk", password: "admin123", full_name: "Admin", role: "admin" as const },
-  { email: "organizer@maxiticket.sk", password: "organizer123", full_name: "Organizer", role: "organizer" as const },
-  { email: "user@maxiticket.sk", password: "user123", full_name: "User", role: "user" as const },
+  { email: "admin@vstupenky.sk", password: "admin123", full_name: "Admin", role: "admin" as const },
+  { email: "organizer@vstupenky.sk", password: "organizer123", full_name: "Organizer", role: "organizer" as const },
+  { email: "user@vstupenky.sk", password: "user123", full_name: "User", role: "user" as const },
 ];
 
 export const Route = createFileRoute("/api/public/seed-demo")({

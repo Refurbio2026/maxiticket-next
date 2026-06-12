@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/organizer/")({
-  head: () => ({ meta: [{ title: "Organizer dashboard · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Organizer dashboard · vstupenky.sk" }] }),
   component: OrganizerHome,
 });
 

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { FileDown, Users, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/organizer/pos/cashier-sales")({
-  head: () => ({ meta: [{ title: "Predaje pokladníkov · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Predaje pokladníkov · vstupenky.sk" }] }),
   component: CashierSalesPage,
 });
 

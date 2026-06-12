@@ -29,7 +29,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout/$orderId")({
-  head: () => ({ meta: [{ title: "Checkout · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Checkout · vstupenky.sk" }] }),
   component: CheckoutPage,
 });
 

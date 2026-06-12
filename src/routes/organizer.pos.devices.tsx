@@ -17,7 +17,7 @@ import { Cpu, Plus, Trash2, Usb, Printer, ScanLine, Bluetooth, Cable, Wifi, Powe
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/devices")({
-  head: () => ({ meta: [{ title: "Zariadenia · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Zariadenia · vstupenky.sk" }] }),
   component: DevicesPage,
 });
 

@@ -47,7 +47,7 @@ const CustomerSeatingMap = lazy(() =>
 );
 
 export const Route = createFileRoute("/events/$id")({
-  head: () => ({ meta: [{ title: "Podujatie · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Podujatie · vstupenky.sk" }] }),
   component: EventDetail,
 });
 
@@ -346,7 +346,7 @@ function EventDetail() {
               <InfoTile
                 icon={<User className="size-4" />}
                 label="Organizátor"
-                value={event.organizer_name || "MAXITICKET partner"}
+                value={event.organizer_name || "vstupenky.sk partner"}
               />
               <InfoTile
                 icon={<MapPin className="size-4" />}

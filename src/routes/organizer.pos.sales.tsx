@@ -15,7 +15,7 @@ import { Ban, FileDown, Search, Receipt, Printer, Ticket as TicketIcon } from "l
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/sales")({
-  head: () => ({ meta: [{ title: "Predaje · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Predaje · vstupenky.sk" }] }),
   component: SalesPage,
 });
 

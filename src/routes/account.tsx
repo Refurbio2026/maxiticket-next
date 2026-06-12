@@ -18,7 +18,7 @@ import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/Walle
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
-  head: () => ({ meta: [{ title: "Môj účet · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Môj účet · vstupenky.sk" }] }),
   component: AccountPage,
 });
 

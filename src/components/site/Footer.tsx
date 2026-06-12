@@ -32,10 +32,10 @@ const cols: Col[] = [
 ];
 
 const socials: { Icon: typeof Instagram; href: string; label: string }[] = [
-  { Icon: Instagram, href: "https://instagram.com/maxiticket", label: "Instagram" },
-  { Icon: Facebook, href: "https://facebook.com/maxiticket", label: "Facebook" },
-  { Icon: Youtube, href: "https://youtube.com/@maxiticket", label: "YouTube" },
-  { Icon: Twitter, href: "https://twitter.com/maxiticket", label: "Twitter" },
+  { Icon: Instagram, href: "https://instagram.com/vstupenky", label: "Instagram" },
+  { Icon: Facebook, href: "https://facebook.com/vstupenky", label: "Facebook" },
+  { Icon: Youtube, href: "https://youtube.com/@vstupenky", label: "YouTube" },
+  { Icon: Twitter, href: "https://twitter.com/vstupenky", label: "Twitter" },
 ];
 
 export function Footer() {
@@ -49,7 +49,7 @@ export function Footer() {
                 <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
               </div>
               <span className="font-display text-xl font-bold">
-                maxi<span className="text-gradient-flame">ticket</span>
+                vstupenky.sk
               </span>
             </Link>
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">
@@ -88,7 +88,7 @@ export function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between gap-4 text-xs text-muted-foreground">
-          <div>© 2026 MAXITICKET s.r.o. — Všetky práva vyhradené.</div>
+          <div>© 2026 vstupenky.sk s.r.o. — Všetky práva vyhradené.</div>
           <div>Postavené s vášňou v Bratislave 🇸🇰</div>
         </div>
       </div>

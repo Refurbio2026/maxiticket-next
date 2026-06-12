@@ -11,7 +11,7 @@ const SETTINGS_KEY = "mt_wallet_settings";
 export type WalletSettings = {
   apple: {
     enabled: boolean;
-    pass_type_identifier: string;   // e.g. "pass.com.maxiticket.event"
+    pass_type_identifier: string;   // e.g. "pass.com.vstupenky.event"
     team_identifier: string;
     organization_name: string;
     cert_uploaded: boolean;         // tracks if .p12 was provided (server-side)
@@ -30,14 +30,14 @@ const defaultSettings: WalletSettings = {
     enabled: false,
     pass_type_identifier: "",
     team_identifier: "",
-    organization_name: "MAXITICKET",
+    organization_name: "vstupenky.sk",
     cert_uploaded: false,
     wwdr_uploaded: false,
   },
   google: {
     enabled: false,
     issuer_id: "",
-    issuer_name: "MAXITICKET",
+    issuer_name: "vstupenky.sk",
     service_account_uploaded: false,
   },
 };

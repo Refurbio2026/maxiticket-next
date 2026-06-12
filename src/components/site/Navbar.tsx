@@ -34,7 +34,7 @@ export function Navbar() {
               <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
             <span className="font-display text-xl font-bold tracking-tight">
-              maxi<span className="text-gradient-flame">ticket</span>
+              vstupenky.sk
             </span>
           </Link>
 

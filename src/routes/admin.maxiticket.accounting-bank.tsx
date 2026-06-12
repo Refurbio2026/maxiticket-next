@@ -19,7 +19,7 @@ import {
 } from "@/lib/bank-db";
 
 export const Route = createFileRoute("/admin/maxiticket/accounting-bank")({
-  head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · vstupenky.sk" }] }),
   component: Page,
 });
 

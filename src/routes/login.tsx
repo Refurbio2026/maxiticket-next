@@ -12,7 +12,7 @@ import { Flame, User as UserIcon, Building2, ShoppingCart, Shield, ChevronLeft }
 type Section = "user" | "organizer" | "cashier" | "admin";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Prihlásenie · MAXITICKET" }] }),
+  head: () => ({ meta: [{ title: "Prihlásenie · vstupenky.sk" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     section: (s.section as Section | undefined) ?? undefined,
   }),
@@ -140,9 +140,9 @@ function LoginPage() {
             </div>
             <div className="mt-6 p-3 rounded-lg bg-muted/30 border border-border/40 text-xs space-y-1">
               <div className="font-semibold text-foreground mb-1">Demo účty</div>
-              <div>admin@maxiticket.sk / admin123</div>
-              <div>organizer@maxiticket.sk / organizer123</div>
-              <div>user@maxiticket.sk / user123</div>
+              <div>admin@vstupenky.sk / admin123</div>
+              <div>organizer@vstupenky.sk / organizer123</div>
+              <div>user@vstupenky.sk / user123</div>
             </div>
           </Card>
         )}
@@ -156,7 +156,7 @@ function SectionPicker() {
     <div>
       <div className="text-center mb-8">
         <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Kam sa chceš prihlásiť?</h1>
-        <p className="text-sm text-muted-foreground mt-2">Vyber sekciu MAXITICKET, do ktorej patrí tvoj účet.</p>
+        <p className="text-sm text-muted-foreground mt-2">Vyber sekciu vstupenky.sk, do ktorej patrí tvoj účet.</p>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         {(Object.keys(SECTIONS) as Section[]).map((key) => {

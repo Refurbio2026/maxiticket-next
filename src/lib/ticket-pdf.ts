@@ -44,7 +44,7 @@ export async function generateTicketsPdf(opts: {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text("MAXITICKET", 14, 18);
+    doc.text("vstupenky.sk", 14, 18);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Vstupenka #${i + 1} z ${tickets.length}`, pageW - 14, 18, { align: "right" });
@@ -86,7 +86,7 @@ export async function generateTicketsPdf(opts: {
     doc.setFontSize(9);
     doc.setTextColor(120);
     doc.text("Vstup je platný iba s QR kódom. Pri vstupe ukáž kód z mobilu alebo vytlačenú vstupenku.", 14, 268);
-    doc.text("Reklamácie: support@maxiticket.sk · www.maxiticket.sk", 14, 274);
+    doc.text("Reklamácie: support@vstupenky.sk · www.vstupenky.sk", 14, 274);
   }
 
   return doc.output("blob");
@@ -101,7 +101,7 @@ export async function downloadTicketsPdf(opts: {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `maxiticket-${opts.order.id.slice(0, 8)}.pdf`;
+  a.download = `vstupenky-${opts.order.id.slice(0, 8)}.pdf`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -136,7 +136,7 @@ export async function generateEventSoldTicketsPdf(opts: {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text("MAXITICKET", 14, 18);
+    doc.text("vstupenky.sk", 14, 18);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Vstupenka ${i + 1} / ${tickets.length}`, pageW - 14, 18, { align: "right" });
@@ -177,7 +177,7 @@ export async function generateEventSoldTicketsPdf(opts: {
     doc.setFontSize(9);
     doc.setTextColor(120);
     doc.text("Vstup je platný iba s QR kódom.", 14, 268);
-    doc.text("MAXITICKET · www.maxiticket.sk", 14, 274);
+    doc.text("vstupenky.sk · www.vstupenky.sk", 14, 274);
   }
 
   return doc.output("blob");

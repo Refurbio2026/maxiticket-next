@@ -19,7 +19,7 @@ import { listAdminOrders, type AdminOrderRow } from "@/lib/admin-stats.functions
 import { refundOrder } from "@/lib/refunds.functions";
 
 export const Route = createFileRoute("/admin/sales/sales")({
-  head: () => ({ meta: [{ title: "Predaj · MAXITICKET Admin" }] }),
+  head: () => ({ meta: [{ title: "Predaj · vstupenky.sk Admin" }] }),
   component: Page,
 });
 

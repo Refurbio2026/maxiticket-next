@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { ChevronLeft } from "lucide-react";
 
 export const Route = createFileRoute("/admin/data/categories/$categoryId/events/new")({
-  head: () => ({ meta: [{ title: "Nové podujatie · MAXITICKET Admin" }] }),
+  head: () => ({ meta: [{ title: "Nové podujatie · vstupenky.sk Admin" }] }),
   component: NewEventForCategory,
 });
 

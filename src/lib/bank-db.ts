@@ -97,7 +97,7 @@ export function connectTatraBanka(): BankAccount {
   const acc: BankAccount = {
     id: uid(),
     bankName: "Tatra banka",
-    accountName: "MaxiTicket – hlavný účet",
+    accountName: "vstupenky.sk – hlavný účet",
     iban: "SK89 1100 0000 0029 4512 8765",
     currency: "EUR",
     balance: 28450.75,

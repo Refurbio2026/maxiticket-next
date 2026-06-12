@@ -1,4 +1,4 @@
-// LocalStorage "database" for MAXITICKET demo mode.
+// LocalStorage "database" for vstupenky.sk demo mode.
 // All reads/writes are SSR-safe (guarded by typeof window).
 
 export type Role = "user" | "organizer" | "admin";
@@ -98,15 +98,15 @@ export const uid = () =>
 const DEMO_USERS: StoredUser[] = [
   {
     id: "demo-admin",
-    email: "admin@maxiticket.sk",
+    email: "admin@vstupenky.sk",
     password: "admin123",
     role: "admin",
-    full_name: "Admin MAXITICKET",
+    full_name: "Admin vstupenky.sk",
     created_at: new Date().toISOString(),
   },
   {
     id: "demo-organizer",
-    email: "organizer@maxiticket.sk",
+    email: "organizer@vstupenky.sk",
     password: "organizer123",
     role: "organizer",
     full_name: "Demo Organizátor",
@@ -115,7 +115,7 @@ const DEMO_USERS: StoredUser[] = [
   },
   {
     id: "demo-user",
-    email: "user@maxiticket.sk",
+    email: "user@vstupenky.sk",
     password: "user123",
     role: "user",
     full_name: "Demo Používateľ",

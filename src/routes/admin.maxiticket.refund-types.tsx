@@ -3,7 +3,7 @@ import { DataTablePage, type Column } from "@/components/admin/DataTablePage";
 import { buildRows, commonColumns } from "@/lib/admin-mock";
 
 export const Route = createFileRoute("/admin/maxiticket/refund-types")({
-  head: () => ({ meta: [{ title: "Typy refundácií · MAXITICKET Admin" }] }),
+  head: () => ({ meta: [{ title: "Typy refundácií · vstupenky.sk Admin" }] }),
   component: Page,
 });
 
