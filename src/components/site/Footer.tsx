@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Ticket, Instagram, Facebook, Youtube, Twitter } from "lucide-react";
+import { Instagram, Facebook, Youtube, Twitter } from "lucide-react";
+import logo from "@/assets/logo.png";
+
 
 type Col = { t: string; l: { label: string; to: string }[] };
 
