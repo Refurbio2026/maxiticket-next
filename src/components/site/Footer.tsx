@@ -47,13 +47,9 @@ export function Footer() {
         <div className="grid lg:grid-cols-5 gap-10">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2">
-              <div className="size-9 rounded-xl bg-gradient-flame grid place-items-center">
-                <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
-              </div>
-              <span className="font-display text-xl font-bold">
-                vstupenky.sk
-              </span>
+              <img src={logo} alt="vstupenky.sk" className="h-9 w-auto dark:invert" />
             </Link>
+
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">
               Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.
             </p>
