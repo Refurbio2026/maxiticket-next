@@ -94,7 +94,7 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="lg:hidden mt-2 glass rounded-2xl p-4 flex flex-col gap-1"
+              className="lg:hidden mx-auto max-w-7xl px-4 pb-4 flex flex-col gap-1"
             >
               {NAV_LINKS.map((l) =>
                 l.to.startsWith("/#") ? (
