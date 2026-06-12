@@ -89,7 +89,7 @@ export function Hero() {
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Práve teraz</div>
-            <div className="text-sm font-medium">238 ľudí kupuje lístky</div>
+            <div className="text-sm font-medium">{live?.count ?? 0} ľudí kupuje lístky</div>
           </div>
         </div>
       </motion.div>
