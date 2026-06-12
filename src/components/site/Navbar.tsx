@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Ticket, Menu, X, User, LogOut, ScanLine } from "lucide-react";
+import { Menu, X, User, LogOut, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
+import logo from "@/assets/logo.png";
+
 
 const NAV_LINKS: { label: string; to: string }[] = [
   { label: "Podujatia", to: "/events" },
@@ -31,13 +33,9 @@ export function Navbar() {
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4">
 
           <Link to="/" className="flex items-center gap-2 group shrink-0" onClick={() => setOpen(false)}>
-            <div className="size-9 rounded-xl bg-gradient-flame grid place-items-center shadow-glow">
-              <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
-            </div>
-            <span className="font-display text-xl font-bold tracking-tight">
-              vstupenky.sk
-            </span>
+            <img src={logo} alt="vstupenky.sk" className="h-9 w-auto dark:invert" />
           </Link>
+
 
           <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-foreground/80">
             {NAV_LINKS.map((l) =>
