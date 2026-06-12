@@ -49,7 +49,7 @@ export function Footer() {
                 <Ticket className="size-5 text-primary-foreground" strokeWidth={2.5} />
               </div>
               <span className="font-display text-xl font-bold">
-                maxi<span className="text-gradient-flame">ticket</span>
+                vstupenky.sk
               </span>
             </Link>
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">
