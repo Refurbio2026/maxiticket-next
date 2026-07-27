@@ -30,7 +30,7 @@ import { getEventSoldTickets } from "@/lib/event-tickets.functions";
 import { downloadEventSoldTicketsPdf } from "@/lib/ticket-pdf";
 
 export const Route = createFileRoute("/admin/events/events")({
-  head: () => ({ meta: [{ title: "Podujatia · vstupenky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Podujatia · vipky.sk Admin" }] }),
   component: Page,
 });
 

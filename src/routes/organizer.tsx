@@ -9,7 +9,7 @@ import { LogOut, ShoppingCart, User } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/organizer")({
-  head: () => ({ meta: [{ title: "Organizer · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Organizer · vipky.sk" }] }),
   component: OrganizerLayout,
 });
 

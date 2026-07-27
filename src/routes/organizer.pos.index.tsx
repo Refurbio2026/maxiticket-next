@@ -32,7 +32,7 @@ import {
 } from "@/lib/cashier-db";
 
 export const Route = createFileRoute("/organizer/pos/")({
-  head: () => ({ meta: [{ title: "Pokladňa · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Pokladňa · vipky.sk" }] }),
   component: PosPage,
 });
 

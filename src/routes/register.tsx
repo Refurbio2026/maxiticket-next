@@ -10,7 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Flame } from "lucide-react";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Registrácia · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Registrácia · vipky.sk" }] }),
   component: RegisterPage,
 });
 
@@ -88,7 +88,7 @@ function RegisterPage() {
           </span>
         </Link>
         <h1 className="font-display text-2xl font-bold mb-1">Vytvor si účet</h1>
-        <p className="text-sm text-muted-foreground mb-6">Pridaj sa k vstupenky.sk v pár sekundách.</p>
+        <p className="text-sm text-muted-foreground mb-6">Pridaj sa k vipky.sk v pár sekundách.</p>
 
         <div className="mb-6">
           <Label className="mb-2 block">Typ účtu</Label>

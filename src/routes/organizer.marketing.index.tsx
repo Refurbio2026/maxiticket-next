@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/marketing/")({
-  head: () => ({ meta: [{ title: "Marketing Center · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Marketing Center · vipky.sk" }] }),
   component: MarketingCenter,
 });
 
@@ -79,7 +79,7 @@ function MarketingCenter() {
             <h1 className="text-3xl font-display font-bold tracking-tight">Marketing Center</h1>
           </div>
           <p className="mt-1 text-muted-foreground">
-            Spusti reklamu na podujatia priamo z vstupenky.sk. Google Ads, Meta Ads, pixel tracking a AI texty.
+            Spusti reklamu na podujatia priamo z vipky.sk. Google Ads, Meta Ads, pixel tracking a AI texty.
           </p>
         </div>
         <Button onClick={() => navigate({ to: "/organizer/marketing/new" })} className="gap-2">
@@ -174,7 +174,7 @@ function MarketingCenter() {
                 <div className="rounded-lg bg-primary/10 p-3"><ChromeIcon className="h-6 w-6 text-primary" /></div>
                 <div>
                   <h3 className="text-lg font-semibold">Google Ads</h3>
-                  <p className="text-sm text-muted-foreground">Pripoj Google Ads účet a spúšťaj kampane priamo z vstupenky.sk.</p>
+                  <p className="text-sm text-muted-foreground">Pripoj Google Ads účet a spúšťaj kampane priamo z vipky.sk.</p>
                 </div>
               </div>
               {google ? (
@@ -269,7 +269,7 @@ function MarketingCenter() {
               <div>
                 <h3 className="font-semibold flex items-center gap-2"><Wand2 className="h-4 w-4 text-primary" /> Automaticky propagovať podujatie</h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-                  Po publikovaní podujatia ti vstupenky.sk automaticky pripraví návrh kampane (Google + Meta),
+                  Po publikovaní podujatia ti vipky.sk automaticky pripraví návrh kampane (Google + Meta),
                   vygeneruje reklamné texty a kreatívy. Stačí ich potvrdiť a spustiť.
                 </p>
               </div>

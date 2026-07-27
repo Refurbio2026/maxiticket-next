@@ -3,7 +3,7 @@ import { DataTablePage, type Column } from "@/components/admin/DataTablePage";
 import { buildRows, commonColumns } from "@/lib/admin-mock";
 
 export const Route = createFileRoute("/admin/events/venues")({
-  head: () => ({ meta: [{ title: "Miesta konania · vstupenky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Miesta konania · vipky.sk Admin" }] }),
   component: Page,
 });
 

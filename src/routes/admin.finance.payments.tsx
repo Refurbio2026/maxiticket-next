@@ -10,7 +10,7 @@ import { ExternalLink, RefreshCw, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/finance/payments")({
-  head: () => ({ meta: [{ title: "Platby (GoPay) · vstupenky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Platby (GoPay) · vipky.sk Admin" }] }),
   component: Page,
 });
 
