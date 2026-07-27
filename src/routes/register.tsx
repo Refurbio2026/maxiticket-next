@@ -84,7 +84,7 @@ function RegisterPage() {
             <Flame className="size-5 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold">
-            maxi<span className="text-gradient-flame">ticket</span>
+            vipky<span className="text-gradient-flame">.sk</span>
           </span>
         </Link>
         <h1 className="font-display text-2xl font-bold mb-1">Vytvor si účet</h1>
