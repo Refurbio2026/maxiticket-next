@@ -103,7 +103,7 @@ function AdminDashboard() {
           <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-primary">
             <Flame className="h-3 w-3" /> Live · {today}
           </div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Prehľad vstupenky.sk</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">Prehľad vipky.sk</h1>
           <p className="mt-1 text-sm text-muted-foreground">Reálne dáta z platformy. Auto-refresh každú minútu.</p>
         </div>
         <Button asChild className="bg-gradient-flame text-primary-foreground hover:opacity-90">

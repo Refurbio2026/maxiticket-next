@@ -47,7 +47,7 @@ export function Footer() {
         <div className="grid lg:grid-cols-5 gap-10">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="vstupenky.sk" className="h-9 w-auto dark:invert" />
+              <img src={logo} alt="vipky.sk" className="h-9 w-auto dark:invert" />
             </Link>
 
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">
@@ -86,7 +86,7 @@ export function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between gap-4 text-xs text-muted-foreground">
-          <div>© 2026 vstupenky.sk s.r.o. — Všetky práva vyhradené.</div>
+          <div>© 2026 vipky.sk s.r.o. — Všetky práva vyhradené.</div>
           <div>Postavené s vášňou v Bratislave 🇸🇰</div>
         </div>
       </div>

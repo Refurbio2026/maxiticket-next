@@ -62,7 +62,7 @@ const groups: Group[] = [
     items: [{ title: "Dashboard", url: "/admin", icon: LayoutDashboard }],
   },
   {
-    label: "vstupenky.sk",
+    label: "vipky.sk",
     items: [
       { title: "Zostavy / fakturovanie", url: "/admin/maxiticket/billing", icon: Receipt },
       { title: "Vyúčtovacie protokoly", url: "/admin/maxiticket/protocols", icon: FileText },
@@ -164,7 +164,7 @@ export function AdminSidebar() {
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">
-              <span className="font-display text-base font-bold tracking-tight">vstupenky.sk</span>
+              <span className="font-display text-base font-bold tracking-tight">vipky.sk</span>
               <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
                 Admin Console
               </span>

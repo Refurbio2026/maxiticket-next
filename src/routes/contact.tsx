@@ -13,9 +13,9 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Kontakt · vstupenky.sk" },
-      { name: "description", content: "Kontaktujte tím vstupenky.sk – e-mail, telefón, adresa a sociálne siete." },
-      { property: "og:title", content: "Kontakt · vstupenky.sk" },
+      { title: "Kontakt · vipky.sk" },
+      { name: "description", content: "Kontaktujte tím vipky.sk – e-mail, telefón, adresa a sociálne siete." },
+      { property: "og:title", content: "Kontakt · vipky.sk" },
       { property: "og:description", content: "Spojte sa s nami." },
     ],
   }),
@@ -77,7 +77,7 @@ function ContactPage() {
                 <Mail className="size-5 text-primary mt-0.5" />
                 <div>
                   <div className="font-display font-bold">E-mail</div>
-                  <a href="mailto:hello@vstupenky.sk" className="text-muted-foreground hover:text-foreground">hello@vstupenky.sk</a>
+                  <a href="mailto:hello@vipky.sk" className="text-muted-foreground hover:text-foreground">hello@vipky.sk</a>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -91,7 +91,7 @@ function ContactPage() {
                 <MapPin className="size-5 text-primary mt-0.5" />
                 <div>
                   <div className="font-display font-bold">Adresa</div>
-                  <div className="text-muted-foreground">vstupenky.sk s.r.o.<br />Mlynské nivy 5<br />821 09 Bratislava</div>
+                  <div className="text-muted-foreground">vipky.sk s.r.o.<br />Mlynské nivy 5<br />821 09 Bratislava</div>
                 </div>
               </div>
             </div>
@@ -122,7 +122,7 @@ function ContactPage() {
 
           <Card className="overflow-hidden bg-card/60 border-border/60">
             <iframe
-              title="vstupenky.sk sídlo"
+              title="vipky.sk sídlo"
               src="https://www.openstreetmap.org/export/embed.html?bbox=17.135%2C48.140%2C17.165%2C48.155&layer=mapnik&marker=48.1475%2C17.150"
               className="w-full h-56 border-0"
               loading="lazy"

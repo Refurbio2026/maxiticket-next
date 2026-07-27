@@ -58,7 +58,7 @@ export function OrganizerSidebar() {
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">
-              <span className="font-display text-base font-bold tracking-tight">vstupenky.sk</span>
+              <span className="font-display text-base font-bold tracking-tight">vipky.sk</span>
               <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
                 Organizer
               </span>

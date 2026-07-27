@@ -31,7 +31,7 @@ const SeatingEditor = lazy(() =>
 );
 
 export const Route = createFileRoute("/admin/events/venue-layouts")({
-  head: () => ({ meta: [{ title: "Editor hál · vstupenky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Editor hál · vipky.sk Admin" }] }),
   component: VenueLayoutsPage,
 });
 

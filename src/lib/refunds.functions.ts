@@ -133,8 +133,8 @@ export const refundOrder = createServerFn({ method: "POST" })
       try {
         const orderShort = order.id.slice(0, 8).toUpperCase();
         const subject = full
-          ? `vstupenky.sk — refund objednávky #${orderShort}`
-          : `vstupenky.sk — čiastočný refund objednávky #${orderShort}`;
+          ? `vipky.sk — refund objednávky #${orderShort}`
+          : `vipky.sk — čiastočný refund objednávky #${orderShort}`;
         const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#fff;padding:24px;color:#111">
 <h2 style="margin:0 0 12px">Refund spracovaný</h2>
 <p>Dobrý deň ${order.customer_name || ""},</p>
@@ -145,7 +145,7 @@ export const refundOrder = createServerFn({ method: "POST" })
   ${data.reason ? `<tr><td style="padding:4px 12px 4px 0;color:#666;vertical-align:top">Dôvod:</td><td>${data.reason}</td></tr>` : ""}
 </table>
 <p>Suma sa vráti na pôvodný spôsob platby (zvyčajne do 5 pracovných dní).</p>
-<p style="color:#888;font-size:12px;margin-top:24px">vstupenky.sk</p>
+<p style="color:#888;font-size:12px;margin-top:24px">vipky.sk</p>
 </body></html>`;
 
         const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email" as any, {

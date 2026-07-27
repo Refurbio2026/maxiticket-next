@@ -13,13 +13,13 @@ import { Footer } from "@/components/site/Footer";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "vstupenky.sk — Vstupenky na koncerty, festivaly a šport" },
+      { title: "vipky.sk — Vstupenky na koncerty, festivaly a šport" },
       {
         name: "description",
         content:
           "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
       },
-      { property: "og:title", content: "vstupenky.sk — Každý zážitok má svoj vstup" },
+      { property: "og:title", content: "vipky.sk — Každý zážitok má svoj vstup" },
       { property: "og:description", content: "Vstupenky na koncerty, festivaly, šport a kultúru. Bez skrytých poplatkov." },
     ],
   }),

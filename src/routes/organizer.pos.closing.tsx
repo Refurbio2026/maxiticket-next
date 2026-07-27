@@ -21,7 +21,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/closing")({
-  head: () => ({ meta: [{ title: "Denná uzávierka · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Denná uzávierka · vipky.sk" }] }),
   component: ClosingPage,
 });
 
