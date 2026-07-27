@@ -100,23 +100,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ensureSeed();
 
     let active = true;
-    supabase.auth.getSession().then(async ({ data }) => {
-      const au = await toAuthUser(data.session?.user);
-      if (active) {
+
+    // IMPORTANT: never await Supabase calls *inside* the onAuthStateChange
+    // callback — it holds the auth lock and would deadlock getSession().
+    // We defer the role lookup to a microtask/timeout instead.
+    const hydrate = (u: SupabaseUserLike | null | undefined, done?: () => void) => {
+      setTimeout(async () => {
+        const au = await toAuthUser(u);
+        if (!active) return;
         setUser(au);
-        setLoading(false);
+        done?.();
+      }, 0);
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        if (active) setUser(null);
+        return;
       }
+      hydrate(session.user);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const au = await toAuthUser(session?.user);
-      if (active) setUser(au);
+    supabase.auth.getSession().then(({ data }) => {
+      hydrate(data.session?.user, () => setLoading(false));
+      if (!data.session?.user && active) setLoading(false);
     });
 
     return () => {
       active = false;
       sub.subscription.unsubscribe();
     };
+
   }, []);
 
   const signIn: AuthCtx["signIn"] = async (email, password) => {
