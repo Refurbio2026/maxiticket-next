@@ -22,7 +22,7 @@ const wizardSearch = z.object({ eventId: z.string().optional() });
 
 export const Route = createFileRoute("/organizer/marketing/new")({
   validateSearch: wizardSearch,
-  head: () => ({ meta: [{ title: "Spustiť reklamu · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Spustiť reklamu · vipky.sk" }] }),
   component: WizardPage,
 });
 
@@ -259,7 +259,7 @@ function WizardPage() {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sponzorované · vstupenky.sk</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sponzorované · vipky.sk</div>
                     <div className="font-semibold leading-tight">{creative.headlines[0]}</div>
                     <div className="text-sm text-muted-foreground line-clamp-2">{creative.descriptions[0]}</div>
                     <Button size="sm" className="mt-2">{creative.cta}</Button>

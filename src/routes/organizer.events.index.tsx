@@ -10,7 +10,7 @@ import { Plus, Eye, Trash2, CheckCircle2, FileText, Calendar, MapPin } from "luc
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/events/")({
-  head: () => ({ meta: [{ title: "Moje podujatia · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Moje podujatia · vipky.sk" }] }),
   component: OrganizerEvents,
 });
 

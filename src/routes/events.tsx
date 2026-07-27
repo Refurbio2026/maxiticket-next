@@ -17,8 +17,8 @@ import { Calendar, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
-      { title: "Podujatia · vstupenky.sk" },
-      { name: "description", content: "Objavte všetky podujatia, koncerty, festivaly a kultúru na vstupenky.sk." },
+      { title: "Podujatia · vipky.sk" },
+      { name: "description", content: "Objavte všetky podujatia, koncerty, festivaly a kultúru na vipky.sk." },
     ],
   }),
   component: EventsPage,

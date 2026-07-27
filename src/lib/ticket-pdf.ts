@@ -44,7 +44,7 @@ export async function generateTicketsPdf(opts: {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text("vstupenky.sk", 14, 18);
+    doc.text("vipky.sk", 14, 18);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Vstupenka #${i + 1} z ${tickets.length}`, pageW - 14, 18, { align: "right" });
@@ -86,7 +86,7 @@ export async function generateTicketsPdf(opts: {
     doc.setFontSize(9);
     doc.setTextColor(120);
     doc.text("Vstup je platný iba s QR kódom. Pri vstupe ukáž kód z mobilu alebo vytlačenú vstupenku.", 14, 268);
-    doc.text("Reklamácie: support@vstupenky.sk · www.vstupenky.sk", 14, 274);
+    doc.text("Reklamácie: support@vipky.sk · www.vipky.sk", 14, 274);
   }
 
   return doc.output("blob");
@@ -136,7 +136,7 @@ export async function generateEventSoldTicketsPdf(opts: {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text("vstupenky.sk", 14, 18);
+    doc.text("vipky.sk", 14, 18);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Vstupenka ${i + 1} / ${tickets.length}`, pageW - 14, 18, { align: "right" });
@@ -177,7 +177,7 @@ export async function generateEventSoldTicketsPdf(opts: {
     doc.setFontSize(9);
     doc.setTextColor(120);
     doc.text("Vstup je platný iba s QR kódom.", 14, 268);
-    doc.text("vstupenky.sk · www.vstupenky.sk", 14, 274);
+    doc.text("vipky.sk · www.vipky.sk", 14, 274);
   }
 
   return doc.output("blob");

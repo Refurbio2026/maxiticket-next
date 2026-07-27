@@ -7,9 +7,9 @@ import { Megaphone, Share2, Mail, Handshake, Tv, Sparkles, ArrowRight, CheckCirc
 export const Route = createFileRoute("/marketing")({
   head: () => ({
     meta: [
-      { title: "Marketing podujatí · vstupenky.sk" },
+      { title: "Marketing podujatí · vipky.sk" },
       { name: "description", content: "Reklamné možnosti, sociálne siete, newsletter a partnerské kampane pre organizátorov." },
-      { property: "og:title", content: "Marketing podujatí · vstupenky.sk" },
+      { property: "og:title", content: "Marketing podujatí · vipky.sk" },
       { property: "og:description", content: "Propagujte svoje podujatie naprieč Slovenskom." },
     ],
   }),
@@ -21,7 +21,7 @@ function MarketingPage() {
     <PageShell
       eyebrow="Marketing"
       title={<>Vypredajte sálu skôr, než <span className="text-gradient-flame">otvoríte dvere</span></>}
-      description="Propagujte vaše podujatia naprieč vstupenky.sk sieťou, sociálnymi sieťami, newsletterom a partnerskými kanálmi. Mediálna podpora a kampane na mieru."
+      description="Propagujte vaše podujatia naprieč vipky.sk sieťou, sociálnymi sieťami, newsletterom a partnerskými kanálmi. Mediálna podpora a kampane na mieru."
       cta={
         <>
           <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
@@ -36,7 +36,7 @@ function MarketingPage() {
       <FeatureGrid
         items={[
           { icon: Megaphone, title: "Propagácia podujatí", description: "Featured pozície na homepage, v kategóriách a v mestských sekciách." },
-          { icon: Share2, title: "Sociálne siete", description: "Promo posty na Instagrame, Facebooku a TikToku v vstupenky.sk kanáloch." },
+          { icon: Share2, title: "Sociálne siete", description: "Promo posty na Instagrame, Facebooku a TikToku v vipky.sk kanáloch." },
           { icon: Mail, title: "Newsletter", description: "Cielené kampane na 120 000+ aktívnych odberateľov podľa miest a žánrov." },
           { icon: Handshake, title: "Partnerské kampane", description: "Cross-promo s ďalšími podujatiami, značkami a mediálnymi partnermi." },
           { icon: Tv, title: "Mediálna podpora", description: "Tlačové správy, rozhlasové spoty a externé PPC kampane." },

@@ -27,7 +27,7 @@ import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/Walle
 import { downloadTicketsPdf } from "@/lib/ticket-pdf";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
-  head: () => ({ meta: [{ title: "Ďakujeme za nákup · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Ďakujeme za nákup · vipky.sk" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     t: typeof s.t === "string" ? s.t : "",
   }),

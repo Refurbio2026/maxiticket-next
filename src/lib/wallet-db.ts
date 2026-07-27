@@ -30,14 +30,14 @@ const defaultSettings: WalletSettings = {
     enabled: false,
     pass_type_identifier: "",
     team_identifier: "",
-    organization_name: "vstupenky.sk",
+    organization_name: "vipky.sk",
     cert_uploaded: false,
     wwdr_uploaded: false,
   },
   google: {
     enabled: false,
     issuer_id: "",
-    issuer_name: "vstupenky.sk",
+    issuer_name: "vipky.sk",
     service_account_uploaded: false,
   },
 };

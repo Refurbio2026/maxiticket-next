@@ -48,7 +48,7 @@ export const Route = createFileRoute("/scanner")({
   component: ScannerPage,
   head: () => ({
     meta: [
-      { title: "Čítačka QR vstupeniek — vstupenky.sk" },
+      { title: "Čítačka QR vstupeniek — vipky.sk" },
       { name: "description", content: "Skenovanie a validácia QR vstupeniek na vstupe." },
     ],
   }),

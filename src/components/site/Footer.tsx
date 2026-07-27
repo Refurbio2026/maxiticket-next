@@ -49,7 +49,7 @@ export function Footer() {
         <div className="grid lg:grid-cols-5 gap-10">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="vstupenky.sk" className="h-9 w-auto dark:invert" />
+              <img src={logo} alt="vipky.sk" className="h-9 w-auto dark:invert" />
             </Link>
 
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">{t("footer.tagline")}</p>

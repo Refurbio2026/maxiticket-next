@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/system/wallet")({
-  head: () => ({ meta: [{ title: "Wallet nastavenia · Admin · vstupenky.sk" }] }),
+  head: () => ({ meta: [{ title: "Wallet nastavenia · Admin · vipky.sk" }] }),
   component: WalletSettingsPage,
 });
 

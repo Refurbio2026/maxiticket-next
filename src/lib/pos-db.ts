@@ -1,4 +1,4 @@
-// POS / Pokladňa local storage layer for vstupenky.sk.
+// POS / Pokladňa local storage layer for vipky.sk.
 // Architektúra je pripravená na neskoršie napojenie na reálnu DB,
 // ORP / eKasa (fiscal-adapter) a USB platobné terminály (payment-terminal-adapter).
 
