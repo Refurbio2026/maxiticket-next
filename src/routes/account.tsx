@@ -1,20 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/hooks/use-auth";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  User, Ticket, LogOut, Calendar, MapPin, Download, Mail,
-} from "lucide-react";
-import {
-  getOrders, getTickets, ORDERS_EVENT,
-  type Order, type IssuedTicket,
-} from "@/lib/ticketing-db";
-import { getEvent, type EventItem } from "@/lib/local-db";
-import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/WalletButtons";
+import { User, Ticket, LogOut, Calendar, MapPin, Download, Mail } from "lucide-react";
+import { getMyTickets } from "@/lib/account.functions";
+import type { IssuedTicket } from "@/lib/ticketing-db";
+import { AppleWalletButton, GoogleWalletButton, type WalletEventInfo } from "@/components/wallet/WalletButtons";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
@@ -22,52 +18,41 @@ export const Route = createFileRoute("/account")({
   component: AccountPage,
 });
 
-type TicketRow = {
+type Row = {
   ticket: IssuedTicket;
-  order: Order;
-  event?: EventItem;
+  event: (WalletEventInfo & { title?: string }) | null;
+  customer_email: string | null;
 };
 
 function AccountPage() {
   const { user, roles, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [tickets, setTickets] = useState<IssuedTicket[]>([]);
+  const fetchMine = useServerFn(getMyTickets);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    const load = () => {
-      setOrders(getOrders());
-      setTickets(getTickets());
-    };
-    load();
-    window.addEventListener(ORDERS_EVENT, load);
-    window.addEventListener("storage", load);
-    return () => {
-      window.removeEventListener(ORDERS_EVENT, load);
-      window.removeEventListener("storage", load);
-    };
-  }, []);
-
-  const rows: TicketRow[] = useMemo(() => {
-    if (!user?.email) return [];
-    const mine = orders.filter(
-      (o) =>
-        o.status === "paid" &&
-        (o.customer_email ?? "").toLowerCase() === user.email!.toLowerCase(),
-    );
-    const orderById = new Map(mine.map((o) => [o.id, o]));
-    return tickets
-      .filter((t) => orderById.has(t.order_id))
-      .map((t) => {
-        const order = orderById.get(t.order_id)!;
-        return { ticket: t, order, event: getEvent(t.event_id) };
+    if (!user) return;
+    let cancelled = false;
+    setTicketsLoading(true);
+    fetchMine()
+      .then((res: { rows: Row[] }) => {
+        if (!cancelled) setRows(res.rows ?? []);
       })
-      .sort((a, b) => b.ticket.issued_at.localeCompare(a.ticket.issued_at));
-  }, [orders, tickets, user?.email]);
+      .catch(() => {
+        if (!cancelled) setRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setTicketsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, fetchMine]);
 
   if (loading || !user) return null;
 
@@ -115,34 +100,29 @@ function AccountPage() {
           <Card className="p-6 bg-card/60 border-border/50">
             <Calendar className="size-6 text-primary mb-3" />
             <div className="font-semibold">Objavuj podujatia</div>
-            <Link
-              to="/events"
-              className="text-sm text-primary hover:underline mt-2 inline-block"
-            >
+            <Link to="/events" className="text-sm text-primary hover:underline mt-2 inline-block">
               Prejsť na podujatia →
             </Link>
           </Card>
           <Card className="p-6 bg-card/60 border-border/50">
             <User className="size-6 text-primary mb-3" />
             <div className="font-semibold">Profil</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Bezpečné a šifrované údaje.
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Bezpečné a šifrované údaje.</p>
           </Card>
         </div>
 
         {/* Tickets */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl font-semibold tracking-tight">
-              Moje vstupenky
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              Podľa emailu {user.email}
-            </span>
+            <h2 className="font-display text-2xl font-semibold tracking-tight">Moje vstupenky</h2>
+            <span className="text-xs text-muted-foreground">Podľa emailu {user.email}</span>
           </div>
 
-          {rows.length === 0 ? (
+          {ticketsLoading ? (
+            <Card className="p-10 text-center bg-card/60 border-dashed border-border/50">
+              <p className="text-sm text-muted-foreground">Načítavam vstupenky…</p>
+            </Card>
+          ) : rows.length === 0 ? (
             <Card className="p-10 text-center bg-card/60 border-dashed border-border/50">
               <Ticket className="size-10 text-muted-foreground mx-auto mb-3" />
               <div className="font-semibold">Zatiaľ nemáš žiadne vstupenky</div>
@@ -159,8 +139,8 @@ function AccountPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {rows.map(({ ticket, order, event }) => (
-                <TicketCard key={ticket.id} ticket={ticket} order={order} event={event} />
+              {rows.map((row) => (
+                <TicketCard key={row.ticket.id} row={row} />
               ))}
             </div>
           )}
@@ -171,14 +151,12 @@ function AccountPage() {
   );
 }
 
-function TicketCard({
-  ticket, order, event,
-}: TicketRow) {
+function TicketCard({ row }: { row: Row }) {
+  const { ticket, event, customer_email } = row;
   const print = () => {
     if (typeof window !== "undefined") window.print();
   };
-  const email = () =>
-    toast.success(`Vstupenka odoslaná na ${order.customer_email}`);
+  const email = () => toast.success(`Vstupenka odoslaná na ${customer_email}`);
 
   return (
     <Card className="p-5 bg-card/60 border-border/50">
@@ -187,12 +165,8 @@ function TicketCard({
           <QRCodeSVG value={ticket.qr_code} size={120} level="M" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            Vstupenka
-          </div>
-          <div className="font-display text-lg font-semibold mt-0.5">
-            {event?.title ?? "Podujatie"}
-          </div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Vstupenka</div>
+          <div className="font-display text-lg font-semibold mt-0.5">{event?.title ?? "Podujatie"}</div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {event && (
               <>
@@ -206,17 +180,15 @@ function TicketCard({
             )}
           </div>
           <div className="mt-2 text-sm font-medium">{ticket.seat_label}</div>
-          <div className="text-[11px] font-mono text-muted-foreground mt-1 break-all">
-            {ticket.qr_code}
-          </div>
+          <div className="text-[11px] font-mono text-muted-foreground mt-1 break-all">{ticket.qr_code}</div>
 
           <div className="flex flex-wrap gap-2 mt-4">
             <AppleWalletButton ticket={ticket} size="sm" compact />
-            <GoogleWalletButton ticket={ticket} size="sm" compact />
+            <GoogleWalletButton ticket={ticket} event={event ?? undefined} size="sm" compact />
             <Button size="sm" variant="outline" onClick={print} className="gap-1.5">
               <Download className="size-3.5" /> PDF
             </Button>
-            {order.customer_email && (
+            {customer_email && (
               <Button size="sm" variant="ghost" onClick={email} className="gap-1.5">
                 <Mail className="size-3.5" /> Email
               </Button>

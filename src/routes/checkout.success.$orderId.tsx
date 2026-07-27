@@ -28,11 +28,15 @@ import { downloadTicketsPdf } from "@/lib/ticket-pdf";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
   head: () => ({ meta: [{ title: "Ďakujeme za nákup · vstupenky.sk" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    t: typeof s.t === "string" ? s.t : "",
+  }),
   component: SuccessPage,
 });
 
 function SuccessPage() {
   const { orderId } = Route.useParams();
+  const { t } = Route.useSearch();
   const [order, setOrder] = useState<Order | undefined>();
   const [event, setEvent] = useState<EventItem | undefined>();
   const [tickets, setTickets] = useState<IssuedTicket[]>([]);
@@ -48,7 +52,7 @@ function SuccessPage() {
     (async () => {
       // 1) Try Supabase order (real GoPay flow)
       try {
-        const s = await fetchSummary({ data: { order_id: orderId } });
+        const s = await fetchSummary({ data: { order_id: orderId, access_token: t } });
         if (cancelled) return;
         if (s.order) {
           const sb = s.order as any;
@@ -112,7 +116,7 @@ function SuccessPage() {
     return () => {
       cancelled = true;
     };
-  }, [orderId, fetchSummary]);
+  }, [orderId, t, fetchSummary]);
 
   const download = async () => {
     if (!order || tickets.length === 0) {
@@ -228,7 +232,22 @@ function SuccessPage() {
 
                       <div className="flex flex-wrap gap-2 mt-4 print:hidden">
                         <AppleWalletButton ticket={t} size="sm" compact />
-                        <GoogleWalletButton ticket={t} size="sm" compact />
+                        <GoogleWalletButton
+                          ticket={t}
+                          event={
+                            event
+                              ? {
+                                  title: event.title,
+                                  event_date: event.event_date,
+                                  event_time: event.event_time,
+                                  venue: event.venue,
+                                  city: event.city,
+                                }
+                              : undefined
+                          }
+                          size="sm"
+                          compact
+                        />
                       </div>
                     </div>
                   </div>

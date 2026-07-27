@@ -33,26 +33,31 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
           body = await request.json();
         } catch {}
         const token = String(body?.token || "").trim();
-        let eventId: string | null = body?.event_id ? String(body.event_id).trim() : null;
         const eventToken = body?.event_token ? String(body.event_token).trim() : null;
         const scannedBy = body?.scanner_user_id ? String(body.scanner_user_id) : null;
         const scannerName = body?.scanner_name ? String(body.scanner_name) : null;
         const allowReentry = Boolean(body?.allow_reentry);
 
-        // Resolve event by public scanner token (no auth required)
-        if (!eventId && eventToken) {
-          const { data: ev } = await supabaseAdmin
-            .from("events")
-            .select("id")
-            .eq("scanner_token", eventToken)
-            .maybeSingle();
-          eventId = (ev as any)?.id || null;
-          if (!eventId) {
-            return Response.json(
-              { ok: false, result: "invalid" as const, message: "Neplatný kód podujatia" },
-              { status: 200 },
-            );
-          }
+        // SECURITY: scanning is authorized ONLY by knowledge of the event's
+        // scanner_token (the shared scanner secret). We never trust a raw
+        // event_id from the body — otherwise anyone could mark tickets used.
+        if (!eventToken) {
+          return Response.json(
+            { ok: false, result: "invalid" as const, message: "Chýba skenovací kód podujatia." },
+            { status: 200 },
+          );
+        }
+        const { data: ev } = await supabaseAdmin
+          .from("events")
+          .select("id")
+          .eq("scanner_token", eventToken)
+          .maybeSingle();
+        const eventId: string | null = (ev as any)?.id || null;
+        if (!eventId) {
+          return Response.json(
+            { ok: false, result: "invalid" as const, message: "Neplatný kód podujatia" },
+            { status: 200 },
+          );
         }
 
         // Accept legacy plaintext qr_code too (fallback)
@@ -108,33 +113,44 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
             .maybeSingle(),
         ]);
 
-        const alreadyUsed = Boolean(ticket.used_at);
         const canReentry = allowReentry || ticket.allow_reentry;
+        const now = new Date().toISOString();
 
         let result: ScanResult;
-        if (!alreadyUsed) result = "valid";
-        else if (canReentry) result = "reentry";
-        else result = "duplicate";
-
-        if (result === "valid") {
-          await supabaseAdmin
+        if (!ticket.used_at) {
+          // Atomic first-use: only the row whose used_at is STILL null gets
+          // updated. If two scanners race the same ticket, exactly one wins.
+          const { data: claimed } = await supabaseAdmin
             .from("tickets")
             .update({
-              used_at: new Date().toISOString(),
+              used_at: now,
               scan_count: (ticket.scan_count || 0) + 1,
-              last_scan_at: new Date().toISOString(),
+              last_scan_at: now,
               scanned_by: scannedBy,
             })
-            .eq("id", ticket.id);
-        } else if (result === "reentry") {
+            .eq("id", ticket.id)
+            .is("used_at", null)
+            .select("id");
+          if (claimed && claimed.length > 0) {
+            result = "valid";
+          } else {
+            // Lost the race — ticket was used a moment ago on another device.
+            result = canReentry ? "reentry" : "duplicate";
+            if (result === "reentry") {
+              await supabaseAdmin
+                .from("tickets")
+                .update({ scan_count: (ticket.scan_count || 0) + 1, last_scan_at: now, scanned_by: scannedBy })
+                .eq("id", ticket.id);
+            }
+          }
+        } else if (canReentry) {
+          result = "reentry";
           await supabaseAdmin
             .from("tickets")
-            .update({
-              scan_count: (ticket.scan_count || 0) + 1,
-              last_scan_at: new Date().toISOString(),
-              scanned_by: scannedBy,
-            })
+            .update({ scan_count: (ticket.scan_count || 0) + 1, last_scan_at: now, scanned_by: scannedBy })
             .eq("id", ticket.id);
+        } else {
+          result = "duplicate";
         }
 
         await logScan({

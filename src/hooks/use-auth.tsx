@@ -1,17 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import {
-  ensureSeed,
-  getCurrentUser,
-  setCurrentUserId,
-  findUserByEmail,
-  getUsers,
-  saveUsers,
-  uid,
-  emit,
-  AUTH_EVENT,
-  type Role,
-  type StoredUser,
-} from "@/lib/local-db";
+import { supabase } from "@/integrations/supabase/client";
+import { ensureSeed, type Role } from "@/lib/local-db";
+
+// AUTH — now backed by Supabase Auth (was localStorage demo before).
+// The public interface (user/roles/loading/isAdmin/isOrganizer/signIn/signUp/
+// signOut) is unchanged, so login.tsx / register.tsx need no edits. Roles come
+// from the `user_roles` table; a fresh sign-up is always role "user" (the
+// handle_new_user DB trigger), and organizer/admin must be granted by an admin
+// (enforced by RLS) — self-assignment is intentionally not possible.
 
 export type AppRole = Role;
 
@@ -36,21 +32,18 @@ type SignUpInput = {
   phone?: string;
 };
 
+type AuthResult = { ok: true; user: AuthUser } | { ok: false; error: string };
+
 type AuthCtx = {
   user: AuthUser | null;
   roles: AppRole[];
   loading: boolean;
   isAdmin: boolean;
   isOrganizer: boolean;
-  signIn: (email: string, password: string) => Promise<{ ok: true; user: AuthUser } | { ok: false; error: string }>;
-  signUp: (input: SignUpInput) => Promise<{ ok: true; user: AuthUser } | { ok: false; error: string }>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (input: SignUpInput) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
-
-function toAuthUser(u: StoredUser | null): AuthUser | null {
-  if (!u) return null;
-  return { id: u.id, email: u.email, full_name: u.full_name, role: u.role };
-}
 
 const Ctx = createContext<AuthCtx>({
   user: null,
@@ -63,70 +56,117 @@ const Ctx = createContext<AuthCtx>({
   signOut: async () => {},
 });
 
+// Pick the highest-privilege role the user holds.
+async function fetchPrimaryRole(userId: string): Promise<AppRole> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const roles = (data ?? []).map((r: { role: string }) => r.role);
+  if (roles.includes("admin")) return "admin";
+  if (roles.includes("organizer")) return "organizer";
+  return "user";
+}
+
+type SupabaseUserLike = {
+  id: string;
+  email?: string | null;
+  user_metadata?: { full_name?: string } | null;
+};
+
+async function toAuthUser(u: SupabaseUserLike | null | undefined): Promise<AuthUser | null> {
+  if (!u) return null;
+  const role = await fetchPrimaryRole(u.id);
+  return {
+    id: u.id,
+    email: u.email ?? "",
+    full_name: u.user_metadata?.full_name,
+    role,
+  };
+}
+
+function translateAuthError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("invalid login")) return "Nesprávny email alebo heslo";
+  if (m.includes("email not confirmed")) return "Email ešte nie je potvrdený. Skontroluj si schránku.";
+  if (m.includes("already registered") || m.includes("already been registered"))
+    return "Účet s týmto emailom už existuje";
+  return message;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Keep seeding demo events/categories so public pages still have content.
     ensureSeed();
-    setUser(toAuthUser(getCurrentUser()));
-    setLoading(false);
 
-    const refresh = () => setUser(toAuthUser(getCurrentUser()));
-    window.addEventListener(AUTH_EVENT, refresh);
-    window.addEventListener("storage", refresh);
+    let active = true;
+    supabase.auth.getSession().then(async ({ data }) => {
+      const au = await toAuthUser(data.session?.user);
+      if (active) {
+        setUser(au);
+        setLoading(false);
+      }
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const au = await toAuthUser(session?.user);
+      if (active) setUser(au);
+    });
+
     return () => {
-      window.removeEventListener(AUTH_EVENT, refresh);
-      window.removeEventListener("storage", refresh);
+      active = false;
+      sub.subscription.unsubscribe();
     };
   }, []);
 
   const signIn: AuthCtx["signIn"] = async (email, password) => {
-    const found = findUserByEmail(email);
-    if (!found || found.password !== password) {
-      return { ok: false, error: "Nesprávny email alebo heslo" };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      return { ok: false, error: translateAuthError(error?.message ?? "Prihlásenie zlyhalo") };
     }
-    setCurrentUserId(found.id);
-    const au = toAuthUser(found)!;
+    const au = await toAuthUser(data.user);
+    if (!au) return { ok: false, error: "Prihlásenie zlyhalo" };
     setUser(au);
-    emit(AUTH_EVENT);
     return { ok: true, user: au };
   };
 
   const signUp: AuthCtx["signUp"] = async (input) => {
-    if (findUserByEmail(input.email)) {
-      return { ok: false, error: "Účet s týmto emailom už existuje" };
-    }
-    const newUser: StoredUser = {
-      id: uid(),
+    const { data, error } = await supabase.auth.signUp({
       email: input.email,
       password: input.password,
-      role: input.role,
-      first_name: input.first_name,
-      last_name: input.last_name,
-      full_name: `${input.first_name} ${input.last_name}`.trim(),
-      company_name: input.company_name,
-      ico: input.ico,
-      dic: input.dic,
-      ic_dph: input.ic_dph,
-      billing_address: input.billing_address,
-      phone: input.phone,
-      created_at: new Date().toISOString(),
-    };
-    const users = getUsers();
-    users.push(newUser);
-    saveUsers(users);
-    setCurrentUserId(newUser.id);
-    const au = toAuthUser(newUser)!;
+      options: {
+        data: {
+          full_name: `${input.first_name} ${input.last_name}`.trim(),
+          first_name: input.first_name,
+          last_name: input.last_name,
+          requested_role: input.role, // organizer requests need admin approval
+          company_name: input.company_name,
+          ico: input.ico,
+          dic: input.dic,
+          ic_dph: input.ic_dph,
+          billing_address: input.billing_address,
+          phone: input.phone,
+        },
+      },
+    });
+    if (error) return { ok: false, error: translateAuthError(error.message) };
+
+    // Email-confirmation ON → no session yet; user must confirm before login.
+    if (!data.session) {
+      return {
+        ok: false,
+        error: "Účet vytvorený. Skontroluj si email a potvrď registráciu, potom sa prihlás.",
+      };
+    }
+    const au = await toAuthUser(data.user);
+    if (!au) return { ok: false, error: "Registrácia zlyhala" };
     setUser(au);
-    emit(AUTH_EVENT);
     return { ok: true, user: au };
   };
 
   const signOut = async () => {
-    setCurrentUserId(null);
+    await supabase.auth.signOut();
     setUser(null);
-    emit(AUTH_EVENT);
   };
 
   const roles: AppRole[] = user ? [user.role] : [];

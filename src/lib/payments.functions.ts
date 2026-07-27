@@ -3,17 +3,32 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   createGoPayPayment,
   getGoPayPaymentStatus,
   mapGoPayStateToOrder,
 } from "./gopay.server";
 import { createPaidInvoice } from "./superfaktura.server";
+import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
+import { newSignedTicket } from "./qr-token.server";
 
 function getOrigin(): string {
   const fromEnv = process.env.PUBLIC_SITE_URL || process.env.SITE_URL;
   if (fromEnv) return fromEnv.replace(/\/+$/, "");
   return "https://project--dff07d0a-f011-4a35-b195-c8c7bc1b200f-dev.lovable.app";
+}
+
+// Server-side admin check for privileged operations.
+async function assertAdmin(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Forbidden: vyžaduje sa rola admin");
 }
 
 const CustomerSchema = z.object({
@@ -73,6 +88,30 @@ export const submitOrder = createServerFn({ method: "POST" })
     // Reserve seats in inventory (only for items with seat_id)
     const seats = data.items.filter((it) => !!it.seat_id);
     if (seats.length > 0) {
+      const seatIds = seats.map((it) => it.seat_id!);
+      const nowIso = new Date().toISOString();
+
+      // SECURITY/CORRECTNESS: never blind-upsert over a seat that is already
+      // sold or actively reserved by someone else — that would oversell it.
+      const { data: existing } = await supabaseAdmin
+        .from("seat_inventory")
+        .select("seat_id, status, reserved_until, order_id")
+        .eq("event_id", data.event_id)
+        .in("seat_id", seatIds);
+
+      const conflict = (existing || []).find(
+        (r: any) =>
+          r.order_id !== order.id &&
+          (r.status === "sold" ||
+            (r.status === "reserved" && (!r.reserved_until || r.reserved_until > nowIso))),
+      );
+      if (conflict) {
+        // Roll back the just-created order so we don't leave an orphan.
+        await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        throw new Error("Niektoré sedadlá už nie sú dostupné. Skús vybrať iné.");
+      }
+
       const inv = seats.map((it) => ({
         event_id: data.event_id,
         seat_id: it.seat_id!,
@@ -129,7 +168,7 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
           amountCents: Math.round(Number(it.unit_price) * 100),
           count: it.quantity || 1,
         })),
-        returnUrl: `${origin}/checkout/return?orderId=${order.id}`,
+        returnUrl: `${origin}/checkout/return?orderId=${order.id}&t=${signOrderAccess(order.id)}`,
         notificationUrl: `${origin}/api/public/payments/gopay/webhook?orderId=${order.id}`,
         lang: "SK",
       });
@@ -239,13 +278,19 @@ async function settleOrderIfPaid(orderId: string) {
         .select("*")
         .eq("order_id", order.id);
       const tickets = (items || []).flatMap((it) =>
-        Array.from({ length: it.quantity || 1 }).map((_, i) => ({
-          order_id: order.id,
-          event_id: order.event_id,
-          seat_id: it.seat_id,
-          seat_label: it.label + (it.quantity > 1 ? ` #${i + 1}` : ""),
-          qr_code: `MAXI-${order.id.slice(0, 8).toUpperCase()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}-${i}`,
-        })),
+        Array.from({ length: it.quantity || 1 }).map((_, i) => {
+          // Signed, verifiable token — identical scheme to the webhook path.
+          const { id, token } = newSignedTicket();
+          return {
+            id,
+            order_id: order.id,
+            event_id: order.event_id,
+            seat_id: it.seat_id,
+            seat_label: it.label + ((it.quantity || 1) > 1 ? ` #${i + 1}` : ""),
+            qr_code: token,
+            qr_token: token,
+          };
+        }),
       );
       if (tickets.length > 0) {
         await supabaseAdmin.from("tickets").insert(tickets);
@@ -326,9 +371,15 @@ export const settleGoPayOrder = createServerFn({ method: "POST" })
     return settleOrderIfPaid(data.order_id);
   });
 
-// Read shape for /checkout/return and /checkout/success
+// Read shape for /checkout/return and /checkout/success.
+// SECURITY: personal data (customer name/email/phone) is only returned when the
+// caller presents a valid per-order access token (issued in the GoPay return
+// URL). Without it we still return the event/items/tickets so the QR renders,
+// but strip PII — so a stranger who only knows the order id can't harvest it.
 export const getOrderSummary = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ order_id: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ order_id: z.string().uuid(), access_token: z.string().optional() }).parse(input),
+  )
   .handler(async ({ data }) => {
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -341,13 +392,21 @@ export const getOrderSummary = createServerFn({ method: "POST" })
       supabaseAdmin.from("tickets").select("*").eq("order_id", order.id),
       supabaseAdmin.from("events").select("*").eq("id", order.event_id).maybeSingle(),
     ]);
-    return { order, items: items || [], tickets: tickets || [], event: event || null };
+
+    const authorized = verifyOrderAccess(order.id, data.access_token);
+    const safeOrder = authorized
+      ? order
+      : { ...order, customer_name: null, customer_email: null, customer_phone: null };
+
+    return { order: safeOrder, items: items || [], tickets: tickets || [], event: event || null };
   });
 
 // Admin: re-issue invoice manually
 export const reissueInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ order_id: z.string().uuid() }).parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const { data: order } = await supabaseAdmin
       .from("orders")
       .select("*")

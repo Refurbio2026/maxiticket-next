@@ -12,12 +12,13 @@ export const Route = createFileRoute("/checkout/return")({
   head: () => ({ meta: [{ title: "Overujeme platbu · vstupenky.sk" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     orderId: typeof s.orderId === "string" ? s.orderId : "",
+    t: typeof s.t === "string" ? s.t : "",
   }),
   component: ReturnPage,
 });
 
 function ReturnPage() {
-  const { orderId } = Route.useSearch();
+  const { orderId, t } = Route.useSearch();
   const navigate = useNavigate();
   const settle = useServerFn(settleGoPayOrder);
   const summary = useServerFn(getOrderSummary);
@@ -35,7 +36,7 @@ function ReturnPage() {
         const result = await settle({ data: { order_id: orderId } });
         if (cancelled) return;
         if (result.status === "paid") {
-          navigate({ to: "/checkout/success/$orderId", params: { orderId } });
+          navigate({ to: "/checkout/success/$orderId", params: { orderId }, search: { t } });
           return;
         }
         if (result.status === "cancelled" || result.status === "failed") {
@@ -44,9 +45,9 @@ function ReturnPage() {
         }
       } catch {
         try {
-          const s = await summary({ data: { order_id: orderId } });
+          const s = await summary({ data: { order_id: orderId, access_token: t } });
           if (s.order?.status === "paid") {
-            navigate({ to: "/checkout/success/$orderId", params: { orderId } });
+            navigate({ to: "/checkout/success/$orderId", params: { orderId }, search: { t } });
             return;
           }
         } catch {
@@ -64,7 +65,7 @@ function ReturnPage() {
     return () => {
       cancelled = true;
     };
-  }, [orderId, attempt, navigate, settle, summary]);
+  }, [orderId, t, attempt, navigate, settle, summary]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

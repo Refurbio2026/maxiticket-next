@@ -10,7 +10,19 @@ const DEMO = [
 export const Route = createFileRoute("/api/public/seed-demo")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // SECURITY: this endpoint creates real admin/organizer accounts, so it
+        // must never be openly reachable. It is inert unless a SEED_SECRET is
+        // configured AND the caller presents it (?key=… or x-seed-secret header).
+        const secret = process.env.SEED_SECRET;
+        const url = new URL(request.url);
+        const provided = url.searchParams.get("key") || request.headers.get("x-seed-secret");
+        if (!secret || provided !== secret) {
+          return new Response(JSON.stringify({ error: "Not found" }), {
+            status: 404,
+            headers: { "content-type": "application/json" },
+          });
+        }
         const results: Record<string, string> = {};
         for (const d of DEMO) {
           const { data: list } = await supabaseAdmin.auth.admin.listUsers();
