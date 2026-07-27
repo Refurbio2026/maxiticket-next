@@ -1,34 +1,34 @@
 import { Link } from "@tanstack/react-router";
 import { Instagram, Facebook, Youtube, Twitter } from "lucide-react";
+import { useI18n } from "@/hooks/use-i18n";
 import logo from "@/assets/logo.png";
 
-
-type Col = { t: string; l: { label: string; to: string }[] };
+type Col = { titleKey: string; l: { labelKey: string; to: string }[] };
 
 const cols: Col[] = [
   {
-    t: "Platforma",
+    titleKey: "footer.platform",
     l: [
-      { label: "Podujatia", to: "/events" },
-      { label: "Umelci", to: "/artists" },
-      { label: "Partneri", to: "/partners" },
-      { label: "Pre organizátorov", to: "/organizer" },
+      { labelKey: "nav.events", to: "/events" },
+      { labelKey: "nav.artists", to: "/artists" },
+      { labelKey: "footer.partners", to: "/partners" },
+      { labelKey: "footer.forOrganizers", to: "/organizer" },
     ],
   },
   {
-    t: "Spoločnosť",
+    titleKey: "footer.company",
     l: [
-      { label: "O nás", to: "/about" },
-      { label: "Kontakt", to: "/contact" },
-      { label: "Podpora", to: "/support" },
+      { labelKey: "footer.about", to: "/about" },
+      { labelKey: "nav.contact", to: "/contact" },
+      { labelKey: "nav.support", to: "/support" },
     ],
   },
   {
-    t: "Účet",
+    titleKey: "footer.account",
     l: [
-      { label: "Prihlásenie", to: "/login" },
-      { label: "Registrácia", to: "/register" },
-      { label: "Môj účet", to: "/account" },
+      { labelKey: "footer.login", to: "/login" },
+      { labelKey: "footer.register", to: "/register" },
+      { labelKey: "footer.myAccount", to: "/account" },
     ],
   },
 ];
@@ -41,6 +41,8 @@ const socials: { Icon: typeof Instagram; href: string; label: string }[] = [
 ];
 
 export function Footer() {
+  const { t } = useI18n();
+
   return (
     <footer className="border-t border-border bg-surface/40 pt-20 pb-10">
       <div className="mx-auto max-w-7xl px-4">
@@ -50,9 +52,7 @@ export function Footer() {
               <img src={logo} alt="vstupenky.sk" className="h-9 w-auto dark:invert" />
             </Link>
 
-            <p className="mt-5 text-sm text-muted-foreground max-w-sm">
-              Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.
-            </p>
+            <p className="mt-5 text-sm text-muted-foreground max-w-sm">{t("footer.tagline")}</p>
             <div className="mt-6 flex gap-2">
               {socials.map(({ Icon, href, label }) => (
                 <a
@@ -70,13 +70,13 @@ export function Footer() {
           </div>
 
           {cols.map((c) => (
-            <div key={c.t}>
-              <div className="font-display font-semibold mb-4 text-sm">{c.t}</div>
+            <div key={c.titleKey}>
+              <div className="font-display font-semibold mb-4 text-sm">{t(c.titleKey)}</div>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
                 {c.l.map((i) => (
-                  <li key={i.label}>
+                  <li key={i.labelKey}>
                     <Link to={i.to} className="hover:text-foreground transition-colors">
-                      {i.label}
+                      {t(i.labelKey)}
                     </Link>
                   </li>
                 ))}
@@ -86,8 +86,8 @@ export function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between gap-4 text-xs text-muted-foreground">
-          <div>© 2026 vstupenky.sk s.r.o. — Všetky práva vyhradené.</div>
-          <div>Postavené s vášňou v Bratislave 🇸🇰</div>
+          <div>{t("footer.rights")}</div>
+          <div>{t("footer.builtWith")}</div>
         </div>
       </div>
     </footer>

@@ -4,22 +4,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, LogOut, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
-
-const NAV_LINKS: { label: string; to: string }[] = [
-  { label: "Podujatia", to: "/events" },
-  { label: "Mestá", to: "/#cities" },
-  { label: "Umelci", to: "/artists" },
-  { label: "Marketing", to: "/marketing" },
-  { label: "Podpora", to: "/support" },
-  { label: "Spolupráca", to: "/partners" },
-  { label: "Kontakt", to: "/contact" },
+const NAV_LINKS: { key: string; to: string }[] = [
+  { key: "nav.events", to: "/events" },
+  { key: "nav.cities", to: "/#cities" },
+  { key: "nav.artists", to: "/artists" },
+  { key: "nav.marketing", to: "/marketing" },
+  { key: "nav.support", to: "/support" },
+  { key: "nav.partners", to: "/partners" },
+  { key: "nav.contact", to: "/contact" },
 ];
 
 export function Navbar() {
   const { user, signOut } = useAuth();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   return (
@@ -40,45 +42,46 @@ export function Navbar() {
           <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-foreground/80">
             {NAV_LINKS.map((l) =>
               l.to.startsWith("/#") ? (
-                <a key={l.label} href={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
-                  {l.label}
+                <a key={l.key} href={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
+                  {t(l.key)}
                 </a>
               ) : (
-                <Link key={l.label} to={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
-                  {l.label}
+                <Link key={l.key} to={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
+                  {t(l.key)}
                 </Link>
               ),
             )}
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageSwitcher className="rounded-xl" />
             <ThemeToggle className="rounded-xl" />
             {user ? (
               <>
                 <Button asChild variant="ghost" className="hidden md:inline-flex rounded-xl text-sm">
-                  <Link to="/account"><User className="size-4 mr-1.5" /> Účet</Link>
+                  <Link to="/account"><User className="size-4 mr-1.5" /> {t("common.account")}</Link>
                 </Button>
                 <Button variant="ghost" className="hidden md:inline-flex rounded-xl text-sm" onClick={() => signOut()}>
-                  <LogOut className="size-4 mr-1.5" /> Odhlásiť
+                  <LogOut className="size-4 mr-1.5" /> {t("common.logout")}
                 </Button>
               </>
             ) : (
               <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-xl text-sm">
-                <Link to="/login">Prihlásiť sa</Link>
+                <Link to="/login">{t("common.login")}</Link>
               </Button>
             )}
             <Button asChild variant="outline" className="hidden sm:inline-flex rounded-xl text-sm">
-              <Link to="/scanner"><ScanLine className="size-4 mr-1.5" /> Čítačka QR</Link>
+              <Link to="/scanner"><ScanLine className="size-4 mr-1.5" /> {t("common.scannerQR")}</Link>
             </Button>
             <Button asChild className="hidden sm:inline-flex rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow">
-              <Link to="/login" search={{ section: "organizer" }}>Pridať podujatie</Link>
+              <Link to="/login" search={{ section: "organizer" }}>{t("common.addEvent")}</Link>
             </Button>
             <Button
               variant="ghost"
               size="icon"
               className="lg:hidden rounded-xl"
               onClick={() => setOpen((v) => !v)}
-              aria-label={open ? "Zavrieť menu" : "Otvoriť menu"}
+              aria-label={open ? t("common.closeMenu") : t("common.openMenu")}
             >
               {open ? <X className="size-5" /> : <Menu className="size-5" />}
             </Button>
@@ -97,21 +100,21 @@ export function Navbar() {
               {NAV_LINKS.map((l) =>
                 l.to.startsWith("/#") ? (
                   <a
-                    key={l.label}
+                    key={l.key}
                     href={l.to}
                     onClick={() => setOpen(false)}
                     className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40"
                   >
-                    {l.label}
+                    {t(l.key)}
                   </a>
                 ) : (
                   <Link
-                    key={l.label}
+                    key={l.key}
                     to={l.to}
                     onClick={() => setOpen(false)}
                     className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40"
                   >
-                    {l.label}
+                    {t(l.key)}
                   </Link>
                 ),
               )}
@@ -123,13 +126,13 @@ export function Navbar() {
                     onClick={() => setOpen(false)}
                     className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40 flex items-center gap-2"
                   >
-                    <User className="size-4" /> Účet
+                    <User className="size-4" /> {t("common.account")}
                   </Link>
                   <button
                     onClick={() => { setOpen(false); signOut(); }}
                     className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40 flex items-center gap-2 text-left"
                   >
-                    <LogOut className="size-4" /> Odhlásiť
+                    <LogOut className="size-4" /> {t("common.logout")}
                   </button>
                 </>
               ) : (
@@ -138,7 +141,7 @@ export function Navbar() {
                   onClick={() => setOpen(false)}
                   className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40"
                 >
-                  Prihlásiť sa
+                  {t("common.login")}
                 </Link>
               )}
               <Link
@@ -146,7 +149,7 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40 flex items-center gap-2"
               >
-                <ScanLine className="size-4" /> Čítačka QR
+                <ScanLine className="size-4" /> {t("common.scannerQR")}
               </Link>
               <Link
                 to="/login"
@@ -154,7 +157,7 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className="mt-2 px-3 py-2.5 rounded-lg text-sm text-center bg-gradient-flame text-primary-foreground shadow-glow"
               >
-                Pridať podujatie
+                {t("common.addEvent")}
               </Link>
             </motion.div>
           )}
