@@ -57,6 +57,16 @@ const sk: Dict = {
   "footer.tagline": "Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — Všetky práva vyhradené.",
   "footer.builtWith": "Postavené s vášňou v Bratislave 🇸🇰",
+  // support chat
+  "support.title": "Podpora",
+  "support.subtitle": "Virtuálny asistent · odpovie hneď",
+  "support.greeting": "Ahoj! 👋 Som virtuálny asistent vstupenky.sk. Ako ti pomôžem — nákup, vstupenky, platby alebo reklamácie?",
+  "support.placeholder": "Napíš svoju otázku…",
+  "support.send": "Odoslať",
+  "support.thinking": "Píšem…",
+  "support.disabled": "Chat podpora momentálne nie je dostupná. Napíš nám prosím cez Kontakt.",
+  "support.error": "Prepáč, niečo sa pokazilo. Skús to prosím znova.",
+  "support.contactCta": "Kontaktovať ľudskú podporu",
 };
 
 const en: Dict = {
@@ -87,6 +97,15 @@ const en: Dict = {
   "footer.tagline": "The most modern ticketing platform in Slovakia. Selling experiences since 2025.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — All rights reserved.",
   "footer.builtWith": "Built with passion in Bratislava 🇸🇰",
+  "support.title": "Support",
+  "support.subtitle": "Virtual assistant · instant replies",
+  "support.greeting": "Hi! 👋 I'm the vstupenky.sk virtual assistant. How can I help — buying, tickets, payments or refunds?",
+  "support.placeholder": "Type your question…",
+  "support.send": "Send",
+  "support.thinking": "Typing…",
+  "support.disabled": "Chat support is currently unavailable. Please reach us via Contact.",
+  "support.error": "Sorry, something went wrong. Please try again.",
+  "support.contactCta": "Contact human support",
 };
 
 const de: Dict = {
@@ -117,6 +136,15 @@ const de: Dict = {
   "footer.tagline": "Die modernste Ticketing-Plattform der Slowakei. Wir verkaufen Erlebnisse seit 2025.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — Alle Rechte vorbehalten.",
   "footer.builtWith": "Mit Leidenschaft in Bratislava gebaut 🇸🇰",
+  "support.title": "Support",
+  "support.subtitle": "Virtueller Assistent · sofortige Antwort",
+  "support.greeting": "Hallo! 👋 Ich bin der virtuelle Assistent von vstupenky.sk. Wie kann ich helfen — Kauf, Tickets, Zahlungen oder Rückerstattungen?",
+  "support.placeholder": "Schreib deine Frage…",
+  "support.send": "Senden",
+  "support.thinking": "Schreibt…",
+  "support.disabled": "Der Chat-Support ist derzeit nicht verfügbar. Bitte kontaktiere uns über Kontakt.",
+  "support.error": "Entschuldigung, etwas ist schiefgelaufen. Bitte versuche es erneut.",
+  "support.contactCta": "Menschlichen Support kontaktieren",
 };
 
 const hu: Dict = {
@@ -147,6 +175,15 @@ const hu: Dict = {
   "footer.tagline": "Szlovákia legmodernebb jegyértékesítő platformja. 2025 óta élményeket árulunk.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — Minden jog fenntartva.",
   "footer.builtWith": "Szenvedéllyel készült Pozsonyban 🇸🇰",
+  "support.title": "Támogatás",
+  "support.subtitle": "Virtuális asszisztens · azonnali válasz",
+  "support.greeting": "Szia! 👋 A vstupenky.sk virtuális asszisztense vagyok. Miben segíthetek — vásárlás, jegyek, fizetés vagy visszatérítés?",
+  "support.placeholder": "Írd be a kérdésed…",
+  "support.send": "Küldés",
+  "support.thinking": "Gépel…",
+  "support.disabled": "A chat támogatás jelenleg nem elérhető. Kérjük, írj nekünk a Kapcsolat oldalon.",
+  "support.error": "Elnézést, valami elromlott. Kérjük, próbáld újra.",
+  "support.contactCta": "Emberi ügyfélszolgálat",
 };
 
 // Page-level translations produced by the batch i18n conversion live in a
