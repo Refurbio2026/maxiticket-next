@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import { getCashiersForOrganizer, getSessions, type Cashier, type CashierSession } from "@/lib/cashier-db";
 import { getSales, POS_EVENT, type PosSale } from "@/lib/pos-db";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/organizer/pos/cashier-sales")({
 });
 
 function CashierSalesPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [cashiers, setCashiers] = useState<Cashier[]>([]);
   const [sales, setSales] = useState<PosSale[]>([]);
@@ -50,7 +52,15 @@ function CashierSalesPage() {
   }, [cashiers, sales, date]);
 
   const exportCsv = () => {
-    const head = ["Dátum", "Pokladník", "Predajov", "Hotovosť", "Karta", "Spolu", "Storno"];
+    const head = [
+      t("orgPosCashierSales.csvDate"),
+      t("orgPosCashierSales.csvCashier"),
+      t("orgPosCashierSales.csvSales"),
+      t("orgPosCashierSales.csvCash"),
+      t("orgPosCashierSales.csvCard"),
+      t("orgPosCashierSales.csvTotal"),
+      t("orgPosCashierSales.csvVoid"),
+    ];
     const csv = [head, ...rows.map((r) => [
       date, r.cashier.display_name, r.count, r.cash.toFixed(2), r.card.toFixed(2), r.total.toFixed(2), r.voids,
     ])].map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -72,15 +82,15 @@ function CashierSalesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Predaje pokladníkov</h1>
-          <p className="text-muted-foreground mt-1">Súhrn predajov za vybraný deň podľa jednotlivých pokladníkov.</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosCashierSales.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("orgPosCashierSales.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-end">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">Dátum</div>
+            <div className="text-xs text-muted-foreground mb-1">{t("orgPosCashierSales.dateLabel")}</div>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 w-44" />
           </div>
-          <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> CSV</Button>
+          <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> {t("orgPosCashierSales.csvButton")}</Button>
         </div>
       </div>
 
@@ -88,21 +98,21 @@ function CashierSalesPage() {
         {rows.length === 0 ? (
           <div className="text-center py-12">
             <Users className="size-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Za vybraný deň žiadne predaje pokladníkov.</p>
+            <p className="text-sm text-muted-foreground">{t("orgPosCashierSales.emptyDay")}</p>
             <Button asChild className="mt-4 bg-gradient-flame text-primary-foreground shadow-glow">
-              <Link to="/organizer/pos">Otvoriť pokladňu</Link>
+              <Link to="/organizer/pos">{t("orgPosCashierSales.openPos")}</Link>
             </Button>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b border-border/50">
               <tr>
-                <th className="text-left py-2">Pokladník</th>
-                <th className="text-right">Predajov</th>
-                <th className="text-right">Hotovosť</th>
-                <th className="text-right">Karta</th>
-                <th className="text-right">Spolu</th>
-                <th className="text-right">Storno</th>
+                <th className="text-left py-2">{t("orgPosCashierSales.colCashier")}</th>
+                <th className="text-right">{t("orgPosCashierSales.colSales")}</th>
+                <th className="text-right">{t("orgPosCashierSales.colCash")}</th>
+                <th className="text-right">{t("orgPosCashierSales.colCard")}</th>
+                <th className="text-right">{t("orgPosCashierSales.colTotal")}</th>
+                <th className="text-right">{t("orgPosCashierSales.colVoid")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -120,7 +130,7 @@ function CashierSalesPage() {
                   <td className="text-right">{r.voids > 0 ? <Badge variant="destructive">{r.voids}</Badge> : "0"}</td>
                   <td className="text-right">
                     <Button size="sm" variant="ghost" onClick={() => setDetail(r.cashier)}>
-                      <Eye className="size-3.5 mr-1.5" /> Detail
+                      <Eye className="size-3.5 mr-1.5" /> {t("orgPosCashierSales.detail")}
                     </Button>
                   </td>
                 </tr>
@@ -137,7 +147,7 @@ function CashierSalesPage() {
           </DialogHeader>
           {detailSessions.length > 0 && (
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Sessiony</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("orgPosCashierSales.sessions")}</div>
               <div className="grid sm:grid-cols-2 gap-2">
                 {detailSessions.map((s) => (
                   <Card key={s.id} className="p-3 bg-muted/30">
@@ -147,10 +157,10 @@ function CashierSalesPage() {
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <Badge variant={s.status === "open" ? "default" : "outline"} className="text-[10px]">
-                        {s.status === "open" ? "Otvorená" : "Zatvorená"}
+                        {s.status === "open" ? t("orgPosCashierSales.sessionOpen") : t("orgPosCashierSales.sessionClosed")}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        Otv. hotov: €{s.opening_cash_amount.toFixed(2)}
+                        {t("orgPosCashierSales.openingCash", { amount: s.opening_cash_amount.toFixed(2) })}
                       </span>
                     </div>
                   </Card>
@@ -158,19 +168,19 @@ function CashierSalesPage() {
               </div>
             </div>
           )}
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mt-4">Predaje</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mt-4">{t("orgPosCashierSales.sales")}</div>
           {detailSales.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Žiadne predaje.</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">{t("orgPosCashierSales.noSales")}</p>
           ) : (
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border/50">
                 <tr>
-                  <th className="text-left py-2">Doklad</th>
-                  <th className="text-left">Čas</th>
-                  <th className="text-left">Podujatie</th>
-                  <th className="text-left">Platba</th>
-                  <th className="text-right">Suma</th>
-                  <th className="text-left">Stav</th>
+                  <th className="text-left py-2">{t("orgPosCashierSales.colReceipt")}</th>
+                  <th className="text-left">{t("orgPosCashierSales.colTime")}</th>
+                  <th className="text-left">{t("orgPosCashierSales.colEvent")}</th>
+                  <th className="text-left">{t("orgPosCashierSales.colPayment")}</th>
+                  <th className="text-right">{t("orgPosCashierSales.colAmount")}</th>
+                  <th className="text-left">{t("orgPosCashierSales.colStatus")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -183,7 +193,7 @@ function CashierSalesPage() {
                     <td className="text-right">€{s.total.toFixed(2)}</td>
                     <td>
                       <Badge variant={s.status === "paid" ? "default" : "destructive"} className="text-[10px]">
-                        {s.status === "paid" ? "Zaplatené" : "Storno"}
+                        {s.status === "paid" ? t("orgPosCashierSales.paid") : t("orgPosCashierSales.void")}
                       </Badge>
                     </td>
                   </tr>

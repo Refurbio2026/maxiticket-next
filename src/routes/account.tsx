@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ type Row = {
 };
 
 function AccountPage() {
+  const { t } = useI18n();
   const { user, roles, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const fetchMine = useServerFn(getMyTickets);
@@ -62,7 +64,7 @@ function AccountPage() {
       <main className="mx-auto max-w-5xl px-4 pt-32 pb-20">
         <div className="flex items-start justify-between mb-10">
           <div>
-            <h1 className="font-display text-4xl font-bold tracking-tight">Môj účet</h1>
+            <h1 className="font-display text-4xl font-bold tracking-tight">{t("account.title")}</h1>
             <p className="text-muted-foreground mt-1">{user.email}</p>
             <div className="flex gap-2 mt-3">
               {roles.map((r) => (
@@ -82,7 +84,7 @@ function AccountPage() {
               navigate({ to: "/login", replace: true });
             }}
           >
-            <LogOut className="size-4 mr-2" /> Odhlásiť sa
+            <LogOut className="size-4 mr-2" /> {t("account.signOut")}
           </Button>
         </div>
 
@@ -90,51 +92,51 @@ function AccountPage() {
         <div className="grid sm:grid-cols-3 gap-4 mb-10">
           <Card className="p-6 bg-card/60 border-border/50">
             <Ticket className="size-6 text-primary mb-3" />
-            <div className="font-semibold">Moje vstupenky</div>
+            <div className="font-semibold">{t("account.myTickets")}</div>
             <p className="text-sm text-muted-foreground mt-1">
               {rows.length > 0
-                ? `${rows.length} aktívnych vstupeniek`
-                : "Vstupenky sa zobrazia po prvom nákupe."}
+                ? t("account.activeTicketsCount", { count: rows.length })
+                : t("account.ticketsAfterFirstPurchase")}
             </p>
           </Card>
           <Card className="p-6 bg-card/60 border-border/50">
             <Calendar className="size-6 text-primary mb-3" />
-            <div className="font-semibold">Objavuj podujatia</div>
+            <div className="font-semibold">{t("account.discoverEvents")}</div>
             <Link to="/events" className="text-sm text-primary hover:underline mt-2 inline-block">
-              Prejsť na podujatia →
+              {t("account.goToEvents")} →
             </Link>
           </Card>
           <Card className="p-6 bg-card/60 border-border/50">
             <User className="size-6 text-primary mb-3" />
-            <div className="font-semibold">Profil</div>
-            <p className="text-sm text-muted-foreground mt-1">Bezpečné a šifrované údaje.</p>
+            <div className="font-semibold">{t("account.profile")}</div>
+            <p className="text-sm text-muted-foreground mt-1">{t("account.profileSecure")}</p>
           </Card>
         </div>
 
         {/* Tickets */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl font-semibold tracking-tight">Moje vstupenky</h2>
-            <span className="text-xs text-muted-foreground">Podľa emailu {user.email}</span>
+            <h2 className="font-display text-2xl font-semibold tracking-tight">{t("account.myTickets")}</h2>
+            <span className="text-xs text-muted-foreground">{t("account.byEmail", { email: user.email })}</span>
           </div>
 
           {ticketsLoading ? (
             <Card className="p-10 text-center bg-card/60 border-dashed border-border/50">
-              <p className="text-sm text-muted-foreground">Načítavam vstupenky…</p>
+              <p className="text-sm text-muted-foreground">{t("account.loadingTickets")}</p>
             </Card>
           ) : rows.length === 0 ? (
             <Card className="p-10 text-center bg-card/60 border-dashed border-border/50">
               <Ticket className="size-10 text-muted-foreground mx-auto mb-3" />
-              <div className="font-semibold">Zatiaľ nemáš žiadne vstupenky</div>
+              <div className="font-semibold">{t("account.noTicketsYet")}</div>
               <p className="text-sm text-muted-foreground mt-1">
-                Vstupenky sa zobrazia automaticky po úspešnom nákupe (pri kúpe použi email{" "}
-                <span className="font-mono">{user.email}</span>).
+                {t("account.noTicketsHintBefore")}{" "}
+                <span className="font-mono">{user.email}</span>{t("account.noTicketsHintAfter")}
               </p>
               <Link
                 to="/events"
                 className="mt-5 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
-                Prezri si podujatia →
+                {t("account.browseEvents")} →
               </Link>
             </Card>
           ) : (
@@ -152,11 +154,12 @@ function AccountPage() {
 }
 
 function TicketCard({ row }: { row: Row }) {
+  const { t } = useI18n();
   const { ticket, event, customer_email } = row;
   const print = () => {
     if (typeof window !== "undefined") window.print();
   };
-  const email = () => toast.success(`Vstupenka odoslaná na ${customer_email}`);
+  const email = () => toast.success(t("account.ticketSent", { email: customer_email }));
 
   return (
     <Card className="p-5 bg-card/60 border-border/50">
@@ -165,8 +168,8 @@ function TicketCard({ row }: { row: Row }) {
           <QRCodeSVG value={ticket.qr_code} size={120} level="M" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Vstupenka</div>
-          <div className="font-display text-lg font-semibold mt-0.5">{event?.title ?? "Podujatie"}</div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("account.ticketLabel")}</div>
+          <div className="font-display text-lg font-semibold mt-0.5">{event?.title ?? t("account.eventFallback")}</div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {event && (
               <>

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   getDevices, saveDevices, POS_EVENT, emitPos, logAudit,
   type PosDevice, type DeviceType, type DeviceConnection, type DeviceStatus,
@@ -29,6 +30,7 @@ const CONN_ICON: Record<DeviceConnection, React.ComponentType<{ className?: stri
 };
 
 function DevicesPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [list, setList] = useState<PosDevice[]>([]);
   const [tick, setTick] = useState(0);
@@ -63,7 +65,7 @@ function DevicesPage() {
       action: "device.created", entity: "pos_devices", entity_id: dev.id, meta: { type: dev.device_type, connection: dev.connection } });
     setForm({ name: "", location: "", device_type: "terminal", connection: "USB" });
     setOpen(false);
-    toast.success("Zariadenie pridané");
+    toast.success(t("orgPosDevices.toastAdded"));
   };
 
   const remove = (id: string) => {
@@ -78,7 +80,7 @@ function DevicesPage() {
   };
 
   const testConnect = async (d: PosDevice) => {
-    toast.info(`Testujem ${d.name}…`);
+    toast.info(t("orgPosDevices.toastTesting", { name: d.name }));
     if (user) logAudit({ user_id: user.id, user_name: user.full_name || user.email,
       action: "device.test", entity: "pos_devices", entity_id: d.id, meta: { connection: d.connection } });
     try {
@@ -86,15 +88,15 @@ function DevicesPage() {
         const s = await paymentTerminal.connectTerminal();
         const ok = s === "connected";
         setStatus(d.id, ok ? "active" : "error", { terminal_connected: ok, last_connected_at: new Date().toISOString() });
-        toast.success(`${d.name}: pripojený (${d.connection})`);
+        toast.success(t("orgPosDevices.toastConnected", { name: d.name, connection: d.connection }));
       } else {
         await new Promise((r) => setTimeout(r, 400));
         setStatus(d.id, "active", { last_connected_at: new Date().toISOString() });
-        toast.success(`${d.name}: test OK`);
+        toast.success(t("orgPosDevices.toastTestOk", { name: d.name }));
       }
     } catch {
       setStatus(d.id, "error");
-      toast.error("Test zlyhal");
+      toast.error(t("orgPosDevices.toastTestFailed"));
     }
   };
 
@@ -103,36 +105,36 @@ function DevicesPage() {
     setStatus(d.id, "inactive", { terminal_connected: false });
     if (user) logAudit({ user_id: user.id, user_name: user.full_name || user.email,
       action: "device.disconnect", entity: "pos_devices", entity_id: d.id });
-    toast.success(`${d.name} odpojené`);
+    toast.success(t("orgPosDevices.toastDisconnected", { name: d.name }));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Zariadenia</h1>
-          <p className="text-muted-foreground mt-1">Platobné terminály, tlačiarne a skenery (USB / Bluetooth / LAN).</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosDevices.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("orgPosDevices.subtitle")}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-flame text-primary-foreground shadow-glow"><Plus className="size-4 mr-2" /> Pridať zariadenie</Button>
+            <Button className="bg-gradient-flame text-primary-foreground shadow-glow"><Plus className="size-4 mr-2" /> {t("orgPosDevices.addButton")}</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nové zariadenie</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("orgPosDevices.dialogTitle")}</DialogTitle></DialogHeader>
             <div className="space-y-3 py-2">
-              <div><Label>Názov</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="POS-01" /></div>
-              <div><Label>Umiestnenie</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Vstup A" /></div>
+              <div><Label>{t("orgPosDevices.name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="POS-01" /></div>
+              <div><Label>{t("orgPosDevices.location")}</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder={t("orgPosDevices.locationPlaceholder")} /></div>
               <div>
-                <Label>Typ zariadenia</Label>
+                <Label>{t("orgPosDevices.deviceType")}</Label>
                 <select value={form.device_type} onChange={(e) => setForm({ ...form, device_type: e.target.value as DeviceType })}
                   className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm">
-                  <option value="terminal">Platobný terminál</option>
-                  <option value="printer">Tlačiareň</option>
-                  <option value="scanner">Skener</option>
+                  <option value="terminal">{t("orgPosDevices.typeTerminal")}</option>
+                  <option value="printer">{t("orgPosDevices.typePrinter")}</option>
+                  <option value="scanner">{t("orgPosDevices.typeScanner")}</option>
                 </select>
               </div>
               <div>
-                <Label>Pripojenie</Label>
+                <Label>{t("orgPosDevices.connection")}</Label>
                 <select value={form.connection} onChange={(e) => setForm({ ...form, connection: e.target.value as DeviceConnection })}
                   className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm">
                   <option value="USB">USB</option>
@@ -141,7 +143,7 @@ function DevicesPage() {
                 </select>
               </div>
             </div>
-            <DialogFooter><Button onClick={save}>Uložiť</Button></DialogFooter>
+            <DialogFooter><Button onClick={save}>{t("orgPosDevices.saveButton")}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -150,7 +152,7 @@ function DevicesPage() {
         {list.length === 0 ? (
           <div className="text-center py-10">
             <Cpu className="size-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Zatiaľ žiadne zariadenia.</p>
+            <p className="text-sm text-muted-foreground">{t("orgPosDevices.empty")}</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -171,20 +173,20 @@ function DevicesPage() {
                       </div>
                       {d.last_connected_at && (
                         <div className="text-[10px] text-muted-foreground mt-1">
-                          Posledné pripojenie: {new Date(d.last_connected_at).toLocaleString("sk-SK")}
+                          {t("orgPosDevices.lastConnected")}: {new Date(d.last_connected_at).toLocaleString("sk-SK")}
                         </div>
                       )}
                     </div>
                     <Badge variant={statusVariant} className="text-[10px] capitalize">
-                      {d.status === "active" ? "Aktívne" : d.status === "error" ? "Chyba" : "Neaktívne"}
+                      {d.status === "active" ? t("orgPosDevices.statusActive") : d.status === "error" ? t("orgPosDevices.statusError") : t("orgPosDevices.statusInactive")}
                     </Badge>
                   </div>
                   <div className="flex gap-2 mt-4 flex-wrap">
                     <Button size="sm" variant="outline" onClick={() => testConnect(d)}>
-                      <Power className="size-3.5 mr-1.5" /> Test
+                      <Power className="size-3.5 mr-1.5" /> {t("orgPosDevices.test")}
                     </Button>
                     {d.status === "active" && (
-                      <Button size="sm" variant="outline" onClick={() => disconnect(d)}>Odpojiť</Button>
+                      <Button size="sm" variant="outline" onClick={() => disconnect(d)}>{t("orgPosDevices.disconnect")}</Button>
                     )}
                     <Button size="icon" variant="ghost" className="size-8 text-destructive ml-auto" onClick={() => remove(d.id)}>
                       <Trash2 className="size-3.5" />

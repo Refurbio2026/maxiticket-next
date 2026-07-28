@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   getEvents, upsertEvent, deleteEvent, emit, EVENTS_EVENT, type EventItem,
 } from "@/lib/local-db";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/organizer/events/")({
 });
 
 function OrganizerEvents() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [events, setEvents] = useState<EventItem[]>([]);
 
@@ -40,33 +42,33 @@ function OrganizerEvents() {
   const togglePublish = (e: EventItem) => {
     upsertEvent({ ...e, status: e.status === "published" ? "draft" : "published" });
     emit(EVENTS_EVENT);
-    toast.success(e.status === "published" ? "Podujatie skryté" : "Podujatie publikované");
+    toast.success(e.status === "published" ? t("orgEventsList.toastHidden") : t("orgEventsList.toastPublished"));
   };
 
   const remove = (id: string) => {
-    if (!confirm("Naozaj zmazať podujatie?")) return;
+    if (!confirm(t("orgEventsList.confirmDelete"))) return;
     deleteEvent(id);
     emit(EVENTS_EVENT);
-    toast.success("Podujatie zmazané");
+    toast.success(t("orgEventsList.toastDeleted"));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Moje podujatia</h1>
-          <p className="text-muted-foreground mt-1">Spravuj koncepty, publikované podujatia a vstupenky.</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgEventsList.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("orgEventsList.subtitle")}</p>
         </div>
         <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
-          <Link to="/organizer/events/new"><Plus className="size-4 mr-2" /> Pridať podujatie</Link>
+          <Link to="/organizer/events/new"><Plus className="size-4 mr-2" /> {t("orgEventsList.addButton")}</Link>
         </Button>
       </div>
 
       {events.length === 0 ? (
         <Card className="p-12 text-center bg-card/60 border-dashed border-border/50">
           <Calendar className="size-10 text-muted-foreground mx-auto mb-3" />
-          <div className="font-semibold">Zatiaľ žiadne podujatia</div>
-          <p className="text-sm text-muted-foreground mt-1">Začni pridaním prvého podujatia.</p>
+          <div className="font-semibold">{t("orgEventsList.emptyTitle")}</div>
+          <p className="text-sm text-muted-foreground mt-1">{t("orgEventsList.emptyHint")}</p>
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -83,7 +85,7 @@ function OrganizerEvents() {
                       ? "bg-primary/15 text-primary border-primary/30"
                       : "bg-muted text-muted-foreground border-border/50"
                   }`}>
-                    {e.status === "published" ? "Publikované" : "Koncept"}
+                    {e.status === "published" ? t("orgEventsList.statusPublished") : t("orgEventsList.statusDraft")}
                   </span>
                   <span className="text-xs text-muted-foreground">{e.category}</span>
                 </div>
@@ -97,16 +99,16 @@ function OrganizerEvents() {
                 <div className="flex flex-wrap gap-2 mt-auto pt-3">
                   {e.status === "published" && (
                     <Button asChild variant="ghost" size="sm">
-                      <Link to="/events/$id" params={{ id: e.id }}><Eye className="size-3.5 mr-1.5" /> Zobraziť</Link>
+                      <Link to="/events/$id" params={{ id: e.id }}><Eye className="size-3.5 mr-1.5" /> {t("orgEventsList.view")}</Link>
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={() => togglePublish(e)}>
                     {e.status === "published"
-                      ? <><FileText className="size-3.5 mr-1.5" /> Skryť</>
-                      : <><CheckCircle2 className="size-3.5 mr-1.5" /> Publikovať</>}
+                      ? <><FileText className="size-3.5 mr-1.5" /> {t("orgEventsList.hide")}</>
+                      : <><CheckCircle2 className="size-3.5 mr-1.5" /> {t("orgEventsList.publish")}</>}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => remove(e.id)} className="text-destructive hover:text-destructive">
-                    <Trash2 className="size-3.5 mr-1.5" /> Zmazať
+                    <Trash2 className="size-3.5 mr-1.5" /> {t("orgEventsList.delete")}
                   </Button>
                 </div>
               </div>

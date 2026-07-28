@@ -7,44 +7,46 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
+import { useI18n } from "@/hooks/use-i18n";
 
 type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }>; exact?: boolean };
 type Group = { label: string; items: Item[] };
 
 const groups: Group[] = [
   {
-    label: "Prehľad",
-    items: [{ title: "Dashboard", url: "/organizer", icon: LayoutDashboard, exact: true }],
+    label: "orgNav.groupOverview",
+    items: [{ title: "orgNav.dashboard", url: "/organizer", icon: LayoutDashboard, exact: true }],
   },
   {
-    label: "Podujatia",
+    label: "orgNav.groupEvents",
     items: [
-      { title: "Moje podujatia", url: "/organizer/events", icon: CalendarDays },
-      { title: "Pridať podujatie", url: "/organizer/events/new", icon: Plus },
+      { title: "orgNav.myEvents", url: "/organizer/events", icon: CalendarDays },
+      { title: "orgNav.addEvent", url: "/organizer/events/new", icon: Plus },
     ],
   },
   {
-    label: "Predaj",
+    label: "orgNav.groupSales",
     items: [
-      { title: "Pokladňa (POS)", url: "/organizer/pos", icon: ShoppingCart, exact: true },
-      { title: "Predaje", url: "/organizer/pos/sales", icon: Receipt },
-      { title: "Predaje pokladníkov", url: "/organizer/pos/cashier-sales", icon: UserCog },
-      { title: "Denné uzávierky", url: "/organizer/pos/closing", icon: ClipboardList },
-      { title: "Pokladníci", url: "/organizer/pos/cashiers", icon: Users },
-      { title: "Zariadenia", url: "/organizer/pos/devices", icon: Cpu },
-      { title: "ORP / eKasa", url: "/organizer/pos/fiscal", icon: ShieldCheck },
+      { title: "orgNav.pos", url: "/organizer/pos", icon: ShoppingCart, exact: true },
+      { title: "orgNav.sales", url: "/organizer/pos/sales", icon: Receipt },
+      { title: "orgNav.cashierSales", url: "/organizer/pos/cashier-sales", icon: UserCog },
+      { title: "orgNav.dailyClosing", url: "/organizer/pos/closing", icon: ClipboardList },
+      { title: "orgNav.cashiers", url: "/organizer/pos/cashiers", icon: Users },
+      { title: "orgNav.devices", url: "/organizer/pos/devices", icon: Cpu },
+      { title: "orgNav.fiscal", url: "/organizer/pos/fiscal", icon: ShieldCheck },
     ],
   },
   {
-    label: "Marketing",
+    label: "orgNav.groupMarketing",
     items: [
-      { title: "Marketing Center", url: "/organizer/marketing", icon: Megaphone, exact: true },
-      { title: "Spustiť reklamu", url: "/organizer/marketing/new", icon: Plus },
+      { title: "orgNav.marketingCenter", url: "/organizer/marketing", icon: Megaphone, exact: true },
+      { title: "orgNav.launchAd", url: "/organizer/marketing/new", icon: Plus },
     ],
   },
 ];
 
 export function OrganizerSidebar() {
+  const { t } = useI18n();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
@@ -60,7 +62,7 @@ export function OrganizerSidebar() {
             <div className="flex flex-col leading-tight">
               <span className="font-display text-base font-bold tracking-tight">vipky.sk</span>
               <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                Organizer
+                {t("orgNav.organizerLabel")}
               </span>
             </div>
           )}
@@ -72,7 +74,7 @@ export function OrganizerSidebar() {
           <SidebarGroup key={group.label}>
             {!collapsed && (
               <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                {group.label}
+                {t(group.label)}
               </SidebarGroupLabel>
             )}
             <SidebarGroupContent>
@@ -88,7 +90,7 @@ export function OrganizerSidebar() {
                       >
                         <Link to={item.url} className="flex items-center gap-2.5">
                           <item.icon className="h-4 w-4 shrink-0" />
-                          {!collapsed && <span className="truncate text-sm">{item.title}</span>}
+                          {!collapsed && <span className="truncate text-sm">{t(item.title)}</span>}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

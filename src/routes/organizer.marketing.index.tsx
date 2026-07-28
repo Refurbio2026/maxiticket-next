@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import { getEvents, type EventItem } from "@/lib/local-db";
 import {
   getGoogleAccountFor, connectGoogleAds, disconnectGoogleAds, syncGoogleAds,
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/organizer/marketing/")({
 });
 
 function MarketingCenter() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [tick, setTick] = useState(0);
@@ -40,7 +42,7 @@ function MarketingCenter() {
     return () => window.removeEventListener(MARKETING_EVENT, h);
   }, []);
 
-  if (!user) return <div className="p-6">Vyžaduje prihlásenie.</div>;
+  if (!user) return <div className="p-6">{t("orgMktList.loginRequired")}</div>;
 
   const events = useMemo(
     () => getEvents().filter((e) => e.organizer_id === user.id || user.role === "admin"),
@@ -79,30 +81,30 @@ function MarketingCenter() {
             <h1 className="text-3xl font-display font-bold tracking-tight">Marketing Center</h1>
           </div>
           <p className="mt-1 text-muted-foreground">
-            Spusti reklamu na podujatia priamo z vipky.sk. Google Ads, Meta Ads, pixel tracking a AI texty.
+            {t("orgMktList.subtitle")}
           </p>
         </div>
         <Button onClick={() => navigate({ to: "/organizer/marketing/new" })} className="gap-2">
-          <Rocket className="h-4 w-4" /> Spustiť reklamu
+          <Rocket className="h-4 w-4" /> {t("orgMktList.launchAd")}
         </Button>
       </header>
 
       {/* KPI */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KPI icon={Euro} label="Rozpočet (spend)" value={`€${totals.spend.toFixed(2)}`} />
+        <KPI icon={Euro} label={t("orgMktList.kpiSpend")} value={`€${totals.spend.toFixed(2)}`} />
         <KPI icon={TrendingUp} label="ROAS" value={`${roas.toFixed(2)}×`} accent />
-        <KPI icon={MousePointerClick} label="Kliknutia" value={totals.clicks.toLocaleString()} sub={`CPC €${cpc.toFixed(2)}`} />
-        <KPI icon={Receipt} label="Predané vstupenky" value={totals.tickets.toString()} sub={`CTR ${ctr.toFixed(2)}%`} />
+        <KPI icon={MousePointerClick} label={t("orgMktList.kpiClicks")} value={totals.clicks.toLocaleString()} sub={`CPC €${cpc.toFixed(2)}`} />
+        <KPI icon={Receipt} label={t("orgMktList.kpiTickets")} value={totals.tickets.toString()} sub={`CTR ${ctr.toFixed(2)}%`} />
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="dashboard">Prehľad</TabsTrigger>
-          <TabsTrigger value="campaigns">Kampane ({campaigns.length})</TabsTrigger>
+          <TabsTrigger value="dashboard">{t("orgMktList.tabDashboard")}</TabsTrigger>
+          <TabsTrigger value="campaigns">{t("orgMktList.tabCampaigns", { count: campaigns.length })}</TabsTrigger>
           <TabsTrigger value="google">Google Ads</TabsTrigger>
           <TabsTrigger value="meta">Meta Ads</TabsTrigger>
-          <TabsTrigger value="pixels">Pixely a tracking</TabsTrigger>
-          <TabsTrigger value="automation">Automatizácia</TabsTrigger>
+          <TabsTrigger value="pixels">{t("orgMktList.tabPixels")}</TabsTrigger>
+          <TabsTrigger value="automation">{t("orgMktList.tabAutomation")}</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD */}
@@ -110,20 +112,20 @@ function MarketingCenter() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="p-5">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-primary" /> Vývoj kampaní
+                <BarChart3 className="h-4 w-4 text-primary" /> {t("orgMktList.chartCampaignDev")}
               </h3>
               {campaigns.length === 0 ? (
-                <Empty text="Zatiaľ žiadne kampane. Spusti svoju prvú reklamu." />
+                <Empty text={t("orgMktList.emptyCampaignsChart")} />
               ) : (
                 <MiniBars data={campaigns.map((c) => ({ label: c.name, value: c.metrics.revenue_eur }))} suffix="€" />
               )}
             </Card>
             <Card className="p-5">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" /> Cena za nákup
+                <Target className="h-4 w-4 text-primary" /> {t("orgMktList.chartCostPerPurchase")}
               </h3>
               {campaigns.length === 0 ? (
-                <Empty text="Žiadne dáta." />
+                <Empty text={t("orgMktList.noData")} />
               ) : (
                 <MiniBars
                   data={campaigns.map((c) => ({
@@ -139,12 +141,12 @@ function MarketingCenter() {
           <Card className="p-5">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-semibold flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" /> Tvoje podujatia
+                <Calendar className="h-4 w-4 text-primary" /> {t("orgMktList.yourEvents")}
               </h3>
-              <Link to="/organizer/events" className="text-sm text-primary hover:underline">Spravovať podujatia</Link>
+              <Link to="/organizer/events" className="text-sm text-primary hover:underline">{t("orgMktList.manageEvents")}</Link>
             </div>
             {events.length === 0 ? (
-              <Empty text="Najprv vytvor podujatie, potom ho môžeš propagovať." />
+              <Empty text={t("orgMktList.emptyEvents")} />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {events.slice(0, 6).map((e) => (
@@ -159,7 +161,7 @@ function MarketingCenter() {
         <TabsContent value="campaigns" className="space-y-3">
           {campaigns.length === 0 ? (
             <Card className="p-10 text-center">
-              <Empty text="Žiadne kampane. Klikni na „Spustiť reklamu“." />
+              <Empty text={t("orgMktList.emptyCampaigns")} />
             </Card>
           ) : (
             campaigns.map((c) => <CampaignRow key={c.id} c={c} />)
@@ -174,40 +176,40 @@ function MarketingCenter() {
                 <div className="rounded-lg bg-primary/10 p-3"><ChromeIcon className="h-6 w-6 text-primary" /></div>
                 <div>
                   <h3 className="text-lg font-semibold">Google Ads</h3>
-                  <p className="text-sm text-muted-foreground">Pripoj Google Ads účet a spúšťaj kampane priamo z vipky.sk.</p>
+                  <p className="text-sm text-muted-foreground">{t("orgMktList.googleDesc")}</p>
                 </div>
               </div>
               {google ? (
-                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">● Pripojené</Badge>
+                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">{t("orgMktList.connectedDot")}</Badge>
               ) : (
-                <Badge variant="outline">Nepripojené</Badge>
+                <Badge variant="outline">{t("orgMktList.notConnected")}</Badge>
               )}
             </div>
 
             {google ? (
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Info label="Customer ID" value={google.customer_id} />
-                <Info label="Účet" value={google.account_name} />
-                <Info label="Kredit" value={`€${google.credit_eur.toFixed(2)}`} />
-                <Info label="Posledná synchronizácia" value={new Date(google.last_sync_at).toLocaleString("sk-SK")} />
-                <Info label="Aktívne kampane" value={campaigns.filter((c) => c.platform === "google" && c.status === "active").length.toString()} />
-                <Info label="Pripojené od" value={new Date(google.connected_at).toLocaleDateString("sk-SK")} />
+                <Info label={t("orgMktList.infoAccount")} value={google.account_name} />
+                <Info label={t("orgMktList.infoCredit")} value={`€${google.credit_eur.toFixed(2)}`} />
+                <Info label={t("orgMktList.infoLastSync")} value={new Date(google.last_sync_at).toLocaleString("sk-SK")} />
+                <Info label={t("orgMktList.infoActiveCampaigns")} value={campaigns.filter((c) => c.platform === "google" && c.status === "active").length.toString()} />
+                <Info label={t("orgMktList.infoConnectedSince")} value={new Date(google.connected_at).toLocaleDateString("sk-SK")} />
               </div>
             ) : null}
 
             <div className="mt-5 flex flex-wrap gap-2">
               {google ? (
                 <>
-                  <Button variant="outline" onClick={() => { syncGoogleAds(user.id); toast.success("Synchronizované"); }} className="gap-2">
-                    <RefreshCw className="h-4 w-4" /> Synchronizovať
+                  <Button variant="outline" onClick={() => { syncGoogleAds(user.id); toast.success(t("orgMktList.toastSynced")); }} className="gap-2">
+                    <RefreshCw className="h-4 w-4" /> {t("orgMktList.sync")}
                   </Button>
-                  <Button variant="outline" onClick={() => { disconnectGoogleAds(user.id); toast("Odpojené"); }} className="gap-2">
-                    <Unplug className="h-4 w-4" /> Odpojiť
+                  <Button variant="outline" onClick={() => { disconnectGoogleAds(user.id); toast(t("orgMktList.toastDisconnected")); }} className="gap-2">
+                    <Unplug className="h-4 w-4" /> {t("orgMktList.disconnect")}
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => { connectGoogleAds(user.id); toast.success("Google Ads pripojené (mock OAuth)"); }} className="gap-2">
-                  <Plug className="h-4 w-4" /> Pripojiť Google Ads účet
+                <Button onClick={() => { connectGoogleAds(user.id); toast.success(t("orgMktList.toastGoogleConnected")); }} className="gap-2">
+                  <Plug className="h-4 w-4" /> {t("orgMktList.connectGoogle")}
                 </Button>
               )}
             </div>
@@ -222,13 +224,13 @@ function MarketingCenter() {
                 <div className="rounded-lg bg-primary/10 p-3"><Facebook className="h-6 w-6 text-primary" /></div>
                 <div>
                   <h3 className="text-lg font-semibold">Meta Ads (Facebook / Instagram)</h3>
-                  <p className="text-sm text-muted-foreground">Propaguj podujatia na Facebooku a Instagrame.</p>
+                  <p className="text-sm text-muted-foreground">{t("orgMktList.metaDesc")}</p>
                 </div>
               </div>
               {meta ? (
-                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">● Pripojené</Badge>
+                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">{t("orgMktList.connectedDot")}</Badge>
               ) : (
-                <Badge variant="outline">Nepripojené</Badge>
+                <Badge variant="outline">{t("orgMktList.notConnected")}</Badge>
               )}
             </div>
 
@@ -237,20 +239,20 @@ function MarketingCenter() {
                 <Info label="Business Account" value={meta.business_account_id} />
                 <Info label="Ad Account" value={meta.ad_account_id} />
                 <Info label="Pixel ID" value={meta.pixel_id} />
-                <Info label="Stránka" value={meta.page_name} />
-                <Info label="Kredit" value={`€${meta.credit_eur.toFixed(2)}`} />
-                <Info label="Posledná synchronizácia" value={new Date(meta.last_sync_at).toLocaleString("sk-SK")} />
+                <Info label={t("orgMktList.infoPage")} value={meta.page_name} />
+                <Info label={t("orgMktList.infoCredit")} value={`€${meta.credit_eur.toFixed(2)}`} />
+                <Info label={t("orgMktList.infoLastSync")} value={new Date(meta.last_sync_at).toLocaleString("sk-SK")} />
               </div>
             ) : null}
 
             <div className="mt-5 flex flex-wrap gap-2">
               {meta ? (
-                <Button variant="outline" onClick={() => { disconnectMetaAds(user.id); toast("Odpojené"); }} className="gap-2">
-                  <Unplug className="h-4 w-4" /> Odpojiť
+                <Button variant="outline" onClick={() => { disconnectMetaAds(user.id); toast(t("orgMktList.toastDisconnected")); }} className="gap-2">
+                  <Unplug className="h-4 w-4" /> {t("orgMktList.disconnect")}
                 </Button>
               ) : (
-                <Button onClick={() => { connectMetaAds(user.id); toast.success("Meta Ads pripojené (mock OAuth)"); }} className="gap-2">
-                  <Plug className="h-4 w-4" /> Pripojiť Facebook / Instagram
+                <Button onClick={() => { connectMetaAds(user.id); toast.success(t("orgMktList.toastMetaConnected")); }} className="gap-2">
+                  <Plug className="h-4 w-4" /> {t("orgMktList.connectMeta")}
                 </Button>
               )}
             </div>
@@ -267,17 +269,15 @@ function MarketingCenter() {
           <Card className="p-6 space-y-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="font-semibold flex items-center gap-2"><Wand2 className="h-4 w-4 text-primary" /> Automaticky propagovať podujatie</h3>
+                <h3 className="font-semibold flex items-center gap-2"><Wand2 className="h-4 w-4 text-primary" /> {t("orgMktList.autoPromoteTitle")}</h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-                  Po publikovaní podujatia ti vipky.sk automaticky pripraví návrh kampane (Google + Meta),
-                  vygeneruje reklamné texty a kreatívy. Stačí ich potvrdiť a spustiť.
+                  {t("orgMktList.autoPromoteDesc")}
                 </p>
               </div>
-              <Switch checked={auto} onCheckedChange={(v) => { setAutoPromote(user.id, v); toast.success(v ? "Auto-propagácia zapnutá" : "Auto-propagácia vypnutá"); }} />
+              <Switch checked={auto} onCheckedChange={(v) => { setAutoPromote(user.id, v); toast.success(v ? t("orgMktList.toastAutoOn") : t("orgMktList.toastAutoOff")); }} />
             </div>
             <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-              Pri spustení: rozpočet €20 / podujatie, cieľ „Predaj vstupeniek“, lokalita SK,
-              kreatíva generovaná z názvu, miesta a kategórie podujatia.
+              {t("orgMktList.autoPromoteNote")}
             </div>
           </Card>
         </TabsContent>
@@ -332,12 +332,13 @@ function MiniBars({ data, suffix = "" }: { data: { label: string; value: number 
 }
 
 function EventPromoCard({ event, onPromote }: { event: EventItem; onPromote: (id: string) => void }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
         <h4 className="font-semibold leading-tight">{event.title}</h4>
         <Badge variant={event.status === "published" ? "default" : "outline"} className="shrink-0 text-[10px]">
-          {event.status === "published" ? "Publikované" : "Koncept"}
+          {event.status === "published" ? t("orgMktList.statusPublished") : t("orgMktList.statusDraft")}
         </Badge>
       </div>
       <div className="mt-2 space-y-1 text-xs text-muted-foreground">
@@ -345,13 +346,14 @@ function EventPromoCard({ event, onPromote }: { event: EventItem; onPromote: (id
         <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {event.venue}, {event.city}</div>
       </div>
       <Button size="sm" className="mt-3 w-full gap-2" onClick={() => onPromote(event.id)}>
-        <Rocket className="h-3.5 w-3.5" /> Spustiť reklamu
+        <Rocket className="h-3.5 w-3.5" /> {t("orgMktList.launchAd")}
       </Button>
     </div>
   );
 }
 
 function CampaignRow({ c }: { c: Campaign }) {
+  const { t } = useI18n();
   return (
     <Card className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -369,37 +371,37 @@ function CampaignRow({ c }: { c: Campaign }) {
             {c.auto_generated && <Badge variant="outline" className="gap-1 text-[10px]"><Sparkles className="h-3 w-3" /> auto</Badge>}
           </div>
           <h4 className="mt-1 font-semibold">{c.name}</h4>
-          <div className="text-xs text-muted-foreground">{c.event_title} · cieľ: {c.goal} · rozpočet €{c.budget_eur}</div>
+          <div className="text-xs text-muted-foreground">{t("orgMktList.campaignMeta", { eventTitle: c.event_title, goal: c.goal, budget: c.budget_eur })}</div>
         </div>
         <div className="flex gap-2">
           {c.status === "active" ? (
-            <Button size="sm" variant="outline" onClick={() => { setCampaignStatus(c.id, "paused"); toast("Pozastavené"); }} className="gap-1">
-              <Pause className="h-3.5 w-3.5" /> Pauza
+            <Button size="sm" variant="outline" onClick={() => { setCampaignStatus(c.id, "paused"); toast(t("orgMktList.toastPaused")); }} className="gap-1">
+              <Pause className="h-3.5 w-3.5" /> {t("orgMktList.pause")}
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => { setCampaignStatus(c.id, "active"); toast.success("Aktivované"); }} className="gap-1">
-              <Play className="h-3.5 w-3.5" /> Spustiť
+            <Button size="sm" variant="outline" onClick={() => { setCampaignStatus(c.id, "active"); toast.success(t("orgMktList.toastActivated")); }} className="gap-1">
+              <Play className="h-3.5 w-3.5" /> {t("orgMktList.start")}
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={() => {
             const next = { ...c, metrics: simulateMetrics(c.budget_eur) };
             saveCampaign(next);
-            toast.success("Metriky aktualizované");
+            toast.success(t("orgMktList.toastMetricsUpdated"));
           }} className="gap-1">
             <RefreshCw className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => { if (confirm("Zmazať kampaň?")) { deleteCampaign(c.id); toast("Zmazané"); } }}>
+          <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("orgMktList.confirmDelete"))) { deleteCampaign(c.id); toast(t("orgMktList.toastDeleted")); } }}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        <Metric icon={EyeIcon} label="Imp." value={c.metrics.impressions.toLocaleString()} />
-        <Metric icon={MousePointerClick} label="Kliky" value={c.metrics.clicks.toLocaleString()} />
+        <Metric icon={EyeIcon} label={t("orgMktList.metricImp")} value={c.metrics.impressions.toLocaleString()} />
+        <Metric icon={MousePointerClick} label={t("orgMktList.metricClicks")} value={c.metrics.clicks.toLocaleString()} />
         <Metric label="CPC" value={`€${c.metrics.cpc.toFixed(2)}`} />
         <Metric label="CTR" value={`${c.metrics.ctr.toFixed(2)}%`} />
-        <Metric label="Konv." value={c.metrics.conversions.toString()} />
-        <Metric icon={Receipt} label="Vstupenky" value={c.metrics.tickets_sold.toString()} />
+        <Metric label={t("orgMktList.metricConv")} value={c.metrics.conversions.toString()} />
+        <Metric icon={Receipt} label={t("orgMktList.metricTickets")} value={c.metrics.tickets_sold.toString()} />
         <Metric icon={TrendingUp} label="ROAS" value={`${c.metrics.roas.toFixed(2)}×`} accent />
       </div>
     </Card>
@@ -418,13 +420,14 @@ function Metric({ icon: Icon, label, value, accent }: { icon?: any; label: strin
 }
 
 function PixelForm({ initial, organizerId }: { initial: PixelSettings; organizerId: string }) {
+  const { t } = useI18n();
   const [s, setS] = useState<PixelSettings>(initial);
   const upd = <K extends keyof PixelSettings>(k: K, v: PixelSettings[K]) => setS((p) => ({ ...p, [k]: v }));
   return (
     <Card className="p-6 space-y-5">
       <div>
-        <h3 className="font-semibold flex items-center gap-2"><Settings2 className="h-4 w-4 text-primary" /> Pixel tracking a analytika</h3>
-        <p className="mt-1 text-sm text-muted-foreground">Nastav GA4, GTM, Google Ads konverzie a Meta Pixel. Použité v predajnom flow.</p>
+        <h3 className="font-semibold flex items-center gap-2"><Settings2 className="h-4 w-4 text-primary" /> {t("orgMktList.pixelTitle")}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{t("orgMktList.pixelDesc")}</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="GA4 Measurement ID" placeholder="G-XXXXXXXXXX" value={s.ga4_measurement_id} onChange={(v) => upd("ga4_measurement_id", v)} />
@@ -433,8 +436,8 @@ function PixelForm({ initial, organizerId }: { initial: PixelSettings; organizer
         <Field label="Google Ads Conversion Label" placeholder="abc123XYZ" value={s.google_ads_conversion_label} onChange={(v) => upd("google_ads_conversion_label", v)} />
         <Field label="Meta Pixel ID" placeholder="1234567890" value={s.meta_pixel_id} onChange={(v) => upd("meta_pixel_id", v)} />
       </div>
-      <Button onClick={() => { savePixelSettings({ ...s, organizer_id: organizerId, updated_at: new Date().toISOString() }); toast.success("Uložené"); }} className="gap-2">
-        Uložiť nastavenia
+      <Button onClick={() => { savePixelSettings({ ...s, organizer_id: organizerId, updated_at: new Date().toISOString() }); toast.success(t("orgMktList.toastSaved")); }} className="gap-2">
+        {t("orgMktList.saveSettings")}
       </Button>
     </Card>
   );

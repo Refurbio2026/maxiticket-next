@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   getSales, computeClosing, addClosing, getAuditLogs, POS_EVENT,
   type PosSale,
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/organizer/pos/closing")({
 });
 
 function ClosingPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [sales, setSales] = useState<PosSale[]>([]);
@@ -48,7 +50,15 @@ function ClosingPage() {
 
   const exportCsv = () => {
     const rows = [
-      ["Doklad", "Čas", "Podujatie", "Platba", "Suma", "Stav", "Pokladník"],
+      [
+        t("orgPosClosing.csvReceipt"),
+        t("orgPosClosing.csvTime"),
+        t("orgPosClosing.csvEvent"),
+        t("orgPosClosing.csvPayment"),
+        t("orgPosClosing.csvAmount"),
+        t("orgPosClosing.csvStatus"),
+        t("orgPosClosing.csvCashier"),
+      ],
       ...sales.map((s) => [
         s.receipt_number, s.created_at, s.event_title,
         s.payment_method, s.total.toFixed(2), s.status, s.cashier_name,
@@ -64,7 +74,7 @@ function ClosingPage() {
   const exportPdf = () => window.print();
 
   const closeDay = () => {
-    if (!confirm("Uzavrieť deň? Vytvorí sa protokol o uzávierke.")) return;
+    if (!confirm(t("orgPosClosing.confirmCloseDay"))) return;
     addClosing({
       id: uid(),
       organizer_id: user.id,
@@ -72,17 +82,17 @@ function ClosingPage() {
       created_at: new Date().toISOString(),
       ...stats,
     });
-    toast.success("Denná uzávierka vytvorená");
+    toast.success(t("orgPosClosing.dayClosed"));
   };
 
   const closeShift = () => {
     const active = getActiveSession();
     if (!active) {
-      toast.info("Žiadna aktívna pokladničná zmena.");
+      toast.info(t("orgPosClosing.noActiveShift"));
       return;
     }
     const cashStr = prompt(
-      `Spočítaj hotovosť v zásuvke pre pokladníka ${active.cashier_display_name} (€):`,
+      t("orgPosClosing.countCashPrompt", { cashier: active.cashier_display_name }),
       "0",
     );
     if (cashStr === null) return;
@@ -106,10 +116,11 @@ function ClosingPage() {
     });
     closeSession(active.id, closingCash);
     const diff = closingCash - expected;
+    const diffStr = `${diff > 0 ? "+" : ""}€${diff.toFixed(2)}`;
     toast.success(
       diff === 0
-        ? "Pokladničná zmena uzavretá — hotovosť sedí."
-        : `Pokladničná zmena uzavretá. Rozdiel: ${diff > 0 ? "+" : ""}€${diff.toFixed(2)}`,
+        ? t("orgPosClosing.shiftClosedOk")
+        : t("orgPosClosing.shiftClosedDiff", { diff: diffStr }),
     );
   };
 
@@ -120,63 +131,63 @@ function ClosingPage() {
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-            <Link to="/organizer/pos"><ArrowLeft className="size-4 mr-1.5" /> Späť na pokladňu</Link>
+            <Link to="/organizer/pos"><ArrowLeft className="size-4 mr-1.5" /> {t("orgPosClosing.backToPos")}</Link>
           </Button>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Denná uzávierka</h1>
-          <p className="text-muted-foreground mt-1">Súhrn predajov a hotovostných operácií za vybraný deň.</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosClosing.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("orgPosClosing.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-end">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">Dátum</div>
+            <div className="text-xs text-muted-foreground mb-1">{t("orgPosClosing.dateLabel")}</div>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 w-44" />
           </div>
-          <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> CSV</Button>
-          <Button variant="outline" onClick={exportPdf}><Printer className="size-4 mr-2" /> PDF</Button>
+          <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> {t("orgPosClosing.csvButton")}</Button>
+          <Button variant="outline" onClick={exportPdf}><Printer className="size-4 mr-2" /> {t("orgPosClosing.pdfButton")}</Button>
           <Button variant="outline" onClick={closeShift}>
-            <LogOut className="size-4 mr-2" /> Uzavrieť zmenu
+            <LogOut className="size-4 mr-2" /> {t("orgPosClosing.closeShift")}
           </Button>
           <Button onClick={closeDay} className="bg-gradient-flame text-primary-foreground shadow-glow">
-            <ShieldCheck className="size-4 mr-2" /> Uzavrieť deň
+            <ShieldCheck className="size-4 mr-2" /> {t("orgPosClosing.closeDay")}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Tile icon={<Banknote className="size-4 text-primary" />} label="Hotovosť" value={`€${stats.cash_total.toFixed(2)}`} />
-        <Tile icon={<CreditCard className="size-4 text-primary" />} label="Karta" value={`€${stats.card_total.toFixed(2)}`} />
-        <Tile icon={<Building2 className="size-4 text-primary" />} label="Prevod" value={`€${stats.transfer_total.toFixed(2)}`} />
-        <Tile icon={<Gift className="size-4 text-primary" />} label="Guestlist" value={`€${stats.free_total.toFixed(2)}`} />
-        <Tile icon={<Ban className="size-4 text-destructive" />} label="Storná" value={`€${stats.voided_total.toFixed(2)}`} />
+        <Tile icon={<Banknote className="size-4 text-primary" />} label={t("orgPosClosing.tileCash")} value={`€${stats.cash_total.toFixed(2)}`} />
+        <Tile icon={<CreditCard className="size-4 text-primary" />} label={t("orgPosClosing.tileCard")} value={`€${stats.card_total.toFixed(2)}`} />
+        <Tile icon={<Building2 className="size-4 text-primary" />} label={t("orgPosClosing.tileTransfer")} value={`€${stats.transfer_total.toFixed(2)}`} />
+        <Tile icon={<Gift className="size-4 text-primary" />} label={t("orgPosClosing.tileGuestlist")} value={`€${stats.free_total.toFixed(2)}`} />
+        <Tile icon={<Ban className="size-4 text-destructive" />} label={t("orgPosClosing.tileVoided")} value={`€${stats.voided_total.toFixed(2)}`} />
       </div>
 
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Celkové tržby</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("orgPosClosing.totalRevenue")}</div>
             <div className="font-display text-4xl font-bold mt-1">€{total.toFixed(2)}</div>
           </div>
           <div className="text-right text-sm text-muted-foreground">
-            <div>Dokladov: <span className="text-foreground font-semibold">{stats.receipts_count}</span></div>
-            <div>Vstupeniek: <span className="text-foreground font-semibold">{stats.tickets_count}</span></div>
+            <div>{t("orgPosClosing.receiptsLabel")} <span className="text-foreground font-semibold">{stats.receipts_count}</span></div>
+            <div>{t("orgPosClosing.ticketsLabel")} <span className="text-foreground font-semibold">{stats.tickets_count}</span></div>
           </div>
         </div>
       </Card>
 
       <Card className="p-5 bg-card/60 border-border/50">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Predaje dňa</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">{t("orgPosClosing.salesOfDay")}</div>
         {sales.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Za vybraný deň neevidujeme žiadne predaje.</p>
+          <p className="text-sm text-muted-foreground">{t("orgPosClosing.noSales")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border/50">
                 <tr>
-                  <th className="text-left py-2">Doklad</th>
-                  <th className="text-left">Čas</th>
-                  <th className="text-left">Podujatie</th>
-                  <th className="text-left">Platba</th>
-                  <th className="text-right">Suma</th>
-                  <th className="text-left">Stav</th>
+                  <th className="text-left py-2">{t("orgPosClosing.colReceipt")}</th>
+                  <th className="text-left">{t("orgPosClosing.colTime")}</th>
+                  <th className="text-left">{t("orgPosClosing.colEvent")}</th>
+                  <th className="text-left">{t("orgPosClosing.colPayment")}</th>
+                  <th className="text-right">{t("orgPosClosing.colAmount")}</th>
+                  <th className="text-left">{t("orgPosClosing.colStatus")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -189,7 +200,7 @@ function ClosingPage() {
                     <td className="text-right">€{s.total.toFixed(2)}</td>
                     <td>
                       <Badge variant={s.status === "paid" ? "default" : "destructive"} className="text-[10px]">
-                        {s.status === "paid" ? "Zaplatené" : "Storno"}
+                        {s.status === "paid" ? t("orgPosClosing.paid") : t("orgPosClosing.void")}
                       </Badge>
                     </td>
                   </tr>
@@ -202,10 +213,10 @@ function ClosingPage() {
 
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-          <Receipt className="size-3.5" /> Audit log (posledné)
+          <Receipt className="size-3.5" /> {t("orgPosClosing.auditLog")}
         </div>
         {audit.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Žiadne záznamy za tento deň.</p>
+          <p className="text-sm text-muted-foreground">{t("orgPosClosing.noAudit")}</p>
         ) : (
           <div className="space-y-2">
             {audit.map((a) => (
@@ -221,8 +232,7 @@ function ClosingPage() {
       </Card>
       <Separator />
       <p className="text-xs text-muted-foreground">
-        Demo prototyp · Reálne napojenie na ORP / eKasa a USB platobný terminál sa doplní podľa
-        oficiálnej dokumentácie Finančnej správy SR a poskytovateľa terminálu.
+        {t("orgPosClosing.demoNote")}
       </p>
     </div>
   );

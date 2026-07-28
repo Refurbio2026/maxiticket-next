@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   getCashiersForOrganizer, upsertCashier, deleteCashier, setCashierStatus,
   resetCashierPin, hashPin, ALL_PERMISSIONS,
@@ -47,6 +48,7 @@ const EMPTY_FORM: FormState = {
 };
 
 function CashiersPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [list, setList] = useState<Cashier[]>([]);
   const [sales, setSales] = useState<PosSale[]>([]);
@@ -82,10 +84,10 @@ function CashiersPage() {
 
   const save = async () => {
     if (!user) return;
-    if (!form.first_name || !form.last_name) return toast.error("Meno a priezvisko sú povinné");
-    if (!form.display_name) return toast.error("Zadaj prezývku / meno na pokladni");
-    if (!editing && form.pin.length < 4) return toast.error("PIN musí mať aspoň 4 znaky");
-    if (editing && form.pin && form.pin.length < 4) return toast.error("Nový PIN musí mať aspoň 4 znaky");
+    if (!form.first_name || !form.last_name) return toast.error(t("orgPosCashiers.errNameRequired"));
+    if (!form.display_name) return toast.error(t("orgPosCashiers.errDisplayNameRequired"));
+    if (!editing && form.pin.length < 4) return toast.error(t("orgPosCashiers.errPinMin4"));
+    if (editing && form.pin && form.pin.length < 4) return toast.error(t("orgPosCashiers.errNewPinMin4"));
 
     const now = new Date().toISOString();
     if (editing) {
@@ -97,7 +99,7 @@ function CashiersPage() {
       };
       if (form.pin) next.pin_hash = await hashPin(form.pin);
       upsertCashier(next);
-      toast.success("Pokladník aktualizovaný");
+      toast.success(t("orgPosCashiers.updated"));
     } else {
       const pin_hash = await hashPin(form.pin);
       upsertCashier({
@@ -107,27 +109,27 @@ function CashiersPage() {
         status: form.status, permissions: form.permissions,
         created_at: now, updated_at: now,
       });
-      toast.success("Pokladník vytvorený");
+      toast.success(t("orgPosCashiers.created"));
     }
     setOpen(false); setEditing(null); setForm(EMPTY_FORM);
   };
 
   const remove = (c: Cashier) => {
-    if (!confirm(`Naozaj zmazať pokladníka ${c.display_name}?`)) return;
-    deleteCashier(c.id); toast.success("Pokladník zmazaný");
+    if (!confirm(t("orgPosCashiers.confirmDelete", { name: c.display_name }))) return;
+    deleteCashier(c.id); toast.success(t("orgPosCashiers.deleted"));
   };
 
   const toggleStatus = (c: Cashier) => {
     const next: "active" | "inactive" = c.status === "active" ? "inactive" : "active";
     setCashierStatus(c.id, next);
-    toast.success(next === "active" ? "Pokladník aktivovaný" : "Pokladník deaktivovaný");
+    toast.success(next === "active" ? t("orgPosCashiers.activated") : t("orgPosCashiers.deactivated"));
   };
 
   const submitReset = async () => {
     if (!resetFor) return;
-    if (newPin.length < 4) return toast.error("PIN musí mať aspoň 4 znaky");
+    if (newPin.length < 4) return toast.error(t("orgPosCashiers.errPinMin4"));
     await resetCashierPin(resetFor.id, newPin);
-    toast.success("PIN resetovaný");
+    toast.success(t("orgPosCashiers.pinReset"));
     setResetFor(null); setNewPin("");
   };
 
@@ -149,13 +151,13 @@ function CashiersPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Pokladníci</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosCashiers.title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Vytváraj pokladníkov a prideľuj im oprávnenia. Každý sa v pokladnici prihlasuje vlastným PIN kódom.
+            {t("orgPosCashiers.subtitle")}
           </p>
         </div>
         <Button onClick={startCreate} className="bg-gradient-flame text-primary-foreground shadow-glow">
-          <Plus className="size-4 mr-2" /> Pridať pokladníka
+          <Plus className="size-4 mr-2" /> {t("orgPosCashiers.addButton")}
         </Button>
       </div>
 
@@ -163,9 +165,9 @@ function CashiersPage() {
         {list.length === 0 ? (
           <div className="text-center py-12">
             <Users className="size-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Zatiaľ žiadni pokladníci.</p>
+            <p className="text-sm text-muted-foreground">{t("orgPosCashiers.empty")}</p>
             <Button onClick={startCreate} className="mt-4 bg-gradient-flame text-primary-foreground shadow-glow">
-              <Plus className="size-4 mr-2" /> Pridať prvého pokladníka
+              <Plus className="size-4 mr-2" /> {t("orgPosCashiers.addFirstButton")}
             </Button>
           </div>
         ) : (
@@ -173,11 +175,11 @@ function CashiersPage() {
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border/50">
                 <tr>
-                  <th className="text-left py-2">Pokladník</th>
-                  <th className="text-left">Prezývka</th>
-                  <th className="text-left">Oprávnenia</th>
-                  <th className="text-left">Stav</th>
-                  <th className="text-right">Predaje</th>
+                  <th className="text-left py-2">{t("orgPosCashiers.thCashier")}</th>
+                  <th className="text-left">{t("orgPosCashiers.thDisplayName")}</th>
+                  <th className="text-left">{t("orgPosCashiers.thPermissions")}</th>
+                  <th className="text-left">{t("orgPosCashiers.thStatus")}</th>
+                  <th className="text-right">{t("orgPosCashiers.thSales")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -188,13 +190,13 @@ function CashiersPage() {
                     <tr key={c.id} className="border-b border-border/30">
                       <td className="py-2">
                         <div className="font-medium">{c.first_name} {c.last_name}</div>
-                        <div className="text-xs text-muted-foreground">aktualizované {new Date(c.updated_at).toLocaleDateString("sk-SK")}</div>
+                        <div className="text-xs text-muted-foreground">{t("orgPosCashiers.updatedAt", { date: new Date(c.updated_at).toLocaleDateString("sk-SK") })}</div>
                       </td>
                       <td className="font-mono text-xs">{c.display_name}</td>
                       <td className="text-xs">
                         <div className="flex flex-wrap gap-1 max-w-[260px]">
                           {c.permissions.length === 0 ? (
-                            <span className="text-muted-foreground">žiadne</span>
+                            <span className="text-muted-foreground">{t("orgPosCashiers.noPermissions")}</span>
                           ) : c.permissions.map((p) => (
                             <Badge key={p} variant="outline" className="text-[10px]">{p}</Badge>
                           ))}
@@ -202,25 +204,25 @@ function CashiersPage() {
                       </td>
                       <td>
                         <Badge variant={c.status === "active" ? "default" : "destructive"} className="text-[10px]">
-                          {c.status === "active" ? "Aktívny" : "Neaktívny"}
+                          {c.status === "active" ? t("orgPosCashiers.statusActive") : t("orgPosCashiers.statusInactive")}
                         </Badge>
                       </td>
                       <td className="text-right text-xs">{count}</td>
                       <td>
                         <div className="flex gap-1 justify-end">
-                          <Button size="icon" variant="ghost" className="size-7" title="História predajov" onClick={() => setHistoryFor(c)}>
+                          <Button size="icon" variant="ghost" className="size-7" title={t("orgPosCashiers.titleHistory")} onClick={() => setHistoryFor(c)}>
                             <History className="size-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7" title="Resetovať PIN" onClick={() => { setResetFor(c); setNewPin(""); }}>
+                          <Button size="icon" variant="ghost" className="size-7" title={t("orgPosCashiers.titleResetPin")} onClick={() => { setResetFor(c); setNewPin(""); }}>
                             <KeyRound className="size-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7" title={c.status === "active" ? "Deaktivovať" : "Aktivovať"} onClick={() => toggleStatus(c)}>
+                          <Button size="icon" variant="ghost" className="size-7" title={c.status === "active" ? t("orgPosCashiers.titleDeactivate") : t("orgPosCashiers.titleActivate")} onClick={() => toggleStatus(c)}>
                             <Power className={`size-3.5 ${c.status === "active" ? "text-primary" : "text-muted-foreground"}`} />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7" title="Upraviť" onClick={() => startEdit(c)}>
+                          <Button size="icon" variant="ghost" className="size-7" title={t("orgPosCashiers.titleEdit")} onClick={() => startEdit(c)}>
                             <Pencil className="size-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7 text-destructive" title="Zmazať" onClick={() => remove(c)}>
+                          <Button size="icon" variant="ghost" className="size-7 text-destructive" title={t("orgPosCashiers.titleDelete")} onClick={() => remove(c)}>
                             <Trash2 className="size-3.5" />
                           </Button>
                         </div>
@@ -238,25 +240,25 @@ function CashiersPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing ? "Upraviť pokladníka" : "Nový pokladník"}</DialogTitle>
+            <DialogTitle>{editing ? t("orgPosCashiers.dialogEditTitle") : t("orgPosCashiers.dialogNewTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Meno</Label>
+                <Label>{t("orgPosCashiers.labelFirstName")}</Label>
                 <Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
               </div>
               <div>
-                <Label>Priezvisko</Label>
+                <Label>{t("orgPosCashiers.labelLastName")}</Label>
                 <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
               </div>
             </div>
             <div>
-              <Label>Prezývka / meno na pokladni</Label>
-              <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="napr. Janka K." />
+              <Label>{t("orgPosCashiers.labelDisplayName")}</Label>
+              <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder={t("orgPosCashiers.displayNamePlaceholder")} />
             </div>
             <div>
-              <Label>{editing ? "Nový PIN (nechaj prázdne ak nemeníš)" : "PIN kód (min. 4 znaky)"}</Label>
+              <Label>{editing ? t("orgPosCashiers.labelNewPinOptional") : t("orgPosCashiers.labelPinCode")}</Label>
               <Input
                 type="password"
                 inputMode="numeric"
@@ -265,13 +267,13 @@ function CashiersPage() {
                 onChange={(e) => setForm({ ...form, pin: e.target.value.replace(/\D/g, "") })}
               />
               <p className="text-[11px] text-muted-foreground mt-1">
-                PIN sa ukladá výhradne ako bezpečný hash (SHA-256), nikdy v plain texte.
+                {t("orgPosCashiers.pinHashNote")}
               </p>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
               <div>
-                <Label className="cursor-pointer">Aktívny</Label>
-                <p className="text-[11px] text-muted-foreground">Neaktívni pokladníci sa nezobrazia pri prihlásení.</p>
+                <Label className="cursor-pointer">{t("orgPosCashiers.labelActive")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("orgPosCashiers.activeNote")}</p>
               </div>
               <Switch
                 checked={form.status === "active"}
@@ -279,7 +281,7 @@ function CashiersPage() {
               />
             </div>
             <div>
-              <Label>Oprávnenia</Label>
+              <Label>{t("orgPosCashiers.labelPermissions")}</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {ALL_PERMISSIONS.map(({ key, label }) => (
                   <label key={key} className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 cursor-pointer hover:bg-muted/40">
@@ -294,9 +296,9 @@ function CashiersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Zrušiť</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("orgPosCashiers.cancel")}</Button>
             <Button onClick={save} className="bg-gradient-flame text-primary-foreground shadow-glow">
-              {editing ? "Uložiť zmeny" : "Vytvoriť pokladníka"}
+              {editing ? t("orgPosCashiers.saveChanges") : t("orgPosCashiers.createCashier")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -306,10 +308,10 @@ function CashiersPage() {
       <Dialog open={!!resetFor} onOpenChange={(o) => !o && setResetFor(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Resetovať PIN · {resetFor?.display_name}</DialogTitle>
+            <DialogTitle>{t("orgPosCashiers.resetPinTitle", { name: resetFor?.display_name })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 py-2">
-            <Label>Nový PIN (min. 4 znaky)</Label>
+            <Label>{t("orgPosCashiers.labelNewPin")}</Label>
             <Input
               type="password"
               inputMode="numeric"
@@ -320,9 +322,9 @@ function CashiersPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResetFor(null)}>Zrušiť</Button>
+            <Button variant="outline" onClick={() => setResetFor(null)}>{t("orgPosCashiers.cancel")}</Button>
             <Button onClick={submitReset} className="bg-gradient-flame text-primary-foreground shadow-glow">
-              Uložiť nový PIN
+              {t("orgPosCashiers.saveNewPin")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -332,20 +334,20 @@ function CashiersPage() {
       <Dialog open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>História predajov · {historyFor?.display_name}</DialogTitle>
+            <DialogTitle>{t("orgPosCashiers.historyTitle", { name: historyFor?.display_name })}</DialogTitle>
           </DialogHeader>
           {historySales.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Žiadne predaje.</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">{t("orgPosCashiers.noSales")}</p>
           ) : (
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border/50">
                 <tr>
-                  <th className="text-left py-2">Doklad</th>
-                  <th className="text-left">Dátum</th>
-                  <th className="text-left">Podujatie</th>
-                  <th className="text-left">Platba</th>
-                  <th className="text-right">Suma</th>
-                  <th className="text-left">Stav</th>
+                  <th className="text-left py-2">{t("orgPosCashiers.hThReceipt")}</th>
+                  <th className="text-left">{t("orgPosCashiers.hThDate")}</th>
+                  <th className="text-left">{t("orgPosCashiers.hThEvent")}</th>
+                  <th className="text-left">{t("orgPosCashiers.hThPayment")}</th>
+                  <th className="text-right">{t("orgPosCashiers.hThTotal")}</th>
+                  <th className="text-left">{t("orgPosCashiers.hThStatus")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -358,7 +360,7 @@ function CashiersPage() {
                     <td className="text-right">€{s.total.toFixed(2)}</td>
                     <td>
                       <Badge variant={s.status === "paid" ? "default" : "destructive"} className="text-[10px]">
-                        {s.status === "paid" ? "Zaplatené" : "Storno"}
+                        {s.status === "paid" ? t("orgPosCashiers.statusPaid") : t("orgPosCashiers.statusVoid")}
                       </Badge>
                     </td>
                   </tr>

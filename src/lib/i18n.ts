@@ -149,7 +149,16 @@ const hu: Dict = {
   "footer.builtWith": "Szenvedéllyel készült Pozsonyban 🇸🇰",
 };
 
-export const translations: Record<Lang, Dict> = { sk, en, de, hu };
+// Page-level translations produced by the batch i18n conversion live in a
+// separate generated file and are merged on top of the base dictionary above.
+import { generated } from "./i18n.generated";
+
+export const translations: Record<Lang, Dict> = {
+  sk: { ...sk, ...generated.sk },
+  en: { ...en, ...generated.en },
+  de: { ...de, ...generated.de },
+  hu: { ...hu, ...generated.hu },
+};
 
 export function translate(lang: Lang, key: string, vars?: Record<string, string | number>): string {
   const raw = translations[lang]?.[key] ?? translations.sk[key] ?? key;

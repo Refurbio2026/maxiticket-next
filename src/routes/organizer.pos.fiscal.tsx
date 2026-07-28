@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   getFiscalSettings, getFiscalReceipts, POS_EVENT, logAudit,
   type FiscalSettings, type FiscalReceipt,
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/organizer/pos/fiscal")({
 });
 
 function FiscalPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [settings, setSettings] = useState<FiscalSettings>(getFiscalSettings());
   const [receipts, setReceipts] = useState<FiscalReceipt[]>([]);
@@ -47,7 +49,7 @@ function FiscalPage() {
   const save = () => {
     orpAdapter.saveSettings(settings);
     audit("orp.settings_updated", { provider: settings.provider, mode: settings.mode });
-    toast.success("Nastavenia uložené");
+    toast.success(t("orgPosFiscal.toastSettingsSaved"));
   };
 
   const test = async () => {
@@ -55,10 +57,10 @@ function FiscalPage() {
     try {
       const r = await orpAdapter.testConnection();
       if (r.ok) {
-        toast.success("ORP spojenie úspešne overené");
+        toast.success(t("orgPosFiscal.toastTestOk"));
         setSettings(getFiscalSettings());
         audit("orp.test_connection", { latency_ms: r.latency_ms });
-      } else toast.error("Test zlyhal: " + (r.error || "neznáma chyba"));
+      } else toast.error(t("orgPosFiscal.toastTestFailed", { error: r.error || t("orgPosFiscal.unknownError") }));
     } finally { setBusy(false); }
   };
 
@@ -67,7 +69,7 @@ function FiscalPage() {
     try {
       const r = await orpAdapter.connect();
       if (r.ok) {
-        toast.success("ORP pripojené");
+        toast.success(t("orgPosFiscal.toastConnected"));
         setSettings(getFiscalSettings());
         audit("orp.connect");
       }
@@ -80,105 +82,105 @@ function FiscalPage() {
       await orpAdapter.disconnect();
       setSettings(getFiscalSettings());
       audit("orp.disconnect");
-      toast.success("ORP odpojené");
+      toast.success(t("orgPosFiscal.toastDisconnected"));
     } finally { setBusy(false); }
   };
 
   const cancelReceipt = async (id: string) => {
-    if (!confirm("Stornovať fiskálny doklad?")) return;
+    if (!confirm(t("orgPosFiscal.confirmCancel"))) return;
     await orpAdapter.cancelReceipt(id);
     audit("orp.receipt_cancelled", { receipt_id: id });
-    toast.success("Doklad stornovaný");
+    toast.success(t("orgPosFiscal.toastReceiptCancelled"));
   };
 
   const status = settings.connection_status;
   const statusVariant = status === "connected" ? "default" : status === "error" ? "destructive" : "outline";
-  const statusLabel = status === "connected" ? "Pripojené" : status === "error" ? "Chyba" : "Nepripojené";
+  const statusLabel = status === "connected" ? t("orgPosFiscal.statusConnected") : status === "error" ? t("orgPosFiscal.statusError") : t("orgPosFiscal.statusDisconnected");
 
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">ORP / eKasa</h1>
-          <p className="text-muted-foreground mt-1">Online registračná pokladnica — integrácia s fiskálnym systémom.</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosFiscal.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("orgPosFiscal.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-center">
           <span
             className={`size-2.5 rounded-full ${status === "connected" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.7)]" : status === "error" ? "bg-destructive" : "bg-muted-foreground/40"}`}
           />
           <Badge variant={statusVariant} className="gap-1.5"><Wifi className="size-3.5" />{statusLabel}</Badge>
-          <Badge variant="outline">{settings.mode === "mock" ? "Mock režim" : "Produkcia"}</Badge>
+          <Badge variant="outline">{settings.mode === "mock" ? t("orgPosFiscal.modeMock") : t("orgPosFiscal.modeProduction")}</Badge>
         </div>
       </div>
 
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="grid md:grid-cols-2 gap-4">
-          <Field label="Režim">
+          <Field label={t("orgPosFiscal.fieldMode")}>
             <Select value={settings.mode} onChange={(v) => setSettings({ ...settings, mode: v as FiscalSettings["mode"] })}
-              options={[{ v: "mock", l: "Mock (testovací)" }, { v: "production", l: "Produkcia" }]} />
+              options={[{ v: "mock", l: t("orgPosFiscal.optModeMock") }, { v: "production", l: t("orgPosFiscal.optModeProduction") }]} />
           </Field>
-          <Field label="Typ fiskalizácie">
+          <Field label={t("orgPosFiscal.fieldFiscalType")}>
             <Select value={settings.provider} onChange={(v) => setSettings({ ...settings, provider: v as FiscalSettings["provider"] })}
-              options={[{ v: "ORP", l: "ORP" }, { v: "eKasa", l: "eKasa provider" }]} />
+              options={[{ v: "ORP", l: "ORP" }, { v: "eKasa", l: t("orgPosFiscal.optEkasaProvider") }]} />
           </Field>
-          <Field label="Poskytovateľ ORP">
-            <Input value={settings.orp_provider} onChange={(e) => setSettings({ ...settings, orp_provider: e.target.value })} placeholder="napr. Bowa, Varos, Elcom…" />
+          <Field label={t("orgPosFiscal.fieldOrpProvider")}>
+            <Input value={settings.orp_provider} onChange={(e) => setSettings({ ...settings, orp_provider: e.target.value })} placeholder={t("orgPosFiscal.orpProviderPlaceholder")} />
           </Field>
-          <Field label="API URL">
+          <Field label={t("orgPosFiscal.fieldApiUrl")}>
             <Input value={settings.api_url} onChange={(e) => setSettings({ ...settings, api_url: e.target.value })} placeholder="https://…" />
           </Field>
-          <Field label="API kľúč">
+          <Field label={t("orgPosFiscal.fieldApiKey")}>
             <Input type="password" value={settings.api_key} onChange={(e) => setSettings({ ...settings, api_key: e.target.value })} placeholder="••••••••" />
           </Field>
-          <Field label="Client ID">
+          <Field label={t("orgPosFiscal.fieldClientId")}>
             <Input value={settings.client_id} onChange={(e) => setSettings({ ...settings, client_id: e.target.value })} placeholder="client_id" />
           </Field>
-          <Field label="Client Secret">
+          <Field label={t("orgPosFiscal.fieldClientSecret")}>
             <Input type="password" value={settings.client_secret} onChange={(e) => setSettings({ ...settings, client_secret: e.target.value })} placeholder="••••••••" />
           </Field>
-          <Field label="IČO">
+          <Field label={t("orgPosFiscal.fieldIco")}>
             <Input value={settings.ico} onChange={(e) => setSettings({ ...settings, ico: e.target.value })} placeholder="12345678" />
           </Field>
-          <Field label="DIČ">
+          <Field label={t("orgPosFiscal.fieldDic")}>
             <Input value={settings.dic} onChange={(e) => setSettings({ ...settings, dic: e.target.value })} placeholder="2020000000" />
           </Field>
-          <Field label="IČ DPH">
+          <Field label={t("orgPosFiscal.fieldIcDph")}>
             <Input value={settings.ic_dph} onChange={(e) => setSettings({ ...settings, ic_dph: e.target.value })} placeholder="SK2020000000" />
           </Field>
-          <Field label="Kód pokladnice">
+          <Field label={t("orgPosFiscal.fieldPosCode")}>
             <Input value={settings.pos_code} onChange={(e) => setSettings({ ...settings, pos_code: e.target.value })} placeholder="0000" />
           </Field>
-          <Field label="Kód prevádzky">
+          <Field label={t("orgPosFiscal.fieldPremisesCode")}>
             <Input value={settings.premises_code} onChange={(e) => setSettings({ ...settings, premises_code: e.target.value })} placeholder="PREV-001" />
           </Field>
-          <Field label="Názov prevádzky">
-            <Input value={settings.premises_name} onChange={(e) => setSettings({ ...settings, premises_name: e.target.value })} placeholder="Hlavná pokladňa" />
+          <Field label={t("orgPosFiscal.fieldPremisesName")}>
+            <Input value={settings.premises_name} onChange={(e) => setSettings({ ...settings, premises_name: e.target.value })} placeholder={t("orgPosFiscal.premisesNamePlaceholder")} />
           </Field>
-          <Field label="Adresa prevádzky">
-            <Input value={settings.premises_address} onChange={(e) => setSettings({ ...settings, premises_address: e.target.value })} placeholder="Hlavná 1, Bratislava" />
+          <Field label={t("orgPosFiscal.fieldPremisesAddress")}>
+            <Input value={settings.premises_address} onChange={(e) => setSettings({ ...settings, premises_address: e.target.value })} placeholder={t("orgPosFiscal.premisesAddressPlaceholder")} />
           </Field>
         </div>
 
         <Separator className="my-5" />
         <div className="flex flex-wrap gap-2">
           <Button onClick={save} disabled={busy} className="bg-gradient-flame text-primary-foreground shadow-glow">
-            <Save className="size-4 mr-2" /> Uložiť nastavenia
+            <Save className="size-4 mr-2" /> {t("orgPosFiscal.saveSettings")}
           </Button>
           <Button variant="outline" onClick={test} disabled={busy}>
-            <ShieldCheck className="size-4 mr-2" /> Test spojenia
+            <ShieldCheck className="size-4 mr-2" /> {t("orgPosFiscal.testConnection")}
           </Button>
           {status !== "connected" ? (
             <Button variant="outline" onClick={connect} disabled={busy}>
-              <Power className="size-4 mr-2" /> Pripojiť ORP
+              <Power className="size-4 mr-2" /> {t("orgPosFiscal.connectOrp")}
             </Button>
           ) : (
             <Button variant="outline" onClick={disconnect} disabled={busy}>
-              <PowerOff className="size-4 mr-2" /> Odpojiť ORP
+              <PowerOff className="size-4 mr-2" /> {t("orgPosFiscal.disconnectOrp")}
             </Button>
           )}
           {settings.last_tested_at && (
             <div className="text-xs text-muted-foreground self-center">
-              Posledný test: {new Date(settings.last_tested_at).toLocaleString("sk-SK")}
+              {t("orgPosFiscal.lastTest")}: {new Date(settings.last_tested_at).toLocaleString("sk-SK")}
             </div>
           )}
         </div>
@@ -187,23 +189,23 @@ function FiscalPage() {
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <Receipt className="size-3.5" /> Posledné ORP doklady
+            <Receipt className="size-3.5" /> {t("orgPosFiscal.recentReceipts")}
           </div>
           <Badge variant="outline">{receipts.length}</Badge>
         </div>
         {receipts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Žiadne fiskálne doklady.</p>
+          <p className="text-sm text-muted-foreground">{t("orgPosFiscal.noReceipts")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border/50">
                 <tr>
-                  <th className="text-left py-2">Číslo ORP</th>
-                  <th className="text-left">Dátum</th>
-                  <th className="text-left">DKP</th>
-                  <th className="text-left">Platba</th>
-                  <th className="text-right">Suma</th>
-                  <th className="text-left">Stav</th>
+                  <th className="text-left py-2">{t("orgPosFiscal.colOrpNumber")}</th>
+                  <th className="text-left">{t("orgPosFiscal.colDate")}</th>
+                  <th className="text-left">{t("orgPosFiscal.colDkp")}</th>
+                  <th className="text-left">{t("orgPosFiscal.colPayment")}</th>
+                  <th className="text-right">{t("orgPosFiscal.colAmount")}</th>
+                  <th className="text-left">{t("orgPosFiscal.colStatus")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -217,7 +219,7 @@ function FiscalPage() {
                     <td className="text-right">€{r.total.toFixed(2)}</td>
                     <td>
                       <Badge variant={r.status === "issued" ? "default" : "destructive"} className="text-[10px]">
-                        {r.status === "issued" ? "Platný" : "Stornovaný"}
+                        {r.status === "issued" ? t("orgPosFiscal.receiptValid") : t("orgPosFiscal.receiptCancelled")}
                       </Badge>
                     </td>
                     <td>
@@ -236,7 +238,7 @@ function FiscalPage() {
       </Card>
 
       <Button asChild variant="ghost" size="sm">
-        <Link to="/organizer/pos">← Späť na pokladňu</Link>
+        <Link to="/organizer/pos">{t("orgPosFiscal.backToPos")}</Link>
       </Button>
     </div>
   );

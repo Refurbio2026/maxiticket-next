@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/hooks/use-i18n";
 import { getEvents, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
 import { getSales, POS_EVENT } from "@/lib/pos-db";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/organizer/")({
 });
 
 function OrganizerHome() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [salesCount, setSalesCount] = useState(0);
@@ -44,58 +46,58 @@ function OrganizerHome() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-4xl font-bold tracking-tight">Vitaj, {user?.full_name || "Organizátor"}.</h1>
-        <p className="text-muted-foreground mt-1">Spravuj svoje podujatia, otvor pokladňu alebo skontroluj predaje.</p>
+        <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgHome.welcome", { name: user?.full_name || t("orgHome.organizerFallback") })}</h1>
+        <p className="text-muted-foreground mt-1">{t("orgHome.subtitle")}</p>
       </div>
 
       {/* Big action cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <ActionCard
           to="/organizer/events/new"
-          title="Pridať podujatie"
-          desc="Vytvor nové podujatie a spusti predaj."
+          title={t("orgHome.addEventTitle")}
+          desc={t("orgHome.addEventDesc")}
           icon={<Plus className="size-6" />}
         />
         <ActionCard
           to="/organizer/pos"
-          title="Otvoriť pokladňu"
-          desc="Predaj vstupeniek fyzicky na mieste."
+          title={t("orgHome.openPosTitle")}
+          desc={t("orgHome.openPosDesc")}
           icon={<ShoppingCart className="size-6" />}
           primary
         />
         <ActionCard
           to="/organizer/pos/sales"
-          title="Predaje"
-          desc="Zoznam dokladov a storno operácie."
+          title={t("orgHome.salesTitle")}
+          desc={t("orgHome.salesDesc")}
           icon={<Receipt className="size-6" />}
         />
         <ActionCard
           to="/organizer/pos/closing"
-          title="Uzávierka"
-          desc="Denný report a export tržieb."
+          title={t("orgHome.closingTitle")}
+          desc={t("orgHome.closingDesc")}
           icon={<ClipboardList className="size-6" />}
         />
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Moje podujatia" value={events.length.toString()} icon={<Calendar className="size-5 text-primary" />} />
-        <Stat label="Publikované" value={published.length.toString()} icon={<Eye className="size-5 text-primary" />} />
-        <Stat label="Kapacita" value={totalCapacity.toLocaleString("sk-SK")} icon={<Ticket className="size-5 text-primary" />} />
-        <Stat label="Predaje (POS)" value={salesCount.toString()} icon={<TrendingUp className="size-5 text-primary" />} />
+        <Stat label={t("orgHome.statMyEvents")} value={events.length.toString()} icon={<Calendar className="size-5 text-primary" />} />
+        <Stat label={t("orgHome.statPublished")} value={published.length.toString()} icon={<Eye className="size-5 text-primary" />} />
+        <Stat label={t("orgHome.statCapacity")} value={totalCapacity.toLocaleString("sk-SK")} icon={<Ticket className="size-5 text-primary" />} />
+        <Stat label={t("orgHome.statPosSales")} value={salesCount.toString()} icon={<TrendingUp className="size-5 text-primary" />} />
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-semibold">Posledné podujatia</h2>
-          <Button asChild variant="ghost" size="sm"><Link to="/organizer/events">Všetky →</Link></Button>
+          <h2 className="font-display text-xl font-semibold">{t("orgHome.recentEvents")}</h2>
+          <Button asChild variant="ghost" size="sm"><Link to="/organizer/events">{t("orgHome.allEvents")}</Link></Button>
         </div>
         {events.length === 0 ? (
           <Card className="p-12 text-center bg-card/60 border-dashed border-border/50">
             <Calendar className="size-10 text-muted-foreground mx-auto mb-3" />
-            <div className="font-semibold">Zatiaľ žiadne podujatia</div>
-            <p className="text-sm text-muted-foreground mt-1">Začni pridaním prvého podujatia.</p>
+            <div className="font-semibold">{t("orgHome.noEventsTitle")}</div>
+            <p className="text-sm text-muted-foreground mt-1">{t("orgHome.noEventsDesc")}</p>
             <Button asChild className="mt-5 bg-gradient-flame text-primary-foreground shadow-glow">
-              <Link to="/organizer/events/new"><Plus className="size-4 mr-2" /> Pridať podujatie</Link>
+              <Link to="/organizer/events/new"><Plus className="size-4 mr-2" /> {t("orgHome.addEventButton")}</Link>
             </Button>
           </Card>
         ) : (
@@ -107,16 +109,16 @@ function OrganizerHome() {
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                       e.status === "published" ? "bg-primary/15 text-primary border-primary/30" : "bg-muted text-muted-foreground border-border/50"
-                    }`}>{e.status === "published" ? "Publikované" : "Koncept"}</span>
+                    }`}>{e.status === "published" ? t("orgHome.statusPublished") : t("orgHome.statusDraft")}</span>
                     <span className="text-xs text-muted-foreground">{e.category}</span>
                   </div>
                   <h3 className="font-display font-semibold text-lg leading-tight">{e.title}</h3>
                   <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Calendar className="size-3.5" /> {e.event_date} · {e.event_time}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1.5"><MapPin className="size-3.5" /> {e.venue}, {e.city}</div>
                   {e.status === "published" ? (
-                    <Button asChild variant="ghost" size="sm" className="mt-2"><Link to="/events/$id" params={{ id: e.id }}><Eye className="size-3.5 mr-1.5" /> Zobraziť</Link></Button>
+                    <Button asChild variant="ghost" size="sm" className="mt-2"><Link to="/events/$id" params={{ id: e.id }}><Eye className="size-3.5 mr-1.5" /> {t("orgHome.view")}</Link></Button>
                   ) : (
-                    <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2"><FileText className="size-3.5" /> Verejne neviditeľné</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2"><FileText className="size-3.5" /> {t("orgHome.notPublic")}</div>
                   )}
                 </div>
               </Card>
@@ -131,6 +133,7 @@ function OrganizerHome() {
 }
 
 function ActionCard({ to, title, desc, icon, primary }: { to: string; title: string; desc: string; icon: React.ReactNode; primary?: boolean }) {
+  const { t } = useI18n();
   return (
     <Link to={to} className="block group">
       <Card className={`p-6 h-full transition border-border/50 ${
@@ -144,7 +147,7 @@ function ActionCard({ to, title, desc, icon, primary }: { to: string; title: str
         <div className="font-display text-lg font-bold">{title}</div>
         <p className={`text-sm mt-1 ${primary ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{desc}</p>
         <div className={`mt-4 inline-flex items-center gap-1 text-xs font-semibold ${primary ? "" : "text-primary"}`}>
-          Otvoriť <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" />
+          {t("orgHome.open")} <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" />
         </div>
       </Card>
     </Link>

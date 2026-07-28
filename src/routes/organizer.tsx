@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShoppingCart, User } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useI18n } from "@/hooks/use-i18n";
 
 export const Route = createFileRoute("/organizer")({
   head: () => ({ meta: [{ title: "Organizer · vipky.sk" }] }),
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/organizer")({
 });
 
 function OrganizerLayout() {
+  const { t } = useI18n();
   const { user, loading, isOrganizer, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -26,7 +28,7 @@ function OrganizerLayout() {
   if (loading || !user || !isOrganizer) {
     return (
       <div className="min-h-screen bg-background text-foreground grid place-items-center">
-        <div className="text-sm text-muted-foreground">Overujem prístup…</div>
+        <div className="text-sm text-muted-foreground">{t("organizer.verifyingAccess")}</div>
       </div>
     );
   }
@@ -42,13 +44,13 @@ function OrganizerLayout() {
               <div className="ml-auto flex items-center gap-2">
                 <ThemeToggle />
                 <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
-                  <Link to="/organizer/pos"><ShoppingCart className="size-4 mr-2" /> Pokladňa</Link>
+                  <Link to="/organizer/pos"><ShoppingCart className="size-4 mr-2" /> {t("organizer.pos")}</Link>
                 </Button>
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/account"><User className="size-4 mr-1.5" /> {user.full_name || user.email}</Link>
                 </Button>
                 <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate({ to: "/login", replace: true }); }}>
-                  <LogOut className="size-4 mr-1.5" /> Odhlásiť sa
+                  <LogOut className="size-4 mr-1.5" /> {t("organizer.signOut")}
                 </Button>
               </div>
             </header>
