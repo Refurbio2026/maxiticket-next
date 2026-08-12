@@ -156,7 +156,7 @@ const groups: Group[] = [
       { title: "Podujatia", url: "/admin/events/events", icon: CalendarDays },
       { title: "Termíny", url: "/admin/events/dates", icon: CalendarClock, demo: true },
       { title: "Editor hál", url: "/admin/events/venue-layouts", icon: LayoutGrid },
-      { title: "Miesta konania", url: "/admin/events/venues", icon: MapPin, demo: true },
+      { title: "Miesta konania", url: "/admin/events/venues", icon: MapPin },
       { title: "Zľavové kupóny", url: "/admin/events/coupons", icon: Tag, demo: true },
     ],
   },

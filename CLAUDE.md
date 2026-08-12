@@ -34,10 +34,10 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 17 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 18 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `ticket_types`, `orders`, `order_items`, `seat_inventory`,
 `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`, `venue_layouts`,
-`email_logs`, `rate_limits`, `settlements`, `platform_settings`.
+`email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
@@ -50,7 +50,7 @@ Zostáva na nej POS, marketing, banka, protokoly, kategórie a obsadenosť sedad
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**26 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**25 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -71,6 +71,13 @@ Nové perzistentné dáta píš do Supabase, nie do localStorage.
 `users.functions.ts` + `/admin/system/users`. Rolu prideľuje výhradne admin (`setUserRole`),
 `createUserWithRole` založí účet aj s rolou a potvrdeným e-mailom. Vlastnú `admin` rolu si
 odobrať nedá — inak by sa dalo zamknúť sa z konzoly. Zápis do `user_roles` nerob nikde inde.
+
+### Miesta konania
+`venues.functions.ts` + `/admin/events/venues`. `events.venue_id` je väzba na číselník, ale
+textové `events.venue` / `city` / `address` **zostávajú vyplnené** — číta ich verejný katalóg,
+PDF aj e-maily a podujatie musí prežiť zmazanie miesta. `upsertEvent` ich pri uložení kopíruje
+z miesta, premenovanie miesta ich prepíše vo všetkých jeho podujatiach. Miesto si nesie
+`default_layout_id`, ktoré sa v admin formulári predvyplní aj s `sale_type = seating_map`.
 
 ### Vyúčtovanie organizátorom
 `settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)

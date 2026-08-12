@@ -9,6 +9,7 @@ import {
   type EventRecord,
 } from "@/hooks/use-events";
 import { useLayouts } from "@/hooks/use-layouts";
+import { listVenues } from "@/lib/venues.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Sparkles, ExternalLink, QrCode, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { renderEventTicketsPdf } from "@/lib/ticket-pdf.functions";
 import { downloadBase64 } from "@/lib/download";
 
@@ -55,6 +57,9 @@ type FormState = {
   organizer_name: string;
   event_date: string;
   event_time: string;
+  venue_id: string;
+  /** Miesto nie je v číselníku — názov a mesto sa píšu ručne. */
+  venue_manual: boolean;
   venue: string;
   city: string;
   description: string;
@@ -67,12 +72,17 @@ type FormState = {
   total_tickets: string;
 };
 
+/** Hodnota pre „miesto nie je v číselníku" — Select neznesie prázdny string. */
+const CUSTOM_VENUE = "__custom__";
+
 const blankForm = (): FormState => ({
   title: "",
   category: "Koncert",
   organizer_name: "",
   event_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
   event_time: "19:00",
+  venue_id: "",
+  venue_manual: false,
   venue: "",
   city: "",
   description: "",
@@ -91,6 +101,11 @@ function Page() {
   const upsert = useUpsertEvent();
   const del = useDeleteEvent();
   const { data: layouts = [] } = useLayouts();
+  const fetchVenues = useServerFn(listVenues);
+  const { data: venues = [] } = useQuery({
+    queryKey: ["venues"],
+    queryFn: () => fetchVenues({ data: undefined as never }),
+  });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(blankForm());
   const [qrLoading, setQrLoading] = useState<string | null>(null);
@@ -139,7 +154,9 @@ function Page() {
 
   const submit = async () => {
     if (!form.title.trim()) return toast.error("Vyplň názov podujatia");
-    if (!form.venue.trim() || !form.city.trim()) return toast.error("Vyplň miesto konania a mesto");
+    if (!form.venue_id && (!form.venue.trim() || !form.city.trim())) {
+      return toast.error("Vyber miesto konania alebo ho zadaj ručne");
+    }
     if (form.sale_type === "seating_map" && !form.venue_layout_id) {
       return toast.error("Vyber rozloženie haly z Editora hál");
     }
@@ -149,6 +166,7 @@ function Page() {
         category: form.category,
         event_date: form.event_date,
         event_time: form.event_time,
+        venue_id: form.venue_id || null,
         venue: form.venue.trim(),
         city: form.city.trim(),
         description: form.description.trim() || null,
@@ -368,18 +386,58 @@ function Page() {
                 onChange={(e) => setForm({ ...form, event_time: e.target.value })}
               />
             </Field>
-            <Field label="Miesto konania">
-              <Input
-                value={form.venue}
-                onChange={(e) => setForm({ ...form, venue: e.target.value })}
-              />
+            <Field label="Miesto konania" className="sm:col-span-2">
+              <Select
+                value={form.venue_id || (form.venue_manual ? CUSTOM_VENUE : "")}
+                onValueChange={(v) => {
+                  if (v === CUSTOM_VENUE) {
+                    setForm({ ...form, venue_id: "", venue_manual: true });
+                    return;
+                  }
+                  // Z miesta si vezmeme adresu aj jeho predvolenú sálu, nech sa
+                  // to nemusí klikať druhýkrát.
+                  const place = venues.find((x) => x.id === v);
+                  setForm({
+                    ...form,
+                    venue_id: v,
+                    venue_manual: false,
+                    venue: place?.name ?? form.venue,
+                    city: place?.city ?? form.city,
+                    venue_layout_id: place?.default_layout_id ?? form.venue_layout_id,
+                    sale_type: place?.default_layout_id ? "seating_map" : form.sale_type,
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vyber miesto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {venues.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.name} · {v.city}
+                      {v.default_layout_name ? ` · ${v.default_layout_name}` : ""}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={CUSTOM_VENUE}>Zadať ručne…</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
-            <Field label="Mesto">
-              <Input
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-              />
-            </Field>
+            {form.venue_manual && (
+              <>
+                <Field label="Názov miesta">
+                  <Input
+                    value={form.venue}
+                    onChange={(e) => setForm({ ...form, venue: e.target.value })}
+                  />
+                </Field>
+                <Field label="Mesto">
+                  <Input
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  />
+                </Field>
+              </>
+            )}
             <Field label="URL obrázka" className="sm:col-span-2">
               <Input
                 value={form.image_url}

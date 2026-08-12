@@ -72,6 +72,7 @@ export type Database = {
           total_tickets: number | null;
           updated_at: string;
           venue: string;
+          venue_id: string | null;
           venue_layout_id: string | null;
           vip_price: number | null;
         };
@@ -94,6 +95,7 @@ export type Database = {
           total_tickets?: number | null;
           updated_at?: string;
           venue: string;
+          venue_id?: string | null;
           venue_layout_id?: string | null;
           vip_price?: number | null;
         };
@@ -116,6 +118,7 @@ export type Database = {
           total_tickets?: number | null;
           updated_at?: string;
           venue?: string;
+          venue_id?: string | null;
           venue_layout_id?: string | null;
           vip_price?: number | null;
         };
@@ -750,6 +753,47 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      venues: {
+        Row: {
+          address: string | null;
+          city: string;
+          created_at: string;
+          default_layout_id: string | null;
+          id: string;
+          name: string;
+          note: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          address?: string | null;
+          city: string;
+          created_at?: string;
+          default_layout_id?: string | null;
+          id?: string;
+          name: string;
+          note?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          address?: string | null;
+          city?: string;
+          created_at?: string;
+          default_layout_id?: string | null;
+          id?: string;
+          name?: string;
+          note?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "venues_default_layout_id_fkey";
+            columns: ["default_layout_id"];
+            isOneToOne: false;
+            referencedRelation: "venue_layouts";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       user_roles: {
         Row: {

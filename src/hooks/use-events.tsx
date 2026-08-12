@@ -72,6 +72,7 @@ export function toEventInput(e: EventRecord, patch?: Partial<EventInputData>): E
     image_url: e.image_url ?? null,
     status: e.status,
     sale_type: e.sale_type ?? "standing",
+    venue_id: e.venue_id ?? null,
     venue_layout_id: e.venue_layout_id ?? null,
     base_price: e.base_price ?? null,
     total_tickets: e.total_tickets ?? null,

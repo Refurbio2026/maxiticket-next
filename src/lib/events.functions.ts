@@ -9,7 +9,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // `scanner_token` je zdieľané tajomstvo, ktoré autorizuje skenovanie vstupeniek —
 // nesmie sa dostať do odpovede pre verejnosť. Nikdy tu nepoužívaj select("*").
 const EVENT_COLUMNS =
-  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_layout_id, base_price, total_tickets, vip_price, created_at, updated_at";
+  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_id, venue_layout_id, base_price, total_tickets, vip_price, created_at, updated_at";
 
 export type EventTicketType = {
   id: string;
@@ -36,6 +36,7 @@ export type EventRecord = {
   created_at: string;
   tickets: EventTicketType[];
   sale_type?: "standing" | "seating" | "seating_map";
+  venue_id?: string;
   venue_layout_id?: string;
   base_price?: number;
   total_tickets?: number;
@@ -64,6 +65,7 @@ function mapEvent(row: EventRow, tickets: EventTicketType[], organizerName?: str
     created_at: row.created_at as string,
     tickets,
     sale_type: opt<EventRecord["sale_type"]>(row.sale_type),
+    venue_id: opt<string>(row.venue_id),
     venue_layout_id: opt<string>(row.venue_layout_id),
     base_price: row.base_price === null ? undefined : Number(row.base_price),
     total_tickets: opt<number>(row.total_tickets),
@@ -189,6 +191,7 @@ const EventInput = z.object({
   image_url: z.string().max(2000).optional().nullable(),
   status: z.enum(["draft", "published"]).default("draft"),
   sale_type: z.enum(["standing", "seating", "seating_map"]).default("standing"),
+  venue_id: z.string().uuid().optional().nullable(),
   venue_layout_id: z.string().max(200).optional().nullable(),
   base_price: z.number().nonnegative().optional().nullable(),
   total_tickets: z.number().int().nonnegative().optional().nullable(),
@@ -226,18 +229,38 @@ export const upsertEvent = createServerFn({ method: "POST" })
       organizerId = admin && data.organizer_id ? data.organizer_id : existing.organizer_id;
     }
 
+    // Miesto konania je zdroj pravdy: adresu z neho odtlačíme do podujatia,
+    // aby ju verejný katalóg, PDF aj e-maily čítali bez ďalšieho dotazu — a aby
+    // podujatie prežilo zmazanie miesta s tým, kde sa naozaj konalo.
+    let venue = data.venue;
+    let city = data.city;
+    let address = data.address ?? null;
+    if (data.venue_id) {
+      const { data: place } = await supabaseAdmin
+        .from("venues")
+        .select("name, city, address")
+        .eq("id", data.venue_id)
+        .maybeSingle();
+      if (place) {
+        venue = place.name;
+        city = place.city;
+        address = place.address;
+      }
+    }
+
     const row = {
       title: data.title,
       category: data.category,
       event_date: data.event_date,
       event_time: data.event_time,
-      venue: data.venue,
-      city: data.city,
-      address: data.address ?? null,
+      venue,
+      city,
+      address,
       description: data.description ?? null,
       image_url: data.image_url ?? null,
       status: data.status,
       sale_type: data.sale_type,
+      venue_id: data.venue_id ?? null,
       venue_layout_id: data.venue_layout_id ?? null,
       base_price: data.base_price ?? null,
       total_tickets: data.total_tickets ?? null,
