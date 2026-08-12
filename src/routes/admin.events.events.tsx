@@ -1,40 +1,53 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { type SaleType } from "@/lib/local-db";
 import {
-  getEvents,
-  deleteEvent,
-  upsertEvent,
-  emit,
-  EVENTS_EVENT,
-  getCurrentUser,
-  uid,
-  type EventItem,
-  type SaleType,
-} from "@/lib/local-db";
-import { listLayouts, type HallLayout } from "@/lib/layouts-db";
+  useEvents,
+  useUpsertEvent,
+  useDeleteEvent,
+  toEventInput,
+  type EventRecord,
+} from "@/hooks/use-events";
+import { useLayouts } from "@/hooks/use-layouts";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Sparkles, ExternalLink, QrCode, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { getEventSoldTickets } from "@/lib/event-tickets.functions";
-import { downloadEventSoldTicketsPdf } from "@/lib/ticket-pdf";
+import { renderEventTicketsPdf } from "@/lib/ticket-pdf.functions";
+import { downloadBase64 } from "@/lib/download";
 
 export const Route = createFileRoute("/admin/events/events")({
   head: () => ({ meta: [{ title: "Podujatia · vipky.sk Admin" }] }),
   component: Page,
 });
 
-const CATEGORIES = ["Koncert", "Festival", "Šport", "Divadlo", "Konferencia", "Stand-up", "Kultúra"];
+const CATEGORIES = [
+  "Koncert",
+  "Festival",
+  "Šport",
+  "Divadlo",
+  "Konferencia",
+  "Stand-up",
+  "Kultúra",
+];
 
 type FormState = {
   title: string;
@@ -73,59 +86,48 @@ const blankForm = (): FormState => ({
 });
 
 function Page() {
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [layouts, setLayouts] = useState<HallLayout[]>([]);
+  // Admin vidí všetky podujatia vrátane konceptov (vynucuje to server podľa roly).
+  const { data: events = [] } = useEvents({ scope: "all" });
+  const upsert = useUpsertEvent();
+  const del = useDeleteEvent();
+  const { data: layouts = [] } = useLayouts();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(blankForm());
   const [qrLoading, setQrLoading] = useState<string | null>(null);
-  const fetchSold = useServerFn(getEventSoldTickets);
+  const renderPdf = useServerFn(renderEventTicketsPdf);
 
-  const downloadQrs = async (e: EventItem) => {
+  const downloadQrs = async (e: EventRecord) => {
     setQrLoading(e.id);
     try {
-      const res = await fetchSold({ data: { title: e.title, event_date: e.event_date } });
-      if (!res.event) {
-        toast.error("Podujatie sa nenašlo v databáze.");
-        return;
-      }
-      if (!res.tickets.length) {
-        toast.info("Pre toto podujatie zatiaľ neexistujú žiadne predané lístky.");
-        return;
-      }
-      await downloadEventSoldTicketsPdf({ event: res.event, tickets: res.tickets });
-      toast.success(`Stiahnutých ${res.tickets.length} vstupeniek.`);
-    } catch (err: any) {
-      toast.error(err?.message || "Nepodarilo sa vygenerovať PDF.");
+      // Server overí vlastníctvo podujatia a vráti hotové PDF — QR kódy
+      // ani údaje kupujúcich sa tak nedostanú k nepovolanému.
+      const res = await renderPdf({ data: { event_id: e.id } });
+      downloadBase64(res.filename, res.base64);
+      toast.success("PDF s vstupenkami stiahnuté.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nepodarilo sa vygenerovať PDF.");
     } finally {
       setQrLoading(null);
     }
   };
 
-  useEffect(() => {
-    const load = () => {
-      setEvents(getEvents());
-      setLayouts(listLayouts());
-    };
-    load();
-    window.addEventListener(EVENTS_EVENT, load);
-    window.addEventListener("storage", load);
-    return () => {
-      window.removeEventListener(EVENTS_EVENT, load);
-      window.removeEventListener("storage", load);
-    };
-  }, []);
-
-  const setStatus = (e: EventItem, status: "draft" | "published") => {
-    upsertEvent({ ...e, status });
-    emit(EVENTS_EVENT);
-    toast.success(status === "published" ? "Publikované" : "Stiahnuté ako koncept");
+  const setStatus = async (e: EventRecord, status: "draft" | "published") => {
+    try {
+      await upsert.mutateAsync(toEventInput(e, { status }));
+      toast.success(status === "published" ? "Publikované" : "Stiahnuté ako koncept");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Zmena stavu zlyhala");
+    }
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm("Naozaj zmazať podujatie?")) return;
-    deleteEvent(id);
-    emit(EVENTS_EVENT);
-    toast.success("Zmazané");
+    try {
+      await del.mutateAsync(id);
+      toast.success("Zmazané");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Zmazanie zlyhalo");
+    }
   };
 
   const openNew = () => {
@@ -135,73 +137,74 @@ function Page() {
     setOpen(true);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.title.trim()) return toast.error("Vyplň názov podujatia");
     if (!form.venue.trim() || !form.city.trim()) return toast.error("Vyplň miesto konania a mesto");
     if (form.sale_type === "seating_map" && !form.venue_layout_id) {
       return toast.error("Vyber rozloženie haly z Editora hál");
     }
-    const user = getCurrentUser();
-    const item: EventItem = {
-      id: uid(),
-      organizer_id: user?.id ?? "demo-organizer",
-      organizer_name: form.organizer_name || user?.full_name || "Demo Organizátor",
-      title: form.title.trim(),
-      category: form.category,
-      event_date: form.event_date,
-      event_time: form.event_time,
-      venue: form.venue.trim(),
-      city: form.city.trim(),
-      description: form.description.trim() || undefined,
-      image_url: form.image_url.trim() || undefined,
-      status: form.status,
-      created_at: new Date().toISOString(),
-      tickets: [
-        { id: uid(), name: "Štandard", price: Number(form.base_price) || 0, quantity: Number(form.total_tickets) || 0 },
-      ],
-      sale_type: form.sale_type,
-      venue_layout_id: form.sale_type === "seating_map" ? form.venue_layout_id : undefined,
-      base_price: Number(form.base_price) || 0,
-      vip_price: Number(form.vip_price) || 0,
-      total_tickets: Number(form.total_tickets) || 0,
-    };
-    upsertEvent(item);
-    emit(EVENTS_EVENT);
-    setOpen(false);
-    toast.success("Podujatie vytvorené");
+    try {
+      await upsert.mutateAsync({
+        title: form.title.trim(),
+        category: form.category,
+        event_date: form.event_date,
+        event_time: form.event_time,
+        venue: form.venue.trim(),
+        city: form.city.trim(),
+        description: form.description.trim() || null,
+        image_url: form.image_url.trim() || null,
+        status: form.status,
+        sale_type: form.sale_type,
+        venue_layout_id: form.sale_type === "seating_map" ? form.venue_layout_id : null,
+        base_price: Number(form.base_price) || 0,
+        vip_price: Number(form.vip_price) || 0,
+        total_tickets: Number(form.total_tickets) || 0,
+        tickets: [
+          {
+            name: "Štandard",
+            price: Number(form.base_price) || 0,
+            quantity: Number(form.total_tickets) || 0,
+          },
+        ],
+      });
+      setOpen(false);
+      toast.success("Podujatie vytvorené");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Podujatie sa nepodarilo vytvoriť");
+    }
   };
 
-  const seedTest = () => {
+  const seedTest = async () => {
     if (layouts.length === 0) {
       toast.error("Najprv vytvor rozloženie haly v Editore hál.");
       return;
     }
     const layout = layouts[0];
-    const user = getCurrentUser();
-    const item: EventItem = {
-      id: uid(),
-      organizer_id: user?.id ?? "demo-organizer",
-      organizer_name: user?.full_name ?? "Demo Organizátor",
-      title: "Test koncert s mapou sedenia",
-      category: "Koncert",
-      event_date: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
-      event_time: "20:00",
-      venue: layout.name,
-      city: layout.city || "Bratislava",
-      description: "Testovacie podujatie vytvorené pre overenie celého predajného flow s mapou sedenia.",
-      image_url: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=80",
-      status: "published",
-      created_at: new Date().toISOString(),
-      tickets: [{ id: uid(), name: "Štandard", price: 25, quantity: 100 }],
-      sale_type: "seating_map",
-      venue_layout_id: layout.id,
-      base_price: 25,
-      vip_price: 55,
-      total_tickets: 100,
-    };
-    upsertEvent(item);
-    emit(EVENTS_EVENT);
-    toast.success("Testovacie podujatie vytvorené a publikované");
+    try {
+      await upsert.mutateAsync({
+        title: "Test koncert s mapou sedenia",
+        category: "Koncert",
+        event_date: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
+        event_time: "20:00",
+        venue: layout.name,
+        city: layout.city || "Bratislava",
+        description:
+          "Testovacie podujatie vytvorené pre overenie celého predajného flow s mapou sedenia.",
+        image_url: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=80",
+        status: "published",
+        sale_type: "seating_map",
+        venue_layout_id: layout.id,
+        base_price: 25,
+        vip_price: 55,
+        total_tickets: 100,
+        tickets: [{ name: "Štandard", price: 25, quantity: 100 }],
+      });
+      toast.success("Testovacie podujatie vytvorené a publikované");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Testovacie podujatie sa nepodarilo vytvoriť",
+      );
+    }
   };
 
   return (
@@ -246,22 +249,34 @@ function Page() {
                 <tr key={e.id} className="border-b border-border/20 hover:bg-muted/10">
                   <td className="p-3 font-medium">{e.title}</td>
                   <td className="p-3 text-muted-foreground">{e.category}</td>
-                  <td className="p-3 text-muted-foreground">{e.event_date} · {e.event_time}</td>
                   <td className="p-3 text-muted-foreground">
-                    {e.sale_type === "seating_map" ? "Mapa sedenia" : e.sale_type === "seating" ? "Sedenie" : e.sale_type === "standing" ? "Státie" : "—"}
+                    {e.event_date} · {e.event_time}
+                  </td>
+                  <td className="p-3 text-muted-foreground">
+                    {e.sale_type === "seating_map"
+                      ? "Mapa sedenia"
+                      : e.sale_type === "seating"
+                        ? "Sedenie"
+                        : e.sale_type === "standing"
+                          ? "Státie"
+                          : "—"}
                   </td>
                   <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                      e.status === "published"
-                        ? "bg-primary/15 text-primary border-primary/30"
-                        : "bg-muted text-muted-foreground border-border/50"
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        e.status === "published"
+                          ? "bg-primary/15 text-primary border-primary/30"
+                          : "bg-muted text-muted-foreground border-border/50"
+                      }`}
+                    >
                       {e.status === "published" ? "Publikované" : "Koncept"}
                     </span>
                   </td>
                   <td className="p-3 text-right space-x-1">
                     <Link to="/events/$id" params={{ id: e.id }} target="_blank">
-                      <Button size="sm" variant="ghost" className="gap-1"><ExternalLink className="size-3.5" /></Button>
+                      <Button size="sm" variant="ghost" className="gap-1">
+                        <ExternalLink className="size-3.5" />
+                      </Button>
                     </Link>
                     <Button
                       size="sm"
@@ -271,17 +286,31 @@ function Page() {
                       disabled={qrLoading === e.id}
                       title="Stiahnuť QR kódy predaných lístkov (PDF)"
                     >
-                      {qrLoading === e.id ? <Loader2 className="size-3.5 animate-spin" /> : <QrCode className="size-3.5" />}
+                      {qrLoading === e.id ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <QrCode className="size-3.5" />
+                      )}
                       QR lístky
                     </Button>
                     {e.status === "draft" ? (
-                      <Button size="sm" variant="outline" onClick={() => setStatus(e, "published")}>Publikovať</Button>
+                      <Button size="sm" variant="outline" onClick={() => setStatus(e, "published")}>
+                        Publikovať
+                      </Button>
                     ) : (
-                      <Button size="sm" variant="outline" onClick={() => setStatus(e, "draft")}>Stiahnuť</Button>
+                      <Button size="sm" variant="outline" onClick={() => setStatus(e, "draft")}>
+                        Stiahnuť
+                      </Button>
                     )}
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(e.id)}>Zmazať</Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => remove(e.id)}
+                    >
+                      Zmazať
+                    </Button>
                   </td>
-
                 </tr>
               ))}
             </tbody>
@@ -296,40 +325,83 @@ function Page() {
           </DialogHeader>
           <div className="grid sm:grid-cols-2 gap-4 py-2">
             <Field label="Názov podujatia" className="sm:col-span-2">
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
             </Field>
             <Field label="Kategória">
-              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.category}
+                onValueChange={(v) => setForm({ ...form, category: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
             <Field label="Organizátor">
-              <Input value={form.organizer_name} onChange={(e) => setForm({ ...form, organizer_name: e.target.value })} placeholder="Demo Organizátor" />
+              <Input
+                value={form.organizer_name}
+                onChange={(e) => setForm({ ...form, organizer_name: e.target.value })}
+                placeholder="Demo Organizátor"
+              />
             </Field>
             <Field label="Dátum">
-              <Input type="date" value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
+              <Input
+                type="date"
+                value={form.event_date}
+                onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+              />
             </Field>
             <Field label="Čas začiatku">
-              <Input type="time" value={form.event_time} onChange={(e) => setForm({ ...form, event_time: e.target.value })} />
+              <Input
+                type="time"
+                value={form.event_time}
+                onChange={(e) => setForm({ ...form, event_time: e.target.value })}
+              />
             </Field>
             <Field label="Miesto konania">
-              <Input value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} />
+              <Input
+                value={form.venue}
+                onChange={(e) => setForm({ ...form, venue: e.target.value })}
+              />
             </Field>
             <Field label="Mesto">
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+              <Input
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+              />
             </Field>
             <Field label="URL obrázka" className="sm:col-span-2">
-              <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://…" />
+              <Input
+                value={form.image_url}
+                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                placeholder="https://…"
+              />
             </Field>
             <Field label="Popis" className="sm:col-span-2">
-              <Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
             </Field>
             <Field label="Stav">
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as "draft" | "published" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.status}
+                onValueChange={(v) => setForm({ ...form, status: v as "draft" | "published" })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Koncept</SelectItem>
                   <SelectItem value="published">Publikované</SelectItem>
@@ -337,8 +409,13 @@ function Page() {
               </Select>
             </Field>
             <Field label="Typ predaja">
-              <Select value={form.sale_type} onValueChange={(v) => setForm({ ...form, sale_type: v as SaleType })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.sale_type}
+                onValueChange={(v) => setForm({ ...form, sale_type: v as SaleType })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="standing">Státie</SelectItem>
                   <SelectItem value="seating">Sedenie</SelectItem>
@@ -350,31 +427,66 @@ function Page() {
               <Field label="Rozloženie haly" className="sm:col-span-2">
                 {layouts.length === 0 ? (
                   <div className="text-xs text-destructive">
-                    Žiadne rozloženie. Vytvor ho v <Link to="/admin/events/venue-layouts" className="underline">Editore hál</Link>.
+                    Žiadne rozloženie. Vytvor ho v{" "}
+                    <Link to="/admin/events/venue-layouts" className="underline">
+                      Editore hál
+                    </Link>
+                    .
                   </div>
                 ) : (
-                  <Select value={form.venue_layout_id} onValueChange={(v) => setForm({ ...form, venue_layout_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Vyber rozloženie" /></SelectTrigger>
+                  <Select
+                    value={form.venue_layout_id}
+                    onValueChange={(v) => setForm({ ...form, venue_layout_id: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyber rozloženie" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {layouts.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                      {layouts.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
               </Field>
             )}
             <Field label="Cena vstupenky (€)">
-              <Input type="number" min={0} step={0.5} value={form.base_price} onChange={(e) => setForm({ ...form, base_price: e.target.value })} />
+              <Input
+                type="number"
+                min={0}
+                step={0.5}
+                value={form.base_price}
+                onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+              />
             </Field>
             <Field label="VIP cena (€)">
-              <Input type="number" min={0} step={0.5} value={form.vip_price} onChange={(e) => setForm({ ...form, vip_price: e.target.value })} />
+              <Input
+                type="number"
+                min={0}
+                step={0.5}
+                value={form.vip_price}
+                onChange={(e) => setForm({ ...form, vip_price: e.target.value })}
+              />
             </Field>
             <Field label="Počet vstupeniek">
-              <Input type="number" min={0} step={1} value={form.total_tickets} onChange={(e) => setForm({ ...form, total_tickets: e.target.value })} />
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                value={form.total_tickets}
+                onChange={(e) => setForm({ ...form, total_tickets: e.target.value })}
+              />
             </Field>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Zrušiť</Button>
-            <Button onClick={submit} className="bg-gradient-flame text-primary-foreground">Uložiť podujatie</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Zrušiť
+            </Button>
+            <Button onClick={submit} className="bg-gradient-flame text-primary-foreground">
+              Uložiť podujatie
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -382,7 +494,15 @@ function Page() {
   );
 }
 
-function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`space-y-1.5 ${className}`}>
       <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>

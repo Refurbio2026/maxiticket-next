@@ -35,7 +35,11 @@ function OrganizerLayout() {
 
   return (
     <div className="">
-      <SidebarProvider style={{ "--sidebar-width": "16rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties}>
+      <SidebarProvider
+        style={
+          { "--sidebar-width": "16rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties
+        }
+      >
         <div className="flex min-h-screen w-full bg-background text-foreground">
           <OrganizerSidebar />
           <SidebarInset className="flex flex-1 flex-col">
@@ -44,12 +48,23 @@ function OrganizerLayout() {
               <div className="ml-auto flex items-center gap-2">
                 <ThemeToggle />
                 <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
-                  <Link to="/organizer/pos"><ShoppingCart className="size-4 mr-2" /> {t("organizer.pos")}</Link>
+                  <Link to="/organizer/pos">
+                    <ShoppingCart className="size-4 mr-2" /> {t("organizer.pos")}
+                  </Link>
                 </Button>
                 <Button asChild variant="ghost" size="sm">
-                  <Link to="/account"><User className="size-4 mr-1.5" /> {user.full_name || user.email}</Link>
+                  <Link to="/account">
+                    <User className="size-4 mr-1.5" /> {user.full_name || user.email}
+                  </Link>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate({ to: "/login", replace: true }); }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    await signOut();
+                    navigate({ to: "/login", replace: true });
+                  }}
+                >
                   <LogOut className="size-4 mr-1.5" /> {t("organizer.signOut")}
                 </Button>
               </div>

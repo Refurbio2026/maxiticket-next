@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  getWalletSettings, setWalletSettings, isAppleConfigured, isGoogleConfigured,
+  getWalletSettings,
+  setWalletSettings,
+  isAppleConfigured,
+  isGoogleConfigured,
   type WalletSettings,
 } from "@/lib/wallet-db";
 import { Card } from "@/components/ui/card";
@@ -11,9 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import {
-  Smartphone, Wallet, ShieldCheck, CheckCircle2, AlertCircle, Upload,
-} from "lucide-react";
+import { Smartphone, Wallet, ShieldCheck, CheckCircle2, AlertCircle, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/admin/system/wallet")({
   head: () => ({ meta: [{ title: "Wallet nastavenia · Admin · vipky.sk" }] }),
@@ -52,12 +53,10 @@ function WalletSettingsPage() {
   return (
     <div className="p-6 lg:p-10 max-w-4xl mx-auto space-y-8">
       <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">
-          Wallet nastavenia
-        </h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">Wallet nastavenia</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Konfigurácia Apple Wallet a Google Wallet pre digitálne vstupenky.
-          Reálne podpisovanie sa aktivuje po dodaní certifikátov a service accountu.
+          Konfigurácia Apple Wallet a Google Wallet pre digitálne vstupenky. Reálne podpisovanie sa
+          aktivuje po dodaní certifikátov a service accountu.
         </p>
       </header>
 
@@ -140,9 +139,8 @@ function WalletSettingsPage() {
         </div>
 
         <div className="text-xs text-muted-foreground bg-muted/40 border border-border/50 rounded-md p-3">
-          <strong className="text-foreground">Ako získať certifikáty:</strong>
-          {" "}developer.apple.com → Certificates → Pass Type ID Certificate. Vyžaduje
-          Apple Developer účet ($99/rok).
+          <strong className="text-foreground">Ako získať certifikáty:</strong> developer.apple.com →
+          Certificates → Pass Type ID Certificate. Vyžaduje Apple Developer účet ($99/rok).
         </div>
       </Card>
 
@@ -182,18 +180,14 @@ function WalletSettingsPage() {
           <Field label="Issuer ID" hint="schvaľuje Google (pay.google.com/business/console)">
             <Input
               value={s.google.issuer_id}
-              onChange={(e) =>
-                save({ ...s, google: { ...s.google, issuer_id: e.target.value } })
-              }
+              onChange={(e) => save({ ...s, google: { ...s.google, issuer_id: e.target.value } })}
               placeholder="3388000000022..."
             />
           </Field>
           <Field label="Issuer Name" hint="zobrazí sa v Google Wallet">
             <Input
               value={s.google.issuer_name}
-              onChange={(e) =>
-                save({ ...s, google: { ...s.google, issuer_name: e.target.value } })
-              }
+              onChange={(e) => save({ ...s, google: { ...s.google, issuer_name: e.target.value } })}
             />
           </Field>
         </div>
@@ -204,14 +198,12 @@ function WalletSettingsPage() {
           label="Service Account JSON"
           uploaded={s.google.service_account_uploaded}
           onUpload={() => fakeUpload("google_sa")}
-          onRemove={() =>
-            save({ ...s, google: { ...s.google, service_account_uploaded: false } })
-          }
+          onRemove={() => save({ ...s, google: { ...s.google, service_account_uploaded: false } })}
         />
 
         <div className="text-xs text-muted-foreground bg-muted/40 border border-border/50 rounded-md p-3">
-          <strong className="text-foreground">Ako získať Issuer ID:</strong>
-          {" "}pay.google.com/business/console → Žiadosť o Issuer account. Trvá 1–3 dni.
+          <strong className="text-foreground">Ako získať Issuer ID:</strong>{" "}
+          pay.google.com/business/console → Žiadosť o Issuer account. Trvá 1–3 dni.
         </div>
       </Card>
 
@@ -258,13 +250,17 @@ function StatusBadge({ ok }: { ok: boolean }) {
 }
 
 function Field({
-  label, hint, children,
-}: { label: string; hint?: string; children: React.ReactNode }) {
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </Label>
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
       {children}
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
@@ -272,7 +268,10 @@ function Field({
 }
 
 function CertRow({
-  label, uploaded, onUpload, onRemove,
+  label,
+  uploaded,
+  onUpload,
+  onRemove,
 }: {
   label: string;
   uploaded: boolean;
@@ -285,9 +284,7 @@ function CertRow({
         <div
           className={
             "size-8 rounded-md grid place-items-center shrink-0 " +
-            (uploaded
-              ? "bg-emerald-500/15 text-emerald-500"
-              : "bg-muted text-muted-foreground")
+            (uploaded ? "bg-emerald-500/15 text-emerald-500" : "bg-muted text-muted-foreground")
           }
         >
           {uploaded ? <CheckCircle2 className="size-4" /> : <Upload className="size-4" />}

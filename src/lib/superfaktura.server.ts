@@ -3,7 +3,10 @@
 // Docs: https://github.com/superfaktura/docs
 
 function env() {
-  const apiUrl = (process.env.SUPERFAKTURA_API_URL || "https://moja.superfaktura.sk").replace(/\/+$/, "");
+  const apiUrl = (process.env.SUPERFAKTURA_API_URL || "https://moja.superfaktura.sk").replace(
+    /\/+$/,
+    "",
+  );
   const email = process.env.SUPERFAKTURA_EMAIL;
   const apiKey = process.env.SUPERFAKTURA_API_KEY;
   const companyId = process.env.SUPERFAKTURA_COMPANY_ID;
@@ -109,6 +112,8 @@ export async function createPaidInvoice(input: SfInvoiceInput): Promise<SfInvoic
   const invoiceId = String(inv.id);
   const invoiceNumber = String(inv.invoice_no_formatted || inv.invoice_no || inv.id);
   const token = inv.token;
-  const pdfUrl = token ? `${apiUrl}/invoices/pdf/${invoiceId}/token:${token}` : `${apiUrl}/invoices/pdf/${invoiceId}`;
+  const pdfUrl = token
+    ? `${apiUrl}/invoices/pdf/${invoiceId}/token:${token}`
+    : `${apiUrl}/invoices/pdf/${invoiceId}`;
   return { invoice_id: invoiceId, invoice_number: invoiceNumber, pdf_url: pdfUrl, raw: data };
 }

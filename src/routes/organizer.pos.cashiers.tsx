@@ -3,9 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
-  getCashiersForOrganizer, upsertCashier, deleteCashier, setCashierStatus,
-  resetCashierPin, hashPin, ALL_PERMISSIONS,
-  type Cashier, type CashierPermission,
+  getCashiersForOrganizer,
+  upsertCashier,
+  deleteCashier,
+  setCashierStatus,
+  resetCashierPin,
+  hashPin,
+  ALL_PERMISSIONS,
+  type Cashier,
+  type CashierPermission,
 } from "@/lib/cashier-db";
 import { getSales, POS_EVENT, type PosSale } from "@/lib/pos-db";
 import { uid } from "@/lib/local-db";
@@ -16,12 +22,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  History, KeyRound, Pencil, Plus, Power, Trash2, Users,
-} from "lucide-react";
+import { History, KeyRound, Pencil, Plus, Power, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/cashiers")({
@@ -72,30 +81,43 @@ function CashiersPage() {
     return () => window.removeEventListener(POS_EVENT, h);
   }, []);
 
-  const startCreate = () => { setEditing(null); setForm(EMPTY_FORM); setOpen(true); };
+  const startCreate = () => {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setOpen(true);
+  };
   const startEdit = (c: Cashier) => {
     setEditing(c);
     setForm({
-      first_name: c.first_name, last_name: c.last_name, display_name: c.display_name,
-      pin: "", status: c.status, permissions: c.permissions,
+      first_name: c.first_name,
+      last_name: c.last_name,
+      display_name: c.display_name,
+      pin: "",
+      status: c.status,
+      permissions: c.permissions,
     });
     setOpen(true);
   };
 
   const save = async () => {
     if (!user) return;
-    if (!form.first_name || !form.last_name) return toast.error(t("orgPosCashiers.errNameRequired"));
+    if (!form.first_name || !form.last_name)
+      return toast.error(t("orgPosCashiers.errNameRequired"));
     if (!form.display_name) return toast.error(t("orgPosCashiers.errDisplayNameRequired"));
     if (!editing && form.pin.length < 4) return toast.error(t("orgPosCashiers.errPinMin4"));
-    if (editing && form.pin && form.pin.length < 4) return toast.error(t("orgPosCashiers.errNewPinMin4"));
+    if (editing && form.pin && form.pin.length < 4)
+      return toast.error(t("orgPosCashiers.errNewPinMin4"));
 
     const now = new Date().toISOString();
     if (editing) {
       const next: Cashier = {
         ...editing,
-        first_name: form.first_name, last_name: form.last_name,
-        display_name: form.display_name, status: form.status,
-        permissions: form.permissions, updated_at: now,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        display_name: form.display_name,
+        status: form.status,
+        permissions: form.permissions,
+        updated_at: now,
       };
       if (form.pin) next.pin_hash = await hashPin(form.pin);
       upsertCashier(next);
@@ -103,26 +125,36 @@ function CashiersPage() {
     } else {
       const pin_hash = await hashPin(form.pin);
       upsertCashier({
-        id: uid(), organizer_id: user.id,
-        first_name: form.first_name, last_name: form.last_name,
-        display_name: form.display_name, pin_hash,
-        status: form.status, permissions: form.permissions,
-        created_at: now, updated_at: now,
+        id: uid(),
+        organizer_id: user.id,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        display_name: form.display_name,
+        pin_hash,
+        status: form.status,
+        permissions: form.permissions,
+        created_at: now,
+        updated_at: now,
       });
       toast.success(t("orgPosCashiers.created"));
     }
-    setOpen(false); setEditing(null); setForm(EMPTY_FORM);
+    setOpen(false);
+    setEditing(null);
+    setForm(EMPTY_FORM);
   };
 
   const remove = (c: Cashier) => {
     if (!confirm(t("orgPosCashiers.confirmDelete", { name: c.display_name }))) return;
-    deleteCashier(c.id); toast.success(t("orgPosCashiers.deleted"));
+    deleteCashier(c.id);
+    toast.success(t("orgPosCashiers.deleted"));
   };
 
   const toggleStatus = (c: Cashier) => {
     const next: "active" | "inactive" = c.status === "active" ? "inactive" : "active";
     setCashierStatus(c.id, next);
-    toast.success(next === "active" ? t("orgPosCashiers.activated") : t("orgPosCashiers.deactivated"));
+    toast.success(
+      next === "active" ? t("orgPosCashiers.activated") : t("orgPosCashiers.deactivated"),
+    );
   };
 
   const submitReset = async () => {
@@ -130,11 +162,12 @@ function CashiersPage() {
     if (newPin.length < 4) return toast.error(t("orgPosCashiers.errPinMin4"));
     await resetCashierPin(resetFor.id, newPin);
     toast.success(t("orgPosCashiers.pinReset"));
-    setResetFor(null); setNewPin("");
+    setResetFor(null);
+    setNewPin("");
   };
 
   const historySales = useMemo(
-    () => historyFor ? sales.filter((s) => s.cashier_id === historyFor.id).slice(0, 100) : [],
+    () => (historyFor ? sales.filter((s) => s.cashier_id === historyFor.id).slice(0, 100) : []),
     [historyFor, sales],
   );
 
@@ -151,12 +184,15 @@ function CashiersPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosCashiers.title")}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t("orgPosCashiers.subtitle")}
-          </p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">
+            {t("orgPosCashiers.title")}
+          </h1>
+          <p className="text-muted-foreground mt-1">{t("orgPosCashiers.subtitle")}</p>
         </div>
-        <Button onClick={startCreate} className="bg-gradient-flame text-primary-foreground shadow-glow">
+        <Button
+          onClick={startCreate}
+          className="bg-gradient-flame text-primary-foreground shadow-glow"
+        >
           <Plus className="size-4 mr-2" /> {t("orgPosCashiers.addButton")}
         </Button>
       </div>
@@ -166,7 +202,10 @@ function CashiersPage() {
           <div className="text-center py-12">
             <Users className="size-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">{t("orgPosCashiers.empty")}</p>
-            <Button onClick={startCreate} className="mt-4 bg-gradient-flame text-primary-foreground shadow-glow">
+            <Button
+              onClick={startCreate}
+              className="mt-4 bg-gradient-flame text-primary-foreground shadow-glow"
+            >
               <Plus className="size-4 mr-2" /> {t("orgPosCashiers.addFirstButton")}
             </Button>
           </div>
@@ -189,40 +228,96 @@ function CashiersPage() {
                   return (
                     <tr key={c.id} className="border-b border-border/30">
                       <td className="py-2">
-                        <div className="font-medium">{c.first_name} {c.last_name}</div>
-                        <div className="text-xs text-muted-foreground">{t("orgPosCashiers.updatedAt", { date: new Date(c.updated_at).toLocaleDateString("sk-SK") })}</div>
+                        <div className="font-medium">
+                          {c.first_name} {c.last_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {t("orgPosCashiers.updatedAt", {
+                            date: new Date(c.updated_at).toLocaleDateString("sk-SK"),
+                          })}
+                        </div>
                       </td>
                       <td className="font-mono text-xs">{c.display_name}</td>
                       <td className="text-xs">
                         <div className="flex flex-wrap gap-1 max-w-[260px]">
                           {c.permissions.length === 0 ? (
-                            <span className="text-muted-foreground">{t("orgPosCashiers.noPermissions")}</span>
-                          ) : c.permissions.map((p) => (
-                            <Badge key={p} variant="outline" className="text-[10px]">{p}</Badge>
-                          ))}
+                            <span className="text-muted-foreground">
+                              {t("orgPosCashiers.noPermissions")}
+                            </span>
+                          ) : (
+                            c.permissions.map((p) => (
+                              <Badge key={p} variant="outline" className="text-[10px]">
+                                {p}
+                              </Badge>
+                            ))
+                          )}
                         </div>
                       </td>
                       <td>
-                        <Badge variant={c.status === "active" ? "default" : "destructive"} className="text-[10px]">
-                          {c.status === "active" ? t("orgPosCashiers.statusActive") : t("orgPosCashiers.statusInactive")}
+                        <Badge
+                          variant={c.status === "active" ? "default" : "destructive"}
+                          className="text-[10px]"
+                        >
+                          {c.status === "active"
+                            ? t("orgPosCashiers.statusActive")
+                            : t("orgPosCashiers.statusInactive")}
                         </Badge>
                       </td>
                       <td className="text-right text-xs">{count}</td>
                       <td>
                         <div className="flex gap-1 justify-end">
-                          <Button size="icon" variant="ghost" className="size-7" title={t("orgPosCashiers.titleHistory")} onClick={() => setHistoryFor(c)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-7"
+                            title={t("orgPosCashiers.titleHistory")}
+                            onClick={() => setHistoryFor(c)}
+                          >
                             <History className="size-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7" title={t("orgPosCashiers.titleResetPin")} onClick={() => { setResetFor(c); setNewPin(""); }}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-7"
+                            title={t("orgPosCashiers.titleResetPin")}
+                            onClick={() => {
+                              setResetFor(c);
+                              setNewPin("");
+                            }}
+                          >
                             <KeyRound className="size-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7" title={c.status === "active" ? t("orgPosCashiers.titleDeactivate") : t("orgPosCashiers.titleActivate")} onClick={() => toggleStatus(c)}>
-                            <Power className={`size-3.5 ${c.status === "active" ? "text-primary" : "text-muted-foreground"}`} />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-7"
+                            title={
+                              c.status === "active"
+                                ? t("orgPosCashiers.titleDeactivate")
+                                : t("orgPosCashiers.titleActivate")
+                            }
+                            onClick={() => toggleStatus(c)}
+                          >
+                            <Power
+                              className={`size-3.5 ${c.status === "active" ? "text-primary" : "text-muted-foreground"}`}
+                            />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7" title={t("orgPosCashiers.titleEdit")} onClick={() => startEdit(c)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-7"
+                            title={t("orgPosCashiers.titleEdit")}
+                            onClick={() => startEdit(c)}
+                          >
                             <Pencil className="size-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-7 text-destructive" title={t("orgPosCashiers.titleDelete")} onClick={() => remove(c)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-7 text-destructive"
+                            title={t("orgPosCashiers.titleDelete")}
+                            onClick={() => remove(c)}
+                          >
                             <Trash2 className="size-3.5" />
                           </Button>
                         </div>
@@ -240,25 +335,41 @@ function CashiersPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing ? t("orgPosCashiers.dialogEditTitle") : t("orgPosCashiers.dialogNewTitle")}</DialogTitle>
+            <DialogTitle>
+              {editing ? t("orgPosCashiers.dialogEditTitle") : t("orgPosCashiers.dialogNewTitle")}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{t("orgPosCashiers.labelFirstName")}</Label>
-                <Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+                <Input
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
               </div>
               <div>
                 <Label>{t("orgPosCashiers.labelLastName")}</Label>
-                <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+                <Input
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
               </div>
             </div>
             <div>
               <Label>{t("orgPosCashiers.labelDisplayName")}</Label>
-              <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder={t("orgPosCashiers.displayNamePlaceholder")} />
+              <Input
+                value={form.display_name}
+                onChange={(e) => setForm({ ...form, display_name: e.target.value })}
+                placeholder={t("orgPosCashiers.displayNamePlaceholder")}
+              />
             </div>
             <div>
-              <Label>{editing ? t("orgPosCashiers.labelNewPinOptional") : t("orgPosCashiers.labelPinCode")}</Label>
+              <Label>
+                {editing
+                  ? t("orgPosCashiers.labelNewPinOptional")
+                  : t("orgPosCashiers.labelPinCode")}
+              </Label>
               <Input
                 type="password"
                 inputMode="numeric"
@@ -273,7 +384,9 @@ function CashiersPage() {
             <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
               <div>
                 <Label className="cursor-pointer">{t("orgPosCashiers.labelActive")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("orgPosCashiers.activeNote")}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("orgPosCashiers.activeNote")}
+                </p>
               </div>
               <Switch
                 checked={form.status === "active"}
@@ -284,7 +397,10 @@ function CashiersPage() {
               <Label>{t("orgPosCashiers.labelPermissions")}</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {ALL_PERMISSIONS.map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 cursor-pointer hover:bg-muted/40">
+                  <label
+                    key={key}
+                    className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 cursor-pointer hover:bg-muted/40"
+                  >
                     <Checkbox
                       checked={form.permissions.includes(key)}
                       onCheckedChange={() => togglePerm(key)}
@@ -296,8 +412,13 @@ function CashiersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>{t("orgPosCashiers.cancel")}</Button>
-            <Button onClick={save} className="bg-gradient-flame text-primary-foreground shadow-glow">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              {t("orgPosCashiers.cancel")}
+            </Button>
+            <Button
+              onClick={save}
+              className="bg-gradient-flame text-primary-foreground shadow-glow"
+            >
               {editing ? t("orgPosCashiers.saveChanges") : t("orgPosCashiers.createCashier")}
             </Button>
           </DialogFooter>
@@ -308,7 +429,9 @@ function CashiersPage() {
       <Dialog open={!!resetFor} onOpenChange={(o) => !o && setResetFor(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t("orgPosCashiers.resetPinTitle", { name: resetFor?.display_name })}</DialogTitle>
+            <DialogTitle>
+              {t("orgPosCashiers.resetPinTitle", { name: resetFor?.display_name })}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-2 py-2">
             <Label>{t("orgPosCashiers.labelNewPin")}</Label>
@@ -322,8 +445,13 @@ function CashiersPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResetFor(null)}>{t("orgPosCashiers.cancel")}</Button>
-            <Button onClick={submitReset} className="bg-gradient-flame text-primary-foreground shadow-glow">
+            <Button variant="outline" onClick={() => setResetFor(null)}>
+              {t("orgPosCashiers.cancel")}
+            </Button>
+            <Button
+              onClick={submitReset}
+              className="bg-gradient-flame text-primary-foreground shadow-glow"
+            >
               {t("orgPosCashiers.saveNewPin")}
             </Button>
           </DialogFooter>
@@ -334,10 +462,14 @@ function CashiersPage() {
       <Dialog open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("orgPosCashiers.historyTitle", { name: historyFor?.display_name })}</DialogTitle>
+            <DialogTitle>
+              {t("orgPosCashiers.historyTitle", { name: historyFor?.display_name })}
+            </DialogTitle>
           </DialogHeader>
           {historySales.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">{t("orgPosCashiers.noSales")}</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              {t("orgPosCashiers.noSales")}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border/50">
@@ -359,8 +491,13 @@ function CashiersPage() {
                     <td className="capitalize">{s.payment_method}</td>
                     <td className="text-right">€{s.total.toFixed(2)}</td>
                     <td>
-                      <Badge variant={s.status === "paid" ? "default" : "destructive"} className="text-[10px]">
-                        {s.status === "paid" ? t("orgPosCashiers.statusPaid") : t("orgPosCashiers.statusVoid")}
+                      <Badge
+                        variant={s.status === "paid" ? "default" : "destructive"}
+                        className="text-[10px]"
+                      >
+                        {s.status === "paid"
+                          ? t("orgPosCashiers.statusPaid")
+                          : t("orgPosCashiers.statusVoid")}
                       </Badge>
                     </td>
                   </tr>

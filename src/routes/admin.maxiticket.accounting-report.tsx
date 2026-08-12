@@ -2,8 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  LineChart, Line, PieChart, Pie, Cell, Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 import { listAccounts, listTransactions } from "@/lib/bank-db";
 
@@ -21,8 +32,12 @@ function Page() {
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const today = new Date().toDateString();
-  const todayIncome = txs.filter((t) => new Date(t.date).toDateString() === today).reduce((s, t) => s + t.amount, 0);
-  const monthIncome = txs.filter((t) => new Date(t.date).getMonth() === new Date().getMonth()).reduce((s, t) => s + t.amount, 0);
+  const todayIncome = txs
+    .filter((t) => new Date(t.date).toDateString() === today)
+    .reduce((s, t) => s + t.amount, 0);
+  const monthIncome = txs
+    .filter((t) => new Date(t.date).getMonth() === new Date().getMonth())
+    .reduce((s, t) => s + t.amount, 0);
   const unmatched = txs.filter((t) => t.matchStatus === "unmatched");
 
   // by day
@@ -46,7 +61,8 @@ function Page() {
       map.set(k, (map.get(k) ?? 0) + t.amount);
     });
     return Array.from(map.entries()).map(([organizer, amount]) => ({
-      organizer, amount: +amount.toFixed(2),
+      organizer,
+      amount: +amount.toFixed(2),
     }));
   }, [txs]);
 
@@ -58,9 +74,12 @@ function Page() {
       const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       map.set(k, (map.get(k) ?? 0) + t.amount);
     });
-    return Array.from(map.entries()).sort().map(([month, amount]) => ({
-      month, amount: +amount.toFixed(2),
-    }));
+    return Array.from(map.entries())
+      .sort()
+      .map(([month, amount]) => ({
+        month,
+        amount: +amount.toFixed(2),
+      }));
   }, [txs]);
 
   const matchPie = useMemo(() => {
@@ -78,20 +97,55 @@ function Page() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Účtovanie · report</h1>
-        <p className="text-sm text-muted-foreground">Bankové reporty a analytika prijatých platieb.</p>
+        <p className="text-sm text-muted-foreground">
+          Bankové reporty a analytika prijatých platieb.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Stav účtov</p><p className="text-xl font-semibold">{totalBalance.toLocaleString("sk-SK", { style: "currency", currency: "EUR" })}</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Dnešné príjmy</p><p className="text-xl font-semibold">{todayIncome.toLocaleString("sk-SK", { style: "currency", currency: "EUR" })}</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Príjmy za mesiac</p><p className="text-xl font-semibold">{monthIncome.toLocaleString("sk-SK", { style: "currency", currency: "EUR" })}</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Nespárované</p><p className="text-xl font-semibold text-destructive">{unmatched.length}</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Transakcie</p><p className="text-xl font-semibold">{txs.length}</p></CardContent></Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Stav účtov</p>
+            <p className="text-xl font-semibold">
+              {totalBalance.toLocaleString("sk-SK", { style: "currency", currency: "EUR" })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Dnešné príjmy</p>
+            <p className="text-xl font-semibold">
+              {todayIncome.toLocaleString("sk-SK", { style: "currency", currency: "EUR" })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Príjmy za mesiac</p>
+            <p className="text-xl font-semibold">
+              {monthIncome.toLocaleString("sk-SK", { style: "currency", currency: "EUR" })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Nespárované</p>
+            <p className="text-xl font-semibold text-destructive">{unmatched.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Transakcie</p>
+            <p className="text-xl font-semibold">{txs.length}</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="text-base">Prijaté platby podľa dní</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Prijaté platby podľa dní</CardTitle>
+          </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer>
               <BarChart data={byDay}>
@@ -106,7 +160,9 @@ function Page() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Bankové príjmy podľa mesiaca</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Bankové príjmy podľa mesiaca</CardTitle>
+          </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer>
               <LineChart data={byMonth}>
@@ -114,14 +170,21 @@ function Page() {
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Line type="monotone" dataKey="amount" stroke="hsl(var(--primary))" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Platby podľa organizátora</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Platby podľa organizátora</CardTitle>
+          </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer>
               <BarChart data={byOrganizer} layout="vertical">
@@ -136,12 +199,16 @@ function Page() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Stav párovania</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Stav párovania</CardTitle>
+          </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer>
               <PieChart>
                 <Pie data={matchPie} dataKey="value" nameKey="name" outerRadius={90} label>
-                  {matchPie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  {matchPie.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
                 </Pie>
                 <Legend />
                 <Tooltip />

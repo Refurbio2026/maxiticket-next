@@ -2,8 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
-import { getSales, getFiscalReceipts, getTickets, POS_EVENT, voidSale, logAudit, type PosSale, type FiscalReceipt, type PosTicket } from "@/lib/pos-db";
-import { getEvents, type EventItem } from "@/lib/local-db";
+import {
+  getSales,
+  getFiscalReceipts,
+  getTickets,
+  POS_EVENT,
+  voidSale,
+  logAudit,
+  type PosSale,
+  type FiscalReceipt,
+  type PosTicket,
+} from "@/lib/pos-db";
+import { useEvents } from "@/hooks/use-events";
 import { orpAdapter } from "@/lib/fiscal-adapter";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { printTickets } from "@/lib/print-tickets";
@@ -11,7 +21,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Ban, FileDown, Search, Receipt, Printer, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,7 +42,7 @@ function SalesPage() {
   const [sales, setSales] = useState<PosSale[]>([]);
   const [receipts, setReceipts] = useState<FiscalReceipt[]>([]);
   const [tickets, setTickets] = useState<PosTicket[]>([]);
-  const [events, setEvents] = useState<EventItem[]>([]);
+  const { data: events = [] } = useEvents({ scope: "mine" });
   const [detail, setDetail] = useState<PosSale | null>(null);
   const [q, setQ] = useState("");
   const [tick, setTick] = useState(0);
@@ -36,7 +52,6 @@ function SalesPage() {
     setSales(getSales().filter((s) => user.role === "admin" || s.organizer_id === user.id));
     setReceipts(getFiscalReceipts());
     setTickets(getTickets());
-    setEvents(getEvents());
   }, [user, tick]);
 
   const receiptById = (id?: string) => (id ? receipts.find((r) => r.id === id) : undefined);
@@ -50,18 +65,41 @@ function SalesPage() {
   const filtered = sales.filter((s) => {
     if (!q) return true;
     const k = q.toLowerCase();
-    return s.receipt_number.toLowerCase().includes(k) || s.event_title.toLowerCase().includes(k) || s.cashier_name.toLowerCase().includes(k);
+    return (
+      s.receipt_number.toLowerCase().includes(k) ||
+      s.event_title.toLowerCase().includes(k) ||
+      s.cashier_name.toLowerCase().includes(k)
+    );
   });
 
   const exportCsv = () => {
     const rows = [
-      [t("orgPosSales.csvReceipt"), t("orgPosSales.csvDate"), t("orgPosSales.csvEvent"), t("orgPosSales.csvPayment"), t("orgPosSales.csvTotal"), t("orgPosSales.csvStatus"), t("orgPosSales.csvCashier")],
-      ...filtered.map((s) => [s.receipt_number, s.created_at, s.event_title, s.payment_method, s.total.toFixed(2), s.status, s.cashier_name]),
+      [
+        t("orgPosSales.csvReceipt"),
+        t("orgPosSales.csvDate"),
+        t("orgPosSales.csvEvent"),
+        t("orgPosSales.csvPayment"),
+        t("orgPosSales.csvTotal"),
+        t("orgPosSales.csvStatus"),
+        t("orgPosSales.csvCashier"),
+      ],
+      ...filtered.map((s) => [
+        s.receipt_number,
+        s.created_at,
+        s.event_title,
+        s.payment_method,
+        s.total.toFixed(2),
+        s.status,
+        s.cashier_name,
+      ]),
     ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    a.download = `predaje.csv`; a.click();
+    a.download = `predaje.csv`;
+    a.click();
   };
 
   const onVoid = async (id: string) => {
@@ -71,7 +109,14 @@ function SalesPage() {
     voidSale(id, reason);
     if (sale?.fiscal_receipt_id) await orpAdapter.cancelReceipt(sale.fiscal_receipt_id);
     if (sale?.terminal_tx_id) await paymentTerminal.cancelPayment(sale.terminal_tx_id);
-    logAudit({ user_id: user.id, user_name: user.full_name || user.email, action: "pos.void", entity: "pos_sales", entity_id: id, meta: { reason } });
+    logAudit({
+      user_id: user.id,
+      user_name: user.full_name || user.email,
+      action: "pos.void",
+      entity: "pos_sales",
+      entity_id: id,
+      meta: { reason },
+    });
     toast.success(t("orgPosSales.voidSuccess"));
   };
 
@@ -79,15 +124,24 @@ function SalesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosSales.title")}</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight">
+            {t("orgPosSales.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("orgPosSales.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input placeholder={t("orgPosSales.searchPlaceholder")} value={q} onChange={(e) => setQ(e.target.value)} className="pl-9 w-72" />
+            <Input
+              placeholder={t("orgPosSales.searchPlaceholder")}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-9 w-72"
+            />
           </div>
-          <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> {t("orgPosSales.csvButton")}</Button>
+          <Button variant="outline" onClick={exportCsv}>
+            <FileDown className="size-4 mr-2" /> {t("orgPosSales.csvButton")}
+          </Button>
         </div>
       </div>
 
@@ -121,42 +175,64 @@ function SalesPage() {
                 {filtered.map((s) => {
                   const r = receiptById(s.fiscal_receipt_id);
                   return (
-                  <tr key={s.id} className="border-b border-border/30">
-                    <td className="py-2 font-mono text-xs">{s.receipt_number}</td>
-                    <td className="text-xs">{new Date(s.created_at).toLocaleString("sk-SK")}</td>
-                    <td className="truncate max-w-[200px]">{s.event_title}</td>
-                    <td className="text-xs text-muted-foreground">{s.cashier_name}</td>
-                    <td className="capitalize">{s.payment_method}</td>
-                    <td className="text-right">€{s.total.toFixed(2)}</td>
-                    <td>
-                      <Badge variant={s.status === "paid" ? "default" : "destructive"} className="text-[10px]">
-                        {s.status === "paid" ? t("orgPosSales.statusPaid") : t("orgPosSales.statusVoid")}
-                      </Badge>
-                    </td>
-                    <td className="font-mono text-[11px]">{r?.receipt_number || "—"}</td>
-                    <td>
-                      {r ? (
-                        <Badge variant={r.status === "issued" ? "default" : "destructive"} className="text-[10px]">
-                          {r.status === "issued" ? t("orgPosSales.fiscalIssued") : t("orgPosSales.fiscalVoided")}
+                    <tr key={s.id} className="border-b border-border/30">
+                      <td className="py-2 font-mono text-xs">{s.receipt_number}</td>
+                      <td className="text-xs">{new Date(s.created_at).toLocaleString("sk-SK")}</td>
+                      <td className="truncate max-w-[200px]">{s.event_title}</td>
+                      <td className="text-xs text-muted-foreground">{s.cashier_name}</td>
+                      <td className="capitalize">{s.payment_method}</td>
+                      <td className="text-right">€{s.total.toFixed(2)}</td>
+                      <td>
+                        <Badge
+                          variant={s.status === "paid" ? "default" : "destructive"}
+                          className="text-[10px]"
+                        >
+                          {s.status === "paid"
+                            ? t("orgPosSales.statusPaid")
+                            : t("orgPosSales.statusVoid")}
                         </Badge>
-                      ) : <span className="text-xs text-muted-foreground">—</span>}
-                    </td>
-                    <td className="flex gap-1">
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setDetail(s)}>
-                        <TicketIcon className="size-3.5 mr-1" /> {t("orgPosSales.ticketsButton")}
-                      </Button>
-                      {r && (
-                        <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
-                          <Link to="/organizer/pos/fiscal">{t("orgPosSales.receiptButton")}</Link>
+                      </td>
+                      <td className="font-mono text-[11px]">{r?.receipt_number || "—"}</td>
+                      <td>
+                        {r ? (
+                          <Badge
+                            variant={r.status === "issued" ? "default" : "destructive"}
+                            className="text-[10px]"
+                          >
+                            {r.status === "issued"
+                              ? t("orgPosSales.fiscalIssued")
+                              : t("orgPosSales.fiscalVoided")}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => setDetail(s)}
+                        >
+                          <TicketIcon className="size-3.5 mr-1" /> {t("orgPosSales.ticketsButton")}
                         </Button>
-                      )}
-                      {s.status === "paid" && (
-                        <Button size="icon" variant="ghost" className="size-7 text-destructive" onClick={() => onVoid(s.id)}>
-                          <Ban className="size-3.5" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
+                        {r && (
+                          <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+                            <Link to="/organizer/pos/fiscal">{t("orgPosSales.receiptButton")}</Link>
+                          </Button>
+                        )}
+                        {s.status === "paid" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-7 text-destructive"
+                            onClick={() => onVoid(s.id)}
+                          >
+                            <Ban className="size-3.5" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -168,48 +244,75 @@ function SalesPage() {
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("orgPosSales.dialogTitle", { number: detail?.receipt_number })}</DialogTitle>
+            <DialogTitle>
+              {t("orgPosSales.dialogTitle", { number: detail?.receipt_number })}
+            </DialogTitle>
           </DialogHeader>
-          {detail && (() => {
-            const saleTickets = tickets.filter((t) => t.sale_id === detail.id);
-            const ev = events.find((e) => e.id === detail.event_id);
-            return (
-              <div className="space-y-4 text-sm">
-                <div className="text-xs text-muted-foreground">
-                  {new Date(detail.created_at).toLocaleString("sk-SK")} · {detail.cashier_name} · {detail.event_title}
-                </div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                  {t("orgPosSales.ticketsCount", { count: saleTickets.length })}
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {saleTickets.map((tk, idx) => (
-                    <div key={tk.id} className="rounded-xl border border-border/50 bg-background p-3 flex gap-3 items-center">
-                      <div className="aspect-square w-20 bg-white rounded-md p-1 flex items-center justify-center shrink-0">
-                        <img alt="QR" className="w-full h-full" src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(tk.code)}`} />
+          {detail &&
+            (() => {
+              const saleTickets = tickets.filter((t) => t.sale_id === detail.id);
+              const ev = events.find((e) => e.id === detail.event_id);
+              return (
+                <div className="space-y-4 text-sm">
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(detail.created_at).toLocaleString("sk-SK")} · {detail.cashier_name} ·{" "}
+                    {detail.event_title}
+                  </div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                    {t("orgPosSales.ticketsCount", { count: saleTickets.length })}
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {saleTickets.map((tk, idx) => (
+                      <div
+                        key={tk.id}
+                        className="rounded-xl border border-border/50 bg-background p-3 flex gap-3 items-center"
+                      >
+                        <div className="aspect-square w-20 bg-white rounded-md p-1 flex items-center justify-center shrink-0">
+                          <img
+                            alt="QR"
+                            className="w-full h-full"
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(tk.code)}`}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {t("orgPosSales.ticketNumber", { n: idx + 1 })}
+                          </div>
+                          <div className="font-semibold truncate">{tk.ticket_type_name}</div>
+                          <div className="text-xs">€{tk.price.toFixed(2)}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground truncate mt-1">
+                            {tk.code}
+                          </div>
+                          <Badge
+                            variant={
+                              tk.status === "valid"
+                                ? "default"
+                                : tk.status === "used"
+                                  ? "outline"
+                                  : "destructive"
+                            }
+                            className="mt-1 text-[10px] uppercase"
+                          >
+                            {tk.status}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("orgPosSales.ticketNumber", { n: idx + 1 })}</div>
-                        <div className="font-semibold truncate">{tk.ticket_type_name}</div>
-                        <div className="text-xs">€{tk.price.toFixed(2)}</div>
-                        <div className="font-mono text-[10px] text-muted-foreground truncate mt-1">{tk.code}</div>
-                        <Badge variant={tk.status === "valid" ? "default" : tk.status === "used" ? "outline" : "destructive"} className="mt-1 text-[10px] uppercase">{tk.status}</Badge>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      size="sm"
+                      className="bg-gradient-flame text-primary-foreground shadow-glow"
+                      onClick={() => printTickets(saleTickets, detail, ev)}
+                      disabled={saleTickets.length === 0}
+                    >
+                      <Printer className="size-4 mr-1.5" />{" "}
+                      {t("orgPosSales.printAll", { count: saleTickets.length })}
+                    </Button>
+                  </DialogFooter>
                 </div>
-                <DialogFooter>
-                  <Button
-                    size="sm"
-                    className="bg-gradient-flame text-primary-foreground shadow-glow"
-                    onClick={() => printTickets(saleTickets, detail, ev)}
-                    disabled={saleTickets.length === 0}
-                  >
-                    <Printer className="size-4 mr-1.5" /> {t("orgPosSales.printAll", { count: saleTickets.length })}
-                  </Button>
-                </DialogFooter>
-              </div>
-            );
-          })()}
+              );
+            })()}
         </DialogContent>
       </Dialog>
     </div>

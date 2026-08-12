@@ -35,8 +35,7 @@ function RegisterPage() {
   });
   const [busy, setBusy] = useState(false);
 
-  const upd = <K extends keyof typeof form>(k: K, v: string) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  const upd = <K extends keyof typeof form>(k: K, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,9 +103,13 @@ function RegisterPage() {
                     : "border-border/50 bg-muted/20 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <div className="font-semibold">{t === "user" ? "Bežný používateľ" : "Organizátor"}</div>
+                <div className="font-semibold">
+                  {t === "user" ? "Bežný používateľ" : "Organizátor"}
+                </div>
                 <div className="text-xs mt-1 opacity-80">
-                  {t === "user" ? "Nákup vstupeniek a správa účtu." : "Pridávanie a správa podujatí."}
+                  {t === "user"
+                    ? "Nákup vstupeniek a správa účtu."
+                    : "Pridávanie a správa podujatí."}
                 </div>
               </button>
             ))}
@@ -117,25 +120,55 @@ function RegisterPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="first_name">Meno</Label>
-              <Input id="first_name" required value={form.first_name} onChange={(e) => upd("first_name", e.target.value)} />
+              <Input
+                id="first_name"
+                required
+                value={form.first_name}
+                onChange={(e) => upd("first_name", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="last_name">Priezvisko</Label>
-              <Input id="last_name" required value={form.last_name} onChange={(e) => upd("last_name", e.target.value)} />
+              <Input
+                id="last_name"
+                required
+                value={form.last_name}
+                onChange={(e) => upd("last_name", e.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={form.email} onChange={(e) => upd("email", e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              required
+              value={form.email}
+              onChange={(e) => upd("email", e.target.value)}
+            />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="password">Heslo</Label>
-              <Input id="password" type="password" required minLength={6} value={form.password} onChange={(e) => upd("password", e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                value={form.password}
+                onChange={(e) => upd("password", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm">Potvrdenie hesla</Label>
-              <Input id="confirm" type="password" required minLength={6} value={form.confirm} onChange={(e) => upd("confirm", e.target.value)} />
+              <Input
+                id="confirm"
+                type="password"
+                required
+                minLength={6}
+                value={form.confirm}
+                onChange={(e) => upd("confirm", e.target.value)}
+              />
             </div>
           </div>
 
@@ -144,7 +177,12 @@ function RegisterPage() {
               <div className="font-semibold text-sm">Fakturačné údaje organizátora</div>
               <div className="space-y-2">
                 <Label htmlFor="company_name">Názov spoločnosti</Label>
-                <Input id="company_name" required value={form.company_name} onChange={(e) => upd("company_name", e.target.value)} />
+                <Input
+                  id="company_name"
+                  required
+                  value={form.company_name}
+                  onChange={(e) => upd("company_name", e.target.value)}
+                />
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
@@ -157,27 +195,45 @@ function RegisterPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ic_dph">IČ DPH</Label>
-                  <Input id="ic_dph" value={form.ic_dph} onChange={(e) => upd("ic_dph", e.target.value)} />
+                  <Input
+                    id="ic_dph"
+                    value={form.ic_dph}
+                    onChange={(e) => upd("ic_dph", e.target.value)}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="billing_address">Fakturačná adresa</Label>
-                <Input id="billing_address" value={form.billing_address} onChange={(e) => upd("billing_address", e.target.value)} />
+                <Input
+                  id="billing_address"
+                  value={form.billing_address}
+                  onChange={(e) => upd("billing_address", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefón</Label>
-                <Input id="phone" value={form.phone} onChange={(e) => upd("phone", e.target.value)} />
+                <Input
+                  id="phone"
+                  value={form.phone}
+                  onChange={(e) => upd("phone", e.target.value)}
+                />
               </div>
             </div>
           )}
 
-          <Button type="submit" disabled={busy} className="w-full bg-gradient-flame text-primary-foreground shadow-glow">
+          <Button
+            type="submit"
+            disabled={busy}
+            className="w-full bg-gradient-flame text-primary-foreground shadow-glow"
+          >
             {busy ? "Registrujem…" : "Vytvoriť účet"}
           </Button>
         </form>
         <div className="mt-6 text-sm text-muted-foreground text-center">
           Už máš účet?{" "}
-          <Link to="/login" className="text-primary hover:underline">Prihlás sa</Link>
+          <Link to="/login" className="text-primary hover:underline">
+            Prihlás sa
+          </Link>
         </div>
       </Card>
     </div>

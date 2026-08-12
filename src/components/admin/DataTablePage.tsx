@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
+  TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,7 +97,7 @@ export function DataTablePage({
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
     let out = rows.filter((r) =>
-      !q ? true : Object.values(r).some((v) => String(v).toLowerCase().includes(q))
+      !q ? true : Object.values(r).some((v) => String(v).toLowerCase().includes(q)),
     );
     if (sortKey) {
       out = [...out].sort((a, b) => {
@@ -116,6 +117,21 @@ export function DataTablePage({
 
   return (
     <div className="space-y-6">
+      {/*
+        Tento komponent používa výhradne 29 admin stránok postavených nad
+        generovanými dátami z `admin-mock.ts`. Kým sa nenapoja na databázu,
+        musí byť na prvý pohľad zrejmé, že čísla nie sú skutočné — inak im
+        človek uverí a spraví podľa nich rozhodnutie.
+        Až budú dáta reálne, zmaž tento banner spolu s `admin-mock.ts`.
+      */}
+      <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-500" />
+        <p className="text-sm text-amber-900 dark:text-amber-200">
+          <span className="font-semibold">Ukážkové dáta.</span> Táto sekcia zatiaľ nie je napojená
+          na databázu — čísla aj riadky sú vygenerované a nezodpovedajú skutočnej prevádzke.
+        </p>
+      </div>
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
@@ -218,12 +234,20 @@ export function DataTablePage({
                   <TableRow key={idx} className="border-border/30 hover:bg-muted/30">
                     {columns.map((c) => {
                       const v = row[c.key];
-                      const cls = c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : "";
+                      const cls =
+                        c.align === "right"
+                          ? "text-right"
+                          : c.align === "center"
+                            ? "text-center"
+                            : "";
                       if (c.badge) {
                         const tone = c.badgeMap?.[String(v)] ?? "muted";
                         return (
                           <TableCell key={c.key} className={cls}>
-                            <Badge variant="outline" className={`${badgeClass[tone]} text-xs font-medium`}>
+                            <Badge
+                              variant="outline"
+                              className={`${badgeClass[tone]} text-xs font-medium`}
+                            >
                               {v}
                             </Badge>
                           </TableCell>

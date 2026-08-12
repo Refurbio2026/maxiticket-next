@@ -84,7 +84,9 @@ function Page() {
     <div className="space-y-5">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight">Platby (GoPay)</h1>
+          <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
+            Platby (GoPay)
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Online platby cez GoPay a vystavené doklady v SuperFaktúre.
           </p>

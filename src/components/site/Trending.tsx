@@ -7,10 +7,42 @@ import e3 from "@/assets/event-3.jpg";
 import e4 from "@/assets/event-4.jpg";
 
 const events = [
-  { img: e1, title: "Calypso Festival 2026", city: "Bratislava", date: "12. Jún", price: "od 39 €", tag: "Festival", left: 87 },
-  { img: e2, title: "Iné Kafe — Akustika Tour", city: "Košice", date: "24. Máj", price: "od 24 €", tag: "Koncert", left: 12 },
-  { img: e3, title: "Comedy Night: Evelyn", city: "Trnava", date: "08. Jún", price: "od 18 €", tag: "Stand-up", left: 41 },
-  { img: e4, title: "HC Slovan vs. Sparta", city: "Bratislava", date: "29. Máj", price: "od 14 €", tag: "Šport", left: 230 },
+  {
+    img: e1,
+    title: "Calypso Festival 2026",
+    city: "Bratislava",
+    date: "12. Jún",
+    price: "od 39 €",
+    tag: "Festival",
+    left: 87,
+  },
+  {
+    img: e2,
+    title: "Iné Kafe — Akustika Tour",
+    city: "Košice",
+    date: "24. Máj",
+    price: "od 24 €",
+    tag: "Koncert",
+    left: 12,
+  },
+  {
+    img: e3,
+    title: "Comedy Night: Evelyn",
+    city: "Trnava",
+    date: "08. Jún",
+    price: "od 18 €",
+    tag: "Stand-up",
+    left: 41,
+  },
+  {
+    img: e4,
+    title: "HC Slovan vs. Sparta",
+    city: "Bratislava",
+    date: "29. Máj",
+    price: "od 14 €",
+    tag: "Šport",
+    left: 230,
+  },
 ];
 
 const MotionLink = motion(Link);
@@ -28,7 +60,10 @@ export function Trending() {
               Práve frčia
             </h2>
           </div>
-          <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">
+          <Link
+            to="/events"
+            className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline"
+          >
             Všetky podujatia →
           </Link>
         </div>
@@ -65,8 +100,14 @@ export function Trending() {
               <div className="p-5 -mt-16 relative">
                 <h3 className="font-display text-lg font-semibold leading-tight">{e.title}</h3>
                 <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5"><Calendar className="size-3.5" />{e.date}</span>
-                  <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5" />{e.city}</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Calendar className="size-3.5" />
+                    {e.date}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-3.5" />
+                    {e.city}
+                  </span>
                 </div>
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-sm font-medium text-gradient-flame">{e.price}</span>

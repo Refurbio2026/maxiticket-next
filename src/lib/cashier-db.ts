@@ -80,10 +80,19 @@ const ACTIVE_KEY = "mt_pos_active_cashier_session"; // per browser
 const isBrowser = () => typeof window !== "undefined";
 function read<T>(k: string, f: T): T {
   if (!isBrowser()) return f;
-  try { const r = localStorage.getItem(k); return r ? JSON.parse(r) as T : f; } catch { return f; }
+  try {
+    const r = localStorage.getItem(k);
+    return r ? (JSON.parse(r) as T) : f;
+  } catch {
+    return f;
+  }
 }
-function write<T>(k: string, v: T) { if (isBrowser()) localStorage.setItem(k, JSON.stringify(v)); }
-function emit() { if (isBrowser()) window.dispatchEvent(new Event(POS_EVENT)); }
+function write<T>(k: string, v: T) {
+  if (isBrowser()) localStorage.setItem(k, JSON.stringify(v));
+}
+function emit() {
+  if (isBrowser()) window.dispatchEvent(new Event(POS_EVENT));
+}
 
 // ---------- PIN hashing ----------
 export async function hashPin(pin: string): Promise<string> {
@@ -93,7 +102,9 @@ export async function hashPin(pin: string): Promise<string> {
   }
   const data = new TextEncoder().encode(pin);
   const buf = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export async function verifyPin(pin: string, hash: string): Promise<boolean> {
@@ -102,39 +113,54 @@ export async function verifyPin(pin: string, hash: string): Promise<boolean> {
 }
 
 // ---------- Cashiers ----------
-export function getCashiers(): Cashier[] { return read<Cashier[]>(CASHIERS_KEY, []); }
+export function getCashiers(): Cashier[] {
+  return read<Cashier[]>(CASHIERS_KEY, []);
+}
 export function getCashiersForOrganizer(organizerId: string): Cashier[] {
   return getCashiers().filter((c) => c.organizer_id === organizerId);
 }
 export function getActiveCashiersForOrganizer(organizerId: string): Cashier[] {
   return getCashiersForOrganizer(organizerId).filter((c) => c.status === "active");
 }
-export function saveCashiers(list: Cashier[]) { write(CASHIERS_KEY, list); emit(); }
+export function saveCashiers(list: Cashier[]) {
+  write(CASHIERS_KEY, list);
+  emit();
+}
 export function getCashier(id: string): Cashier | undefined {
   return getCashiers().find((c) => c.id === id);
 }
 export function upsertCashier(c: Cashier) {
   const all = getCashiers();
   const i = all.findIndex((x) => x.id === c.id);
-  if (i >= 0) all[i] = c; else all.unshift(c);
+  if (i >= 0) all[i] = c;
+  else all.unshift(c);
   saveCashiers(all);
 }
 export function deleteCashier(id: string) {
   saveCashiers(getCashiers().filter((c) => c.id !== id));
 }
 export function setCashierStatus(id: string, status: CashierStatus) {
-  const all = getCashiers().map((c) => c.id === id ? { ...c, status, updated_at: new Date().toISOString() } : c);
+  const all = getCashiers().map((c) =>
+    c.id === id ? { ...c, status, updated_at: new Date().toISOString() } : c,
+  );
   saveCashiers(all);
 }
 export async function resetCashierPin(id: string, newPin: string) {
   const pin_hash = await hashPin(newPin);
-  const all = getCashiers().map((c) => c.id === id ? { ...c, pin_hash, updated_at: new Date().toISOString() } : c);
+  const all = getCashiers().map((c) =>
+    c.id === id ? { ...c, pin_hash, updated_at: new Date().toISOString() } : c,
+  );
   saveCashiers(all);
 }
 
 // ---------- Sessions ----------
-export function getSessions(): CashierSession[] { return read<CashierSession[]>(SESSIONS_KEY, []); }
-export function saveSessions(s: CashierSession[]) { write(SESSIONS_KEY, s); emit(); }
+export function getSessions(): CashierSession[] {
+  return read<CashierSession[]>(SESSIONS_KEY, []);
+}
+export function saveSessions(s: CashierSession[]) {
+  write(SESSIONS_KEY, s);
+  emit();
+}
 export function getSession(id: string): CashierSession | undefined {
   return getSessions().find((s) => s.id === id);
 }
@@ -164,9 +190,16 @@ export function openSession(input: {
 }
 
 export function closeSession(id: string, closingCash?: number) {
-  const all = getSessions().map((s) => s.id === id
-    ? { ...s, status: "closed" as const, closed_at: new Date().toISOString(), closing_cash_amount: closingCash }
-    : s);
+  const all = getSessions().map((s) =>
+    s.id === id
+      ? {
+          ...s,
+          status: "closed" as const,
+          closed_at: new Date().toISOString(),
+          closing_cash_amount: closingCash,
+        }
+      : s,
+  );
   saveSessions(all);
   const active = getActiveSessionId();
   if (active === id) setActiveSessionId(null);
@@ -177,7 +210,9 @@ export function computeSessionTotals(sessionId: string) {
   const sales = getSales().filter((s) => s.cashier_session_id === sessionId && s.status === "paid");
   const cash = sales.filter((s) => s.payment_method === "cash").reduce((a, b) => a + b.total, 0);
   const card = sales.filter((s) => s.payment_method === "card").reduce((a, b) => a + b.total, 0);
-  const transfer = sales.filter((s) => s.payment_method === "transfer").reduce((a, b) => a + b.total, 0);
+  const transfer = sales
+    .filter((s) => s.payment_method === "transfer")
+    .reduce((a, b) => a + b.total, 0);
   const free = sales.filter((s) => s.payment_method === "free").reduce((a, b) => a + b.total, 0);
   const total = cash + card + transfer + free;
   return {
@@ -187,7 +222,9 @@ export function computeSessionTotals(sessionId: string) {
     total_free_sales: free,
     total_sales: total,
     order_count: sales.length,
-    voided_count: getSales().filter((s) => s.cashier_session_id === sessionId && s.status === "void").length,
+    voided_count: getSales().filter(
+      (s) => s.cashier_session_id === sessionId && s.status === "void",
+    ).length,
   };
 }
 
@@ -219,5 +256,10 @@ export function getActiveCashier(): Cashier | null {
 }
 
 // ---------- Closures ----------
-export function getClosures(): CashierClosure[] { return read<CashierClosure[]>(CLOSURES_KEY, []); }
-export function addClosure(c: CashierClosure) { write(CLOSURES_KEY, [c, ...getClosures()]); emit(); }
+export function getClosures(): CashierClosure[] {
+  return read<CashierClosure[]>(CLOSURES_KEY, []);
+}
+export function addClosure(c: CashierClosure) {
+  write(CLOSURES_KEY, [c, ...getClosures()]);
+  emit();
+}

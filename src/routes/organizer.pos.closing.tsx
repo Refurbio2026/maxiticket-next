@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
-  getSales, computeClosing, addClosing, getAuditLogs, POS_EVENT,
+  getSales,
+  computeClosing,
+  addClosing,
+  getAuditLogs,
+  POS_EVENT,
   type PosSale,
 } from "@/lib/pos-db";
-import {
-  getActiveSession, closeSession, addClosure, computeSessionTotals,
-} from "@/lib/cashier-db";
+import { getActiveSession, closeSession, addClosure, computeSessionTotals } from "@/lib/cashier-db";
 import { uid } from "@/lib/local-db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,8 +18,17 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
-  Banknote, CreditCard, Building2, Gift, Ban, FileDown, Printer,
-  ArrowLeft, Receipt, ShieldCheck, LogOut,
+  Banknote,
+  CreditCard,
+  Building2,
+  Gift,
+  Ban,
+  FileDown,
+  Printer,
+  ArrowLeft,
+  Receipt,
+  ShieldCheck,
+  LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,15 +71,23 @@ function ClosingPage() {
         t("orgPosClosing.csvCashier"),
       ],
       ...sales.map((s) => [
-        s.receipt_number, s.created_at, s.event_title,
-        s.payment_method, s.total.toFixed(2), s.status, s.cashier_name,
+        s.receipt_number,
+        s.created_at,
+        s.event_title,
+        s.payment_method,
+        s.total.toFixed(2),
+        s.status,
+        s.cashier_name,
       ]),
     ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `uzavierka-${date}.csv`; a.click();
+    a.download = `uzavierka-${date}.csv`;
+    a.click();
   };
 
   const exportPdf = () => window.print();
@@ -124,57 +143,105 @@ function ClosingPage() {
     );
   };
 
-  const audit = getAuditLogs().filter((a) => a.created_at.startsWith(date)).slice(0, 10);
+  const audit = getAuditLogs()
+    .filter((a) => a.created_at.startsWith(date))
+    .slice(0, 10);
 
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-            <Link to="/organizer/pos"><ArrowLeft className="size-4 mr-1.5" /> {t("orgPosClosing.backToPos")}</Link>
+            <Link to="/organizer/pos">
+              <ArrowLeft className="size-4 mr-1.5" /> {t("orgPosClosing.backToPos")}
+            </Link>
           </Button>
-          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosClosing.title")}</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight">
+            {t("orgPosClosing.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("orgPosClosing.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-end">
           <div>
             <div className="text-xs text-muted-foreground mb-1">{t("orgPosClosing.dateLabel")}</div>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 w-44" />
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-10 w-44"
+            />
           </div>
-          <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> {t("orgPosClosing.csvButton")}</Button>
-          <Button variant="outline" onClick={exportPdf}><Printer className="size-4 mr-2" /> {t("orgPosClosing.pdfButton")}</Button>
+          <Button variant="outline" onClick={exportCsv}>
+            <FileDown className="size-4 mr-2" /> {t("orgPosClosing.csvButton")}
+          </Button>
+          <Button variant="outline" onClick={exportPdf}>
+            <Printer className="size-4 mr-2" /> {t("orgPosClosing.pdfButton")}
+          </Button>
           <Button variant="outline" onClick={closeShift}>
             <LogOut className="size-4 mr-2" /> {t("orgPosClosing.closeShift")}
           </Button>
-          <Button onClick={closeDay} className="bg-gradient-flame text-primary-foreground shadow-glow">
+          <Button
+            onClick={closeDay}
+            className="bg-gradient-flame text-primary-foreground shadow-glow"
+          >
             <ShieldCheck className="size-4 mr-2" /> {t("orgPosClosing.closeDay")}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Tile icon={<Banknote className="size-4 text-primary" />} label={t("orgPosClosing.tileCash")} value={`€${stats.cash_total.toFixed(2)}`} />
-        <Tile icon={<CreditCard className="size-4 text-primary" />} label={t("orgPosClosing.tileCard")} value={`€${stats.card_total.toFixed(2)}`} />
-        <Tile icon={<Building2 className="size-4 text-primary" />} label={t("orgPosClosing.tileTransfer")} value={`€${stats.transfer_total.toFixed(2)}`} />
-        <Tile icon={<Gift className="size-4 text-primary" />} label={t("orgPosClosing.tileGuestlist")} value={`€${stats.free_total.toFixed(2)}`} />
-        <Tile icon={<Ban className="size-4 text-destructive" />} label={t("orgPosClosing.tileVoided")} value={`€${stats.voided_total.toFixed(2)}`} />
+        <Tile
+          icon={<Banknote className="size-4 text-primary" />}
+          label={t("orgPosClosing.tileCash")}
+          value={`€${stats.cash_total.toFixed(2)}`}
+        />
+        <Tile
+          icon={<CreditCard className="size-4 text-primary" />}
+          label={t("orgPosClosing.tileCard")}
+          value={`€${stats.card_total.toFixed(2)}`}
+        />
+        <Tile
+          icon={<Building2 className="size-4 text-primary" />}
+          label={t("orgPosClosing.tileTransfer")}
+          value={`€${stats.transfer_total.toFixed(2)}`}
+        />
+        <Tile
+          icon={<Gift className="size-4 text-primary" />}
+          label={t("orgPosClosing.tileGuestlist")}
+          value={`€${stats.free_total.toFixed(2)}`}
+        />
+        <Tile
+          icon={<Ban className="size-4 text-destructive" />}
+          label={t("orgPosClosing.tileVoided")}
+          value={`€${stats.voided_total.toFixed(2)}`}
+        />
       </div>
 
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("orgPosClosing.totalRevenue")}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              {t("orgPosClosing.totalRevenue")}
+            </div>
             <div className="font-display text-4xl font-bold mt-1">€{total.toFixed(2)}</div>
           </div>
           <div className="text-right text-sm text-muted-foreground">
-            <div>{t("orgPosClosing.receiptsLabel")} <span className="text-foreground font-semibold">{stats.receipts_count}</span></div>
-            <div>{t("orgPosClosing.ticketsLabel")} <span className="text-foreground font-semibold">{stats.tickets_count}</span></div>
+            <div>
+              {t("orgPosClosing.receiptsLabel")}{" "}
+              <span className="text-foreground font-semibold">{stats.receipts_count}</span>
+            </div>
+            <div>
+              {t("orgPosClosing.ticketsLabel")}{" "}
+              <span className="text-foreground font-semibold">{stats.tickets_count}</span>
+            </div>
           </div>
         </div>
       </Card>
 
       <Card className="p-5 bg-card/60 border-border/50">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">{t("orgPosClosing.salesOfDay")}</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
+          {t("orgPosClosing.salesOfDay")}
+        </div>
         {sales.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("orgPosClosing.noSales")}</p>
         ) : (
@@ -194,12 +261,17 @@ function ClosingPage() {
                 {sales.map((s) => (
                   <tr key={s.id} className="border-b border-border/30">
                     <td className="py-2 font-mono text-xs">{s.receipt_number}</td>
-                    <td className="text-xs">{new Date(s.created_at).toLocaleTimeString("sk-SK")}</td>
+                    <td className="text-xs">
+                      {new Date(s.created_at).toLocaleTimeString("sk-SK")}
+                    </td>
                     <td className="truncate max-w-[220px]">{s.event_title}</td>
                     <td className="capitalize">{s.payment_method}</td>
                     <td className="text-right">€{s.total.toFixed(2)}</td>
                     <td>
-                      <Badge variant={s.status === "paid" ? "default" : "destructive"} className="text-[10px]">
+                      <Badge
+                        variant={s.status === "paid" ? "default" : "destructive"}
+                        className="text-[10px]"
+                      >
                         {s.status === "paid" ? t("orgPosClosing.paid") : t("orgPosClosing.void")}
                       </Badge>
                     </td>
@@ -221,7 +293,9 @@ function ClosingPage() {
           <div className="space-y-2">
             {audit.map((a) => (
               <div key={a.id} className="text-xs flex gap-3 items-start">
-                <span className="text-muted-foreground font-mono">{new Date(a.created_at).toLocaleTimeString("sk-SK")}</span>
+                <span className="text-muted-foreground font-mono">
+                  {new Date(a.created_at).toLocaleTimeString("sk-SK")}
+                </span>
                 <span className="font-medium">{a.user_name}</span>
                 <span className="text-primary">{a.action}</span>
                 <span className="text-muted-foreground truncate">{JSON.stringify(a.meta)}</span>
@@ -231,9 +305,7 @@ function ClosingPage() {
         )}
       </Card>
       <Separator />
-      <p className="text-xs text-muted-foreground">
-        {t("orgPosClosing.demoNote")}
-      </p>
+      <p className="text-xs text-muted-foreground">{t("orgPosClosing.demoNote")}</p>
     </div>
   );
 }

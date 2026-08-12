@@ -6,15 +6,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getGoPayPaymentStatus, mapGoPayStateToOrder } from "@/lib/gopay.server";
 import { createPaidInvoice } from "@/lib/superfaktura.server";
+import { sendTicketsEmail } from "@/lib/ticket-mail.server";
 import { signTicket } from "@/lib/qr-token.server";
 import crypto from "crypto";
 
 async function settle(orderId: string) {
-  const { data: order } = await supabaseAdmin
-    .from("orders")
-    .select("*")
-    .eq("id", orderId)
-    .single();
+  const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
   if (!order || !order.gopay_payment_id) return;
 
   const status = await getGoPayPaymentStatus(order.gopay_payment_id);
@@ -120,6 +117,15 @@ async function settle(orderId: string) {
         console.error("SF invoice failed", e);
       }
     }
+
+    // Vstupenky e-mailom. GoPay môže notifikáciu poslať viackrát — druhýkrát
+    // to `tickets_emailed_at` zastaví. Zlyhanie nesmie zhodiť webhook, inak by
+    // ho GoPay opakovalo donekonečna.
+    try {
+      await sendTicketsEmail(order.id);
+    } catch (e) {
+      console.error("Odoslanie vstupeniek zlyhalo pre objednávku", order.id, e);
+    }
   } else if (mapped === "cancelled" || mapped === "failed") {
     await supabaseAdmin.from("orders").update({ status: mapped }).eq("id", order.id);
     await supabaseAdmin
@@ -128,7 +134,10 @@ async function settle(orderId: string) {
       .eq("order_id", order.id);
     await supabaseAdmin
       .from("payments")
-      .update({ status: mapped === "cancelled" ? "cancelled" : "failed", raw_response: status.raw as any })
+      .update({
+        status: mapped === "cancelled" ? "cancelled" : "failed",
+        raw_response: status.raw as any,
+      })
       .eq("order_id", order.id);
   }
 }

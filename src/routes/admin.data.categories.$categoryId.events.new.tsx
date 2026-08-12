@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  getCategory, upsertEvent, uid, emit, EVENTS_EVENT,
-  getUsers, type EventItem, type StoredUser,
-} from "@/lib/local-db";
+import { getCategory } from "@/lib/local-db";
+import { listOrganizers } from "@/lib/events.functions";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useUpsertEvent } from "@/hooks/use-events";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ChevronLeft } from "lucide-react";
@@ -40,7 +45,7 @@ function NewEventForCategory() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const category = useMemo(() => getCategory(categoryId), [categoryId]);
-  const [organizers, setOrganizers] = useState<StoredUser[]>([]);
+  const upsert = useUpsertEvent();
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState<FormState>({
     title: "",
@@ -56,11 +61,18 @@ function NewEventForCategory() {
     status: "draft",
   });
 
+  // Reálni organizátori z databázy (demo účty z localStorage tu nefungujú —
+  // ich id nie sú UUID a server by ich odmietol).
+  const fetchOrganizers = useServerFn(listOrganizers);
+  const { data: organizers = [] } = useQuery({
+    queryKey: ["organizers"],
+    queryFn: () => fetchOrganizers({ data: undefined }),
+  });
+
   useEffect(() => {
-    const orgs = getUsers().filter((u) => u.role === "organizer" || u.role === "admin");
-    setOrganizers(orgs);
-    setForm((f) => ({ ...f, organizer_id: f.organizer_id || orgs[0]?.id || "" }));
-  }, []);
+    if (organizers.length === 0) return;
+    setForm((f) => ({ ...f, organizer_id: f.organizer_id || organizers[0].id }));
+  }, [organizers]);
 
   const upd = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -77,7 +89,7 @@ function NewEventForCategory() {
     );
   }
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error("Názov je povinný");
     if (!form.event_date) return toast.error("Dátum je povinný");
@@ -92,34 +104,37 @@ function NewEventForCategory() {
     if (!org) return toast.error("Vyber organizátora");
 
     setBusy(true);
-    const event: EventItem = {
-      id: uid(),
-      organizer_id: org.id,
-      organizer_name: org.full_name ?? org.email,
-      title: form.title.trim(),
-      category: category.name,
-      event_date: form.event_date,
-      event_time: form.event_time || "19:00",
-      venue: form.venue.trim() || "—",
-      city: form.city.trim(),
-      description: form.description.trim() || undefined,
-      image_url: form.image_url.trim() || undefined,
-      status: form.status,
-      created_at: new Date().toISOString(),
-      tickets: [{ id: uid(), name: "Štandard", price, quantity }],
-    };
-    upsertEvent(event);
-    emit(EVENTS_EVENT);
-    setBusy(false);
-    toast.success("Podujatie vytvorené");
-    navigate({ to: "/admin/events/events" });
+    try {
+      // `organizer_id` server rešpektuje len adminovi — táto obrazovka je v admin zóne.
+      await upsert.mutateAsync({
+        organizer_id: org.id,
+        title: form.title.trim(),
+        category: category.name,
+        event_date: form.event_date,
+        event_time: form.event_time || "19:00",
+        venue: form.venue.trim() || "—",
+        city: form.city.trim(),
+        description: form.description.trim() || null,
+        image_url: form.image_url.trim() || null,
+        status: form.status,
+        tickets: [{ name: "Štandard", price, quantity }],
+      });
+      toast.success("Podujatie vytvorené");
+      navigate({ to: "/admin/events/events" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Podujatie sa nepodarilo vytvoriť");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <form onSubmit={submit} className="space-y-6 max-w-4xl">
       <div>
         <Button asChild type="button" variant="ghost" size="sm" className="mb-3">
-          <Link to="/admin/data/categories"><ChevronLeft className="size-4 mr-1" /> Späť na kategórie</Link>
+          <Link to="/admin/data/categories">
+            <ChevronLeft className="size-4 mr-1" /> Späť na kategórie
+          </Link>
         </Button>
         <div className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
           Kategória · {category.name}
@@ -132,7 +147,12 @@ function NewEventForCategory() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2 space-y-2">
             <Label>Názov podujatia *</Label>
-            <Input required maxLength={120} value={form.title} onChange={(e) => upd("title", e.target.value)} />
+            <Input
+              required
+              maxLength={120}
+              value={form.title}
+              onChange={(e) => upd("title", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Kategória *</Label>
@@ -140,8 +160,13 @@ function NewEventForCategory() {
           </div>
           <div className="space-y-2">
             <Label>Stav *</Label>
-            <Select value={form.status} onValueChange={(v: "draft" | "published") => upd("status", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={form.status}
+              onValueChange={(v: "draft" | "published") => upd("status", v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="draft">Koncept</SelectItem>
                 <SelectItem value="published">Publikované</SelectItem>
@@ -150,28 +175,50 @@ function NewEventForCategory() {
           </div>
           <div className="space-y-2">
             <Label>Dátum *</Label>
-            <Input type="date" required value={form.event_date} onChange={(e) => upd("event_date", e.target.value)} />
+            <Input
+              type="date"
+              required
+              value={form.event_date}
+              onChange={(e) => upd("event_date", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Čas *</Label>
-            <Input type="time" required value={form.event_time} onChange={(e) => upd("event_time", e.target.value)} />
+            <Input
+              type="time"
+              required
+              value={form.event_time}
+              onChange={(e) => upd("event_time", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Miesto konania *</Label>
-            <Input required maxLength={120} value={form.venue} onChange={(e) => upd("venue", e.target.value)} />
+            <Input
+              required
+              maxLength={120}
+              value={form.venue}
+              onChange={(e) => upd("venue", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Mesto *</Label>
-            <Input required maxLength={80} value={form.city} onChange={(e) => upd("city", e.target.value)} />
+            <Input
+              required
+              maxLength={80}
+              value={form.city}
+              onChange={(e) => upd("city", e.target.value)}
+            />
           </div>
           <div className="sm:col-span-2 space-y-2">
             <Label>Organizátor *</Label>
             <Select value={form.organizer_id} onValueChange={(v) => upd("organizer_id", v)}>
-              <SelectTrigger><SelectValue placeholder="Vyber organizátora" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Vyber organizátora" />
+              </SelectTrigger>
               <SelectContent>
                 {organizers.map((o) => (
                   <SelectItem key={o.id} value={o.id}>
-                    {o.full_name ?? o.email} {o.company_name ? `· ${o.company_name}` : ""}
+                    {o.full_name} {o.email ? `· ${o.email}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -179,28 +226,60 @@ function NewEventForCategory() {
           </div>
           <div className="space-y-2">
             <Label>Cena vstupenky (€) *</Label>
-            <Input type="number" min="0" step="0.01" required value={form.price} onChange={(e) => upd("price", e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              value={form.price}
+              onChange={(e) => upd("price", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Počet vstupeniek *</Label>
-            <Input type="number" min="0" step="1" required value={form.quantity} onChange={(e) => upd("quantity", e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              required
+              value={form.quantity}
+              onChange={(e) => upd("quantity", e.target.value)}
+            />
           </div>
           <div className="sm:col-span-2 space-y-2">
             <Label>URL obrázka</Label>
-            <Input placeholder="https://…" maxLength={500} value={form.image_url} onChange={(e) => upd("image_url", e.target.value)} />
+            <Input
+              placeholder="https://…"
+              maxLength={500}
+              value={form.image_url}
+              onChange={(e) => upd("image_url", e.target.value)}
+            />
           </div>
           <div className="sm:col-span-2 space-y-2">
             <Label>Popis</Label>
-            <Textarea rows={5} maxLength={2000} value={form.description} onChange={(e) => upd("description", e.target.value)} />
+            <Textarea
+              rows={5}
+              maxLength={2000}
+              value={form.description}
+              onChange={(e) => upd("description", e.target.value)}
+            />
           </div>
         </div>
       </Card>
 
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={() => navigate({ to: "/admin/data/categories" })}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => navigate({ to: "/admin/data/categories" })}
+        >
           Zrušiť
         </Button>
-        <Button type="submit" disabled={busy} className="bg-gradient-flame text-primary-foreground shadow-glow">
+        <Button
+          type="submit"
+          disabled={busy}
+          className="bg-gradient-flame text-primary-foreground shadow-glow"
+        >
           {busy ? "Ukladám…" : "Uložiť podujatie"}
         </Button>
       </div>

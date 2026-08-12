@@ -11,10 +11,10 @@ const SETTINGS_KEY = "mt_wallet_settings";
 export type WalletSettings = {
   apple: {
     enabled: boolean;
-    pass_type_identifier: string;   // e.g. "pass.com.vstupenky.event"
+    pass_type_identifier: string; // e.g. "pass.com.vstupenky.event"
     team_identifier: string;
     organization_name: string;
-    cert_uploaded: boolean;         // tracks if .p12 was provided (server-side)
+    cert_uploaded: boolean; // tracks if .p12 was provided (server-side)
     wwdr_uploaded: boolean;
   };
   google: {
@@ -97,7 +97,11 @@ export async function generateApplePass(_ticket: IssuedTicket): Promise<WalletPa
     };
   }
   // Placeholder until real .pkpass signing is wired
-  return { ok: false, reason: "error", message: "Apple Wallet generator zatiaľ nie je aktivovaný." };
+  return {
+    ok: false,
+    reason: "error",
+    message: "Apple Wallet generator zatiaľ nie je aktivovaný.",
+  };
 }
 
 export async function generateGoogleWalletLink(_ticket: IssuedTicket): Promise<WalletPassResult> {
@@ -109,5 +113,9 @@ export async function generateGoogleWalletLink(_ticket: IssuedTicket): Promise<W
         "Google Wallet zatiaľ nie je nakonfigurovaný. Administrátor musí pridať Issuer ID a service account v Systém → Wallet nastavenia.",
     };
   }
-  return { ok: false, reason: "error", message: "Google Wallet generator zatiaľ nie je aktivovaný." };
+  return {
+    ok: false,
+    reason: "error",
+    message: "Google Wallet generator zatiaľ nie je aktivovaný.",
+  };
 }

@@ -11,11 +11,6 @@ function Page() {
   const columns = commonColumns.simple as Column[];
   const rows = buildRows(48, "data.rows");
   return (
-    <DataTablePage
-      title="Rad / Loc2"
-      subtitle="Definície radov."
-      columns={columns}
-      rows={rows}
-    />
+    <DataTablePage title="Rad / Loc2" subtitle="Definície radov." columns={columns} rows={rows} />
   );
 }

@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  getFiscalReceipts, getFiscalSettings, POS_EVENT,
-  type FiscalReceipt, type FiscalSettings,
+  getFiscalReceipts,
+  getFiscalSettings,
+  POS_EVENT,
+  type FiscalReceipt,
+  type FiscalSettings,
 } from "@/lib/pos-db";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,20 +36,25 @@ function AdminFiscalPage() {
   const issued = receipts.filter((r) => r.status === "issued").length;
   const cancelled = receipts.filter((r) => r.status === "cancelled").length;
   const status = settings.connection_status;
-  const statusLabel = status === "connected" ? "Pripojené" : status === "error" ? "Chyba" : "Nepripojené";
+  const statusLabel =
+    status === "connected" ? "Pripojené" : status === "error" ? "Chyba" : "Nepripojené";
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold">ORP / eKasa</h1>
-        <p className="text-sm text-muted-foreground mt-1">Stav fiskalizácie naprieč organizátormi.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Stav fiskalizácie naprieč organizátormi.
+        </p>
       </div>
 
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-5 bg-card/60 border-border/50">
           <Wifi className="size-6 text-primary mb-3" />
           <div className="font-display font-semibold">Stav ORP</div>
-          <Badge variant={status === "connected" ? "default" : "outline"} className="mt-2">{statusLabel}</Badge>
+          <Badge variant={status === "connected" ? "default" : "outline"} className="mt-2">
+            {statusLabel}
+          </Badge>
           <p className="text-xs text-muted-foreground mt-3">Režim: {settings.mode}</p>
         </Card>
         <Card className="p-5 bg-card/60 border-border/50">
@@ -69,7 +77,9 @@ function AdminFiscalPage() {
       </div>
 
       <Card className="p-5 bg-card/60 border-border/50">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Všetky ORP doklady</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
+          Všetky ORP doklady
+        </div>
         {receipts.length === 0 ? (
           <p className="text-sm text-muted-foreground">Žiadne doklady.</p>
         ) : (
@@ -94,7 +104,10 @@ function AdminFiscalPage() {
                     <td className="text-xs font-mono">{r.dkp}</td>
                     <td className="text-right">€{r.total.toFixed(2)}</td>
                     <td>
-                      <Badge variant={r.status === "issued" ? "default" : "destructive"} className="text-[10px]">
+                      <Badge
+                        variant={r.status === "issued" ? "default" : "destructive"}
+                        className="text-[10px]"
+                      >
                         {r.status === "issued" ? "Platný" : "Stornovaný"}
                       </Badge>
                     </td>

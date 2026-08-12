@@ -88,7 +88,6 @@ export function AdminTopbar() {
     navigate({ to: "/login", replace: true });
   };
 
-
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 md:px-6">
       <SidebarTrigger className="-ml-1" />
@@ -101,7 +100,11 @@ export function AdminTopbar() {
             const label = labels[seg] ?? seg;
             return (
               <BreadcrumbItem key={url}>
-                {i > 0 && <BreadcrumbSeparator><ChevronRight className="h-3.5 w-3.5" /></BreadcrumbSeparator>}
+                {i > 0 && (
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </BreadcrumbSeparator>
+                )}
                 {isLast ? (
                   <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
                 ) : (
@@ -145,8 +148,16 @@ export function AdminTopbar() {
             <DropdownMenuSeparator />
             {[
               { t: "Nová refundácia čaká na schválenie", s: "pred 2 min", c: "bg-primary" },
-              { t: "Organizátor MeloFest dosiahol limit predaja", s: "pred 14 min", c: "bg-accent" },
-              { t: "Bankový výpis spárovaný (98 položiek)", s: "pred 1 h", c: "bg-muted-foreground" },
+              {
+                t: "Organizátor MeloFest dosiahol limit predaja",
+                s: "pred 14 min",
+                c: "bg-accent",
+              },
+              {
+                t: "Bankový výpis spárovaný (98 položiek)",
+                s: "pred 1 h",
+                c: "bg-muted-foreground",
+              },
               { t: "Zariadenie SCAN-04 offline", s: "pred 3 h", c: "bg-destructive" },
             ].map((n, i) => (
               <DropdownMenuItem key={i} className="flex flex-col items-start gap-1 py-3">
@@ -169,23 +180,41 @@ export function AdminTopbar() {
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left leading-tight md:block">
-                <div className="text-xs font-semibold">{user?.full_name || user?.email || "Admin"}</div>
-                <div className="text-[10px] text-muted-foreground">{user?.role === "admin" ? "Super Admin" : user?.role ?? ""}</div>
+                <div className="text-xs font-semibold">
+                  {user?.full_name || user?.email || "Admin"}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {user?.role === "admin" ? "Super Admin" : (user?.role ?? "")}
+                </div>
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Môj účet</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link to="/account"><User className="mr-2 h-4 w-4" />Profil</Link></DropdownMenuItem>
-            <DropdownMenuItem><Settings className="mr-2 h-4 w-4" />Nastavenia</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/account">
+                <User className="mr-2 h-4 w-4" />
+                Profil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              Nastavenia
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleLogout(); }} className="text-destructive focus:text-destructive">
-              <LogOut className="mr-2 h-4 w-4" />Odhlásiť sa
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                handleLogout();
+              }}
+              className="text-destructive focus:text-destructive"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Odhlásiť sa
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
       </div>
     </header>
   );

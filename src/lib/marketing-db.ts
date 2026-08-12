@@ -8,7 +8,7 @@ export type CampaignStatus = "draft" | "active" | "paused" | "ended";
 export type GoogleAdsAccount = {
   id: string;
   organizer_id: string;
-  customer_id: string;          // 123-456-7890
+  customer_id: string; // 123-456-7890
   account_name: string;
   status: "connected" | "disconnected";
   credit_eur: number;
@@ -40,7 +40,7 @@ export type PixelSettings = {
 };
 
 export type CampaignAudience = {
-  country: string;          // SK
+  country: string; // SK
   cities: string[];
   age_min: number;
   age_max: number;
@@ -49,8 +49,8 @@ export type CampaignAudience = {
 };
 
 export type CampaignCreative = {
-  headlines: string[];      // až 15 (Google)
-  descriptions: string[];   // až 4 (Google)
+  headlines: string[]; // až 15 (Google)
+  descriptions: string[]; // až 4 (Google)
   cta: string;
   image_url?: string;
 };
@@ -58,13 +58,13 @@ export type CampaignCreative = {
 export type CampaignMetrics = {
   impressions: number;
   clicks: number;
-  cpc: number;              // €
-  ctr: number;              // %
+  cpc: number; // €
+  ctr: number; // %
   conversions: number;
   tickets_sold: number;
   revenue_eur: number;
   spend_eur: number;
-  roas: number;             // revenue / spend
+  roas: number; // revenue / spend
   updated_at: string;
 };
 
@@ -95,7 +95,7 @@ const AUTO_KEY = "mt_marketing_auto"; // map organizer_id -> boolean
 export const MARKETING_EVENT = "mt:marketing-change";
 
 const isBrowser = () => typeof window !== "undefined";
-const read = <T,>(k: string, f: T): T => {
+const read = <T>(k: string, f: T): T => {
   if (!isBrowser()) return f;
   try {
     const v = window.localStorage.getItem(k);
@@ -104,7 +104,7 @@ const read = <T,>(k: string, f: T): T => {
     return f;
   }
 };
-const write = <T,>(k: string, v: T) => {
+const write = <T>(k: string, v: T) => {
   if (!isBrowser()) return;
   window.localStorage.setItem(k, JSON.stringify(v));
   window.dispatchEvent(new Event(MARKETING_EVENT));
@@ -134,7 +134,10 @@ export function connectGoogleAds(organizerId: string): GoogleAdsAccount {
   return acc;
 }
 export function disconnectGoogleAds(organizerId: string) {
-  write(GADS_KEY, getGoogleAccounts().filter((a) => a.organizer_id !== organizerId));
+  write(
+    GADS_KEY,
+    getGoogleAccounts().filter((a) => a.organizer_id !== organizerId),
+  );
 }
 export function syncGoogleAds(organizerId: string) {
   const list = getGoogleAccounts();
@@ -169,7 +172,10 @@ export function connectMetaAds(organizerId: string): MetaAdsAccount {
   return acc;
 }
 export function disconnectMetaAds(organizerId: string) {
-  write(META_KEY, getMetaAccounts().filter((a) => a.organizer_id !== organizerId));
+  write(
+    META_KEY,
+    getMetaAccounts().filter((a) => a.organizer_id !== organizerId),
+  );
 }
 
 // ---------- Pixel settings ----------
@@ -202,7 +208,10 @@ export function saveCampaign(c: Campaign) {
   write(CAMP_KEY, list);
 }
 export function deleteCampaign(id: string) {
-  write(CAMP_KEY, getCampaigns().filter((c) => c.id !== id));
+  write(
+    CAMP_KEY,
+    getCampaigns().filter((c) => c.id !== id),
+  );
 }
 export function setCampaignStatus(id: string, status: CampaignStatus) {
   const list = getCampaigns();
@@ -231,7 +240,12 @@ function rand(len: number) {
   return s;
 }
 
-export function generateCreative(event: { title: string; city: string; venue: string; category: string }): CampaignCreative {
+export function generateCreative(event: {
+  title: string;
+  city: string;
+  venue: string;
+  category: string;
+}): CampaignCreative {
   const t = event.title;
   const headlines = [
     `${t} – kúp vstupenku`,

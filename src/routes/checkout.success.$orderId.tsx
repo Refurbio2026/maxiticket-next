@@ -3,7 +3,17 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import { getOrder, getTicketsForOrder, type Order, type IssuedTicket } from "@/lib/ticketing-db";
-import { getEvent, type EventItem } from "@/lib/local-db";
+import { useEvent } from "@/hooks/use-events";
+
+/** Polia podujatia, ktoré táto stránka zobrazuje (bez `scanner_token`). */
+type SummaryEvent = {
+  id: string;
+  title: string;
+  event_date: string;
+  event_time: string;
+  venue: string;
+  city: string;
+};
 import { getOrderSummary } from "@/lib/payments.functions";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
@@ -24,7 +34,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppleWalletButton, GoogleWalletButton } from "@/components/wallet/WalletButtons";
-import { downloadTicketsPdf } from "@/lib/ticket-pdf";
+import { renderOrderTicketsPdf } from "@/lib/ticket-pdf.functions";
+import { downloadBase64 } from "@/lib/download";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
   head: () => ({ meta: [{ title: "Ďakujeme za nákup · vipky.sk" }] }),
@@ -38,7 +49,7 @@ function SuccessPage() {
   const { orderId } = Route.useParams();
   const { t } = Route.useSearch();
   const [order, setOrder] = useState<Order | undefined>();
-  const [event, setEvent] = useState<EventItem | undefined>();
+  const [summaryEvent, setSummaryEvent] = useState<SummaryEvent | undefined>();
   const [tickets, setTickets] = useState<IssuedTicket[]>([]);
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
@@ -46,6 +57,11 @@ function SuccessPage() {
   const [sending, setSending] = useState(false);
   const [generating, setGenerating] = useState(false);
   const fetchSummary = useServerFn(getOrderSummary);
+  const renderPdf = useServerFn(renderOrderTicketsPdf);
+  // Zhrnutie zo servera je hlavný zdroj; pri starej localStorage objednávke
+  // (demo/POS cesta) doplní podujatie dotaz do databázy.
+  const { data: dbEvent } = useEvent(order?.event_id);
+  const event = summaryEvent ?? dbEvent ?? undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -86,17 +102,14 @@ function SuccessPage() {
           setInvoiceUrl(sb.superfaktura_invoice_pdf_url || null);
           setInvoiceNumber(sb.superfaktura_invoice_number || null);
           if (s.event) {
-            setEvent({
+            setSummaryEvent({
               id: s.event.id,
               title: s.event.title,
-              category: s.event.category,
               event_date: s.event.event_date,
               event_time: s.event.event_time,
               venue: s.event.venue,
               city: s.event.city,
-            } as EventItem);
-          } else {
-            setEvent(getEvent(sb.event_id));
+            });
           }
           setLoaded(true);
           return;
@@ -107,10 +120,7 @@ function SuccessPage() {
       // 2) Fallback: legacy localStorage order (demo/POS path)
       const o = getOrder(orderId);
       setOrder(o);
-      if (o) {
-        setEvent(getEvent(o.event_id));
-        setTickets(getTicketsForOrder(o.id));
-      }
+      if (o) setTickets(getTicketsForOrder(o.id));
       setLoaded(true);
     })();
     return () => {
@@ -123,13 +133,20 @@ function SuccessPage() {
       toast.error("Vstupenky nie sú pripravené");
       return;
     }
+    if (!t) {
+      toast.error("Na stiahnutie PDF otvor odkaz z potvrdzovacieho e-mailu.");
+      return;
+    }
     setGenerating(true);
     try {
-      await downloadTicketsPdf({ order, event, tickets });
+      // PDF skladá server — jeden generátor pre e-mail aj stiahnutie, a s
+      // vloženým fontom, takže diakritika v názvoch sedí.
+      const res = await renderPdf({ data: { order_id: order.id, access_token: t } });
+      downloadBase64(res.filename, res.base64);
       toast.success("PDF vstupenka stiahnutá");
     } catch (e) {
       console.error(e);
-      toast.error("Generovanie PDF zlyhalo");
+      toast.error(e instanceof Error ? e.message : "Generovanie PDF zlyhalo");
     } finally {
       setGenerating(false);
     }
@@ -205,7 +222,8 @@ function SuccessPage() {
                     Pridajte si vstupenku do mobilu
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Netreba tlačiť. Ulož si vstupenku do Apple Wallet alebo Google Wallet a pri vstupe ukáž QR kód z telefónu.
+                    Netreba tlačiť. Ulož si vstupenku do Apple Wallet alebo Google Wallet a pri
+                    vstupe ukáž QR kód z telefónu.
                   </p>
                 </div>
               </div>
@@ -225,7 +243,9 @@ function SuccessPage() {
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                         Vstupenka #{i + 1}
                       </div>
-                      <div className="font-display text-lg font-semibold mt-0.5">{t.seat_label}</div>
+                      <div className="font-display text-lg font-semibold mt-0.5">
+                        {t.seat_label}
+                      </div>
                       <div className="text-xs font-mono text-muted-foreground mt-1 break-all">
                         {t.qr_code}
                       </div>
@@ -261,7 +281,8 @@ function SuccessPage() {
                 disabled={generating}
                 className="gap-1.5 bg-gradient-flame text-primary-foreground shadow-glow"
               >
-                <Download className="size-4" /> {generating ? "Generujem PDF…" : "Stiahnuť PDF vstupenku"}
+                <Download className="size-4" />{" "}
+                {generating ? "Generujem PDF…" : "Stiahnuť PDF vstupenku"}
               </Button>
               <Button onClick={sendEmail} variant="outline" disabled={sending} className="gap-1.5">
                 <Mail className="size-4" /> {sending ? "Posielam…" : "Poslať na email"}

@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
-  getEvents, upsertEvent, deleteEvent, emit, EVENTS_EVENT, type EventItem,
-} from "@/lib/local-db";
+  useEvents,
+  useUpsertEvent,
+  useDeleteEvent,
+  toEventInput,
+  type EventRecord,
+} from "@/hooks/use-events";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Eye, Trash2, CheckCircle2, FileText, Calendar, MapPin } from "lucide-react";
@@ -18,49 +21,46 @@ export const Route = createFileRoute("/organizer/events/")({
 function OrganizerEvents() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const [events, setEvents] = useState<EventItem[]>([]);
+  // Vlastné podujatia vrátane konceptov; adminovi server vráti všetky.
+  const { data: events = [] } = useEvents({ scope: "mine" });
+  const upsert = useUpsertEvent();
+  const del = useDeleteEvent();
 
-  const load = () => {
-    if (!user) return setEvents([]);
-    setEvents(
-      getEvents().filter((e) => user.role === "admin" || e.organizer_id === user.id),
-    );
+  const togglePublish = async (e: EventRecord) => {
+    const next = e.status === "published" ? "draft" : "published";
+    try {
+      await upsert.mutateAsync(toEventInput(e, { status: next }));
+      toast.success(
+        next === "draft" ? t("orgEventsList.toastHidden") : t("orgEventsList.toastPublished"),
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Zmena stavu zlyhala");
+    }
   };
 
-  useEffect(() => {
-    load();
-    const handler = () => load();
-    window.addEventListener(EVENTS_EVENT, handler);
-    window.addEventListener("storage", handler);
-    return () => {
-      window.removeEventListener(EVENTS_EVENT, handler);
-      window.removeEventListener("storage", handler);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  const togglePublish = (e: EventItem) => {
-    upsertEvent({ ...e, status: e.status === "published" ? "draft" : "published" });
-    emit(EVENTS_EVENT);
-    toast.success(e.status === "published" ? t("orgEventsList.toastHidden") : t("orgEventsList.toastPublished"));
-  };
-
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm(t("orgEventsList.confirmDelete"))) return;
-    deleteEvent(id);
-    emit(EVENTS_EVENT);
-    toast.success(t("orgEventsList.toastDeleted"));
+    try {
+      await del.mutateAsync(id);
+      toast.success(t("orgEventsList.toastDeleted"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Zmazanie zlyhalo");
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgEventsList.title")}</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight">
+            {t("orgEventsList.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("orgEventsList.subtitle")}</p>
         </div>
         <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
-          <Link to="/organizer/events/new"><Plus className="size-4 mr-2" /> {t("orgEventsList.addButton")}</Link>
+          <Link to="/organizer/events/new">
+            <Plus className="size-4 mr-2" /> {t("orgEventsList.addButton")}
+          </Link>
         </Button>
       </div>
 
@@ -80,12 +80,16 @@ function OrganizerEvents() {
               />
               <div className="p-5 space-y-2 flex-1 flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                    e.status === "published"
-                      ? "bg-primary/15 text-primary border-primary/30"
-                      : "bg-muted text-muted-foreground border-border/50"
-                  }`}>
-                    {e.status === "published" ? t("orgEventsList.statusPublished") : t("orgEventsList.statusDraft")}
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                      e.status === "published"
+                        ? "bg-primary/15 text-primary border-primary/30"
+                        : "bg-muted text-muted-foreground border-border/50"
+                    }`}
+                  >
+                    {e.status === "published"
+                      ? t("orgEventsList.statusPublished")
+                      : t("orgEventsList.statusDraft")}
                   </span>
                   <span className="text-xs text-muted-foreground">{e.category}</span>
                 </div>
@@ -99,15 +103,28 @@ function OrganizerEvents() {
                 <div className="flex flex-wrap gap-2 mt-auto pt-3">
                   {e.status === "published" && (
                     <Button asChild variant="ghost" size="sm">
-                      <Link to="/events/$id" params={{ id: e.id }}><Eye className="size-3.5 mr-1.5" /> {t("orgEventsList.view")}</Link>
+                      <Link to="/events/$id" params={{ id: e.id }}>
+                        <Eye className="size-3.5 mr-1.5" /> {t("orgEventsList.view")}
+                      </Link>
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={() => togglePublish(e)}>
-                    {e.status === "published"
-                      ? <><FileText className="size-3.5 mr-1.5" /> {t("orgEventsList.hide")}</>
-                      : <><CheckCircle2 className="size-3.5 mr-1.5" /> {t("orgEventsList.publish")}</>}
+                    {e.status === "published" ? (
+                      <>
+                        <FileText className="size-3.5 mr-1.5" /> {t("orgEventsList.hide")}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="size-3.5 mr-1.5" /> {t("orgEventsList.publish")}
+                      </>
+                    )}
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => remove(e.id)} className="text-destructive hover:text-destructive">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => remove(e.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
                     <Trash2 className="size-3.5 mr-1.5" /> {t("orgEventsList.delete")}
                   </Button>
                 </div>

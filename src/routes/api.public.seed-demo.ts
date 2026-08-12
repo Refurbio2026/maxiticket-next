@@ -3,7 +3,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const DEMO = [
   { email: "admin@vipky.sk", password: "admin123", full_name: "Admin", role: "admin" as const },
-  { email: "organizer@vipky.sk", password: "organizer123", full_name: "Organizer", role: "organizer" as const },
+  {
+    email: "organizer@vipky.sk",
+    password: "organizer123",
+    full_name: "Organizer",
+    role: "organizer" as const,
+  },
   { email: "user@vipky.sk", password: "user123", full_name: "User", role: "user" as const },
 ];
 

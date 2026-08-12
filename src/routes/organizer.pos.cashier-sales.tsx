@@ -2,7 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
-import { getCashiersForOrganizer, getSessions, type Cashier, type CashierSession } from "@/lib/cashier-db";
+import {
+  getCashiersForOrganizer,
+  getSessions,
+  type Cashier,
+  type CashierSession,
+} from "@/lib/cashier-db";
 import { getSales, POS_EVENT, type PosSale } from "@/lib/pos-db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,15 +45,21 @@ function CashierSalesPage() {
   }, []);
 
   const rows = useMemo(() => {
-    return cashiers.map((c) => {
-      const own = sales.filter((s) => s.cashier_id === c.id && s.created_at.startsWith(date));
-      const paid = own.filter((s) => s.status === "paid");
-      const cash = paid.filter((s) => s.payment_method === "cash").reduce((a, b) => a + b.total, 0);
-      const card = paid.filter((s) => s.payment_method === "card").reduce((a, b) => a + b.total, 0);
-      const total = paid.reduce((a, b) => a + b.total, 0);
-      const voids = own.filter((s) => s.status === "void").length;
-      return { cashier: c, count: paid.length, cash, card, total, voids };
-    }).filter((r) => r.count > 0 || r.voids > 0);
+    return cashiers
+      .map((c) => {
+        const own = sales.filter((s) => s.cashier_id === c.id && s.created_at.startsWith(date));
+        const paid = own.filter((s) => s.status === "paid");
+        const cash = paid
+          .filter((s) => s.payment_method === "cash")
+          .reduce((a, b) => a + b.total, 0);
+        const card = paid
+          .filter((s) => s.payment_method === "card")
+          .reduce((a, b) => a + b.total, 0);
+        const total = paid.reduce((a, b) => a + b.total, 0);
+        const voids = own.filter((s) => s.status === "void").length;
+        return { cashier: c, count: paid.length, cash, card, total, voids };
+      })
+      .filter((r) => r.count > 0 || r.voids > 0);
   }, [cashiers, sales, date]);
 
   const exportCsv = () => {
@@ -61,20 +72,38 @@ function CashierSalesPage() {
       t("orgPosCashierSales.csvTotal"),
       t("orgPosCashierSales.csvVoid"),
     ];
-    const csv = [head, ...rows.map((r) => [
-      date, r.cashier.display_name, r.count, r.cash.toFixed(2), r.card.toFixed(2), r.total.toFixed(2), r.voids,
-    ])].map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [
+      head,
+      ...rows.map((r) => [
+        date,
+        r.cashier.display_name,
+        r.count,
+        r.cash.toFixed(2),
+        r.card.toFixed(2),
+        r.total.toFixed(2),
+        r.voids,
+      ]),
+    ]
+      .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    a.download = `predaje-pokladnikov-${date}.csv`; a.click();
+    a.download = `predaje-pokladnikov-${date}.csv`;
+    a.click();
   };
 
   const detailSales = useMemo(
-    () => detail ? sales.filter((s) => s.cashier_id === detail.id && s.created_at.startsWith(date)) : [],
+    () =>
+      detail
+        ? sales.filter((s) => s.cashier_id === detail.id && s.created_at.startsWith(date))
+        : [],
     [detail, sales, date],
   );
   const detailSessions = useMemo(
-    () => detail ? sessions.filter((s) => s.cashier_id === detail.id && s.opened_at.startsWith(date)) : [],
+    () =>
+      detail
+        ? sessions.filter((s) => s.cashier_id === detail.id && s.opened_at.startsWith(date))
+        : [],
     [detail, sessions, date],
   );
 
@@ -82,15 +111,26 @@ function CashierSalesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosCashierSales.title")}</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight">
+            {t("orgPosCashierSales.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("orgPosCashierSales.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-end">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">{t("orgPosCashierSales.dateLabel")}</div>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 w-44" />
+            <div className="text-xs text-muted-foreground mb-1">
+              {t("orgPosCashierSales.dateLabel")}
+            </div>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-10 w-44"
+            />
           </div>
-          <Button variant="outline" onClick={exportCsv}><FileDown className="size-4 mr-2" /> {t("orgPosCashierSales.csvButton")}</Button>
+          <Button variant="outline" onClick={exportCsv}>
+            <FileDown className="size-4 mr-2" /> {t("orgPosCashierSales.csvButton")}
+          </Button>
         </div>
       </div>
 
@@ -121,13 +161,17 @@ function CashierSalesPage() {
                 <tr key={r.cashier.id} className="border-b border-border/30">
                   <td className="py-2">
                     <div className="font-medium">{r.cashier.display_name}</div>
-                    <div className="text-xs text-muted-foreground">{r.cashier.first_name} {r.cashier.last_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {r.cashier.first_name} {r.cashier.last_name}
+                    </div>
                   </td>
                   <td className="text-right">{r.count}</td>
                   <td className="text-right">€{r.cash.toFixed(2)}</td>
                   <td className="text-right">€{r.card.toFixed(2)}</td>
                   <td className="text-right font-semibold">€{r.total.toFixed(2)}</td>
-                  <td className="text-right">{r.voids > 0 ? <Badge variant="destructive">{r.voids}</Badge> : "0"}</td>
+                  <td className="text-right">
+                    {r.voids > 0 ? <Badge variant="destructive">{r.voids}</Badge> : "0"}
+                  </td>
                   <td className="text-right">
                     <Button size="sm" variant="ghost" onClick={() => setDetail(r.cashier)}>
                       <Eye className="size-3.5 mr-1.5" /> {t("orgPosCashierSales.detail")}
@@ -143,11 +187,15 @@ function CashierSalesPage() {
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{detail?.display_name} · {date}</DialogTitle>
+            <DialogTitle>
+              {detail?.display_name} · {date}
+            </DialogTitle>
           </DialogHeader>
           {detailSessions.length > 0 && (
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("orgPosCashierSales.sessions")}</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                {t("orgPosCashierSales.sessions")}
+              </div>
               <div className="grid sm:grid-cols-2 gap-2">
                 {detailSessions.map((s) => (
                   <Card key={s.id} className="p-3 bg-muted/30">
@@ -156,11 +204,18 @@ function CashierSalesPage() {
                       {s.closed_at && ` – ${new Date(s.closed_at).toLocaleTimeString("sk-SK")}`}
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                      <Badge variant={s.status === "open" ? "default" : "outline"} className="text-[10px]">
-                        {s.status === "open" ? t("orgPosCashierSales.sessionOpen") : t("orgPosCashierSales.sessionClosed")}
+                      <Badge
+                        variant={s.status === "open" ? "default" : "outline"}
+                        className="text-[10px]"
+                      >
+                        {s.status === "open"
+                          ? t("orgPosCashierSales.sessionOpen")
+                          : t("orgPosCashierSales.sessionClosed")}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {t("orgPosCashierSales.openingCash", { amount: s.opening_cash_amount.toFixed(2) })}
+                        {t("orgPosCashierSales.openingCash", {
+                          amount: s.opening_cash_amount.toFixed(2),
+                        })}
                       </span>
                     </div>
                   </Card>
@@ -168,9 +223,13 @@ function CashierSalesPage() {
               </div>
             </div>
           )}
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mt-4">{t("orgPosCashierSales.sales")}</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mt-4">
+            {t("orgPosCashierSales.sales")}
+          </div>
           {detailSales.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">{t("orgPosCashierSales.noSales")}</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              {t("orgPosCashierSales.noSales")}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border/50">
@@ -187,13 +246,20 @@ function CashierSalesPage() {
                 {detailSales.map((s) => (
                   <tr key={s.id} className="border-b border-border/30">
                     <td className="py-2 font-mono text-xs">{s.receipt_number}</td>
-                    <td className="text-xs">{new Date(s.created_at).toLocaleTimeString("sk-SK")}</td>
+                    <td className="text-xs">
+                      {new Date(s.created_at).toLocaleTimeString("sk-SK")}
+                    </td>
                     <td className="truncate max-w-[200px]">{s.event_title}</td>
                     <td className="capitalize">{s.payment_method}</td>
                     <td className="text-right">€{s.total.toFixed(2)}</td>
                     <td>
-                      <Badge variant={s.status === "paid" ? "default" : "destructive"} className="text-[10px]">
-                        {s.status === "paid" ? t("orgPosCashierSales.paid") : t("orgPosCashierSales.void")}
+                      <Badge
+                        variant={s.status === "paid" ? "default" : "destructive"}
+                        className="text-[10px]"
+                      >
+                        {s.status === "paid"
+                          ? t("orgPosCashierSales.paid")
+                          : t("orgPosCashierSales.void")}
                       </Badge>
                     </td>
                   </tr>

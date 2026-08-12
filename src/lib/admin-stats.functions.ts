@@ -55,41 +55,48 @@ export const getAdminOverview = createServerFn({ method: "POST" })
     const start7 = new Date(Date.now() - 6 * 86400_000);
     start7.setHours(0, 0, 0, 0);
 
-    const [todayOrdersRes, weekOrdersRes, eventsRes, organizersRes, refundsRes, paidTotalRes, topRes, recentRes] =
-      await Promise.all([
-        supabaseAdmin
-          .from("orders")
-          .select("total_amount, id")
-          .eq("status", "paid")
-          .gte("paid_at", startToday),
-        supabaseAdmin
-          .from("orders")
-          .select("total_amount, paid_at, id")
-          .eq("status", "paid")
-          .gte("paid_at", start7.toISOString()),
-        supabaseAdmin
-          .from("events")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "published"),
-        supabaseAdmin
-          .from("user_roles")
-          .select("user_id", { count: "exact", head: true })
-          .eq("role", "organizer"),
-        supabaseAdmin
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .in("status", ["refunded"]),
-        supabaseAdmin.from("orders").select("total_amount").eq("status", "paid"),
-        supabaseAdmin
-          .from("tickets")
-          .select("event_id, events ( id, title )")
-          .limit(2000),
-        supabaseAdmin
-          .from("orders")
-          .select("id, customer_email, total_amount, status, created_at, event_id, events ( title ), order_items ( quantity )")
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
+    const [
+      todayOrdersRes,
+      weekOrdersRes,
+      eventsRes,
+      organizersRes,
+      refundsRes,
+      paidTotalRes,
+      topRes,
+      recentRes,
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("orders")
+        .select("total_amount, id")
+        .eq("status", "paid")
+        .gte("paid_at", startToday),
+      supabaseAdmin
+        .from("orders")
+        .select("total_amount, paid_at, id")
+        .eq("status", "paid")
+        .gte("paid_at", start7.toISOString()),
+      supabaseAdmin
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "published"),
+      supabaseAdmin
+        .from("user_roles")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "organizer"),
+      supabaseAdmin
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["refunded"]),
+      supabaseAdmin.from("orders").select("total_amount").eq("status", "paid"),
+      supabaseAdmin.from("tickets").select("event_id, events ( id, title )").limit(2000),
+      supabaseAdmin
+        .from("orders")
+        .select(
+          "id, customer_email, total_amount, status, created_at, event_id, events ( title ), order_items ( quantity )",
+        )
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
 
     // tickets today (count of tickets with issued_at today)
     const { count: todayTickets } = await supabaseAdmin
@@ -352,7 +359,10 @@ export const getScanStatsAll = createServerFn({ method: "POST" })
     const rows: ScanEventRow[] = [];
     for (const e of events || []) {
       const [{ count: sold }, { count: used }] = await Promise.all([
-        supabaseAdmin.from("tickets").select("id", { count: "exact", head: true }).eq("event_id", (e as any).id),
+        supabaseAdmin
+          .from("tickets")
+          .select("id", { count: "exact", head: true })
+          .eq("event_id", (e as any).id),
         supabaseAdmin
           .from("tickets")
           .select("id", { count: "exact", head: true })

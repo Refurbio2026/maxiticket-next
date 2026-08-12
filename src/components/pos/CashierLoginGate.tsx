@@ -6,8 +6,11 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Delete, LogIn, ShieldCheck, UserCircle2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
-  getActiveCashiersForOrganizer, verifyPin, openSession,
-  type Cashier, type CashierSession,
+  getActiveCashiersForOrganizer,
+  verifyPin,
+  openSession,
+  type Cashier,
+  type CashierSession,
 } from "@/lib/cashier-db";
 
 type Props = {
@@ -30,7 +33,7 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
   const initials = (c: Cashier) =>
     (c.first_name?.[0] ?? "") + (c.last_name?.[0] ?? "") || c.display_name.slice(0, 2);
 
-  const pinKeys = useMemo(() => ["1","2","3","4","5","6","7","8","9","C","0","⌫"], []);
+  const pinKeys = useMemo(() => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"], []);
 
   const pressKey = (k: string) => {
     if (k === "C") return setPin("");
@@ -46,7 +49,11 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
     setBusy(true);
     try {
       const ok = await verifyPin(value, selected.pin_hash);
-      if (!ok) { toast.error("Nesprávny PIN"); setPin(""); return; }
+      if (!ok) {
+        toast.error("Nesprávny PIN");
+        setPin("");
+        return;
+      }
       setStep("cash");
     } finally {
       setBusy(false);
@@ -61,7 +68,6 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pin, step, selected]);
-
 
   const finishLogin = () => {
     if (!selected) return;
@@ -83,8 +89,8 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
           <Users className="size-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="font-display text-2xl font-bold">Žiadny aktívny pokladník</h2>
           <p className="text-sm text-muted-foreground mt-2">
-            Najprv vytvor pokladníka v sekcii <strong>Pokladňa → Pokladníci</strong>.
-            Každý pokladník sa prihlasuje vlastným PIN kódom.
+            Najprv vytvor pokladníka v sekcii <strong>Pokladňa → Pokladníci</strong>. Každý
+            pokladník sa prihlasuje vlastným PIN kódom.
           </p>
           <Button asChild className="mt-6 bg-gradient-flame text-primary-foreground shadow-glow">
             <a href="/organizer/pos/cashiers">Spravovať pokladníkov</a>
@@ -110,7 +116,11 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
               {cashiers.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => { setSelected(c); setPin(""); setStep("pin"); }}
+                  onClick={() => {
+                    setSelected(c);
+                    setPin("");
+                    setStep("pin");
+                  }}
                   className="group p-5 rounded-2xl border border-border/50 bg-background hover:border-primary hover:shadow-glow transition text-left"
                 >
                   <div className="flex flex-col items-center text-center gap-3">
@@ -135,7 +145,16 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
 
         {step === "pin" && selected && (
           <div className="max-w-sm mx-auto">
-            <Button variant="ghost" size="sm" className="-ml-2 mb-4" onClick={() => { setSelected(null); setPin(""); setStep("pick"); }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-2 mb-4"
+              onClick={() => {
+                setSelected(null);
+                setPin("");
+                setStep("pick");
+              }}
+            >
               <ArrowLeft className="size-4 mr-1.5" /> Späť
             </Button>
             <div className="text-center mb-6">
@@ -186,7 +205,9 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
               <h2 className="font-display text-2xl font-bold">{selected.display_name}</h2>
               <p className="text-xs text-muted-foreground">Otvorenie pokladne</p>
             </div>
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Počiatočná hotovosť v zásuvke (€)</Label>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Počiatočná hotovosť v zásuvke (€)
+            </Label>
             <Input
               type="number"
               step="0.01"
@@ -202,7 +223,10 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
               Otvoriť pokladnicu
             </Button>
             <button
-              onClick={() => { setStep("pin"); setPin(""); }}
+              onClick={() => {
+                setStep("pin");
+                setPin("");
+              }}
               className="w-full mt-3 text-xs text-muted-foreground hover:text-foreground"
             >
               Späť

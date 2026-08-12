@@ -85,7 +85,8 @@ async function toAuthUser(u: SupabaseUserLike | null | undefined): Promise<AuthU
 function translateAuthError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login")) return "Nesprávny email alebo heslo";
-  if (m.includes("email not confirmed")) return "Email ešte nie je potvrdený. Skontroluj si schránku.";
+  if (m.includes("email not confirmed"))
+    return "Email ešte nie je potvrdený. Skontroluj si schránku.";
   if (m.includes("already registered") || m.includes("already been registered"))
     return "Účet s týmto emailom už existuje";
   return message;
@@ -130,7 +131,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       sub.subscription.unsubscribe();
     };
-
   }, []);
 
   const signIn: AuthCtx["signIn"] = async (email, password) => {

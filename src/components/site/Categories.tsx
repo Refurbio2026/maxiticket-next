@@ -3,14 +3,62 @@ import { Link } from "@tanstack/react-router";
 import { Music, Mic2, Trophy, Theater, Drama, Users, Lightbulb, Disc3 } from "lucide-react";
 
 const cats = [
-  { icon: Music, label: "Koncerty", slug: "koncerty", count: 1240, hue: "from-orange-500/20 to-amber-500/10" },
-  { icon: Disc3, label: "Festivaly", slug: "festivaly", count: 86, hue: "from-pink-500/20 to-orange-500/10" },
-  { icon: Trophy, label: "Šport", slug: "sport", count: 412, hue: "from-blue-500/20 to-cyan-500/10" },
-  { icon: Theater, label: "Divadlo", slug: "divadlo", count: 318, hue: "from-purple-500/20 to-pink-500/10" },
-  { icon: Mic2, label: "Stand-up", slug: "stand-up", count: 95, hue: "from-amber-500/20 to-orange-500/10" },
-  { icon: Users, label: "Konferencie", slug: "konferencie", count: 64, hue: "from-emerald-500/20 to-cyan-500/10" },
-  { icon: Lightbulb, label: "Workshopy", slug: "workshopy", count: 142, hue: "from-yellow-500/20 to-amber-500/10" },
-  { icon: Drama, label: "Kluby", slug: "kluby", count: 287, hue: "from-fuchsia-500/20 to-purple-500/10" },
+  {
+    icon: Music,
+    label: "Koncerty",
+    slug: "koncerty",
+    count: 1240,
+    hue: "from-orange-500/20 to-amber-500/10",
+  },
+  {
+    icon: Disc3,
+    label: "Festivaly",
+    slug: "festivaly",
+    count: 86,
+    hue: "from-pink-500/20 to-orange-500/10",
+  },
+  {
+    icon: Trophy,
+    label: "Šport",
+    slug: "sport",
+    count: 412,
+    hue: "from-blue-500/20 to-cyan-500/10",
+  },
+  {
+    icon: Theater,
+    label: "Divadlo",
+    slug: "divadlo",
+    count: 318,
+    hue: "from-purple-500/20 to-pink-500/10",
+  },
+  {
+    icon: Mic2,
+    label: "Stand-up",
+    slug: "stand-up",
+    count: 95,
+    hue: "from-amber-500/20 to-orange-500/10",
+  },
+  {
+    icon: Users,
+    label: "Konferencie",
+    slug: "konferencie",
+    count: 64,
+    hue: "from-emerald-500/20 to-cyan-500/10",
+  },
+  {
+    icon: Lightbulb,
+    label: "Workshopy",
+    slug: "workshopy",
+    count: 142,
+    hue: "from-yellow-500/20 to-amber-500/10",
+  },
+  {
+    icon: Drama,
+    label: "Kluby",
+    slug: "kluby",
+    count: 287,
+    hue: "from-fuchsia-500/20 to-purple-500/10",
+  },
 ];
 
 const MotionLink = motion(Link);
@@ -43,7 +91,10 @@ export function Categories() {
               <div className="absolute inset-0 bg-card/60" />
               <div className="relative">
                 <div className="size-12 rounded-xl bg-background/40 backdrop-blur grid place-items-center mb-4 group-hover:bg-gradient-flame transition-all duration-300">
-                  <c.icon className="size-5 group-hover:text-primary-foreground transition-colors" strokeWidth={2} />
+                  <c.icon
+                    className="size-5 group-hover:text-primary-foreground transition-colors"
+                    strokeWidth={2}
+                  />
                 </div>
                 <div className="font-display text-lg font-semibold">{c.label}</div>
                 <div className="text-xs text-muted-foreground mt-1">{c.count} podujatí</div>

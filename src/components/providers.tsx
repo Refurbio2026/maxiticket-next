@@ -4,7 +4,13 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { I18nProvider } from "@/hooks/use-i18n";
 
-export function Providers({ queryClient, children }: { queryClient: QueryClient; children: ReactNode }) {
+export function Providers({
+  queryClient,
+  children,
+}: {
+  queryClient: QueryClient;
+  children: ReactNode;
+}) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

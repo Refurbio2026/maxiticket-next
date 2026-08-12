@@ -19,7 +19,8 @@ export const Route = createFileRoute("/api/public/tickets/stats")({
             .maybeSingle();
           eventId = (data as any)?.id || null;
         }
-        if (!eventId) return Response.json({ error: "event_id or event_token required" }, { status: 400 });
+        if (!eventId)
+          return Response.json({ error: "event_id or event_token required" }, { status: 400 });
 
         const [{ count: sold }, { count: used }, scansRes] = await Promise.all([
           supabaseAdmin

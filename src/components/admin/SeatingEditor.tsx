@@ -1,23 +1,15 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import {
-  Stage,
-  Layer,
-  Rect,
-  Text as KText,
-  Group,
-  Circle,
-  Transformer,
-} from "react-konva";
+import { Stage, Layer, Rect, Text as KText, Group, Circle, Transformer } from "react-konva";
 import type Konva from "konva";
 import {
   computeCapacity,
   uid,
-  upsertLayout,
   type CurveGroup,
   type HallLayout,
   type Shape,
   type ShapeKind,
-} from "@/lib/layouts-db";
+} from "@/lib/layout-types";
+import { useUpsertLayout, toLayoutInput } from "@/hooks/use-layouts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,15 +49,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Tool =
-  | "select"
-  | "sector"
-  | "vip"
-  | "standing"
-  | "stage"
-  | "entrance"
-  | "label"
-  | "seat";
+type Tool = "select" | "sector" | "vip" | "standing" | "stage" | "entrance" | "label" | "seat";
 
 const SHAPE_COLOR: Record<ShapeKind, string> = {
   sector: "#3b82f6",
@@ -94,7 +78,9 @@ const formatRowLabel = (i: number, mode: "ABC" | "123" = "ABC") =>
 function buildCurveGroupSeats(group: CurveGroup, previous: Shape[] = []): Shape[] {
   const ss = group.seatSize ?? 22;
   const startSeat = group.startSeat ?? 1;
-  const existing = new Map(previous.map((seat) => [`${seat.startRow ?? 1}:${seat.seatNumber ?? 1}`, seat]));
+  const existing = new Map(
+    previous.map((seat) => [`${seat.startRow ?? 1}:${seat.seatNumber ?? 1}`, seat]),
+  );
   const seats: Shape[] = [];
   const totalAngle = group.endAngle - group.startAngle;
   const fullArc = Math.abs(totalAngle) >= 360;
@@ -106,7 +92,8 @@ function buildCurveGroupSeats(group: CurveGroup, previous: Shape[] = []): Shape[
       const relativeAngle =
         group.seatsPerRow === 1
           ? group.startAngle + totalAngle / 2
-          : group.startAngle + (totalAngle * c) / (fullArc ? group.seatsPerRow : group.seatsPerRow - 1);
+          : group.startAngle +
+            (totalAngle * c) / (fullArc ? group.seatsPerRow : group.seatsPerRow - 1);
       const worldAngle = relativeAngle + group.rotation;
       const rad = (worldAngle * Math.PI) / 180;
       const x = group.centerX + rowRadius * Math.cos(rad);
@@ -177,16 +164,22 @@ function normalizeLayout(input: HallLayout): HallLayout {
     const first = seats[0];
     if (!first) continue;
     const firstAngle = typeof first.angle === "number" ? first.angle : 0;
-    const angleDeg = Math.abs(firstAngle) <= Math.PI * 2 ? (firstAngle * 180) / Math.PI : firstAngle;
+    const angleDeg =
+      Math.abs(firstAngle) <= Math.PI * 2 ? (firstAngle * 180) / Math.PI : firstAngle;
     const radius = first.radius ?? first.relativeRadius ?? 280;
     const centerX = first.x + first.width / 2 - radius * Math.cos((angleDeg * Math.PI) / 180);
     const centerY = first.y + first.height / 2 - radius * Math.sin((angleDeg * Math.PI) / 180);
     const rows = new Set(seats.map((seat) => seat.startRow ?? seat.row ?? "1")).size || 1;
-    const seatsPerRow = Math.max(...Object.values(seats.reduce<Record<string, number>>((acc, seat) => {
-      const key = String(seat.startRow ?? seat.row ?? "1");
-      acc[key] = (acc[key] ?? 0) + 1;
-      return acc;
-    }, {})), 1);
+    const seatsPerRow = Math.max(
+      ...Object.values(
+        seats.reduce<Record<string, number>>((acc, seat) => {
+          const key = String(seat.startRow ?? seat.row ?? "1");
+          acc[key] = (acc[key] ?? 0) + 1;
+          return acc;
+        }, {}),
+      ),
+      1,
+    );
     curveGroups.push({
       id,
       name: first.sectorId ?? "Zakrivený blok",
@@ -214,9 +207,14 @@ function normalizeLayout(input: HallLayout): HallLayout {
     ...input,
     curveGroups,
     shapes: [
-      ...input.shapes.filter((shape) => !shape.curveGroupId || !curveGroupIds.has(shape.curveGroupId)),
+      ...input.shapes.filter(
+        (shape) => !shape.curveGroupId || !curveGroupIds.has(shape.curveGroupId),
+      ),
       ...curveGroups.flatMap((group) =>
-        buildCurveGroupSeats(group, input.shapes.filter((shape) => shape.curveGroupId === group.id)),
+        buildCurveGroupSeats(
+          group,
+          input.shapes.filter((shape) => shape.curveGroupId === group.id),
+        ),
       ),
     ],
   };
@@ -269,7 +267,6 @@ export function SeatingEditor({
     color: "#22c55e",
   });
 
-
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
@@ -288,11 +285,19 @@ export function SeatingEditor({
   }, []);
 
   // ---------- persistence (debounced) ----------
+  // Ukladá sa do databázy, nie do localStorage — sála musí byť dostupná na
+  // každom zariadení a hlavne serveru, ktorý podľa nej určuje VIP sedadlá.
+  const upsert = useUpsertLayout();
+  const saveRef = useRef(upsert.mutateAsync);
+  saveRef.current = upsert.mutateAsync;
+
   useEffect(() => {
     const t = setTimeout(() => {
       const next = { ...layout, capacity: computeCapacity(layout.shapes) };
-      upsertLayout(next);
-      onChange?.(next);
+      saveRef
+        .current(toLayoutInput(next))
+        .then(() => onChange?.(next))
+        .catch((e) => toast.error(e instanceof Error ? e.message : "Uloženie sály zlyhalo"));
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -390,16 +395,16 @@ export function SeatingEditor({
         kind === "sector"
           ? "Sektor"
           : kind === "vip"
-          ? "VIP"
-          : kind === "standing"
-          ? "Státie"
-          : kind === "stage"
-          ? "PÓDIUM"
-          : kind === "entrance"
-          ? "Vstup"
-          : kind === "label"
-          ? "Text"
-          : "",
+            ? "VIP"
+            : kind === "standing"
+              ? "Státie"
+              : kind === "stage"
+                ? "PÓDIUM"
+                : kind === "entrance"
+                  ? "Vstup"
+                  : kind === "label"
+                    ? "Text"
+                    : "",
       priceCategory: kind === "vip" ? "VIP" : "Regular",
       capacity: kind === "standing" ? 200 : kind === "vip" ? 40 : undefined,
     };
@@ -481,9 +486,6 @@ export function SeatingEditor({
     setSelectedIds([group.id]);
   };
 
-
-
-
   const addSeatGrid = (cx: number, cy: number) => {
     const f = seatsForm;
     const ss = f.seatSize;
@@ -513,11 +515,17 @@ export function SeatingEditor({
   const deleteSelected = () => {
     if (!selectedIds.length) return;
     setLayout((prev) => {
-      const selectedGroups = new Set((prev.curveGroups ?? []).filter((group) => selectedIds.includes(group.id)).map((group) => group.id));
+      const selectedGroups = new Set(
+        (prev.curveGroups ?? [])
+          .filter((group) => selectedIds.includes(group.id))
+          .map((group) => group.id),
+      );
       const next = {
         ...prev,
         curveGroups: (prev.curveGroups ?? []).filter((group) => !selectedGroups.has(group.id)),
-        shapes: prev.shapes.filter((s) => !selectedIds.includes(s.id) && !selectedGroups.has(s.curveGroupId ?? "")),
+        shapes: prev.shapes.filter(
+          (s) => !selectedIds.includes(s.id) && !selectedGroups.has(s.curveGroupId ?? ""),
+        ),
       };
       setTimeout(() => pushHistory(next), 0);
       return next;
@@ -530,9 +538,17 @@ export function SeatingEditor({
     const copies: Shape[] = [];
     const groupCopies: CurveGroup[] = [];
     setLayout((prev) => {
-      const selectedGroups = (prev.curveGroups ?? []).filter((group) => selectedIds.includes(group.id));
+      const selectedGroups = (prev.curveGroups ?? []).filter((group) =>
+        selectedIds.includes(group.id),
+      );
       selectedGroups.forEach((group) => {
-        const nextGroup = { ...group, id: uid(), name: `${group.name} (kópia)`, centerX: group.centerX + 30, centerY: group.centerY + 30 };
+        const nextGroup = {
+          ...group,
+          id: uid(),
+          name: `${group.name} (kópia)`,
+          centerX: group.centerX + 30,
+          centerY: group.centerY + 30,
+        };
         groupCopies.push(nextGroup);
         copies.push(...buildCurveGroupSeats(nextGroup));
       });
@@ -549,7 +565,11 @@ export function SeatingEditor({
       setTimeout(() => pushHistory(next), 0);
       return next;
     });
-    setTimeout(() => setSelectedIds(groupCopies.length ? groupCopies.map((g) => g.id) : copies.map((c) => c.id)), 0);
+    setTimeout(
+      () =>
+        setSelectedIds(groupCopies.length ? groupCopies.map((g) => g.id) : copies.map((c) => c.id)),
+      0,
+    );
   };
 
   const updateSelected = (patch: Partial<Shape>) => {
@@ -568,7 +588,9 @@ export function SeatingEditor({
       const nextSeats = buildCurveGroupSeats(nextGroup, previousSeats);
       const next = {
         ...prev,
-        curveGroups: (prev.curveGroups ?? []).map((group) => (group.id === groupId ? nextGroup : group)),
+        curveGroups: (prev.curveGroups ?? []).map((group) =>
+          group.id === groupId ? nextGroup : group,
+        ),
         shapes: [...prev.shapes.filter((shape) => shape.curveGroupId !== groupId), ...nextSeats],
       };
       if (commit) setTimeout(() => pushHistory(next), 0);
@@ -594,7 +616,14 @@ export function SeatingEditor({
       if (pos) addSingleSeat(pos.x, pos.y);
       return;
     }
-    if (tool === "label" || tool === "sector" || tool === "vip" || tool === "standing" || tool === "stage" || tool === "entrance") {
+    if (
+      tool === "label" ||
+      tool === "sector" ||
+      tool === "vip" ||
+      tool === "standing" ||
+      tool === "stage" ||
+      tool === "entrance"
+    ) {
       const pos = getRelPointer();
       if (pos) addShape(tool as ShapeKind, pos.x - 100, pos.y - 60);
     }
@@ -622,7 +651,10 @@ export function SeatingEditor({
     };
     const direction = e.evt.deltaY > 0 ? -1 : 1;
     const factor = 1.08;
-    const newScale = Math.max(0.2, Math.min(3, direction > 0 ? oldScale * factor : oldScale / factor));
+    const newScale = Math.max(
+      0.2,
+      Math.min(3, direction > 0 ? oldScale * factor : oldScale / factor),
+    );
     setScale(newScale);
     setStagePos({
       x: pointer.x - mousePointTo.x * newScale,
@@ -641,7 +673,10 @@ export function SeatingEditor({
     [selectedIds, layout.shapes],
   );
   const selectedCurveGroup = useMemo(
-    () => (selectedIds.length === 1 ? (layout.curveGroups ?? []).find((group) => group.id === selectedIds[0]) : null),
+    () =>
+      selectedIds.length === 1
+        ? (layout.curveGroups ?? []).find((group) => group.id === selectedIds[0])
+        : null,
     [selectedIds, layout.curveGroups],
   );
 
@@ -686,20 +721,35 @@ export function SeatingEditor({
           Zakrivený rad sedadiel…
         </ToolBtn>
 
-
         <div className="my-2 border-t border-border/40" />
 
         <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Úpravy
         </div>
-        <ToolBtn icon={Copy} active={false} onClick={duplicateSelected} disabled={!selectedIds.length}>
+        <ToolBtn
+          icon={Copy}
+          active={false}
+          onClick={duplicateSelected}
+          disabled={!selectedIds.length}
+        >
           Duplikovať
         </ToolBtn>
-        <ToolBtn icon={Trash2} active={false} onClick={deleteSelected} disabled={!selectedIds.length}>
+        <ToolBtn
+          icon={Trash2}
+          active={false}
+          onClick={deleteSelected}
+          disabled={!selectedIds.length}
+        >
           Zmazať
         </ToolBtn>
         <div className="grid grid-cols-2 gap-1 px-1">
-          <Button size="sm" variant="outline" onClick={undo} disabled={hIdx <= 0} className="gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={undo}
+            disabled={hIdx <= 0}
+            className="gap-1.5"
+          >
             <Undo2 className="h-3.5 w-3.5" /> Späť
           </Button>
           <Button
@@ -722,11 +772,21 @@ export function SeatingEditor({
       {/* CENTER CANVAS */}
       <div className="relative flex-1 min-w-0">
         <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-md border border-border/40 bg-card/80 backdrop-blur px-2 py-1 shadow-sm">
-          <Button size="sm" variant="ghost" onClick={() => setScale((s) => Math.min(3, s * 1.15))} className="h-7 w-7 p-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setScale((s) => Math.min(3, s * 1.15))}
+            className="h-7 w-7 p-0"
+          >
             <ZoomIn className="h-3.5 w-3.5" />
           </Button>
           <span className="text-xs tabular-nums w-10 text-center">{Math.round(scale * 100)}%</span>
-          <Button size="sm" variant="ghost" onClick={() => setScale((s) => Math.max(0.2, s / 1.15))} className="h-7 w-7 p-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setScale((s) => Math.max(0.2, s / 1.15))}
+            className="h-7 w-7 p-0"
+          >
             <ZoomOut className="h-3.5 w-3.5" />
           </Button>
           <Button size="sm" variant="ghost" onClick={fitToScreen} className="h-7 w-7 p-0">
@@ -769,12 +829,16 @@ export function SeatingEditor({
                       group={group}
                       seats={seats}
                       selected={selectedIds.includes(group.id)}
-                      selectedSeatIds={selectedIds.filter((id) => seats.some((seat) => seat.id === id))}
+                      selectedSeatIds={selectedIds.filter((id) =>
+                        seats.some((seat) => seat.id === id),
+                      )}
                       onSelect={(shift: boolean) => {
                         if (tool !== "select") return;
                         if (shift) {
                           setSelectedIds((ids) =>
-                            ids.includes(group.id) ? ids.filter((i) => i !== group.id) : [...ids, group.id],
+                            ids.includes(group.id)
+                              ? ids.filter((i) => i !== group.id)
+                              : [...ids, group.id],
                           );
                         } else {
                           setSelectedIds([group.id]);
@@ -784,7 +848,9 @@ export function SeatingEditor({
                         if (tool !== "select") return;
                         if (shift) {
                           setSelectedIds((ids) =>
-                            ids.includes(seatId) ? ids.filter((i) => i !== seatId) : [...ids.filter((id) => id !== group.id), seatId],
+                            ids.includes(seatId)
+                              ? ids.filter((i) => i !== seatId)
+                              : [...ids.filter((id) => id !== group.id), seatId],
                           );
                         } else {
                           setSelectedIds([group.id]);
@@ -794,36 +860,44 @@ export function SeatingEditor({
                         if (tool !== "select") return;
                         setSelectedIds([seatId]);
                       }}
-                      onMove={(dx: number, dy: number) => updateCurveGroup(group.id, { centerX: group.centerX + dx, centerY: group.centerY + dy }, true)}
+                      onMove={(dx: number, dy: number) =>
+                        updateCurveGroup(
+                          group.id,
+                          { centerX: group.centerX + dx, centerY: group.centerY + dy },
+                          true,
+                        )
+                      }
                       onCommit={commitChange}
                     />
                   );
                 })}
 
-                {layout.shapes.filter((shape) => !shape.curveGroupId).map((sh) => (
-                  <ShapeNode
-                    key={sh.id}
-                    shape={sh}
-                    selected={selectedIds.includes(sh.id)}
-                    onSelect={(shift) => {
-                      if (tool !== "select") return;
-                      if (shift) {
-                        setSelectedIds((ids) =>
-                          ids.includes(sh.id) ? ids.filter((i) => i !== sh.id) : [...ids, sh.id],
+                {layout.shapes
+                  .filter((shape) => !shape.curveGroupId)
+                  .map((sh) => (
+                    <ShapeNode
+                      key={sh.id}
+                      shape={sh}
+                      selected={selectedIds.includes(sh.id)}
+                      onSelect={(shift) => {
+                        if (tool !== "select") return;
+                        if (shift) {
+                          setSelectedIds((ids) =>
+                            ids.includes(sh.id) ? ids.filter((i) => i !== sh.id) : [...ids, sh.id],
+                          );
+                        } else {
+                          setSelectedIds([sh.id]);
+                        }
+                      }}
+                      onChange={(patch) => {
+                        setShapes(
+                          (arr) => arr.map((s) => (s.id === sh.id ? { ...s, ...patch } : s)),
+                          false,
                         );
-                      } else {
-                        setSelectedIds([sh.id]);
-                      }
-                    }}
-                    onChange={(patch) => {
-                      setShapes(
-                        (arr) => arr.map((s) => (s.id === sh.id ? { ...s, ...patch } : s)),
-                        false,
-                      );
-                    }}
-                    onCommit={commitChange}
-                  />
-                ))}
+                      }}
+                      onCommit={commitChange}
+                    />
+                  ))}
 
                 <Transformer
                   ref={trRef}
@@ -866,7 +940,9 @@ export function SeatingEditor({
         {selectedCurveGroup && (
           <CurveGroupPropertiesPanel
             group={selectedCurveGroup}
-            onChange={(patch: Partial<CurveGroup>) => updateCurveGroup(selectedCurveGroup.id, patch)}
+            onChange={(patch: Partial<CurveGroup>) =>
+              updateCurveGroup(selectedCurveGroup.id, patch)
+            }
             onCommit={() => pushHistory(layout)}
           />
         )}
@@ -887,9 +963,16 @@ export function SeatingEditor({
           />
           <Button
             className="w-full gap-2"
-            onClick={() => {
-              upsertLayout({ ...layout, capacity: computeCapacity(layout.shapes) });
-              toast.success("Rozloženie uložené");
+            disabled={upsert.isPending}
+            onClick={async () => {
+              try {
+                await upsert.mutateAsync(
+                  toLayoutInput({ ...layout, capacity: computeCapacity(layout.shapes) }),
+                );
+                toast.success("Rozloženie uložené");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Uloženie sály zlyhalo");
+              }
             }}
           >
             <Save className="h-4 w-4" />
@@ -911,7 +994,9 @@ export function SeatingEditor({
                 type="number"
                 min={1}
                 value={seatsForm.rows}
-                onChange={(e) => setSeatsForm({ ...seatsForm, rows: Math.max(1, +e.target.value || 1) })}
+                onChange={(e) =>
+                  setSeatsForm({ ...seatsForm, rows: Math.max(1, +e.target.value || 1) })
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -920,7 +1005,9 @@ export function SeatingEditor({
                 type="number"
                 min={1}
                 value={seatsForm.cols}
-                onChange={(e) => setSeatsForm({ ...seatsForm, cols: Math.max(1, +e.target.value || 1) })}
+                onChange={(e) =>
+                  setSeatsForm({ ...seatsForm, cols: Math.max(1, +e.target.value || 1) })
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -946,7 +1033,9 @@ export function SeatingEditor({
                 type="number"
                 min={1}
                 value={seatsForm.startSeat}
-                onChange={(e) => setSeatsForm({ ...seatsForm, startSeat: Math.max(1, +e.target.value || 1) })}
+                onChange={(e) =>
+                  setSeatsForm({ ...seatsForm, startSeat: Math.max(1, +e.target.value || 1) })
+                }
               />
             </div>
             <div className="space-y-1.5 col-span-2">
@@ -981,7 +1070,9 @@ export function SeatingEditor({
                 min={10}
                 max={60}
                 value={seatsForm.seatSize}
-                onChange={(e) => setSeatsForm({ ...seatsForm, seatSize: Math.max(10, +e.target.value || 22) })}
+                onChange={(e) =>
+                  setSeatsForm({ ...seatsForm, seatSize: Math.max(10, +e.target.value || 22) })
+                }
               />
             </div>
             <div className="space-y-1.5 col-span-2">
@@ -1020,21 +1111,45 @@ export function SeatingEditor({
           </DialogHeader>
           <div className="grid grid-cols-3 gap-3 py-2">
             <Field label="Počet radov">
-              <Input type="number" min={1} value={curvedForm.rows}
-                onChange={(e) => setCurvedForm({ ...curvedForm, rows: Math.max(1, +e.target.value || 1) })} />
+              <Input
+                type="number"
+                min={1}
+                value={curvedForm.rows}
+                onChange={(e) =>
+                  setCurvedForm({ ...curvedForm, rows: Math.max(1, +e.target.value || 1) })
+                }
+              />
             </Field>
             <Field label="Miest v rade">
-              <Input type="number" min={1} value={curvedForm.cols}
-                onChange={(e) => setCurvedForm({ ...curvedForm, cols: Math.max(1, +e.target.value || 1) })} />
+              <Input
+                type="number"
+                min={1}
+                value={curvedForm.cols}
+                onChange={(e) =>
+                  setCurvedForm({ ...curvedForm, cols: Math.max(1, +e.target.value || 1) })
+                }
+              />
             </Field>
             <Field label="Počiatočné č. sedadla">
-              <Input type="number" min={1} value={curvedForm.startSeat}
-                onChange={(e) => setCurvedForm({ ...curvedForm, startSeat: Math.max(1, +e.target.value || 1) })} />
+              <Input
+                type="number"
+                min={1}
+                value={curvedForm.startSeat}
+                onChange={(e) =>
+                  setCurvedForm({ ...curvedForm, startSeat: Math.max(1, +e.target.value || 1) })
+                }
+              />
             </Field>
             <Field label="Označenie radov">
-              <Select value={curvedForm.rowLabelMode}
-                onValueChange={(v) => setCurvedForm({ ...curvedForm, rowLabelMode: v as "ABC" | "123" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={curvedForm.rowLabelMode}
+                onValueChange={(v) =>
+                  setCurvedForm({ ...curvedForm, rowLabelMode: v as "ABC" | "123" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ABC">A, B, C…</SelectItem>
                   <SelectItem value="123">1, 2, 3…</SelectItem>
@@ -1042,33 +1157,70 @@ export function SeatingEditor({
               </Select>
             </Field>
             <Field label="Polomer (px)">
-              <Input type="number" min={50} value={curvedForm.radius}
-                onChange={(e) => setCurvedForm({ ...curvedForm, radius: Math.max(50, +e.target.value || 280) })} />
+              <Input
+                type="number"
+                min={50}
+                value={curvedForm.radius}
+                onChange={(e) =>
+                  setCurvedForm({ ...curvedForm, radius: Math.max(50, +e.target.value || 280) })
+                }
+              />
             </Field>
             <Field label="Vzdialenosť radov">
-              <Input type="number" min={10} value={curvedForm.rowSpacing}
-                onChange={(e) => setCurvedForm({ ...curvedForm, rowSpacing: Math.max(10, +e.target.value || 32) })} />
+              <Input
+                type="number"
+                min={10}
+                value={curvedForm.rowSpacing}
+                onChange={(e) =>
+                  setCurvedForm({ ...curvedForm, rowSpacing: Math.max(10, +e.target.value || 32) })
+                }
+              />
             </Field>
             <Field label="Vzdialenosť sedadiel">
-              <Input type="number" min={10} value={curvedForm.seatSpacing}
-                onChange={(e) => setCurvedForm({ ...curvedForm, seatSpacing: Math.max(10, +e.target.value || 30) })} />
+              <Input
+                type="number"
+                min={10}
+                value={curvedForm.seatSpacing}
+                onChange={(e) =>
+                  setCurvedForm({ ...curvedForm, seatSpacing: Math.max(10, +e.target.value || 30) })
+                }
+              />
             </Field>
             <Field label="Uhol začiatku (°)">
-              <Input type="number" value={curvedForm.startAngle}
-                onChange={(e) => setCurvedForm({ ...curvedForm, startAngle: +e.target.value || 0 })} />
+              <Input
+                type="number"
+                value={curvedForm.startAngle}
+                onChange={(e) => setCurvedForm({ ...curvedForm, startAngle: +e.target.value || 0 })}
+              />
             </Field>
             <Field label="Uhol konca (°)">
-              <Input type="number" value={curvedForm.endAngle}
-                onChange={(e) => setCurvedForm({ ...curvedForm, endAngle: +e.target.value || 0 })} />
+              <Input
+                type="number"
+                value={curvedForm.endAngle}
+                onChange={(e) => setCurvedForm({ ...curvedForm, endAngle: +e.target.value || 0 })}
+              />
             </Field>
             <Field label="Veľkosť sedadla">
-              <Input type="number" min={10} max={60} value={curvedForm.seatSize}
-                onChange={(e) => setCurvedForm({ ...curvedForm, seatSize: Math.max(10, +e.target.value || 22) })} />
+              <Input
+                type="number"
+                min={10}
+                max={60}
+                value={curvedForm.seatSize}
+                onChange={(e) =>
+                  setCurvedForm({ ...curvedForm, seatSize: Math.max(10, +e.target.value || 22) })
+                }
+              />
             </Field>
             <Field label="Smer číslovania">
-              <Select value={curvedForm.direction}
-                onValueChange={(v) => setCurvedForm({ ...curvedForm, direction: v as "ltr" | "rtl" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={curvedForm.direction}
+                onValueChange={(v) =>
+                  setCurvedForm({ ...curvedForm, direction: v as "ltr" | "rtl" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ltr">Zľava doprava</SelectItem>
                   <SelectItem value="rtl">Sprava doľava</SelectItem>
@@ -1076,9 +1228,13 @@ export function SeatingEditor({
               </Select>
             </Field>
             <Field label="Natočiť k pódiu">
-              <Select value={curvedForm.faceStage ? "yes" : "no"}
-                onValueChange={(v) => setCurvedForm({ ...curvedForm, faceStage: v === "yes" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={curvedForm.faceStage ? "yes" : "no"}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, faceStage: v === "yes" })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="yes">Áno</SelectItem>
                   <SelectItem value="no">Nie</SelectItem>
@@ -1086,38 +1242,53 @@ export function SeatingEditor({
               </Select>
             </Field>
             <Field label="Sektor" className="col-span-2">
-              <Input value={curvedForm.sectorName}
-                onChange={(e) => setCurvedForm({ ...curvedForm, sectorName: e.target.value })} />
+              <Input
+                value={curvedForm.sectorName}
+                onChange={(e) => setCurvedForm({ ...curvedForm, sectorName: e.target.value })}
+              />
             </Field>
             <Field label="Cenová kategória">
-              <Select value={curvedForm.priceCategory}
-                onValueChange={(v) => setCurvedForm({ ...curvedForm, priceCategory: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={curvedForm.priceCategory}
+                onValueChange={(v) => setCurvedForm({ ...curvedForm, priceCategory: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {PRICE_CATEGORIES.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
             <Field label="Farba" className="col-span-3">
-              <input type="color" value={curvedForm.color}
+              <input
+                type="color"
+                value={curvedForm.color}
                 onChange={(e) => setCurvedForm({ ...curvedForm, color: e.target.value })}
-                className="h-9 w-full rounded-md border border-input" />
+                className="h-9 w-full rounded-md border border-input"
+              />
             </Field>
           </div>
           <p className="text-xs text-muted-foreground">
-            Tip: pre polkruh nastav uhly 180° → 360°, pre arénové rozloženie 0° → 360°.
-            Stred oblúka (pódium) je v strede aktuálneho pohľadu.
+            Tip: pre polkruh nastav uhly 180° → 360°, pre arénové rozloženie 0° → 360°. Stred oblúka
+            (pódium) je v strede aktuálneho pohľadu.
           </p>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setCurvedDialog(false)}>Zrušiť</Button>
+            <Button variant="ghost" onClick={() => setCurvedDialog(false)}>
+              Zrušiť
+            </Button>
             <Button
               onClick={() => {
                 const center = getVisibleCenter();
                 addCurvedRows(center.x, center.y);
                 setCurvedDialog(false);
-                toast.success(`Pridaných ${curvedForm.rows * curvedForm.cols} zakrivených sedadiel`);
+                toast.success(
+                  `Pridaných ${curvedForm.rows * curvedForm.cols} zakrivených sedadiel`,
+                );
               }}
             >
               Vygenerovať
@@ -1126,7 +1297,6 @@ export function SeatingEditor({
         </DialogContent>
       </Dialog>
     </div>
-
   );
 }
 
@@ -1150,7 +1320,6 @@ function Field({
 }
 
 function ToolBtn({
-
   icon: Icon,
   active,
   disabled,
@@ -1170,9 +1339,7 @@ function ToolBtn({
       disabled={disabled}
       className={[
         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition",
-        active
-          ? "bg-primary/15 text-primary font-medium"
-          : "hover:bg-muted text-foreground/80",
+        active ? "bg-primary/15 text-primary font-medium" : "hover:bg-muted text-foreground/80",
         disabled ? "opacity-40 cursor-not-allowed" : "",
       ].join(" ")}
     >
@@ -1186,12 +1353,28 @@ function GridLayer({ width, height, step }: { width: number; height: number; ste
   const lines: React.ReactNode[] = [];
   for (let x = 0; x <= width; x += step) {
     lines.push(
-      <Rect key={`v${x}`} x={x} y={0} width={1} height={height} fill="#e2e8f0" opacity={x % (step * 5) === 0 ? 0.7 : 0.3} />,
+      <Rect
+        key={`v${x}`}
+        x={x}
+        y={0}
+        width={1}
+        height={height}
+        fill="#e2e8f0"
+        opacity={x % (step * 5) === 0 ? 0.7 : 0.3}
+      />,
     );
   }
   for (let y = 0; y <= height; y += step) {
     lines.push(
-      <Rect key={`h${y}`} x={0} y={y} width={width} height={1} fill="#e2e8f0" opacity={y % (step * 5) === 0 ? 0.7 : 0.3} />,
+      <Rect
+        key={`h${y}`}
+        x={0}
+        y={y}
+        width={width}
+        height={1}
+        fill="#e2e8f0"
+        opacity={y % (step * 5) === 0 ? 0.7 : 0.3}
+      />,
     );
   }
   return <Group listening={false}>{lines}</Group>;
@@ -1474,11 +1657,14 @@ function CurveGroupPropertiesPanel({
   onChange: (patch: Partial<CurveGroup>) => void;
   onCommit: () => void;
 }) {
-  const numberPatch = (key: keyof CurveGroup, min?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = +e.target.value;
-    const value = Number.isFinite(raw) ? raw : 0;
-    onChange({ [key]: typeof min === "number" ? Math.max(min, value) : value } as Partial<CurveGroup>);
-  };
+  const numberPatch =
+    (key: keyof CurveGroup, min?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = +e.target.value;
+      const value = Number.isFinite(raw) ? raw : 0;
+      onChange({
+        [key]: typeof min === "number" ? Math.max(min, value) : value,
+      } as Partial<CurveGroup>);
+    };
 
   return (
     <div className="space-y-3">
@@ -1488,51 +1674,123 @@ function CurveGroupPropertiesPanel({
       </div>
 
       <Field label="Názov skupiny">
-        <Input value={group.name} onChange={(e) => onChange({ name: e.target.value })} onBlur={onCommit} />
+        <Input
+          value={group.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+          onBlur={onCommit}
+        />
       </Field>
 
       <div className="grid grid-cols-2 gap-2">
         <Field label="centerX">
-          <Input type="number" value={Math.round(group.centerX)} onChange={numberPatch("centerX")} onBlur={onCommit} />
+          <Input
+            type="number"
+            value={Math.round(group.centerX)}
+            onChange={numberPatch("centerX")}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="centerY">
-          <Input type="number" value={Math.round(group.centerY)} onChange={numberPatch("centerY")} onBlur={onCommit} />
+          <Input
+            type="number"
+            value={Math.round(group.centerY)}
+            onChange={numberPatch("centerY")}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="radius">
-          <Input type="number" min={20} value={Math.round(group.radius)} onChange={numberPatch("radius", 20)} onBlur={onCommit} />
+          <Input
+            type="number"
+            min={20}
+            value={Math.round(group.radius)}
+            onChange={numberPatch("radius", 20)}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="rotation">
-          <Input type="number" value={Math.round(group.rotation)} onChange={numberPatch("rotation")} onBlur={onCommit} />
+          <Input
+            type="number"
+            value={Math.round(group.rotation)}
+            onChange={numberPatch("rotation")}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="startAngle">
-          <Input type="number" value={Math.round(group.startAngle)} onChange={numberPatch("startAngle")} onBlur={onCommit} />
+          <Input
+            type="number"
+            value={Math.round(group.startAngle)}
+            onChange={numberPatch("startAngle")}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="endAngle">
-          <Input type="number" value={Math.round(group.endAngle)} onChange={numberPatch("endAngle")} onBlur={onCommit} />
+          <Input
+            type="number"
+            value={Math.round(group.endAngle)}
+            onChange={numberPatch("endAngle")}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="Počet radov">
-          <Input type="number" min={1} value={group.rows} onChange={numberPatch("rows", 1)} onBlur={onCommit} />
+          <Input
+            type="number"
+            min={1}
+            value={group.rows}
+            onChange={numberPatch("rows", 1)}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="Sedadiel v rade">
-          <Input type="number" min={1} value={group.seatsPerRow} onChange={numberPatch("seatsPerRow", 1)} onBlur={onCommit} />
+          <Input
+            type="number"
+            min={1}
+            value={group.seatsPerRow}
+            onChange={numberPatch("seatsPerRow", 1)}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="rowSpacing">
-          <Input type="number" min={1} value={group.rowSpacing} onChange={numberPatch("rowSpacing", 1)} onBlur={onCommit} />
+          <Input
+            type="number"
+            min={1}
+            value={group.rowSpacing}
+            onChange={numberPatch("rowSpacing", 1)}
+            onBlur={onCommit}
+          />
         </Field>
         <Field label="seatSpacing">
-          <Input type="number" min={1} value={group.seatSpacing} onChange={numberPatch("seatSpacing", 1)} onBlur={onCommit} />
+          <Input
+            type="number"
+            min={1}
+            value={group.seatSpacing}
+            onChange={numberPatch("seatSpacing", 1)}
+            onBlur={onCommit}
+          />
         </Field>
       </div>
 
       <Field label="Sektor">
-        <Input value={group.sectorId ?? ""} onChange={(e) => onChange({ sectorId: e.target.value })} onBlur={onCommit} />
+        <Input
+          value={group.sectorId ?? ""}
+          onChange={(e) => onChange({ sectorId: e.target.value })}
+          onBlur={onCommit}
+        />
       </Field>
 
       <Field label="Cenová kategória">
-        <Select value={group.priceCategoryId ?? "Regular"} onValueChange={(v) => onChange({ priceCategoryId: v })}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+        <Select
+          value={group.priceCategoryId ?? "Regular"}
+          onValueChange={(v) => onChange({ priceCategoryId: v })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            {PRICE_CATEGORIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            {PRICE_CATEGORIES.map((p) => (
+              <SelectItem key={p} value={p}>
+                {p}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </Field>
@@ -1634,7 +1892,10 @@ function PropertiesPanel({
         </div>
       </div>
 
-      {(shape.kind === "sector" || shape.kind === "vip" || shape.kind === "standing" || shape.kind === "seats") && (
+      {(shape.kind === "sector" ||
+        shape.kind === "vip" ||
+        shape.kind === "standing" ||
+        shape.kind === "seats") && (
         <>
           <div className="space-y-1.5">
             <Label className="text-xs">Cenová kategória</Label>

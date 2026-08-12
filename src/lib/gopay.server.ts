@@ -5,7 +5,10 @@ type TokenCache = { token: string; expiresAt: number } | null;
 let tokenCache: TokenCache = null;
 
 function env() {
-  const apiUrl = (process.env.GOPAY_API_URL || "https://gw.sandbox.gopay.com/api").replace(/\/+$/, "");
+  const apiUrl = (process.env.GOPAY_API_URL || "https://gw.sandbox.gopay.com/api").replace(
+    /\/+$/,
+    "",
+  );
   const clientId = process.env.GOPAY_CLIENT_ID;
   const clientSecret = process.env.GOPAY_CLIENT_SECRET;
   const goid = process.env.GOPAY_GOID;
@@ -17,7 +20,9 @@ function env() {
   return { apiUrl, clientId, clientSecret, goid };
 }
 
-async function getAccessToken(scope: "payment-create" | "payment-all" = "payment-create"): Promise<string> {
+async function getAccessToken(
+  scope: "payment-create" | "payment-all" = "payment-create",
+): Promise<string> {
   if (tokenCache && tokenCache.expiresAt > Date.now() + 5_000) {
     return tokenCache.token;
   }
@@ -74,7 +79,13 @@ export async function createGoPayPayment(input: CreatePaymentInput): Promise<Cre
   const body = {
     payer: {
       default_payment_instrument: "PAYMENT_CARD",
-      allowed_payment_instruments: ["PAYMENT_CARD", "BANK_ACCOUNT", "GOPAY", "APPLE_PAY", "GOOGLE_PAY"],
+      allowed_payment_instruments: [
+        "PAYMENT_CARD",
+        "BANK_ACCOUNT",
+        "GOPAY",
+        "APPLE_PAY",
+        "GOOGLE_PAY",
+      ],
       contact: {
         first_name: input.customer.firstName || "",
         last_name: input.customer.lastName || "",
@@ -177,7 +188,9 @@ export async function refundGoPayPayment(
   return { id: data.id, result: data.result || "FINISHED", raw: data };
 }
 
-export function mapGoPayStateToOrder(state: string): "paid" | "failed" | "cancelled" | "awaiting_payment" | "refunded" {
+export function mapGoPayStateToOrder(
+  state: string,
+): "paid" | "failed" | "cancelled" | "awaiting_payment" | "refunded" {
   switch (state) {
     case "PAID":
       return "paid";

@@ -1,5 +1,9 @@
-// LocalStorage store for hall layouts (seating editor).
-// Layout = collection of shapes on an SVG canvas.
+// Typy a čisté pomocníky pre rozloženia sál (editor sedenia).
+//
+// Zámerne bez localStorage a bez závislostí, aby ich mohol importovať aj server
+// — `layouts.functions.ts` z nich mapuje riadky z databázy a `payments.functions.ts`
+// podľa nich určuje, či je sedadlo VIP.
+// Layout = kolekcia tvarov na plátne.
 
 export type ShapeKind =
   | "sector"
@@ -70,7 +74,6 @@ export type CurveGroup = {
   seatSize?: number;
 };
 
-
 export type HallType =
   | "stadion"
   | "kino"
@@ -106,80 +109,10 @@ export type HallLayout = {
   updated_at: string;
 };
 
-const KEY = "mt_hall_layouts";
-const isBrowser = () => typeof window !== "undefined";
-
-export const LAYOUTS_EVENT = "mt:layouts-change";
-
-function read(): HallLayout[] {
-  if (!isBrowser()) return [];
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as HallLayout[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function write(list: HallLayout[]) {
-  if (!isBrowser()) return;
-  window.localStorage.setItem(KEY, JSON.stringify(list));
-  window.dispatchEvent(new Event(LAYOUTS_EVENT));
-}
-
 export const uid = () =>
-  isBrowser() && typeof crypto !== "undefined" && "randomUUID" in crypto
+  typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
-
-export function listLayouts(): HallLayout[] {
-  return read();
-}
-
-export function getLayout(id: string): HallLayout | undefined {
-  return read().find((l) => l.id === id);
-}
-
-export function upsertLayout(l: HallLayout) {
-  const list = read();
-  const idx = list.findIndex((x) => x.id === l.id);
-  l.updated_at = new Date().toISOString();
-  if (idx >= 0) list[idx] = l;
-  else list.unshift(l);
-  write(list);
-}
-
-export function deleteLayout(id: string) {
-  write(read().filter((l) => l.id !== id));
-}
-
-export function duplicateLayout(id: string): HallLayout | undefined {
-  const src = getLayout(id);
-  if (!src) return;
-  const groupIdMap = new Map((src.curveGroups ?? []).map((group) => [group.id, uid()]));
-  const copy: HallLayout = {
-    ...src,
-    id: uid(),
-    name: src.name + " (kópia)",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    curveGroups: (src.curveGroups ?? []).map((group) => ({
-      ...group,
-      id: groupIdMap.get(group.id) ?? uid(),
-      centerX: group.centerX + 20,
-      centerY: group.centerY + 20,
-    })),
-    shapes: src.shapes.map((s) => ({
-      ...s,
-      id: uid(),
-      curveGroupId: s.curveGroupId ? groupIdMap.get(s.curveGroupId) ?? s.curveGroupId : undefined,
-      x: s.x + 20,
-      y: s.y + 20,
-    })),
-  };
-  upsertLayout(copy);
-  return copy;
-}
 
 export function emptyLayout(name = "Nová hala"): HallLayout {
   const now = new Date().toISOString();

@@ -36,17 +36,19 @@ function ticketHtml(t: PosTicket, sale: PosSale, ev?: EventItem, index?: number,
 }
 
 function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
 }
 
 export function printTickets(tickets: PosTicket[], sale: PosSale, ev?: EventItem) {
   if (tickets.length === 0) return;
   const w = window.open("", "_blank", "width=820,height=900");
   if (!w) return;
-  const body = tickets
-    .map((t, i) => ticketHtml(t, sale, ev, i + 1, tickets.length))
-    .join("");
-  w.document.write(`<!doctype html><html lang="sk"><head><meta charset="utf-8"/><title>Vstupenky · ${escapeHtml(sale.receipt_number)}</title>
+  const body = tickets.map((t, i) => ticketHtml(t, sale, ev, i + 1, tickets.length)).join("");
+  w.document
+    .write(`<!doctype html><html lang="sk"><head><meta charset="utf-8"/><title>Vstupenky · ${escapeHtml(sale.receipt_number)}</title>
   <style>
     @page { size: A5; margin: 12mm; }
     * { box-sizing: border-box; }

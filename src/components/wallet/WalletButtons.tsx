@@ -18,21 +18,11 @@ export type WalletEventInfo = {
 
 type Props = {
   ticket: IssuedTicket;
+  /** @deprecated Údaje na pass si server ťahá z databázy; prop sa ignoruje. */
   event?: WalletEventInfo;
   size?: "default" | "sm";
   compact?: boolean;
 };
-
-function eventDateISO(event?: WalletEventInfo): string | undefined {
-  if (!event?.event_date) return undefined;
-  // Build an ISO-ish datetime; the server validates and drops it if unparseable.
-  const time = event.event_time && /^\d{1,2}:\d{2}/.test(event.event_time)
-    ? event.event_time.length === 5
-      ? `${event.event_time}:00`
-      : event.event_time
-    : "00:00:00";
-  return `${event.event_date}T${time}`;
-}
 
 export function AppleWalletButton({ ticket, size = "default", compact }: Props) {
   const [loading, setLoading] = useState(false);
@@ -60,24 +50,19 @@ export function AppleWalletButton({ ticket, size = "default", compact }: Props) 
   );
 }
 
-export function GoogleWalletButton({ ticket, event, size = "default", compact }: Props) {
+export function GoogleWalletButton({ ticket, size = "default", compact }: Props) {
   const [loading, setLoading] = useState(false);
   const buildLink = useServerFn(getGoogleWalletSaveLink);
 
   const click = async () => {
     setLoading(true);
     try {
+      // Posielame len QR kód vstupenky — server si podľa neho dohľadá podujatie,
+      // sedadlo aj meno držiteľa v databáze a podpíše pass z overených údajov.
       const res = await buildLink({
         data: {
-          ticketId: ticket.id,
           qrValue: ticket.qr_code,
-          eventTitle: event?.title || "Podujatie",
-          eventDateISO: eventDateISO(event),
-          venue: event?.venue,
-          city: event?.city,
-          seatLabel: ticket.seat_label,
-          originUrl:
-            typeof window !== "undefined" ? window.location.origin : undefined,
+          originUrl: typeof window !== "undefined" ? window.location.origin : undefined,
         },
       });
       if (res.ok) {

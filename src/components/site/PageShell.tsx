@@ -43,7 +43,11 @@ export function PageShell({
 export function FeatureGrid({
   items,
 }: {
-  items: { icon: React.ComponentType<{ className?: string }>; title: string; description: string }[];
+  items: {
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+    description: string;
+  }[];
 }) {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

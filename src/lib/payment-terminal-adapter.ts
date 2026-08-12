@@ -23,7 +23,12 @@ export type TerminalPaymentResult = {
 export interface PaymentTerminalAdapter {
   connectTerminal(): Promise<TerminalStatus>;
   disconnectTerminal(): Promise<TerminalStatus>;
-  sendPayment(amount: number, currency: string, orderId: string, organizerId?: string): Promise<TerminalPaymentResult>;
+  sendPayment(
+    amount: number,
+    currency: string,
+    orderId: string,
+    organizerId?: string,
+  ): Promise<TerminalPaymentResult>;
   checkPaymentStatus(txId: string): Promise<TerminalStatus>;
   cancelPayment(txId: string): Promise<boolean>;
   printTerminalReceipt(txId: string): Promise<boolean>;
@@ -55,28 +60,44 @@ export const paymentTerminal: PaymentTerminalAdapter = {
       id: tx_id,
       organizer_id: organizerId || "unknown",
       order_id,
-      amount, currency,
+      amount,
+      currency,
       status: "approved",
-      auth_code, card_brand, card_last4,
+      auth_code,
+      card_brand,
+      card_last4,
       created_at: new Date().toISOString(),
     };
     addTerminalTx(record);
     return {
-      ok: true, tx_id, amount, currency, order_id,
-      auth_code, card_brand, card_last4,
+      ok: true,
+      tx_id,
+      amount,
+      currency,
+      order_id,
+      auth_code,
+      card_brand,
+      card_last4,
       finished_at: record.created_at,
     };
   },
-  async checkPaymentStatus() { return status; },
+  async checkPaymentStatus() {
+    return status;
+  },
   async cancelPayment(txId: string) {
     await wait(200);
     status = "connected";
     updateTerminalTx(txId, { status: "cancelled" });
     return true;
   },
-  async printTerminalReceipt() { await wait(200); return true; },
+  async printTerminalReceipt() {
+    await wait(200);
+    return true;
+  },
 };
 
 export { uid as _uid };
 
-function wait(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+function wait(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}

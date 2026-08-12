@@ -1,15 +1,38 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, CalendarDays, Plus, ShoppingCart, Receipt,
-  ClipboardList, Users, Cpu, Flame, ShieldCheck, Megaphone, UserCog,
+  LayoutDashboard,
+  CalendarDays,
+  Plus,
+  ShoppingCart,
+  Receipt,
+  ClipboardList,
+  Users,
+  Cpu,
+  Flame,
+  ShieldCheck,
+  Megaphone,
+  UserCog,
 } from "lucide-react";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useI18n } from "@/hooks/use-i18n";
 
-type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }>; exact?: boolean };
+type Item = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  exact?: boolean;
+};
 type Group = { label: string; items: Item[] };
 
 const groups: Group[] = [
@@ -39,7 +62,12 @@ const groups: Group[] = [
   {
     label: "orgNav.groupMarketing",
     items: [
-      { title: "orgNav.marketingCenter", url: "/organizer/marketing", icon: Megaphone, exact: true },
+      {
+        title: "orgNav.marketingCenter",
+        url: "/organizer/marketing",
+        icon: Megaphone,
+        exact: true,
+      },
       { title: "orgNav.launchAd", url: "/organizer/marketing/new", icon: Plus },
     ],
   },
@@ -80,7 +108,9 @@ export function OrganizerSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
-                  const active = item.exact ? currentPath === item.url : currentPath.startsWith(item.url);
+                  const active = item.exact
+                    ? currentPath === item.url
+                    : currentPath.startsWith(item.url);
                   return (
                     <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton

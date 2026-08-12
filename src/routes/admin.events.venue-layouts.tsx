@@ -1,14 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, lazy, Suspense } from "react";
-import {
-  listLayouts,
-  getLayout,
-  emptyLayout,
-  upsertLayout,
-  deleteLayout,
-  LAYOUTS_EVENT,
-  type HallLayout,
-} from "@/lib/layouts-db";
+import { useLayouts, useUpsertLayout, useDeleteLayout, toLayoutInput } from "@/hooks/use-layouts";
+import { emptyLayout, type HallLayout } from "@/lib/layout-types";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -17,13 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  ChevronRight,
-  Loader2,
-  Plus,
-  Trash2,
-  LayoutGrid,
-} from "lucide-react";
+import { ChevronRight, Loader2, Plus, Trash2, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 
 const SeatingEditor = lazy(() =>
@@ -37,57 +24,42 @@ export const Route = createFileRoute("/admin/events/venue-layouts")({
 
 function VenueLayoutsPage() {
   const [mounted, setMounted] = useState(false);
-  const [layouts, setLayouts] = useState<HallLayout[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [active, setActive] = useState<HallLayout | null>(null);
 
-  // load list and pick the most recent (or create one)
-  useEffect(() => {
-    setMounted(true);
-    const refresh = () => setLayouts(listLayouts());
-    refresh();
-    window.addEventListener(LAYOUTS_EVENT, refresh);
-    return () => window.removeEventListener(LAYOUTS_EVENT, refresh);
-  }, []);
+  const { data: layouts = [], isLoading } = useLayouts();
+  const upsert = useUpsertLayout();
+  const del = useDeleteLayout();
+  const active: HallLayout | null = layouts.find((l) => l.id === activeId) ?? null;
 
+  useEffect(() => setMounted(true), []);
+
+  // Prvá sála sa už nezakladá automaticky — v databáze by sa tak tvorili
+  // prázdne záznamy pri každom otvorení editora. Používateľ ju vytvorí sám.
   useEffect(() => {
-    if (!mounted) return;
-    if (activeId) return;
-    const list = listLayouts();
-    if (list.length > 0) {
-      setActiveId(list[0].id);
-    } else {
-      const l = emptyLayout("Nová hala");
-      upsertLayout(l);
-      setActiveId(l.id);
+    if (!activeId && layouts.length > 0) setActiveId(layouts[0].id);
+  }, [layouts, activeId]);
+
+  const createNew = async () => {
+    try {
+      const fresh = emptyLayout(`Nová hala ${layouts.length + 1}`);
+      const { id } = await upsert.mutateAsync(toLayoutInput(fresh, { id: undefined }));
+      setActiveId(id);
+      toast.success("Vytvorené nové rozloženie");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Rozloženie sa nepodarilo vytvoriť");
     }
-  }, [mounted, activeId]);
-
-  useEffect(() => {
-    if (!activeId) return;
-    setActive(getLayout(activeId) ?? null);
-  }, [activeId]);
-
-  const createNew = () => {
-    const l = emptyLayout(`Nová hala ${layouts.length + 1}`);
-    upsertLayout(l);
-    setActiveId(l.id);
-    toast.success("Vytvorené nové rozloženie");
   };
 
-  const deleteActive = () => {
+  const deleteActive = async () => {
     if (!active) return;
     if (!confirm(`Zmazať rozloženie „${active.name}"?`)) return;
-    deleteLayout(active.id);
-    const remaining = listLayouts();
-    if (remaining.length > 0) {
-      setActiveId(remaining[0].id);
-    } else {
-      const l = emptyLayout("Nová hala");
-      upsertLayout(l);
-      setActiveId(l.id);
+    try {
+      await del.mutateAsync(active.id);
+      setActiveId(null);
+      toast.success("Rozloženie zmazané");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Zmazanie zlyhalo");
     }
-    toast.success("Rozloženie zmazané");
   };
 
   return (
@@ -101,7 +73,9 @@ function VenueLayoutsPage() {
           <div className="min-w-0">
             <h1 className="text-sm font-bold leading-tight">Editor hál</h1>
             <nav className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <Link to="/admin" className="hover:text-foreground">Admin</Link>
+              <Link to="/admin" className="hover:text-foreground">
+                Admin
+              </Link>
               <ChevronRight className="h-3 w-3" />
               <span>Podujatia</span>
               <ChevronRight className="h-3 w-3" />
@@ -149,9 +123,9 @@ function VenueLayoutsPage() {
             <SeatingEditor
               key={active.id}
               initial={active}
-              onChange={(l) => {
-                setLayouts(listLayouts());
-              }}
+              // Editor ukladá cez `useUpsertLayout`, ktorý invaliduje cache —
+              // zoznam sa obnoví sám.
+              onChange={() => {}}
             />
           </Suspense>
         ) : (

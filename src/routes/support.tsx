@@ -5,15 +5,29 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Search, Ticket, RefreshCcw, ShieldQuestion, CreditCard, LifeBuoy, MessageCircle } from "lucide-react";
+import {
+  Search,
+  Ticket,
+  RefreshCcw,
+  ShieldQuestion,
+  CreditCard,
+  LifeBuoy,
+  MessageCircle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
       { title: "Podpora · vipky.sk" },
-      { name: "description", content: "FAQ, reklamácie, refundácie a technická podpora pre kupujúcich aj organizátorov." },
+      {
+        name: "description",
+        content: "FAQ, reklamácie, refundácie a technická podpora pre kupujúcich aj organizátorov.",
+      },
       { property: "og:title", content: "Podpora · vipky.sk" },
       { property: "og:description", content: "Pomoc s nákupom vstupeniek a technická podpora." },
     ],
@@ -22,12 +36,36 @@ export const Route = createFileRoute("/support")({
 });
 
 const FAQ = [
-  { cat: "Vstupenky", q: "Ako dostanem vstupenku po nákupe?", a: "Vstupenka vám príde okamžite e-mailom v PDF formáte aj s QR kódom. Nájdete ju aj vo svojom účte v sekcii Moje vstupenky." },
-  { cat: "Refundácie", q: "Ako požiadam o refundáciu?", a: "V účte otvorte detail objednávky a kliknite na 'Požiadať o refundáciu'. Spracovanie trvá 3–5 pracovných dní." },
-  { cat: "Reklamácie", q: "Podujatie bolo zrušené, čo teraz?", a: "Pri zrušení podujatia organizátorom dostanete automatický e-mail a 100 % vrátenie peňazí na pôvodný spôsob platby." },
-  { cat: "Platba", q: "Aké spôsoby platby podporujete?", a: "Akceptujeme platobné karty (Visa, Mastercard), Apple Pay, Google Pay, Tatra Pay a bankový prevod." },
-  { cat: "Vstupenky", q: "Môžem vstupenku preniesť na inú osobu?", a: "Áno, vstupenku môžete preposlať e-mailom – QR kód je platný pre prvého návštevníka, ktorý ho použije." },
-  { cat: "Technické", q: "Nefunguje mi QR kód pri vstupe.", a: "Kontaktujte personál na vstupe alebo nás napíšte na support@vipky.sk – overíme vás podľa e-mailu objednávky." },
+  {
+    cat: "Vstupenky",
+    q: "Ako dostanem vstupenku po nákupe?",
+    a: "Vstupenka vám príde okamžite e-mailom v PDF formáte aj s QR kódom. Nájdete ju aj vo svojom účte v sekcii Moje vstupenky.",
+  },
+  {
+    cat: "Refundácie",
+    q: "Ako požiadam o refundáciu?",
+    a: "V účte otvorte detail objednávky a kliknite na 'Požiadať o refundáciu'. Spracovanie trvá 3–5 pracovných dní.",
+  },
+  {
+    cat: "Reklamácie",
+    q: "Podujatie bolo zrušené, čo teraz?",
+    a: "Pri zrušení podujatia organizátorom dostanete automatický e-mail a 100 % vrátenie peňazí na pôvodný spôsob platby.",
+  },
+  {
+    cat: "Platba",
+    q: "Aké spôsoby platby podporujete?",
+    a: "Akceptujeme platobné karty (Visa, Mastercard), Apple Pay, Google Pay, Tatra Pay a bankový prevod.",
+  },
+  {
+    cat: "Vstupenky",
+    q: "Môžem vstupenku preniesť na inú osobu?",
+    a: "Áno, vstupenku môžete preposlať e-mailom – QR kód je platný pre prvého návštevníka, ktorý ho použije.",
+  },
+  {
+    cat: "Technické",
+    q: "Nefunguje mi QR kód pri vstupe.",
+    a: "Kontaktujte personál na vstupe alebo nás napíšte na support@vipky.sk – overíme vás podľa e-mailu objednávky.",
+  },
 ];
 
 function SupportPage() {
@@ -39,7 +77,11 @@ function SupportPage() {
   return (
     <PageShell
       eyebrow="Podpora"
-      title={<>Sme tu, keď nás <span className="text-gradient-flame">potrebujete</span></>}
+      title={
+        <>
+          Sme tu, keď nás <span className="text-gradient-flame">potrebujete</span>
+        </>
+      }
       description="Vyhľadajte odpovede v znalostnej báze alebo nás kontaktujte. Pomoc s nákupom, refundáciami aj technickými otázkami."
       cta={
         <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
@@ -68,7 +110,10 @@ function SupportPage() {
         ].map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.t} className="p-5 bg-card/60 border-border/60 hover:border-primary/50 transition-colors">
+            <Card
+              key={c.t}
+              className="p-5 bg-card/60 border-border/60 hover:border-primary/50 transition-colors"
+            >
               <div className="size-10 rounded-xl bg-primary/15 text-primary grid place-items-center mb-3">
                 <Icon className="size-5" />
               </div>
@@ -89,7 +134,9 @@ function SupportPage() {
               <AccordionItem key={i} value={`i${i}`} className="border-border/60">
                 <AccordionTrigger className="text-left hover:no-underline">
                   <div className="flex items-start gap-3">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary mt-1">{f.cat}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary mt-1">
+                      {f.cat}
+                    </span>
                     <span className="font-medium">{f.q}</span>
                   </div>
                 </AccordionTrigger>
@@ -109,8 +156,13 @@ function SupportPage() {
           </div>
           <div>
             <div className="font-display font-bold">Technická podpora</div>
-            <p className="text-sm text-muted-foreground mt-1">Po–Pi 9:00–18:00, víkendy 12:00–22:00 počas podujatí.</p>
-            <a href="mailto:support@vipky.sk" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
+            <p className="text-sm text-muted-foreground mt-1">
+              Po–Pi 9:00–18:00, víkendy 12:00–22:00 počas podujatí.
+            </p>
+            <a
+              href="mailto:support@vipky.sk"
+              className="text-primary text-sm font-semibold hover:underline mt-2 inline-block"
+            >
               support@vipky.sk
             </a>
           </div>
@@ -121,7 +173,9 @@ function SupportPage() {
           </div>
           <div>
             <div className="font-display font-bold">Live chat</div>
-            <p className="text-sm text-muted-foreground mt-1">Odpovedáme do 5 minút v pracovných hodinách.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Odpovedáme do 5 minút v pracovných hodinách.
+            </p>
             <Button asChild variant="link" className="p-0 h-auto text-primary font-semibold mt-2">
               <Link to="/contact">Otvoriť chat →</Link>
             </Button>

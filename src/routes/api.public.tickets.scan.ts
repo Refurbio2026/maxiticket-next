@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { verifyTicket } from "@/lib/qr-token.server";
 
-type ScanResult = "valid" | "duplicate" | "invalid" | "reentry";
+type ScanResult = "valid" | "duplicate" | "invalid" | "reentry" | "refunded";
 
 async function logScan(payload: {
   ticket_id: string | null;
@@ -61,10 +61,12 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
         }
 
         // Accept legacy plaintext qr_code too (fallback)
-        let ticketId = verifyTicket(token);
-        let query = supabaseAdmin.from("tickets").select(
-          "id, event_id, order_id, seat_label, seat_id, qr_code, qr_token, scan_count, last_scan_at, used_at, allow_reentry, scanned_by, issued_at",
-        );
+        const ticketId = verifyTicket(token);
+        const query = supabaseAdmin
+          .from("tickets")
+          .select(
+            "id, event_id, order_id, seat_label, seat_id, qr_code, qr_token, scan_count, last_scan_at, used_at, refunded_at, allow_reentry, scanned_by, issued_at",
+          );
         const { data: ticket } = ticketId
           ? await query.eq("id", ticketId).maybeSingle()
           : await query.eq("qr_code", token).maybeSingle();
@@ -79,7 +81,11 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
             scanner_name: scannerName,
             user_agent: ua,
           });
-          return Response.json({ ok: false, result: "invalid" as const, message: "Neplatná vstupenka" });
+          return Response.json({
+            ok: false,
+            result: "invalid" as const,
+            message: "Neplatná vstupenka",
+          });
         }
 
         if (eventId && ticket.event_id !== eventId) {
@@ -96,6 +102,26 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
             ok: false,
             result: "invalid" as const,
             message: "Vstupenka patrí inému podujatiu",
+          });
+        }
+
+        // Refundovaná vstupenka neplatí, aj keď nikdy nebola použitá.
+        // Kontrola musí byť pred logikou prvého použitia, inak by sa označila
+        // za platnú a pustila by kupujúceho dnu.
+        if (ticket.refunded_at) {
+          await logScan({
+            ticket_id: ticket.id,
+            event_id: ticket.event_id,
+            qr_token: token,
+            result: "refunded",
+            scanned_by: scannedBy,
+            scanner_name: scannerName,
+            user_agent: ua,
+          });
+          return Response.json({
+            ok: false,
+            result: "refunded" as const,
+            message: "Vstupenka bola refundovaná — neplatí.",
           });
         }
 
@@ -139,7 +165,11 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
             if (result === "reentry") {
               await supabaseAdmin
                 .from("tickets")
-                .update({ scan_count: (ticket.scan_count || 0) + 1, last_scan_at: now, scanned_by: scannedBy })
+                .update({
+                  scan_count: (ticket.scan_count || 0) + 1,
+                  last_scan_at: now,
+                  scanned_by: scannedBy,
+                })
                 .eq("id", ticket.id);
             }
           }
@@ -147,7 +177,11 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
           result = "reentry";
           await supabaseAdmin
             .from("tickets")
-            .update({ scan_count: (ticket.scan_count || 0) + 1, last_scan_at: now, scanned_by: scannedBy })
+            .update({
+              scan_count: (ticket.scan_count || 0) + 1,
+              last_scan_at: now,
+              scanned_by: scannedBy,
+            })
             .eq("id", ticket.id);
         } else {
           result = "duplicate";

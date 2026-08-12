@@ -2,9 +2,24 @@ import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 
 const items = [
-  { n: "Lucia K.", r: "Bratislava", q: "Konečne ticketing, ktorý nevyzerá ako z roku 2008. Vstupenku som mala v Apple Walletke za 20 sekúnd.", rating: 5 },
-  { n: "Pohoda Festival", r: "Organizátor", q: "vipky.sk zvládol 80 000 vstupeniek bez výpadku. Check-in cez QR bol bleskový.", rating: 5 },
-  { n: "Marek H.", r: "Košice", q: "Kúpil som lístok na koncert v aute. Žiadne registrácie, žiadne otravné formuláre.", rating: 5 },
+  {
+    n: "Lucia K.",
+    r: "Bratislava",
+    q: "Konečne ticketing, ktorý nevyzerá ako z roku 2008. Vstupenku som mala v Apple Walletke za 20 sekúnd.",
+    rating: 5,
+  },
+  {
+    n: "Pohoda Festival",
+    r: "Organizátor",
+    q: "vipky.sk zvládol 80 000 vstupeniek bez výpadku. Check-in cez QR bol bleskový.",
+    rating: 5,
+  },
+  {
+    n: "Marek H.",
+    r: "Košice",
+    q: "Kúpil som lístok na koncert v aute. Žiadne registrácie, žiadne otravné formuláre.",
+    rating: 5,
+  },
 ];
 
 export function Testimonials() {

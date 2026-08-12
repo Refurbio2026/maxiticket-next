@@ -110,20 +110,20 @@ export const refundOrder = createServerFn({ method: "POST" })
 
     // 3) Update order status (full only). Partial keeps it paid.
     if (full) {
-      await supabaseAdmin
-        .from("orders")
-        .update({ status: "refunded" })
-        .eq("id", order.id);
+      await supabaseAdmin.from("orders").update({ status: "refunded" }).eq("id", order.id);
       // Free seats and invalidate tickets
       await supabaseAdmin
         .from("seat_inventory")
         .update({ status: "available", order_id: null, reserved_until: null })
         .eq("order_id", order.id);
+      // Označíme ich ako refundované, nie ako použité. Skener podľa toho
+      // personálu povie „refundovaná" namiesto zavádzajúceho „už bola použitá",
+      // a štatistika skenov nezapočíta refundy medzi vstupy.
       await supabaseAdmin
         .from("tickets")
-        .update({ used_at: new Date().toISOString() })
+        .update({ refunded_at: new Date().toISOString() })
         .eq("order_id", order.id)
-        .is("used_at", null);
+        .is("refunded_at", null);
     }
 
     // 4) Notify customer — try the queue if email infra is set up, else skip.
@@ -148,21 +148,30 @@ export const refundOrder = createServerFn({ method: "POST" })
 <p style="color:#888;font-size:12px;margin-top:24px">vipky.sk</p>
 </body></html>`;
 
-        const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email" as any, {
-          queue_name: "transactional_emails",
-          message: {
-            to: order.customer_email,
-            subject,
-            html,
-            template_name: "refund_notification",
-            recipient_email: order.customer_email,
-            idempotency_key: `refund-${order.id}-${Date.now()}`,
-          },
-        } as any);
-        if (enqErr) {
-          email_skipped_reason = enqErr.message;
-        } else {
+        // Pôvodne to volalo RPC `enqueue_email` do fronty `transactional_emails`.
+        // Tá funkcia v databáze neexistuje (ani schéma pgmq), takže oznámenie
+        // o refunde nikdy neodišlo — chyba sa len ticho zapísala do dôvodu a
+        // admin videl „ok". Ide to cez ten istý mailer ako vstupenky.
+        const { sendMail } = await import("./mailer.server");
+        const sent = await sendMail({
+          to: order.customer_email,
+          subject,
+          html,
+          text: `Refund za objednávku #${orderShort} vo výške ${amount.toFixed(2)} ${order.currency || "EUR"} bol spracovaný.`,
+        });
+        await supabaseAdmin.from("email_logs").insert({
+          order_id: order.id,
+          recipient: order.customer_email,
+          subject,
+          provider: "resend",
+          provider_message_id: sent.ok ? sent.id : null,
+          status: sent.ok ? "ok" : "error",
+          error_message: sent.ok ? null : sent.message,
+        });
+        if (sent.ok) {
           email_queued = true;
+        } else {
+          email_skipped_reason = sent.message;
         }
       } catch (e: any) {
         email_skipped_reason = String(e?.message || e);

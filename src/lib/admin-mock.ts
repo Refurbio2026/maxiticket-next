@@ -89,7 +89,12 @@ export const commonColumns = {
       key: "status",
       label: "Stav",
       badge: true,
-      badgeMap: { Aktívne: "success", Čakajúce: "accent", Ukončené: "muted", Stornované: "destructive" } as const,
+      badgeMap: {
+        Aktívne: "success",
+        Čakajúce: "accent",
+        Ukončené: "muted",
+        Stornované: "destructive",
+      } as const,
     },
   ] satisfies Column[],
   organizer: [
@@ -101,15 +106,29 @@ export const commonColumns = {
       key: "status",
       label: "Stav",
       badge: true,
-      badgeMap: { Aktívne: "success", Čakajúce: "accent", Ukončené: "muted", Stornované: "destructive" } as const,
+      badgeMap: {
+        Aktívne: "success",
+        Čakajúce: "accent",
+        Ukončené: "muted",
+        Stornované: "destructive",
+      } as const,
     },
   ] satisfies Column[],
   event: [
     { key: "event", label: "Podujatie" },
-    { key: "type", label: "Typ", badge: true, badgeMap: {
-      Koncert: "primary", Festival: "accent", Šport: "success",
-      Divadlo: "muted", Konferencia: "muted", "Stand-up": "primary",
-    } as const },
+    {
+      key: "type",
+      label: "Typ",
+      badge: true,
+      badgeMap: {
+        Koncert: "primary",
+        Festival: "accent",
+        Šport: "success",
+        Divadlo: "muted",
+        Konferencia: "muted",
+        "Stand-up": "primary",
+      } as const,
+    },
     { key: "venue", label: "Miesto" },
     { key: "city", label: "Mesto" },
     { key: "created", label: "Termín" },
@@ -125,7 +144,12 @@ export const commonColumns = {
       key: "status",
       label: "Stav",
       badge: true,
-      badgeMap: { Aktívne: "success", Čakajúce: "accent", Ukončené: "muted", Stornované: "destructive" } as const,
+      badgeMap: {
+        Aktívne: "success",
+        Čakajúce: "accent",
+        Ukončené: "muted",
+        Stornované: "destructive",
+      } as const,
     },
   ] satisfies Column[],
   simple: [
@@ -143,16 +167,30 @@ export const commonColumns = {
       key: "status",
       label: "Stav",
       badge: true,
-      badgeMap: { Aktívne: "success", Čakajúce: "accent", Ukončené: "muted", Stornované: "destructive" } as const,
+      badgeMap: {
+        Aktívne: "success",
+        Čakajúce: "accent",
+        Ukončené: "muted",
+        Stornované: "destructive",
+      } as const,
     },
   ] satisfies Column[],
   user: [
     { key: "user", label: "Login", mono: true },
     { key: "organizer", label: "Organizácia" },
-    { key: "type", label: "Rola", badge: true, badgeMap: {
-      Koncert: "primary", Festival: "accent", Šport: "success",
-      Divadlo: "muted", Konferencia: "muted", "Stand-up": "primary",
-    } as const },
+    {
+      key: "type",
+      label: "Rola",
+      badge: true,
+      badgeMap: {
+        Koncert: "primary",
+        Festival: "accent",
+        Šport: "success",
+        Divadlo: "muted",
+        Konferencia: "muted",
+        "Stand-up": "primary",
+      } as const,
+    },
     { key: "created", label: "Posl. prihlásenie" },
   ] satisfies Column[],
 };

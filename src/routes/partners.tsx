@@ -8,7 +8,11 @@ export const Route = createFileRoute("/partners")({
   head: () => ({
     meta: [
       { title: "Spolupráca · vipky.sk" },
-      { name: "description", content: "Pre organizátorov, partnerov, affiliate program, sponzoring a mediálnu spoluprácu." },
+      {
+        name: "description",
+        content:
+          "Pre organizátorov, partnerov, affiliate program, sponzoring a mediálnu spoluprácu.",
+      },
       { property: "og:title", content: "Spolupráca · vipky.sk" },
       { property: "og:description", content: "Staňte sa partnerom vipky.sk." },
     ],
@@ -20,27 +24,59 @@ function PartnersPage() {
   return (
     <PageShell
       eyebrow="Spolupráca"
-      title={<>Rastieme <span className="text-gradient-flame">spoločne</span></>}
+      title={
+        <>
+          Rastieme <span className="text-gradient-flame">spoločne</span>
+        </>
+      }
       description="Pridajte sa k vipky.sk ekosystému – organizátori, partneri, affiliate tvorcovia, sponzori a mediálne značky. Profitujeme všetci."
       cta={
         <>
           <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
-            <Link to="/contact">Stať sa partnerom <ArrowRight className="size-4 ml-1.5" /></Link>
+            <Link to="/contact">
+              Stať sa partnerom <ArrowRight className="size-4 ml-1.5" />
+            </Link>
           </Button>
           <Button asChild variant="outline" className="border-border/60">
-            <Link to="/login" search={{ section: "organizer" }}>Som organizátor</Link>
+            <Link to="/login" search={{ section: "organizer" }}>
+              Som organizátor
+            </Link>
           </Button>
         </>
       }
     >
       <FeatureGrid
         items={[
-          { icon: Building2, title: "Pre organizátorov", description: "Kompletný nástroj na predaj vstupeniek, marketing, POS a vyúčtovanie." },
-          { icon: Handshake, title: "Pre partnerov", description: "Integrácie, B2B ponuky a dlhodobá spolupráca s ticketing lídrom." },
-          { icon: BadgePercent, title: "Affiliate program", description: "Zarábajte províziu z každej predanej vstupenky cez váš odkaz alebo kód." },
-          { icon: Trophy, title: "Sponzoring", description: "Brandujte podujatia, festivaly a aktivity podľa svojej cieľovej skupiny." },
-          { icon: Tv2, title: "Mediálni partneri", description: "Cross-promo, výmena dosahu a exkluzívne mediálne kampane." },
-          { icon: Users, title: "Komunita", description: "Spoločné eventy, networking a školenia pre celý ekosystém." },
+          {
+            icon: Building2,
+            title: "Pre organizátorov",
+            description: "Kompletný nástroj na predaj vstupeniek, marketing, POS a vyúčtovanie.",
+          },
+          {
+            icon: Handshake,
+            title: "Pre partnerov",
+            description: "Integrácie, B2B ponuky a dlhodobá spolupráca s ticketing lídrom.",
+          },
+          {
+            icon: BadgePercent,
+            title: "Affiliate program",
+            description: "Zarábajte províziu z každej predanej vstupenky cez váš odkaz alebo kód.",
+          },
+          {
+            icon: Trophy,
+            title: "Sponzoring",
+            description: "Brandujte podujatia, festivaly a aktivity podľa svojej cieľovej skupiny.",
+          },
+          {
+            icon: Tv2,
+            title: "Mediálni partneri",
+            description: "Cross-promo, výmena dosahu a exkluzívne mediálne kampane.",
+          },
+          {
+            icon: Users,
+            title: "Komunita",
+            description: "Spoločné eventy, networking a školenia pre celý ekosystém.",
+          },
         ]}
       />
 
@@ -64,8 +100,8 @@ function PartnersPage() {
       <Card className="p-8 bg-card/60 border-border/60">
         <h2 className="font-display text-2xl font-bold mb-2">Affiliate program</h2>
         <p className="text-muted-foreground max-w-2xl">
-          Zdieľajte podujatia a získajte províziu z každej predanej vstupenky. Sledovanie v reálnom čase,
-          mesačné výplaty a podpora vlastných promo kódov.
+          Zdieľajte podujatia a získajte províziu z každej predanej vstupenky. Sledovanie v reálnom
+          čase, mesačné výplaty a podpora vlastných promo kódov.
         </p>
         <ul className="grid sm:grid-cols-3 gap-3 mt-5 text-sm">
           {[
@@ -76,7 +112,10 @@ function PartnersPage() {
             "Mesačné výplaty",
             "Dedikovaný manažér",
           ].map((t) => (
-            <li key={t} className="flex items-center gap-2 p-3 rounded-lg bg-background/40 border border-border/40">
+            <li
+              key={t}
+              className="flex items-center gap-2 p-3 rounded-lg bg-background/40 border border-border/40"
+            >
               <span className="size-1.5 rounded-full bg-primary" /> {t}
             </li>
           ))}

@@ -2,11 +2,14 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  getOrder, releaseExpired, releaseOrder, upsertOrder,
+  getOrder,
+  releaseExpired,
+  releaseOrder,
+  upsertOrder,
   type Order,
 } from "@/lib/ticketing-db";
 import { submitOrder, createGoPayPaymentForOrder } from "@/lib/payments.functions";
-import { getEvent, type EventItem } from "@/lib/local-db";
+import { useEvent } from "@/hooks/use-events";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
@@ -37,7 +40,8 @@ function CheckoutPage() {
   const { orderId } = Route.useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | undefined>();
-  const [event, setEvent] = useState<EventItem | undefined>();
+  const { data: eventData } = useEvent(order?.event_id);
+  const event = eventData ?? undefined;
   const [loaded, setLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
 
@@ -53,7 +57,6 @@ function CheckoutPage() {
     releaseExpired();
     const o = getOrder(orderId);
     setOrder(o);
-    if (o) setEvent(getEvent(o.event_id));
     setLoaded(true);
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
@@ -95,10 +98,11 @@ function CheckoutPage() {
             email: form.email,
             phone: form.phone || undefined,
           },
+          // Ceny sa neposielajú — server si ich odvodí z databázy.
           items: order.items.map((it) => ({
             seat_id: it.seat_id || undefined,
-            label: it.label,
-            unit_price: it.price,
+            seat_label: it.seat_id ? it.label : undefined,
+            is_vip: it.is_vip ?? false,
             quantity: 1,
           })),
         },
@@ -120,8 +124,18 @@ function CheckoutPage() {
     navigate({ to: "/events/$id", params: { id: order.event_id } });
   };
 
-  if (!loaded) return <Shell><p className="text-muted-foreground">Načítavam…</p></Shell>;
-  if (!order) return <Shell><Card className="p-12 text-center bg-card/60 border-dashed">Objednávka sa nenašla</Card></Shell>;
+  if (!loaded)
+    return (
+      <Shell>
+        <p className="text-muted-foreground">Načítavam…</p>
+      </Shell>
+    );
+  if (!order)
+    return (
+      <Shell>
+        <Card className="p-12 text-center bg-card/60 border-dashed">Objednávka sa nenašla</Card>
+      </Shell>
+    );
 
   if (order.status === "paid") {
     // already paid → redirect to success
@@ -133,7 +147,11 @@ function CheckoutPage() {
 
   return (
     <Shell>
-      <Link to="/events/$id" params={{ id: order.event_id }} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6">
+      <Link
+        to="/events/$id"
+        params={{ id: order.event_id }}
+        className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6"
+      >
         <ArrowLeft className="size-4" /> Späť na podujatie
       </Link>
 
@@ -271,18 +289,29 @@ function CheckoutPage() {
 
           <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Spolu</span>
-            <span className="font-display text-2xl font-bold">€{order.total_amount.toFixed(2)}</span>
+            <span className="font-display text-2xl font-bold">
+              €{order.total_amount.toFixed(2)}
+            </span>
           </div>
 
-          <div className={`mt-4 p-3 rounded-md border text-xs inline-flex items-center gap-2 w-full ${
-            expired
-              ? "bg-destructive/10 border-destructive/30 text-destructive"
-              : "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
-          }`}>
+          <div
+            className={`mt-4 p-3 rounded-md border text-xs inline-flex items-center gap-2 w-full ${
+              expired
+                ? "bg-destructive/10 border-destructive/30 text-destructive"
+                : "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+            }`}
+          >
             <Clock className="size-3.5" />
-            {expired
-              ? "Rezervácia vypršala — sedadlá boli uvoľnené."
-              : <>Sedadlá rezervované ešte <strong>{mins}:{String(secs).padStart(2, "0")}</strong></>}
+            {expired ? (
+              "Rezervácia vypršala — sedadlá boli uvoľnené."
+            ) : (
+              <>
+                Sedadlá rezervované ešte{" "}
+                <strong>
+                  {mins}:{String(secs).padStart(2, "0")}
+                </strong>
+              </>
+            )}
           </div>
         </Card>
       </div>
@@ -341,7 +370,15 @@ function Stepper({ current }: { current: number }) {
   );
 }
 
-function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`space-y-1.5 ${className}`}>
       <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>

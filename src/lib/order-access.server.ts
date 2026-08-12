@@ -10,7 +10,9 @@ import crypto from "crypto";
 function getSecret(): string {
   const secret = process.env.TICKET_QR_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret) {
-    throw new Error("Chýba TICKET_QR_SECRET (alebo SUPABASE_SERVICE_ROLE_KEY) pre prístupové tokeny.");
+    throw new Error(
+      "Chýba TICKET_QR_SECRET (alebo SUPABASE_SERVICE_ROLE_KEY) pre prístupové tokeny.",
+    );
   }
   return secret;
 }
@@ -20,7 +22,11 @@ function b64url(buf: Buffer): string {
 }
 
 export function signOrderAccess(orderId: string): string {
-  const sig = crypto.createHmac("sha256", getSecret()).update("order:" + orderId).digest().slice(0, 16);
+  const sig = crypto
+    .createHmac("sha256", getSecret())
+    .update("order:" + orderId)
+    .digest()
+    .slice(0, 16);
   return b64url(sig);
 }
 

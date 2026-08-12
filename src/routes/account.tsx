@@ -11,7 +11,11 @@ import { Card } from "@/components/ui/card";
 import { User, Ticket, LogOut, Calendar, MapPin, Download, Mail } from "lucide-react";
 import { getMyTickets } from "@/lib/account.functions";
 import type { IssuedTicket } from "@/lib/ticketing-db";
-import { AppleWalletButton, GoogleWalletButton, type WalletEventInfo } from "@/components/wallet/WalletButtons";
+import {
+  AppleWalletButton,
+  GoogleWalletButton,
+  type WalletEventInfo,
+} from "@/components/wallet/WalletButtons";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
@@ -116,8 +120,12 @@ function AccountPage() {
         {/* Tickets */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl font-semibold tracking-tight">{t("account.myTickets")}</h2>
-            <span className="text-xs text-muted-foreground">{t("account.byEmail", { email: user.email })}</span>
+            <h2 className="font-display text-2xl font-semibold tracking-tight">
+              {t("account.myTickets")}
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {t("account.byEmail", { email: user.email })}
+            </span>
           </div>
 
           {ticketsLoading ? (
@@ -129,8 +137,8 @@ function AccountPage() {
               <Ticket className="size-10 text-muted-foreground mx-auto mb-3" />
               <div className="font-semibold">{t("account.noTicketsYet")}</div>
               <p className="text-sm text-muted-foreground mt-1">
-                {t("account.noTicketsHintBefore")}{" "}
-                <span className="font-mono">{user.email}</span>{t("account.noTicketsHintAfter")}
+                {t("account.noTicketsHintBefore")} <span className="font-mono">{user.email}</span>
+                {t("account.noTicketsHintAfter")}
               </p>
               <Link
                 to="/events"
@@ -168,8 +176,12 @@ function TicketCard({ row }: { row: Row }) {
           <QRCodeSVG value={ticket.qr_code} size={120} level="M" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("account.ticketLabel")}</div>
-          <div className="font-display text-lg font-semibold mt-0.5">{event?.title ?? t("account.eventFallback")}</div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            {t("account.ticketLabel")}
+          </div>
+          <div className="font-display text-lg font-semibold mt-0.5">
+            {event?.title ?? t("account.eventFallback")}
+          </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {event && (
               <>
@@ -183,7 +195,9 @@ function TicketCard({ row }: { row: Row }) {
             )}
           </div>
           <div className="mt-2 text-sm font-medium">{ticket.seat_label}</div>
-          <div className="text-[11px] font-mono text-muted-foreground mt-1 break-all">{ticket.qr_code}</div>
+          <div className="text-[11px] font-mono text-muted-foreground mt-1 break-all">
+            {ticket.qr_code}
+          </div>
 
           <div className="flex flex-wrap gap-2 mt-4">
             <AppleWalletButton ticket={ticket} size="sm" compact />

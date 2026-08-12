@@ -2,7 +2,6 @@
 // Architektúra je pripravená na neskoršie napojenie na reálnu DB,
 // ORP / eKasa (fiscal-adapter) a USB platobné terminály (payment-terminal-adapter).
 
-
 import { uid } from "./local-db";
 
 export type PaymentMethod = "cash" | "card" | "transfer" | "free";
@@ -185,23 +184,48 @@ export const POS_EVENT = "mt:pos-change";
 const isBrowser = () => typeof window !== "undefined";
 function read<T>(k: string, f: T): T {
   if (!isBrowser()) return f;
-  try { const r = localStorage.getItem(k); return r ? JSON.parse(r) as T : f; } catch { return f; }
+  try {
+    const r = localStorage.getItem(k);
+    return r ? (JSON.parse(r) as T) : f;
+  } catch {
+    return f;
+  }
 }
-function write<T>(k: string, v: T) { if (isBrowser()) localStorage.setItem(k, JSON.stringify(v)); }
-export function emitPos() { if (isBrowser()) window.dispatchEvent(new Event(POS_EVENT)); }
+function write<T>(k: string, v: T) {
+  if (isBrowser()) localStorage.setItem(k, JSON.stringify(v));
+}
+export function emitPos() {
+  if (isBrowser()) window.dispatchEvent(new Event(POS_EVENT));
+}
 
 // ---------- Sales ----------
-export function getSales(): PosSale[] { return read<PosSale[]>(SALES, []); }
-export function saveSales(s: PosSale[]) { write(SALES, s); }
-export function addSale(s: PosSale) { const all = getSales(); all.unshift(s); saveSales(all); emitPos(); }
+export function getSales(): PosSale[] {
+  return read<PosSale[]>(SALES, []);
+}
+export function saveSales(s: PosSale[]) {
+  write(SALES, s);
+}
+export function addSale(s: PosSale) {
+  const all = getSales();
+  all.unshift(s);
+  saveSales(all);
+  emitPos();
+}
 export function voidSale(id: string, reason: string) {
   const all = getSales();
   const idx = all.findIndex((s) => s.id === id);
   if (idx >= 0) {
-    all[idx] = { ...all[idx], status: "void", voided_at: new Date().toISOString(), void_reason: reason };
+    all[idx] = {
+      ...all[idx],
+      status: "void",
+      voided_at: new Date().toISOString(),
+      void_reason: reason,
+    };
     saveSales(all);
     // cascade cancel tickets
-    const tickets = getTickets().map((t) => t.sale_id === id ? { ...t, status: "cancelled" as const } : t);
+    const tickets = getTickets().map((t) =>
+      t.sale_id === id ? { ...t, status: "cancelled" as const } : t,
+    );
     saveTickets(tickets);
     emitPos();
   }
@@ -213,51 +237,109 @@ export function nextReceiptNumber(): string {
 }
 
 // ---------- Cashiers ----------
-export function getCashiers(): PosCashier[] { return read<PosCashier[]>(CASHIERS, []); }
-export function saveCashiers(c: PosCashier[]) { write(CASHIERS, c); }
+export function getCashiers(): PosCashier[] {
+  return read<PosCashier[]>(CASHIERS, []);
+}
+export function saveCashiers(c: PosCashier[]) {
+  write(CASHIERS, c);
+}
 export function upsertCashier(c: PosCashier) {
   const all = getCashiers();
   const i = all.findIndex((x) => x.id === c.id);
-  if (i >= 0) all[i] = c; else all.unshift(c);
-  saveCashiers(all); emitPos();
+  if (i >= 0) all[i] = c;
+  else all.unshift(c);
+  saveCashiers(all);
+  emitPos();
 }
-export function deleteCashier(id: string) { saveCashiers(getCashiers().filter((c) => c.id !== id)); emitPos(); }
+export function deleteCashier(id: string) {
+  saveCashiers(getCashiers().filter((c) => c.id !== id));
+  emitPos();
+}
 
 // ---------- Devices ----------
-export function getDevices(): PosDevice[] { return read<PosDevice[]>(DEVICES, []); }
-export function saveDevices(d: PosDevice[]) { write(DEVICES, d); }
+export function getDevices(): PosDevice[] {
+  return read<PosDevice[]>(DEVICES, []);
+}
+export function saveDevices(d: PosDevice[]) {
+  write(DEVICES, d);
+}
 
 // ---------- Closings ----------
-export function getClosings(): PosClosing[] { return read<PosClosing[]>(CLOSINGS, []); }
-export function addClosing(c: PosClosing) { const all = getClosings(); all.unshift(c); write(CLOSINGS, all); emitPos(); }
+export function getClosings(): PosClosing[] {
+  return read<PosClosing[]>(CLOSINGS, []);
+}
+export function addClosing(c: PosClosing) {
+  const all = getClosings();
+  all.unshift(c);
+  write(CLOSINGS, all);
+  emitPos();
+}
 
 // ---------- Sessions ----------
-export function getSessions(): PosSession[] { return read<PosSession[]>(SESSIONS, []); }
-export function addSession(s: PosSession) { const all = getSessions(); all.unshift(s); write(SESSIONS, all); emitPos(); }
+export function getSessions(): PosSession[] {
+  return read<PosSession[]>(SESSIONS, []);
+}
+export function addSession(s: PosSession) {
+  const all = getSessions();
+  all.unshift(s);
+  write(SESSIONS, all);
+  emitPos();
+}
 export function closeSession(id: string) {
-  const all = getSessions().map((s) => s.id === id ? { ...s, status: "closed" as const, closed_at: new Date().toISOString() } : s);
-  write(SESSIONS, all); emitPos();
+  const all = getSessions().map((s) =>
+    s.id === id ? { ...s, status: "closed" as const, closed_at: new Date().toISOString() } : s,
+  );
+  write(SESSIONS, all);
+  emitPos();
 }
 
 // ---------- Tickets (POS-issued) ----------
-export function getTickets(): PosTicket[] { return read<PosTicket[]>(TICKETS, []); }
-export function saveTickets(t: PosTicket[]) { write(TICKETS, t); }
-export function addTickets(t: PosTicket[]) { const all = getTickets(); saveTickets([...t, ...all]); emitPos(); }
+export function getTickets(): PosTicket[] {
+  return read<PosTicket[]>(TICKETS, []);
+}
+export function saveTickets(t: PosTicket[]) {
+  write(TICKETS, t);
+}
+export function addTickets(t: PosTicket[]) {
+  const all = getTickets();
+  saveTickets([...t, ...all]);
+  emitPos();
+}
 
 // ---------- Terminal Transactions ----------
-export function getTerminalTx(): PaymentTerminalTx[] { return read<PaymentTerminalTx[]>(TERMINAL_TX, []); }
-export function addTerminalTx(t: PaymentTerminalTx) { const all = getTerminalTx(); all.unshift(t); write(TERMINAL_TX, all); emitPos(); }
+export function getTerminalTx(): PaymentTerminalTx[] {
+  return read<PaymentTerminalTx[]>(TERMINAL_TX, []);
+}
+export function addTerminalTx(t: PaymentTerminalTx) {
+  const all = getTerminalTx();
+  all.unshift(t);
+  write(TERMINAL_TX, all);
+  emitPos();
+}
 export function updateTerminalTx(id: string, patch: Partial<PaymentTerminalTx>) {
-  const all = getTerminalTx().map((t) => t.id === id ? { ...t, ...patch } : t);
-  write(TERMINAL_TX, all); emitPos();
+  const all = getTerminalTx().map((t) => (t.id === id ? { ...t, ...patch } : t));
+  write(TERMINAL_TX, all);
+  emitPos();
 }
 
 // ---------- Fiscal Receipts ----------
-export function getFiscalReceipts(): FiscalReceipt[] { return read<FiscalReceipt[]>(FISCAL_RECEIPTS, []); }
-export function addFiscalReceipt(r: FiscalReceipt) { const all = getFiscalReceipts(); all.unshift(r); write(FISCAL_RECEIPTS, all); emitPos(); }
+export function getFiscalReceipts(): FiscalReceipt[] {
+  return read<FiscalReceipt[]>(FISCAL_RECEIPTS, []);
+}
+export function addFiscalReceipt(r: FiscalReceipt) {
+  const all = getFiscalReceipts();
+  all.unshift(r);
+  write(FISCAL_RECEIPTS, all);
+  emitPos();
+}
 export function cancelFiscalReceiptInStore(id: string) {
-  const all = getFiscalReceipts().map((r) => r.id === id ? { ...r, status: "cancelled" as const, cancelled_at: new Date().toISOString() } : r);
-  write(FISCAL_RECEIPTS, all); emitPos();
+  const all = getFiscalReceipts().map((r) =>
+    r.id === id
+      ? { ...r, status: "cancelled" as const, cancelled_at: new Date().toISOString() }
+      : r,
+  );
+  write(FISCAL_RECEIPTS, all);
+  emitPos();
 }
 
 // ---------- Fiscal Settings ----------
@@ -278,11 +360,18 @@ const DEFAULT_FISCAL_SETTINGS: FiscalSettings = {
   premises_address: "",
   connection_status: "disconnected",
 };
-export function getFiscalSettings(): FiscalSettings { return read<FiscalSettings>(FISCAL_SETTINGS, DEFAULT_FISCAL_SETTINGS); }
-export function saveFiscalSettings(s: FiscalSettings) { write(FISCAL_SETTINGS, s); emitPos(); }
+export function getFiscalSettings(): FiscalSettings {
+  return read<FiscalSettings>(FISCAL_SETTINGS, DEFAULT_FISCAL_SETTINGS);
+}
+export function saveFiscalSettings(s: FiscalSettings) {
+  write(FISCAL_SETTINGS, s);
+  emitPos();
+}
 
 // ---------- Audit ----------
-export function getAuditLogs(): AuditLog[] { return read<AuditLog[]>(AUDIT, []); }
+export function getAuditLogs(): AuditLog[] {
+  return read<AuditLog[]>(AUDIT, []);
+}
 export function logAudit(entry: Omit<AuditLog, "id" | "created_at">) {
   const all = getAuditLogs();
   all.unshift({ ...entry, id: uid(), created_at: new Date().toISOString() });
@@ -297,9 +386,20 @@ export function computeClosing(
   const sales = getSales().filter(
     (s) => s.organizer_id === organizerId && s.created_at.startsWith(date),
   );
-  const acc = { cash_total: 0, card_total: 0, transfer_total: 0, free_total: 0, voided_total: 0, receipts_count: 0, tickets_count: 0 };
+  const acc = {
+    cash_total: 0,
+    card_total: 0,
+    transfer_total: 0,
+    free_total: 0,
+    voided_total: 0,
+    receipts_count: 0,
+    tickets_count: 0,
+  };
   for (const s of sales) {
-    if (s.status === "void") { acc.voided_total += s.total; continue; }
+    if (s.status === "void") {
+      acc.voided_total += s.total;
+      continue;
+    }
     acc.receipts_count += 1;
     acc.tickets_count += s.items.reduce((a, b) => a + b.quantity, 0);
     if (s.payment_method === "cash") acc.cash_total += s.total;

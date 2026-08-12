@@ -33,20 +33,30 @@ export function Navbar() {
     >
       <div className="glass border-x-0 border-t-0">
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4">
-
-          <Link to="/" className="flex items-center gap-2 group shrink-0" onClick={() => setOpen(false)}>
+          <Link
+            to="/"
+            className="flex items-center gap-2 group shrink-0"
+            onClick={() => setOpen(false)}
+          >
             <img src={logo} alt="vipky.sk" className="h-9 w-auto dark:invert" />
           </Link>
-
 
           <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-foreground/80">
             {NAV_LINKS.map((l) =>
               l.to.startsWith("/#") ? (
-                <a key={l.key} href={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
+                <a
+                  key={l.key}
+                  href={l.to}
+                  className="hover:text-foreground transition-colors whitespace-nowrap"
+                >
                   {t(l.key)}
                 </a>
               ) : (
-                <Link key={l.key} to={l.to} className="hover:text-foreground transition-colors whitespace-nowrap">
+                <Link
+                  key={l.key}
+                  to={l.to}
+                  className="hover:text-foreground transition-colors whitespace-nowrap"
+                >
                   {t(l.key)}
                 </Link>
               ),
@@ -58,10 +68,20 @@ export function Navbar() {
             <ThemeToggle className="rounded-xl" />
             {user ? (
               <>
-                <Button asChild variant="ghost" className="hidden md:inline-flex rounded-xl text-sm">
-                  <Link to="/account"><User className="size-4 mr-1.5" /> {t("common.account")}</Link>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="hidden md:inline-flex rounded-xl text-sm"
+                >
+                  <Link to="/account">
+                    <User className="size-4 mr-1.5" /> {t("common.account")}
+                  </Link>
                 </Button>
-                <Button variant="ghost" className="hidden md:inline-flex rounded-xl text-sm" onClick={() => signOut()}>
+                <Button
+                  variant="ghost"
+                  className="hidden md:inline-flex rounded-xl text-sm"
+                  onClick={() => signOut()}
+                >
                   <LogOut className="size-4 mr-1.5" /> {t("common.logout")}
                 </Button>
               </>
@@ -71,10 +91,17 @@ export function Navbar() {
               </Button>
             )}
             <Button asChild variant="outline" className="hidden sm:inline-flex rounded-xl text-sm">
-              <Link to="/scanner"><ScanLine className="size-4 mr-1.5" /> {t("common.scannerQR")}</Link>
+              <Link to="/scanner">
+                <ScanLine className="size-4 mr-1.5" /> {t("common.scannerQR")}
+              </Link>
             </Button>
-            <Button asChild className="hidden sm:inline-flex rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow">
-              <Link to="/login" search={{ section: "organizer" }}>{t("common.addEvent")}</Link>
+            <Button
+              asChild
+              className="hidden sm:inline-flex rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow"
+            >
+              <Link to="/login" search={{ section: "organizer" }}>
+                {t("common.addEvent")}
+              </Link>
             </Button>
             <Button
               variant="ghost"
@@ -129,7 +156,10 @@ export function Navbar() {
                     <User className="size-4" /> {t("common.account")}
                   </Link>
                   <button
-                    onClick={() => { setOpen(false); signOut(); }}
+                    onClick={() => {
+                      setOpen(false);
+                      signOut();
+                    }}
                     className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40 flex items-center gap-2 text-left"
                   >
                     <LogOut className="size-4" /> {t("common.logout")}

@@ -44,8 +44,14 @@ const LOG_KEY = "bank.sync_logs.v1";
 
 const ORGANIZERS = ["org_1", "org_2", "org_3"];
 const NAMES = [
-  "Ján Novák", "Mária Horváthová", "Peter Kováč", "Eva Tóthová",
-  "Lukáš Varga", "Andrea Baláž", "Michal Polák", "Zuzana Krištofová",
+  "Ján Novák",
+  "Mária Horváthová",
+  "Peter Kováč",
+  "Eva Tóthová",
+  "Lukáš Varga",
+  "Andrea Baláž",
+  "Michal Polák",
+  "Zuzana Krištofová",
 ];
 
 function uid() {
@@ -114,8 +120,9 @@ export function disconnectAccount(id: string) {
   write(ACC_KEY, accounts);
 }
 
-function tryMatch(tx: Omit<BankTransaction, "matchStatus" | "matchedOrderId" | "organizerId">):
-  Pick<BankTransaction, "matchStatus" | "matchedOrderId" | "organizerId"> {
+function tryMatch(
+  tx: Omit<BankTransaction, "matchStatus" | "matchedOrderId" | "organizerId">,
+): Pick<BankTransaction, "matchStatus" | "matchedOrderId" | "organizerId"> {
   // Mock matching: if variable symbol is "non-empty 6 digits" → matched
   if (/^\d{6,}$/.test(tx.variableSymbol)) {
     return {
@@ -191,7 +198,17 @@ export function resetBankMock() {
 
 // CSV / XLSX (HTML table) export
 export function exportCsv(txs: BankTransaction[]): string {
-  const header = ["Dátum", "Suma", "Mena", "Odosielateľ", "IBAN", "VS", "Správa", "Stav", "Objednávka"];
+  const header = [
+    "Dátum",
+    "Suma",
+    "Mena",
+    "Odosielateľ",
+    "IBAN",
+    "VS",
+    "Správa",
+    "Stav",
+    "Objednávka",
+  ];
   const rows = txs.map((t) => [
     new Date(t.date).toLocaleString("sk-SK"),
     t.amount.toFixed(2),
@@ -220,7 +237,17 @@ export function downloadFile(filename: string, content: string, mime: string) {
 
 export function exportXlsx(txs: BankTransaction[]): string {
   // HTML table — Excel opens .xls natively
-  const head = ["Dátum", "Suma", "Mena", "Odosielateľ", "IBAN", "VS", "Správa", "Stav", "Objednávka"];
+  const head = [
+    "Dátum",
+    "Suma",
+    "Mena",
+    "Odosielateľ",
+    "IBAN",
+    "VS",
+    "Správa",
+    "Stav",
+    "Objednávka",
+  ];
   const rows = txs
     .map(
       (t) =>

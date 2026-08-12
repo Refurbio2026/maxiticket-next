@@ -3,8 +3,15 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
-  getDevices, saveDevices, POS_EVENT, emitPos, logAudit,
-  type PosDevice, type DeviceType, type DeviceConnection, type DeviceStatus,
+  getDevices,
+  saveDevices,
+  POS_EVENT,
+  emitPos,
+  logAudit,
+  type PosDevice,
+  type DeviceType,
+  type DeviceConnection,
+  type DeviceStatus,
 } from "@/lib/pos-db";
 import { uid } from "@/lib/local-db";
 import { Card } from "@/components/ui/card";
@@ -12,9 +19,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
-import { Cpu, Plus, Trash2, Usb, Printer, ScanLine, Bluetooth, Cable, Wifi, Power } from "lucide-react";
+import {
+  Cpu,
+  Plus,
+  Trash2,
+  Usb,
+  Printer,
+  ScanLine,
+  Bluetooth,
+  Cable,
+  Wifi,
+  Power,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/devices")({
@@ -23,10 +48,14 @@ export const Route = createFileRoute("/organizer/pos/devices")({
 });
 
 const TYPE_ICON: Record<DeviceType, React.ComponentType<{ className?: string }>> = {
-  terminal: Usb, printer: Printer, scanner: ScanLine,
+  terminal: Usb,
+  printer: Printer,
+  scanner: ScanLine,
 };
 const CONN_ICON: Record<DeviceConnection, React.ComponentType<{ className?: string }>> = {
-  USB: Cable, Bluetooth: Bluetooth, LAN: Wifi,
+  USB: Cable,
+  Bluetooth: Bluetooth,
+  LAN: Wifi,
 };
 
 function DevicesPage() {
@@ -36,7 +65,10 @@ function DevicesPage() {
   const [tick, setTick] = useState(0);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<{
-    name: string; location: string; device_type: DeviceType; connection: DeviceConnection;
+    name: string;
+    location: string;
+    device_type: DeviceType;
+    connection: DeviceConnection;
   }>({ name: "", location: "", device_type: "terminal", connection: "USB" });
 
   useEffect(() => {
@@ -54,41 +86,73 @@ function DevicesPage() {
     if (!user || !form.name) return;
     const all = getDevices();
     const dev: PosDevice = {
-      id: uid(), organizer_id: user.id, name: form.name, location: form.location,
-      device_type: form.device_type, connection: form.connection,
-      status: "inactive", terminal_connected: false,
+      id: uid(),
+      organizer_id: user.id,
+      name: form.name,
+      location: form.location,
+      device_type: form.device_type,
+      connection: form.connection,
+      status: "inactive",
+      terminal_connected: false,
       created_at: new Date().toISOString(),
     };
     all.unshift(dev);
-    saveDevices(all); emitPos();
-    logAudit({ user_id: user.id, user_name: user.full_name || user.email,
-      action: "device.created", entity: "pos_devices", entity_id: dev.id, meta: { type: dev.device_type, connection: dev.connection } });
+    saveDevices(all);
+    emitPos();
+    logAudit({
+      user_id: user.id,
+      user_name: user.full_name || user.email,
+      action: "device.created",
+      entity: "pos_devices",
+      entity_id: dev.id,
+      meta: { type: dev.device_type, connection: dev.connection },
+    });
     setForm({ name: "", location: "", device_type: "terminal", connection: "USB" });
     setOpen(false);
     toast.success(t("orgPosDevices.toastAdded"));
   };
 
   const remove = (id: string) => {
-    saveDevices(getDevices().filter((d) => d.id !== id)); emitPos();
-    if (user) logAudit({ user_id: user.id, user_name: user.full_name || user.email,
-      action: "device.deleted", entity: "pos_devices", entity_id: id });
+    saveDevices(getDevices().filter((d) => d.id !== id));
+    emitPos();
+    if (user)
+      logAudit({
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        action: "device.deleted",
+        entity: "pos_devices",
+        entity_id: id,
+      });
   };
 
   const setStatus = (id: string, status: DeviceStatus, extra: Partial<PosDevice> = {}) => {
-    const all = getDevices().map((d) => d.id === id ? { ...d, status, ...extra } : d);
-    saveDevices(all); emitPos();
+    const all = getDevices().map((d) => (d.id === id ? { ...d, status, ...extra } : d));
+    saveDevices(all);
+    emitPos();
   };
 
   const testConnect = async (d: PosDevice) => {
     toast.info(t("orgPosDevices.toastTesting", { name: d.name }));
-    if (user) logAudit({ user_id: user.id, user_name: user.full_name || user.email,
-      action: "device.test", entity: "pos_devices", entity_id: d.id, meta: { connection: d.connection } });
+    if (user)
+      logAudit({
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        action: "device.test",
+        entity: "pos_devices",
+        entity_id: d.id,
+        meta: { connection: d.connection },
+      });
     try {
       if (d.device_type === "terminal") {
         const s = await paymentTerminal.connectTerminal();
         const ok = s === "connected";
-        setStatus(d.id, ok ? "active" : "error", { terminal_connected: ok, last_connected_at: new Date().toISOString() });
-        toast.success(t("orgPosDevices.toastConnected", { name: d.name, connection: d.connection }));
+        setStatus(d.id, ok ? "active" : "error", {
+          terminal_connected: ok,
+          last_connected_at: new Date().toISOString(),
+        });
+        toast.success(
+          t("orgPosDevices.toastConnected", { name: d.name, connection: d.connection }),
+        );
       } else {
         await new Promise((r) => setTimeout(r, 400));
         setStatus(d.id, "active", { last_connected_at: new Date().toISOString() });
@@ -103,8 +167,14 @@ function DevicesPage() {
   const disconnect = async (d: PosDevice) => {
     if (d.device_type === "terminal") await paymentTerminal.disconnectTerminal();
     setStatus(d.id, "inactive", { terminal_connected: false });
-    if (user) logAudit({ user_id: user.id, user_name: user.full_name || user.email,
-      action: "device.disconnect", entity: "pos_devices", entity_id: d.id });
+    if (user)
+      logAudit({
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        action: "device.disconnect",
+        entity: "pos_devices",
+        entity_id: d.id,
+      });
     toast.success(t("orgPosDevices.toastDisconnected", { name: d.name }));
   };
 
@@ -112,22 +182,45 @@ function DevicesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosDevices.title")}</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight">
+            {t("orgPosDevices.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("orgPosDevices.subtitle")}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-flame text-primary-foreground shadow-glow"><Plus className="size-4 mr-2" /> {t("orgPosDevices.addButton")}</Button>
+            <Button className="bg-gradient-flame text-primary-foreground shadow-glow">
+              <Plus className="size-4 mr-2" /> {t("orgPosDevices.addButton")}
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{t("orgPosDevices.dialogTitle")}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>{t("orgPosDevices.dialogTitle")}</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3 py-2">
-              <div><Label>{t("orgPosDevices.name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="POS-01" /></div>
-              <div><Label>{t("orgPosDevices.location")}</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder={t("orgPosDevices.locationPlaceholder")} /></div>
+              <div>
+                <Label>{t("orgPosDevices.name")}</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="POS-01"
+                />
+              </div>
+              <div>
+                <Label>{t("orgPosDevices.location")}</Label>
+                <Input
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  placeholder={t("orgPosDevices.locationPlaceholder")}
+                />
+              </div>
               <div>
                 <Label>{t("orgPosDevices.deviceType")}</Label>
-                <select value={form.device_type} onChange={(e) => setForm({ ...form, device_type: e.target.value as DeviceType })}
-                  className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm">
+                <select
+                  value={form.device_type}
+                  onChange={(e) => setForm({ ...form, device_type: e.target.value as DeviceType })}
+                  className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm"
+                >
                   <option value="terminal">{t("orgPosDevices.typeTerminal")}</option>
                   <option value="printer">{t("orgPosDevices.typePrinter")}</option>
                   <option value="scanner">{t("orgPosDevices.typeScanner")}</option>
@@ -135,15 +228,22 @@ function DevicesPage() {
               </div>
               <div>
                 <Label>{t("orgPosDevices.connection")}</Label>
-                <select value={form.connection} onChange={(e) => setForm({ ...form, connection: e.target.value as DeviceConnection })}
-                  className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm">
+                <select
+                  value={form.connection}
+                  onChange={(e) =>
+                    setForm({ ...form, connection: e.target.value as DeviceConnection })
+                  }
+                  className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm"
+                >
                   <option value="USB">USB</option>
                   <option value="Bluetooth">Bluetooth</option>
                   <option value="LAN">LAN</option>
                 </select>
               </div>
             </div>
-            <DialogFooter><Button onClick={save}>{t("orgPosDevices.saveButton")}</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={save}>{t("orgPosDevices.saveButton")}</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -159,7 +259,12 @@ function DevicesPage() {
             {list.map((d) => {
               const TypeIcon = TYPE_ICON[d.device_type] || Cpu;
               const ConnIcon = CONN_ICON[d.connection] || Cable;
-              const statusVariant = d.status === "active" ? "default" : d.status === "error" ? "destructive" : "outline";
+              const statusVariant =
+                d.status === "active"
+                  ? "default"
+                  : d.status === "error"
+                    ? "destructive"
+                    : "outline";
               return (
                 <Card key={d.id} className="p-4 bg-background border-border/50">
                   <div className="flex items-start justify-between gap-2">
@@ -173,12 +278,17 @@ function DevicesPage() {
                       </div>
                       {d.last_connected_at && (
                         <div className="text-[10px] text-muted-foreground mt-1">
-                          {t("orgPosDevices.lastConnected")}: {new Date(d.last_connected_at).toLocaleString("sk-SK")}
+                          {t("orgPosDevices.lastConnected")}:{" "}
+                          {new Date(d.last_connected_at).toLocaleString("sk-SK")}
                         </div>
                       )}
                     </div>
                     <Badge variant={statusVariant} className="text-[10px] capitalize">
-                      {d.status === "active" ? t("orgPosDevices.statusActive") : d.status === "error" ? t("orgPosDevices.statusError") : t("orgPosDevices.statusInactive")}
+                      {d.status === "active"
+                        ? t("orgPosDevices.statusActive")
+                        : d.status === "error"
+                          ? t("orgPosDevices.statusError")
+                          : t("orgPosDevices.statusInactive")}
                     </Badge>
                   </div>
                   <div className="flex gap-2 mt-4 flex-wrap">
@@ -186,9 +296,16 @@ function DevicesPage() {
                       <Power className="size-3.5 mr-1.5" /> {t("orgPosDevices.test")}
                     </Button>
                     {d.status === "active" && (
-                      <Button size="sm" variant="outline" onClick={() => disconnect(d)}>{t("orgPosDevices.disconnect")}</Button>
+                      <Button size="sm" variant="outline" onClick={() => disconnect(d)}>
+                        {t("orgPosDevices.disconnect")}
+                      </Button>
                     )}
-                    <Button size="icon" variant="ghost" className="size-8 text-destructive ml-auto" onClick={() => remove(d.id)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 text-destructive ml-auto"
+                      onClick={() => remove(d.id)}
+                    >
                       <Trash2 className="size-3.5" />
                     </Button>
                   </div>

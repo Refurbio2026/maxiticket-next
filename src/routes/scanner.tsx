@@ -11,6 +11,7 @@ import {
   RefreshCcw,
   Keyboard,
   Ticket as TicketIcon,
+  Ban,
   Loader2,
   QrCode,
 } from "lucide-react";
@@ -20,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-type ScanResult = "valid" | "duplicate" | "invalid" | "reentry";
+type ScanResult = "valid" | "duplicate" | "invalid" | "reentry" | "refunded";
 type ScanResponse = {
   ok: boolean;
   result: ScanResult;
@@ -41,7 +42,9 @@ type EventInfo = {
 };
 
 export const Route = createFileRoute("/scanner")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  // Návratový typ má kľúče voliteľné — inak by TanStack vyžadoval `search`
+  // pri každom <Link to="/scanner">.
+  validateSearch: (s: Record<string, unknown>): { t?: string; e?: string } => ({
     t: typeof s.t === "string" ? s.t : undefined,
     e: typeof s.e === "string" ? s.e : undefined,
   }),
@@ -67,7 +70,12 @@ function ScannerPage() {
   const [manualCode, setManualCode] = useState("");
   const [last, setLast] = useState<ScanResponse | null>(null);
   const [busy, setBusy] = useState(false);
-  const [stats, setStats] = useState<{ sold: number; used: number; remaining: number; recent: any[] }>({
+  const [stats, setStats] = useState<{
+    sold: number;
+    used: number;
+    remaining: number;
+    recent: any[];
+  }>({
     sold: 0,
     used: 0,
     remaining: 0,
@@ -86,7 +94,9 @@ function ScannerPage() {
     setLoadingEvent(true);
     (async () => {
       try {
-        const r = await fetch(`/api/public/events/by-token?token=${encodeURIComponent(eventToken)}`);
+        const r = await fetch(
+          `/api/public/events/by-token?token=${encodeURIComponent(eventToken)}`,
+        );
         if (!r.ok) throw new Error("not found");
         const j = await r.json();
         if (!cancelled) setEvent(j.event);
@@ -107,7 +117,9 @@ function ScannerPage() {
     let stop = false;
     const load = async () => {
       try {
-        const r = await fetch(`/api/public/tickets/stats?event_token=${encodeURIComponent(eventToken)}`);
+        const r = await fetch(
+          `/api/public/tickets/stats?event_token=${encodeURIComponent(eventToken)}`,
+        );
         if (r.ok && !stop) setStats(await r.json());
       } catch {}
     };
@@ -175,7 +187,8 @@ function ScannerPage() {
         });
         const j: ScanResponse = await r.json();
         setLast(j);
-        if (navigator.vibrate) navigator.vibrate(j.result === "valid" || j.result === "reentry" ? 80 : [60, 40, 60]);
+        if (navigator.vibrate)
+          navigator.vibrate(j.result === "valid" || j.result === "reentry" ? 80 : [60, 40, 60]);
       }
     } catch {
       setLast({ ok: false, result: "invalid", message: "Chyba spojenia" });
@@ -246,7 +259,8 @@ function ScannerPage() {
                   <h2 className="font-semibold">Zadaj kód podujatia</h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Kód získaš od organizátora podujatia. Po zadaní sa otvorí čítačka pre dané podujatie.
+                  Kód získaš od organizátora podujatia. Po zadaní sa otvorí čítačka pre dané
+                  podujatie.
                 </p>
                 <Input
                   value={tokenInput}
@@ -264,7 +278,10 @@ function ScannerPage() {
                 {eventToken && !loadingEvent && (
                   <div className="rounded-lg border border-rose-500/40 bg-rose-500/5 p-3 text-sm text-rose-500 flex items-start gap-2">
                     <AlertTriangle className="size-4 mt-0.5 shrink-0" />
-                    <span>Kód <code className="font-mono">{eventToken}</code> nepatrí žiadnemu podujatiu.</span>
+                    <span>
+                      Kód <code className="font-mono">{eventToken}</code> nepatrí žiadnemu
+                      podujatiu.
+                    </span>
                   </div>
                 )}
               </Card>
@@ -279,12 +296,14 @@ function ScannerPage() {
     last?.result === "valid"
       ? "bg-emerald-500"
       : last?.result === "reentry"
-      ? "bg-sky-500"
-      : last?.result === "duplicate"
-      ? "bg-amber-500"
-      : last
-      ? "bg-rose-600"
-      : "";
+        ? "bg-sky-500"
+        : last?.result === "duplicate"
+          ? "bg-amber-500"
+          : last?.result === "refunded"
+            ? "bg-violet-500"
+            : last
+              ? "bg-rose-600"
+              : "";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5 pb-24">
@@ -297,7 +316,8 @@ function ScannerPage() {
             <div>
               <h1 className="text-2xl font-display font-bold">{event.title}</h1>
               <p className="text-xs text-muted-foreground">
-                {new Date(event.event_date).toLocaleDateString("sk")} · {event.event_time} · {event.venue}, {event.city}
+                {new Date(event.event_date).toLocaleDateString("sk")} · {event.event_time} ·{" "}
+                {event.venue}, {event.city}
               </p>
             </div>
           </div>
@@ -343,14 +363,29 @@ function ScannerPage() {
             </div>
             <div className="p-3 flex flex-wrap gap-2 justify-between border-t border-border/40 bg-card">
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setScanning((v) => !v)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setScanning((v) => !v)}
+                >
                   <Camera className="size-4 mr-1.5" /> {scanning ? "Stop" : "Štart"}
                 </Button>
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
+                >
                   <RefreshCcw className="size-4 mr-1.5" /> Kamera
                 </Button>
               </div>
-              <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setManualOpen((v) => !v)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => setManualOpen((v) => !v)}
+              >
                 <Keyboard className="size-4 mr-1.5" /> Ručne
               </Button>
             </div>
@@ -390,13 +425,29 @@ function ScannerPage() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.18 }}
                 >
-                  <Card className={cn("p-5 border-2", last.result === "valid" && "border-emerald-500/50", last.result === "reentry" && "border-sky-500/50", last.result === "duplicate" && "border-amber-500/50", last.result === "invalid" && "border-rose-500/60")}>
+                  <Card
+                    className={cn(
+                      "p-5 border-2",
+                      last.result === "valid" && "border-emerald-500/50",
+                      last.result === "reentry" && "border-sky-500/50",
+                      last.result === "duplicate" && "border-amber-500/50",
+                      last.result === "refunded" && "border-violet-500/60",
+                      last.result === "invalid" && "border-rose-500/60",
+                    )}
+                  >
                     <div className="flex items-start gap-4">
-                      <div className={cn("size-14 rounded-2xl grid place-items-center text-white shrink-0", resColor)}>
+                      <div
+                        className={cn(
+                          "size-14 rounded-2xl grid place-items-center text-white shrink-0",
+                          resColor,
+                        )}
+                      >
                         {last.result === "valid" || last.result === "reentry" ? (
                           <CheckCircle2 className="size-8" />
                         ) : last.result === "duplicate" ? (
                           <AlertTriangle className="size-8" />
+                        ) : last.result === "refunded" ? (
+                          <Ban className="size-8" />
                         ) : (
                           <XCircle className="size-8" />
                         )}
@@ -407,29 +458,69 @@ function ScannerPage() {
                             {last.result === "valid"
                               ? "Platná vstupenka"
                               : last.result === "reentry"
-                              ? "Opätovný vstup povolený"
-                              : last.result === "duplicate"
-                              ? "Vstupenka už bola použitá"
-                              : "Neplatná vstupenka"}
+                                ? "Opätovný vstup povolený"
+                                : last.result === "duplicate"
+                                  ? "Vstupenka už bola použitá"
+                                  : last.result === "refunded"
+                                    ? "Vstupenka bola refundovaná"
+                                    : "Neplatná vstupenka"}
                           </h3>
                           {last.message && <Badge variant="outline">{last.message}</Badge>}
                         </div>
                         {last.ticket && (
                           <dl className="mt-3 grid grid-cols-[110px_1fr] gap-x-3 gap-y-1 text-sm">
-                            {last.ticket.seat_label && (<><dt className="text-muted-foreground">Sedadlo</dt><dd className="font-medium">{last.ticket.seat_label}</dd></>)}
-                            {last.order?.customer_name && (<><dt className="text-muted-foreground">Meno</dt><dd>{last.order.customer_name}</dd></>)}
-                            {last.order?.id && (<><dt className="text-muted-foreground">Objednávka</dt><dd className="font-mono text-xs">{String(last.order.id).slice(0, 8).toUpperCase()}</dd></>)}
-                            {last.ticket.last_scan_at && (<><dt className="text-muted-foreground">Posl. sken</dt><dd>{new Date(last.ticket.last_scan_at).toLocaleString("sk")}</dd></>)}
-                            {typeof last.ticket.scan_count === "number" && (<><dt className="text-muted-foreground">Skenov</dt><dd>{last.ticket.scan_count}</dd></>)}
+                            {last.ticket.seat_label && (
+                              <>
+                                <dt className="text-muted-foreground">Sedadlo</dt>
+                                <dd className="font-medium">{last.ticket.seat_label}</dd>
+                              </>
+                            )}
+                            {last.order?.customer_name && (
+                              <>
+                                <dt className="text-muted-foreground">Meno</dt>
+                                <dd>{last.order.customer_name}</dd>
+                              </>
+                            )}
+                            {last.order?.id && (
+                              <>
+                                <dt className="text-muted-foreground">Objednávka</dt>
+                                <dd className="font-mono text-xs">
+                                  {String(last.order.id).slice(0, 8).toUpperCase()}
+                                </dd>
+                              </>
+                            )}
+                            {last.ticket.last_scan_at && (
+                              <>
+                                <dt className="text-muted-foreground">Posl. sken</dt>
+                                <dd>{new Date(last.ticket.last_scan_at).toLocaleString("sk")}</dd>
+                              </>
+                            )}
+                            {typeof last.ticket.scan_count === "number" && (
+                              <>
+                                <dt className="text-muted-foreground">Skenov</dt>
+                                <dd>{last.ticket.scan_count}</dd>
+                              </>
+                            )}
                           </dl>
                         )}
                         <div className="mt-4 flex gap-2 flex-wrap">
                           {last.result === "duplicate" && last.ticket?.id && (
-                            <Button size="sm" className="rounded-xl" onClick={() => submitScan(lastTokenRef.current, { allowReentry: true })}>
+                            <Button
+                              size="sm"
+                              className="rounded-xl"
+                              onClick={() =>
+                                submitScan(lastTokenRef.current, { allowReentry: true })
+                              }
+                            >
                               Povoliť opätovný vstup
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setLast(null)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl"
+                            onClick={() => setLast(null)}
+                          >
                             Zavrieť
                           </Button>
                         </div>
@@ -443,14 +534,21 @@ function ScannerPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-sm">QR podujatia</h3>
-                <Badge variant="outline" className="font-mono text-[10px]">{event.scanner_token.slice(0, 10)}…</Badge>
+                <Badge variant="outline" className="font-mono text-[10px]">
+                  {event.scanner_token.slice(0, 10)}…
+                </Badge>
               </div>
               <div className="flex items-center gap-3">
                 <div className="bg-white p-2 rounded-lg">
-                  <QRCodeSVG value={buildEventScannerUrl(event.scanner_token)} size={96} level="M" />
+                  <QRCodeSVG
+                    value={buildEventScannerUrl(event.scanner_token)}
+                    size={96}
+                    level="M"
+                  />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Vytlač a daj obsluhe — naskenovaním tohto QR sa čítačka automaticky napojí na podujatie.
+                  Vytlač a daj obsluhe — naskenovaním tohto QR sa čítačka automaticky napojí na
+                  podujatie.
                 </p>
               </div>
             </Card>
@@ -461,16 +559,28 @@ function ScannerPage() {
                 <Badge variant="outline">{stats.recent.length}</Badge>
               </div>
               <ul className="space-y-2 max-h-[220px] overflow-auto pr-1 text-sm">
-                {stats.recent.length === 0 && <li className="text-muted-foreground text-xs">Zatiaľ žiadne</li>}
+                {stats.recent.length === 0 && (
+                  <li className="text-muted-foreground text-xs">Zatiaľ žiadne</li>
+                )}
                 {stats.recent.map((s) => (
-                  <li key={s.id} className="flex items-center gap-2 border-b border-border/40 last:border-0 pb-2">
-                    <span className={cn("size-2 rounded-full",
-                      s.result === "valid" && "bg-emerald-500",
-                      s.result === "reentry" && "bg-sky-500",
-                      s.result === "duplicate" && "bg-amber-500",
-                      s.result === "invalid" && "bg-rose-500")}/>
+                  <li
+                    key={s.id}
+                    className="flex items-center gap-2 border-b border-border/40 last:border-0 pb-2"
+                  >
+                    <span
+                      className={cn(
+                        "size-2 rounded-full",
+                        s.result === "valid" && "bg-emerald-500",
+                        s.result === "reentry" && "bg-sky-500",
+                        s.result === "duplicate" && "bg-amber-500",
+                        s.result === "refunded" && "bg-violet-500",
+                        s.result === "invalid" && "bg-rose-500",
+                      )}
+                    />
                     <span className="flex-1 truncate">{s.scanner_name || "—"}</span>
-                    <span className="text-muted-foreground text-xs">{new Date(s.created_at).toLocaleTimeString("sk")}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {new Date(s.created_at).toLocaleTimeString("sk")}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -502,7 +612,15 @@ function extractEventToken(raw: string): string | null {
   return null;
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone: "primary" | "emerald" | "amber" }) {
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "primary" | "emerald" | "amber";
+}) {
   const map = {
     primary: "from-primary/20 to-primary/5 text-primary",
     emerald: "from-emerald-500/20 to-emerald-500/5 text-emerald-500",

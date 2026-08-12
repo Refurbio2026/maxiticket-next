@@ -54,13 +54,15 @@ const sk: Dict = {
   "footer.login": "Prihlásenie",
   "footer.register": "Registrácia",
   "footer.myAccount": "Môj účet",
-  "footer.tagline": "Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.",
+  "footer.tagline":
+    "Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — Všetky práva vyhradené.",
   "footer.builtWith": "Postavené s vášňou v Bratislave 🇸🇰",
   // support chat
   "support.title": "Podpora",
   "support.subtitle": "Virtuálny asistent · odpovie hneď",
-  "support.greeting": "Ahoj! 👋 Som virtuálny asistent vstupenky.sk. Ako ti pomôžem — nákup, vstupenky, platby alebo reklamácie?",
+  "support.greeting":
+    "Ahoj! 👋 Som virtuálny asistent vstupenky.sk. Ako ti pomôžem — nákup, vstupenky, platby alebo reklamácie?",
   "support.placeholder": "Napíš svoju otázku…",
   "support.send": "Odoslať",
   "support.thinking": "Píšem…",
@@ -94,12 +96,14 @@ const en: Dict = {
   "footer.login": "Sign in",
   "footer.register": "Sign up",
   "footer.myAccount": "My account",
-  "footer.tagline": "The most modern ticketing platform in Slovakia. Selling experiences since 2025.",
+  "footer.tagline":
+    "The most modern ticketing platform in Slovakia. Selling experiences since 2025.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — All rights reserved.",
   "footer.builtWith": "Built with passion in Bratislava 🇸🇰",
   "support.title": "Support",
   "support.subtitle": "Virtual assistant · instant replies",
-  "support.greeting": "Hi! 👋 I'm the vstupenky.sk virtual assistant. How can I help — buying, tickets, payments or refunds?",
+  "support.greeting":
+    "Hi! 👋 I'm the vstupenky.sk virtual assistant. How can I help — buying, tickets, payments or refunds?",
   "support.placeholder": "Type your question…",
   "support.send": "Send",
   "support.thinking": "Typing…",
@@ -133,16 +137,19 @@ const de: Dict = {
   "footer.login": "Anmeldung",
   "footer.register": "Registrierung",
   "footer.myAccount": "Mein Konto",
-  "footer.tagline": "Die modernste Ticketing-Plattform der Slowakei. Wir verkaufen Erlebnisse seit 2025.",
+  "footer.tagline":
+    "Die modernste Ticketing-Plattform der Slowakei. Wir verkaufen Erlebnisse seit 2025.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — Alle Rechte vorbehalten.",
   "footer.builtWith": "Mit Leidenschaft in Bratislava gebaut 🇸🇰",
   "support.title": "Support",
   "support.subtitle": "Virtueller Assistent · sofortige Antwort",
-  "support.greeting": "Hallo! 👋 Ich bin der virtuelle Assistent von vstupenky.sk. Wie kann ich helfen — Kauf, Tickets, Zahlungen oder Rückerstattungen?",
+  "support.greeting":
+    "Hallo! 👋 Ich bin der virtuelle Assistent von vstupenky.sk. Wie kann ich helfen — Kauf, Tickets, Zahlungen oder Rückerstattungen?",
   "support.placeholder": "Schreib deine Frage…",
   "support.send": "Senden",
   "support.thinking": "Schreibt…",
-  "support.disabled": "Der Chat-Support ist derzeit nicht verfügbar. Bitte kontaktiere uns über Kontakt.",
+  "support.disabled":
+    "Der Chat-Support ist derzeit nicht verfügbar. Bitte kontaktiere uns über Kontakt.",
   "support.error": "Entschuldigung, etwas ist schiefgelaufen. Bitte versuche es erneut.",
   "support.contactCta": "Menschlichen Support kontaktieren",
 };
@@ -172,16 +179,19 @@ const hu: Dict = {
   "footer.login": "Bejelentkezés",
   "footer.register": "Regisztráció",
   "footer.myAccount": "Fiókom",
-  "footer.tagline": "Szlovákia legmodernebb jegyértékesítő platformja. 2025 óta élményeket árulunk.",
+  "footer.tagline":
+    "Szlovákia legmodernebb jegyértékesítő platformja. 2025 óta élményeket árulunk.",
   "footer.rights": "© 2026 vstupenky.sk s.r.o. — Minden jog fenntartva.",
   "footer.builtWith": "Szenvedéllyel készült Pozsonyban 🇸🇰",
   "support.title": "Támogatás",
   "support.subtitle": "Virtuális asszisztens · azonnali válasz",
-  "support.greeting": "Szia! 👋 A vstupenky.sk virtuális asszisztense vagyok. Miben segíthetek — vásárlás, jegyek, fizetés vagy visszatérítés?",
+  "support.greeting":
+    "Szia! 👋 A vstupenky.sk virtuális asszisztense vagyok. Miben segíthetek — vásárlás, jegyek, fizetés vagy visszatérítés?",
   "support.placeholder": "Írd be a kérdésed…",
   "support.send": "Küldés",
   "support.thinking": "Gépel…",
-  "support.disabled": "A chat támogatás jelenleg nem elérhető. Kérjük, írj nekünk a Kapcsolat oldalon.",
+  "support.disabled":
+    "A chat támogatás jelenleg nem elérhető. Kérjük, írj nekünk a Kapcsolat oldalon.",
   "support.error": "Elnézést, valami elromlott. Kérjük, próbáld újra.",
   "support.contactCta": "Emberi ügyfélszolgálat",
 };
@@ -197,8 +207,17 @@ export const translations: Record<Lang, Dict> = {
   hu: { ...hu, ...generated.hu },
 };
 
-export function translate(lang: Lang, key: string, vars?: Record<string, string | number>): string {
+// Premenné smú byť aj null/undefined — volajúci často posiela hodnotu z
+// voliteľného objektu (napr. `detail?.receipt_number`). Odovzdaný kľúč s
+// prázdnou hodnotou sa nahradí prázdnym reťazcom; neodovzdaný kľúč necháva
+// placeholder viditeľný, aby sa chýbajúca premenná dala odhaliť.
+export type TranslateVars = Record<string, string | number | null | undefined>;
+
+export function translate(lang: Lang, key: string, vars?: TranslateVars): string {
   const raw = translations[lang]?.[key] ?? translations.sk[key] ?? key;
   if (!vars) return raw;
-  return raw.replace(/\{\{(\w+)\}\}/g, (_, k: string) => (vars[k] != null ? String(vars[k]) : `{{${k}}}`));
+  return raw.replace(/\{\{(\w+)\}\}/g, (_, k: string) => {
+    if (!(k in vars)) return `{{${k}}}`;
+    return vars[k] != null ? String(vars[k]) : "";
+  });
 }

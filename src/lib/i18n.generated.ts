@@ -15,7 +15,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "account.loadingTickets": "Načítavam vstupenky…",
     "account.myTickets": "Moje vstupenky",
     "account.noTicketsHintAfter": ").",
-    "account.noTicketsHintBefore": "Vstupenky sa zobrazia automaticky po úspešnom nákupe (pri kúpe použi email",
+    "account.noTicketsHintBefore":
+      "Vstupenky sa zobrazia automaticky po úspešnom nákupe (pri kúpe použi email",
     "account.noTicketsYet": "Zatiaľ nemáš žiadne vstupenky",
     "account.profile": "Profil",
     "account.profileSecure": "Bezpečné a šifrované údaje.",
@@ -90,8 +91,10 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.subtitle": "Spravuj svoje podujatia, otvor pokladňu alebo skontroluj predaje.",
     "orgHome.view": "Zobraziť",
     "orgHome.welcome": "Vitaj, {{name}}.",
-    "orgMktList.autoPromoteDesc": "Po publikovaní podujatia ti vipky.sk automaticky pripraví návrh kampane (Google + Meta), vygeneruje reklamné texty a kreatívy. Stačí ich potvrdiť a spustiť.",
-    "orgMktList.autoPromoteNote": "Pri spustení: rozpočet €20 / podujatie, cieľ „Predaj vstupeniek“, lokalita SK, kreatíva generovaná z názvu, miesta a kategórie podujatia.",
+    "orgMktList.autoPromoteDesc":
+      "Po publikovaní podujatia ti vipky.sk automaticky pripraví návrh kampane (Google + Meta), vygeneruje reklamné texty a kreatívy. Stačí ich potvrdiť a spustiť.",
+    "orgMktList.autoPromoteNote":
+      "Pri spustení: rozpočet €20 / podujatie, cieľ „Predaj vstupeniek“, lokalita SK, kreatíva generovaná z názvu, miesta a kategórie podujatia.",
     "orgMktList.autoPromoteTitle": "Automaticky propagovať podujatie",
     "orgMktList.campaignMeta": "{{eventTitle}} · cieľ: {{goal}} · rozpočet €{{budget}}",
     "orgMktList.chartCampaignDev": "Vývoj kampaní",
@@ -125,13 +128,15 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.noData": "Žiadne dáta.",
     "orgMktList.notConnected": "Nepripojené",
     "orgMktList.pause": "Pauza",
-    "orgMktList.pixelDesc": "Nastav GA4, GTM, Google Ads konverzie a Meta Pixel. Použité v predajnom flow.",
+    "orgMktList.pixelDesc":
+      "Nastav GA4, GTM, Google Ads konverzie a Meta Pixel. Použité v predajnom flow.",
     "orgMktList.pixelTitle": "Pixel tracking a analytika",
     "orgMktList.saveSettings": "Uložiť nastavenia",
     "orgMktList.start": "Spustiť",
     "orgMktList.statusDraft": "Koncept",
     "orgMktList.statusPublished": "Publikované",
-    "orgMktList.subtitle": "Spusti reklamu na podujatia priamo z vipky.sk. Google Ads, Meta Ads, pixel tracking a AI texty.",
+    "orgMktList.subtitle":
+      "Spusti reklamu na podujatia priamo z vipky.sk. Google Ads, Meta Ads, pixel tracking a AI texty.",
     "orgMktList.sync": "Synchronizovať",
     "orgMktList.tabAutomation": "Automatizácia",
     "orgMktList.tabCampaigns": "Kampane ({{count}})",
@@ -232,7 +237,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.configure": "Konfigurovať",
     "orgPos.connectTerminal": "Pripojiť terminál",
     "orgPos.createEvent": "Vytvoriť podujatie",
-    "orgPos.createEventDesc": "Pokladňu môžete otvoriť až po vytvorení podujatia s nakonfigurovanými vstupenkami.",
+    "orgPos.createEventDesc":
+      "Pokladňu môžete otvoriť až po vytvorení podujatia s nakonfigurovanými vstupenkami.",
     "orgPos.createEventFirst": "Najprv vytvorte podujatie",
     "orgPos.dailyClosing": "Denná uzávierka",
     "orgPos.discount": "Zľava ({{pct}}%)",
@@ -370,7 +376,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.labelPinCode": "PIN kód (min. 4 znaky)",
     "orgPosCashiers.noPermissions": "žiadne",
     "orgPosCashiers.noSales": "Žiadne predaje.",
-    "orgPosCashiers.pinHashNote": "PIN sa ukladá výhradne ako bezpečný hash (SHA-256), nikdy v plain texte.",
+    "orgPosCashiers.pinHashNote":
+      "PIN sa ukladá výhradne ako bezpečný hash (SHA-256), nikdy v plain texte.",
     "orgPosCashiers.pinReset": "PIN resetovaný",
     "orgPosCashiers.resetPinTitle": "Resetovať PIN · {{name}}",
     "orgPosCashiers.saveChanges": "Uložiť zmeny",
@@ -379,7 +386,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.statusInactive": "Neaktívny",
     "orgPosCashiers.statusPaid": "Zaplatené",
     "orgPosCashiers.statusVoid": "Storno",
-    "orgPosCashiers.subtitle": "Vytváraj pokladníkov a prideľuj im oprávnenia. Každý sa v pokladnici prihlasuje vlastným PIN kódom.",
+    "orgPosCashiers.subtitle":
+      "Vytváraj pokladníkov a prideľuj im oprávnenia. Každý sa v pokladnici prihlasuje vlastným PIN kódom.",
     "orgPosCashiers.thCashier": "Pokladník",
     "orgPosCashiers.thDisplayName": "Prezývka",
     "orgPosCashiers.thPermissions": "Oprávnenia",
@@ -416,7 +424,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.csvTime": "Čas",
     "orgPosClosing.dateLabel": "Dátum",
     "orgPosClosing.dayClosed": "Denná uzávierka vytvorená",
-    "orgPosClosing.demoNote": "Demo prototyp · Reálne napojenie na ORP / eKasa a USB platobný terminál sa doplní podľa oficiálnej dokumentácie Finančnej správy SR a poskytovateľa terminálu.",
+    "orgPosClosing.demoNote":
+      "Demo prototyp · Reálne napojenie na ORP / eKasa a USB platobný terminál sa doplní podľa oficiálnej dokumentácie Finančnej správy SR a poskytovateľa terminálu.",
     "orgPosClosing.noActiveShift": "Žiadna aktívna pokladničná zmena.",
     "orgPosClosing.noAudit": "Žiadne záznamy za tento deň.",
     "orgPosClosing.noSales": "Za vybraný deň neevidujeme žiadne predaje.",
@@ -561,7 +570,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "account.loadingTickets": "Loading tickets…",
     "account.myTickets": "My tickets",
     "account.noTicketsHintAfter": ").",
-    "account.noTicketsHintBefore": "Tickets will appear automatically after a successful purchase (use the email",
+    "account.noTicketsHintBefore":
+      "Tickets will appear automatically after a successful purchase (use the email",
     "account.noTicketsYet": "You don't have any tickets yet",
     "account.profile": "Profile",
     "account.profileSecure": "Secure and encrypted data.",
@@ -636,8 +646,10 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.subtitle": "Manage your events, open the checkout or check sales.",
     "orgHome.view": "View",
     "orgHome.welcome": "Welcome, {{name}}.",
-    "orgMktList.autoPromoteDesc": "After you publish an event, vipky.sk automatically prepares a campaign draft (Google + Meta) and generates ad copy and creatives. Just confirm and launch.",
-    "orgMktList.autoPromoteNote": "On launch: budget €20 / event, goal “Ticket sales”, location SK, creative generated from the event's title, venue and category.",
+    "orgMktList.autoPromoteDesc":
+      "After you publish an event, vipky.sk automatically prepares a campaign draft (Google + Meta) and generates ad copy and creatives. Just confirm and launch.",
+    "orgMktList.autoPromoteNote":
+      "On launch: budget €20 / event, goal “Ticket sales”, location SK, creative generated from the event's title, venue and category.",
     "orgMktList.autoPromoteTitle": "Automatically promote events",
     "orgMktList.campaignMeta": "{{eventTitle}} · goal: {{goal}} · budget €{{budget}}",
     "orgMktList.chartCampaignDev": "Campaign performance",
@@ -650,7 +662,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.emptyCampaigns": "No campaigns. Click “Launch ad”.",
     "orgMktList.emptyCampaignsChart": "No campaigns yet. Launch your first ad.",
     "orgMktList.emptyEvents": "Create an event first, then you can promote it.",
-    "orgMktList.googleDesc": "Connect a Google Ads account and launch campaigns directly from vipky.sk.",
+    "orgMktList.googleDesc":
+      "Connect a Google Ads account and launch campaigns directly from vipky.sk.",
     "orgMktList.infoAccount": "Account",
     "orgMktList.infoActiveCampaigns": "Active campaigns",
     "orgMktList.infoConnectedSince": "Connected since",
@@ -671,13 +684,15 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.noData": "No data.",
     "orgMktList.notConnected": "Not connected",
     "orgMktList.pause": "Pause",
-    "orgMktList.pixelDesc": "Set up GA4, GTM, Google Ads conversions and Meta Pixel. Used in the sales flow.",
+    "orgMktList.pixelDesc":
+      "Set up GA4, GTM, Google Ads conversions and Meta Pixel. Used in the sales flow.",
     "orgMktList.pixelTitle": "Pixel tracking and analytics",
     "orgMktList.saveSettings": "Save settings",
     "orgMktList.start": "Start",
     "orgMktList.statusDraft": "Draft",
     "orgMktList.statusPublished": "Published",
-    "orgMktList.subtitle": "Launch ads for your events directly from vipky.sk. Google Ads, Meta Ads, pixel tracking and AI copy.",
+    "orgMktList.subtitle":
+      "Launch ads for your events directly from vipky.sk. Google Ads, Meta Ads, pixel tracking and AI copy.",
     "orgMktList.sync": "Sync",
     "orgMktList.tabAutomation": "Automation",
     "orgMktList.tabCampaigns": "Campaigns ({{count}})",
@@ -778,7 +793,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.configure": "Configure",
     "orgPos.connectTerminal": "Connect terminal",
     "orgPos.createEvent": "Create event",
-    "orgPos.createEventDesc": "You can open the POS only after creating an event with configured tickets.",
+    "orgPos.createEventDesc":
+      "You can open the POS only after creating an event with configured tickets.",
     "orgPos.createEventFirst": "Create an event first",
     "orgPos.dailyClosing": "Daily closing",
     "orgPos.discount": "Discount ({{pct}}%)",
@@ -916,7 +932,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.labelPinCode": "PIN code (min. 4 characters)",
     "orgPosCashiers.noPermissions": "none",
     "orgPosCashiers.noSales": "No sales.",
-    "orgPosCashiers.pinHashNote": "The PIN is stored solely as a secure hash (SHA-256), never in plain text.",
+    "orgPosCashiers.pinHashNote":
+      "The PIN is stored solely as a secure hash (SHA-256), never in plain text.",
     "orgPosCashiers.pinReset": "PIN reset",
     "orgPosCashiers.resetPinTitle": "Reset PIN · {{name}}",
     "orgPosCashiers.saveChanges": "Save changes",
@@ -925,7 +942,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.statusInactive": "Inactive",
     "orgPosCashiers.statusPaid": "Paid",
     "orgPosCashiers.statusVoid": "Void",
-    "orgPosCashiers.subtitle": "Create cashiers and assign them permissions. Each one signs in to the register with their own PIN.",
+    "orgPosCashiers.subtitle":
+      "Create cashiers and assign them permissions. Each one signs in to the register with their own PIN.",
     "orgPosCashiers.thCashier": "Cashier",
     "orgPosCashiers.thDisplayName": "Nickname",
     "orgPosCashiers.thPermissions": "Permissions",
@@ -962,7 +980,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.csvTime": "Time",
     "orgPosClosing.dateLabel": "Date",
     "orgPosClosing.dayClosed": "Daily closing created",
-    "orgPosClosing.demoNote": "Demo prototype · Real integration with the ORP / eKasa cash register and USB payment terminal will be added according to the official documentation of the Slovak Financial Administration and the terminal provider.",
+    "orgPosClosing.demoNote":
+      "Demo prototype · Real integration with the ORP / eKasa cash register and USB payment terminal will be added according to the official documentation of the Slovak Financial Administration and the terminal provider.",
     "orgPosClosing.noActiveShift": "No active cashier shift.",
     "orgPosClosing.noAudit": "No records for this day.",
     "orgPosClosing.noSales": "No sales recorded for the selected day.",
@@ -1107,7 +1126,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "account.loadingTickets": "Tickets werden geladen…",
     "account.myTickets": "Meine Tickets",
     "account.noTicketsHintAfter": ").",
-    "account.noTicketsHintBefore": "Tickets erscheinen automatisch nach einem erfolgreichen Kauf (verwende beim Kauf die E-Mail",
+    "account.noTicketsHintBefore":
+      "Tickets erscheinen automatisch nach einem erfolgreichen Kauf (verwende beim Kauf die E-Mail",
     "account.noTicketsYet": "Du hast noch keine Tickets",
     "account.profile": "Profil",
     "account.profileSecure": "Sichere und verschlüsselte Daten.",
@@ -1143,7 +1163,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgEventsNew.labelStatus": "Status *",
     "orgEventsNew.labelTime": "Zeit *",
     "orgEventsNew.labelVenue": "Veranstaltungsort *",
-    "orgEventsNew.noPermissionText": "Zum Hinzufügen einer Veranstaltung benötigen Sie ein Veranstalterkonto.",
+    "orgEventsNew.noPermissionText":
+      "Zum Hinzufügen einer Veranstaltung benötigen Sie ein Veranstalterkonto.",
     "orgEventsNew.noPermissionTitle": "Unzureichende Berechtigungen",
     "orgEventsNew.save": "Veranstaltung speichern",
     "orgEventsNew.saving": "Speichern…",
@@ -1182,8 +1203,10 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.subtitle": "Verwalte deine Veranstaltungen, öffne die Kasse oder prüfe die Verkäufe.",
     "orgHome.view": "Ansehen",
     "orgHome.welcome": "Willkommen, {{name}}.",
-    "orgMktList.autoPromoteDesc": "Nach der Veröffentlichung einer Veranstaltung erstellt vipky.sk automatisch einen Kampagnenentwurf (Google + Meta) und generiert Werbetexte und Creatives. Einfach bestätigen und starten.",
-    "orgMktList.autoPromoteNote": "Beim Start: Budget €20 / Veranstaltung, Ziel „Ticketverkauf“, Standort SK, Creative aus Titel, Ort und Kategorie der Veranstaltung generiert.",
+    "orgMktList.autoPromoteDesc":
+      "Nach der Veröffentlichung einer Veranstaltung erstellt vipky.sk automatisch einen Kampagnenentwurf (Google + Meta) und generiert Werbetexte und Creatives. Einfach bestätigen und starten.",
+    "orgMktList.autoPromoteNote":
+      "Beim Start: Budget €20 / Veranstaltung, Ziel „Ticketverkauf“, Standort SK, Creative aus Titel, Ort und Kategorie der Veranstaltung generiert.",
     "orgMktList.autoPromoteTitle": "Veranstaltung automatisch bewerben",
     "orgMktList.campaignMeta": "{{eventTitle}} · Ziel: {{goal}} · Budget €{{budget}}",
     "orgMktList.chartCampaignDev": "Kampagnenentwicklung",
@@ -1196,7 +1219,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.emptyCampaigns": "Keine Kampagnen. Klicke auf „Werbung starten“.",
     "orgMktList.emptyCampaignsChart": "Noch keine Kampagnen. Starte deine erste Werbung.",
     "orgMktList.emptyEvents": "Erstelle zuerst eine Veranstaltung, dann kannst du sie bewerben.",
-    "orgMktList.googleDesc": "Verbinde ein Google Ads-Konto und starte Kampagnen direkt über vipky.sk.",
+    "orgMktList.googleDesc":
+      "Verbinde ein Google Ads-Konto und starte Kampagnen direkt über vipky.sk.",
     "orgMktList.infoAccount": "Konto",
     "orgMktList.infoActiveCampaigns": "Aktive Kampagnen",
     "orgMktList.infoConnectedSince": "Verbunden seit",
@@ -1217,13 +1241,15 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.noData": "Keine Daten.",
     "orgMktList.notConnected": "Nicht verbunden",
     "orgMktList.pause": "Pause",
-    "orgMktList.pixelDesc": "Richte GA4, GTM, Google Ads-Conversions und Meta Pixel ein. Wird im Verkaufsablauf verwendet.",
+    "orgMktList.pixelDesc":
+      "Richte GA4, GTM, Google Ads-Conversions und Meta Pixel ein. Wird im Verkaufsablauf verwendet.",
     "orgMktList.pixelTitle": "Pixel-Tracking und Analytik",
     "orgMktList.saveSettings": "Einstellungen speichern",
     "orgMktList.start": "Starten",
     "orgMktList.statusDraft": "Entwurf",
     "orgMktList.statusPublished": "Veröffentlicht",
-    "orgMktList.subtitle": "Starte Werbung für deine Veranstaltungen direkt über vipky.sk. Google Ads, Meta Ads, Pixel-Tracking und KI-Texte.",
+    "orgMktList.subtitle":
+      "Starte Werbung für deine Veranstaltungen direkt über vipky.sk. Google Ads, Meta Ads, Pixel-Tracking und KI-Texte.",
     "orgMktList.sync": "Synchronisieren",
     "orgMktList.tabAutomation": "Automatisierung",
     "orgMktList.tabCampaigns": "Kampagnen ({{count}})",
@@ -1315,7 +1341,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgNav.sales": "Verkäufe",
     "orgPos.addEvent": "Veranstaltung hinzufügen",
     "orgPos.addToCart": "+ In den Warenkorb",
-    "orgPos.afterOpenDesc": "Nach dem Öffnen erscheint der Verkaufsbildschirm mit Tickets und Warenkorb.",
+    "orgPos.afterOpenDesc":
+      "Nach dem Öffnen erscheint der Verkaufsbildschirm mit Tickets und Warenkorb.",
     "orgPos.apply": "Anwenden",
     "orgPos.capacity": "Kapazität: {{count}}",
     "orgPos.cart": "Warenkorb",
@@ -1324,7 +1351,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.configure": "Konfigurieren",
     "orgPos.connectTerminal": "Terminal verbinden",
     "orgPos.createEvent": "Veranstaltung erstellen",
-    "orgPos.createEventDesc": "Sie können die Kasse erst öffnen, nachdem Sie eine Veranstaltung mit konfigurierten Tickets erstellt haben.",
+    "orgPos.createEventDesc":
+      "Sie können die Kasse erst öffnen, nachdem Sie eine Veranstaltung mit konfigurierten Tickets erstellt haben.",
     "orgPos.createEventFirst": "Erstellen Sie zuerst eine Veranstaltung",
     "orgPos.dailyClosing": "Tagesabschluss",
     "orgPos.discount": "Rabatt ({{pct}}%)",
@@ -1424,7 +1452,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashierSales.sessionClosed": "Geschlossen",
     "orgPosCashierSales.sessionOpen": "Offen",
     "orgPosCashierSales.sessions": "Sitzungen",
-    "orgPosCashierSales.subtitle": "Verkaufsübersicht für den ausgewählten Tag nach einzelnen Kassierern.",
+    "orgPosCashierSales.subtitle":
+      "Verkaufsübersicht für den ausgewählten Tag nach einzelnen Kassierern.",
     "orgPosCashierSales.title": "Kassierer-Verkäufe",
     "orgPosCashierSales.void": "Storno",
     "orgPosCashiers.activated": "Kassierer aktiviert",
@@ -1462,7 +1491,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.labelPinCode": "PIN-Code (min. 4 Zeichen)",
     "orgPosCashiers.noPermissions": "keine",
     "orgPosCashiers.noSales": "Keine Verkäufe.",
-    "orgPosCashiers.pinHashNote": "Der PIN wird ausschließlich als sicherer Hash (SHA-256) gespeichert, niemals im Klartext.",
+    "orgPosCashiers.pinHashNote":
+      "Der PIN wird ausschließlich als sicherer Hash (SHA-256) gespeichert, niemals im Klartext.",
     "orgPosCashiers.pinReset": "PIN zurückgesetzt",
     "orgPosCashiers.resetPinTitle": "PIN zurücksetzen · {{name}}",
     "orgPosCashiers.saveChanges": "Änderungen speichern",
@@ -1471,7 +1501,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.statusInactive": "Inaktiv",
     "orgPosCashiers.statusPaid": "Bezahlt",
     "orgPosCashiers.statusVoid": "Storno",
-    "orgPosCashiers.subtitle": "Erstelle Kassierer und weise ihnen Berechtigungen zu. Jeder meldet sich mit einem eigenen PIN an der Kasse an.",
+    "orgPosCashiers.subtitle":
+      "Erstelle Kassierer und weise ihnen Berechtigungen zu. Jeder meldet sich mit einem eigenen PIN an der Kasse an.",
     "orgPosCashiers.thCashier": "Kassierer",
     "orgPosCashiers.thDisplayName": "Spitzname",
     "orgPosCashiers.thPermissions": "Berechtigungen",
@@ -1497,7 +1528,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.colStatus": "Status",
     "orgPosClosing.colTime": "Zeit",
     "orgPosClosing.confirmCloseDay": "Tag abschließen? Es wird ein Abschlussprotokoll erstellt.",
-    "orgPosClosing.countCashPrompt": "Zähle das Bargeld in der Kassenlade für Kassierer {{cashier}} (€):",
+    "orgPosClosing.countCashPrompt":
+      "Zähle das Bargeld in der Kassenlade für Kassierer {{cashier}} (€):",
     "orgPosClosing.csvAmount": "Betrag",
     "orgPosClosing.csvButton": "CSV",
     "orgPosClosing.csvCashier": "Kassierer",
@@ -1508,7 +1540,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.csvTime": "Zeit",
     "orgPosClosing.dateLabel": "Datum",
     "orgPosClosing.dayClosed": "Tagesabschluss erstellt",
-    "orgPosClosing.demoNote": "Demo-Prototyp · Die reale Anbindung an ORP / eKasa und das USB-Zahlungsterminal wird gemäß der offiziellen Dokumentation der slowakischen Finanzverwaltung und des Terminal-Anbieters ergänzt.",
+    "orgPosClosing.demoNote":
+      "Demo-Prototyp · Die reale Anbindung an ORP / eKasa und das USB-Zahlungsterminal wird gemäß der offiziellen Dokumentation der slowakischen Finanzverwaltung und des Terminal-Anbieters ergänzt.",
     "orgPosClosing.noActiveShift": "Keine aktive Kassierer-Schicht.",
     "orgPosClosing.noAudit": "Keine Einträge für diesen Tag.",
     "orgPosClosing.noSales": "Für den ausgewählten Tag sind keine Verkäufe erfasst.",
@@ -1518,7 +1551,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.salesOfDay": "Verkäufe des Tages",
     "orgPosClosing.shiftClosedDiff": "Kassierer-Schicht abgeschlossen. Differenz: {{diff}}",
     "orgPosClosing.shiftClosedOk": "Kassierer-Schicht abgeschlossen — Bargeld stimmt.",
-    "orgPosClosing.subtitle": "Übersicht der Verkäufe und Bargeldvorgänge für den ausgewählten Tag.",
+    "orgPosClosing.subtitle":
+      "Übersicht der Verkäufe und Bargeldvorgänge für den ausgewählten Tag.",
     "orgPosClosing.ticketsLabel": "Tickets:",
     "orgPosClosing.tileCard": "Karte",
     "orgPosClosing.tileCash": "Bargeld",
@@ -1653,7 +1687,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "account.loadingTickets": "Jegyek betöltése…",
     "account.myTickets": "Jegyeim",
     "account.noTicketsHintAfter": ").",
-    "account.noTicketsHintBefore": "A jegyek automatikusan megjelennek a sikeres vásárlás után (a vásárláskor használd az e-mail címet",
+    "account.noTicketsHintBefore":
+      "A jegyek automatikusan megjelennek a sikeres vásárlás után (a vásárláskor használd az e-mail címet",
     "account.noTicketsYet": "Még nincsenek jegyeid",
     "account.profile": "Profil",
     "account.profileSecure": "Biztonságos és titkosított adatok.",
@@ -1725,11 +1760,14 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.statPublished": "Közzétéve",
     "orgHome.statusDraft": "Piszkozat",
     "orgHome.statusPublished": "Közzétéve",
-    "orgHome.subtitle": "Kezeld az eseményeidet, nyisd meg a pénztárat vagy ellenőrizd az értékesítéseket.",
+    "orgHome.subtitle":
+      "Kezeld az eseményeidet, nyisd meg a pénztárat vagy ellenőrizd az értékesítéseket.",
     "orgHome.view": "Megtekintés",
     "orgHome.welcome": "Üdvözlünk, {{name}}.",
-    "orgMktList.autoPromoteDesc": "Egy esemény közzététele után a vipky.sk automatikusan elkészít egy kampánytervezetet (Google + Meta), és legenerálja a hirdetésszövegeket és kreatívokat. Csak jóvá kell hagyni és elindítani.",
-    "orgMktList.autoPromoteNote": "Indításkor: költségvetés €20 / esemény, cél „Jegyeladás”, hely SK, a kreatív az esemény címéből, helyszínéből és kategóriájából generálva.",
+    "orgMktList.autoPromoteDesc":
+      "Egy esemény közzététele után a vipky.sk automatikusan elkészít egy kampánytervezetet (Google + Meta), és legenerálja a hirdetésszövegeket és kreatívokat. Csak jóvá kell hagyni és elindítani.",
+    "orgMktList.autoPromoteNote":
+      "Indításkor: költségvetés €20 / esemény, cél „Jegyeladás”, hely SK, a kreatív az esemény címéből, helyszínéből és kategóriájából generálva.",
     "orgMktList.autoPromoteTitle": "Esemény automatikus hirdetése",
     "orgMktList.campaignMeta": "{{eventTitle}} · cél: {{goal}} · költségvetés €{{budget}}",
     "orgMktList.chartCampaignDev": "Kampányok alakulása",
@@ -1742,7 +1780,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.emptyCampaigns": "Nincsenek kampányok. Kattints a „Hirdetés indítása” gombra.",
     "orgMktList.emptyCampaignsChart": "Még nincsenek kampányok. Indítsd el az első hirdetésed.",
     "orgMktList.emptyEvents": "Előbb hozz létre eseményt, utána hirdetheted.",
-    "orgMktList.googleDesc": "Csatlakoztass egy Google Ads-fiókot, és indíts kampányokat közvetlenül a vipky.sk oldalról.",
+    "orgMktList.googleDesc":
+      "Csatlakoztass egy Google Ads-fiókot, és indíts kampányokat közvetlenül a vipky.sk oldalról.",
     "orgMktList.infoAccount": "Fiók",
     "orgMktList.infoActiveCampaigns": "Aktív kampányok",
     "orgMktList.infoConnectedSince": "Csatlakoztatva ekkor óta",
@@ -1763,13 +1802,15 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.noData": "Nincs adat.",
     "orgMktList.notConnected": "Nincs csatlakoztatva",
     "orgMktList.pause": "Szünet",
-    "orgMktList.pixelDesc": "Állítsd be a GA4-et, GTM-et, Google Ads konverziókat és a Meta Pixelt. Az értékesítési folyamatban használatos.",
+    "orgMktList.pixelDesc":
+      "Állítsd be a GA4-et, GTM-et, Google Ads konverziókat és a Meta Pixelt. Az értékesítési folyamatban használatos.",
     "orgMktList.pixelTitle": "Pixelkövetés és analitika",
     "orgMktList.saveSettings": "Beállítások mentése",
     "orgMktList.start": "Indítás",
     "orgMktList.statusDraft": "Vázlat",
     "orgMktList.statusPublished": "Közzétéve",
-    "orgMktList.subtitle": "Indíts hirdetéseket eseményeidhez közvetlenül a vipky.sk oldalról. Google Ads, Meta Ads, pixelkövetés és AI szövegek.",
+    "orgMktList.subtitle":
+      "Indíts hirdetéseket eseményeidhez közvetlenül a vipky.sk oldalról. Google Ads, Meta Ads, pixelkövetés és AI szövegek.",
     "orgMktList.sync": "Szinkronizálás",
     "orgMktList.tabAutomation": "Automatizálás",
     "orgMktList.tabCampaigns": "Kampányok ({{count}})",
@@ -1861,7 +1902,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgNav.sales": "Értékesítések",
     "orgPos.addEvent": "Esemény hozzáadása",
     "orgPos.addToCart": "+ Kosárba",
-    "orgPos.afterOpenDesc": "Megnyitás után megjelenik az eladási képernyő a jegyekkel és a kosárral.",
+    "orgPos.afterOpenDesc":
+      "Megnyitás után megjelenik az eladási képernyő a jegyekkel és a kosárral.",
     "orgPos.apply": "Alkalmaz",
     "orgPos.capacity": "Kapacitás: {{count}}",
     "orgPos.cart": "Kosár",
@@ -1870,7 +1912,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.configure": "Beállítás",
     "orgPos.connectTerminal": "Terminál csatlakoztatása",
     "orgPos.createEvent": "Esemény létrehozása",
-    "orgPos.createEventDesc": "A pénztárat csak beállított jegyekkel rendelkező esemény létrehozása után nyithatja meg.",
+    "orgPos.createEventDesc":
+      "A pénztárat csak beállított jegyekkel rendelkező esemény létrehozása után nyithatja meg.",
     "orgPos.createEventFirst": "Először hozzon létre eseményt",
     "orgPos.dailyClosing": "Napi zárás",
     "orgPos.discount": "Kedvezmény ({{pct}}%)",
@@ -2008,7 +2051,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.labelPinCode": "PIN-kód (min. 4 karakter)",
     "orgPosCashiers.noPermissions": "nincs",
     "orgPosCashiers.noSales": "Nincsenek eladások.",
-    "orgPosCashiers.pinHashNote": "A PIN-t kizárólag biztonságos hash-ként (SHA-256) tároljuk, soha nem szöveges formában.",
+    "orgPosCashiers.pinHashNote":
+      "A PIN-t kizárólag biztonságos hash-ként (SHA-256) tároljuk, soha nem szöveges formában.",
     "orgPosCashiers.pinReset": "PIN visszaállítva",
     "orgPosCashiers.resetPinTitle": "PIN visszaállítása · {{name}}",
     "orgPosCashiers.saveChanges": "Módosítások mentése",
@@ -2017,7 +2061,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosCashiers.statusInactive": "Inaktív",
     "orgPosCashiers.statusPaid": "Fizetve",
     "orgPosCashiers.statusVoid": "Sztornó",
-    "orgPosCashiers.subtitle": "Hozz létre pénztárosokat és adj nekik jogosultságokat. Mindegyik saját PIN-kóddal jelentkezik be a pénztárba.",
+    "orgPosCashiers.subtitle":
+      "Hozz létre pénztárosokat és adj nekik jogosultságokat. Mindegyik saját PIN-kóddal jelentkezik be a pénztárba.",
     "orgPosCashiers.thCashier": "Pénztáros",
     "orgPosCashiers.thDisplayName": "Becenév",
     "orgPosCashiers.thPermissions": "Jogosultságok",
@@ -2043,7 +2088,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.colStatus": "Állapot",
     "orgPosClosing.colTime": "Idő",
     "orgPosClosing.confirmCloseDay": "Lezárja a napot? Zárási jegyzőkönyv készül.",
-    "orgPosClosing.countCashPrompt": "Számold meg a készpénzt a fiókban a(z) {{cashier}} pénztáros számára (€):",
+    "orgPosClosing.countCashPrompt":
+      "Számold meg a készpénzt a fiókban a(z) {{cashier}} pénztáros számára (€):",
     "orgPosClosing.csvAmount": "Összeg",
     "orgPosClosing.csvButton": "CSV",
     "orgPosClosing.csvCashier": "Pénztáros",
@@ -2054,7 +2100,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.csvTime": "Idő",
     "orgPosClosing.dateLabel": "Dátum",
     "orgPosClosing.dayClosed": "Napi zárás létrehozva",
-    "orgPosClosing.demoNote": "Demó prototípus · Az ORP / eKasa pénztárgéppel és az USB fizetési terminállal való valós összekapcsolás a Szlovák Pénzügyi Igazgatóság és a terminálszolgáltató hivatalos dokumentációja szerint kerül kiegészítésre.",
+    "orgPosClosing.demoNote":
+      "Demó prototípus · Az ORP / eKasa pénztárgéppel és az USB fizetési terminállal való valós összekapcsolás a Szlovák Pénzügyi Igazgatóság és a terminálszolgáltató hivatalos dokumentációja szerint kerül kiegészítésre.",
     "orgPosClosing.noActiveShift": "Nincs aktív pénztáros műszak.",
     "orgPosClosing.noAudit": "Nincsenek bejegyzések erre a napra.",
     "orgPosClosing.noSales": "A kiválasztott napra nincs rögzített eladás.",
@@ -2064,7 +2111,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosClosing.salesOfDay": "A nap eladásai",
     "orgPosClosing.shiftClosedDiff": "Pénztáros műszak lezárva. Eltérés: {{diff}}",
     "orgPosClosing.shiftClosedOk": "Pénztáros műszak lezárva — a készpénz egyezik.",
-    "orgPosClosing.subtitle": "Az eladások és készpénzes műveletek összesítése a kiválasztott napra.",
+    "orgPosClosing.subtitle":
+      "Az eladások és készpénzes műveletek összesítése a kiválasztott napra.",
     "orgPosClosing.ticketsLabel": "Jegyek:",
     "orgPosClosing.tileCard": "Kártya",
     "orgPosClosing.tileCash": "Készpénz",
@@ -2088,7 +2136,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPosDevices.statusActive": "Aktív",
     "orgPosDevices.statusError": "Hiba",
     "orgPosDevices.statusInactive": "Inaktív",
-    "orgPosDevices.subtitle": "Fizetési terminálok, nyomtatók és szkennerek (USB / Bluetooth / LAN).",
+    "orgPosDevices.subtitle":
+      "Fizetési terminálok, nyomtatók és szkennerek (USB / Bluetooth / LAN).",
     "orgPosDevices.test": "Teszt",
     "orgPosDevices.title": "Eszközök",
     "orgPosDevices.toastAdded": "Eszköz hozzáadva",

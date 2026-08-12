@@ -7,21 +7,25 @@ export type SeatStatus = "available" | "reserved" | "sold";
 
 export type SeatInventoryRow = {
   event_id: string;
-  seat_id: string;        // shape.id from layout
+  seat_id: string; // shape.id from layout
   status: SeatStatus;
   price: number;
   reserved_until?: string;
   order_id?: string;
   is_vip?: boolean;
-  label?: string;         // e.g. "Rad A · 5"
+  label?: string; // e.g. "Rad A · 5"
 };
 
 export type OrderStatus = "pending" | "paid" | "cancelled" | "expired";
 
 export type OrderItem = {
-  seat_id?: string;       // empty for standing/general
+  seat_id?: string; // empty for standing/general
   label: string;
+  // Orientačná cena pre zobrazenie v košíku. Záväznú cenu určuje server pri
+  // `submitOrder` z databázy — táto hodnota sa naň neposiela.
   price: number;
+  // Server podľa tohto príznaku vyberie medzi `vip_price` a `base_price`.
+  is_vip?: boolean;
 };
 
 export type Order = {
@@ -226,7 +230,6 @@ export function releaseAllHolds(eventId: string) {
   }
   if (changed) setAllInventory(all);
 }
-
 
 export function markSold(eventId: string, orderId: string) {
   const all = read<SeatInventoryRow[]>(INV_KEY, []);

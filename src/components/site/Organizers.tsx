@@ -3,7 +3,11 @@ import { BarChart3, QrCode, CreditCard, Megaphone, ArrowRight } from "lucide-rea
 import { Button } from "@/components/ui/button";
 
 const features = [
-  { icon: BarChart3, t: "Realtime analytika", d: "Predaje, konverzie a publikum v jednom dashboarde." },
+  {
+    icon: BarChart3,
+    t: "Realtime analytika",
+    d: "Predaje, konverzie a publikum v jednom dashboarde.",
+  },
   { icon: QrCode, t: "QR check-in", d: "Validuj vstupenky pri vchode jediným skenom." },
   { icon: CreditCard, t: "Okamžité výplaty", d: "Peniaze na účte do 48 hodín po podujatí." },
   { icon: Megaphone, t: "Marketing tooling", d: "Promo kódy, affiliate, newsletter, retargeting." },
@@ -26,8 +30,8 @@ export function Organizers() {
               <span className="text-gradient-flame">Stresuj menej.</span>
             </h2>
             <p className="mt-5 text-muted-foreground text-lg max-w-md">
-              Komplexný systém na predaj, marketing a manažment vstupeniek.
-              Spusti predaj za 5 minút — bez záväzkov, len 4% z transakcie.
+              Komplexný systém na predaj, marketing a manažment vstupeniek. Spusti predaj za 5 minút
+              — bez záväzkov, len 4% z transakcie.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 h-12 px-6 shadow-glow">

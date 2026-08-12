@@ -3,8 +3,11 @@
 // poskytovateľa ORP brány alebo eKasa providera.
 
 import {
-  addFiscalReceipt, cancelFiscalReceiptInStore, getFiscalReceipts,
-  getFiscalSettings, saveFiscalSettings,
+  addFiscalReceipt,
+  cancelFiscalReceiptInStore,
+  getFiscalReceipts,
+  getFiscalSettings,
+  saveFiscalSettings,
   type FiscalReceipt as StoredFiscalReceipt,
   type FiscalSettings,
 } from "./pos-db";
@@ -36,7 +39,9 @@ export interface OrpAdapter {
 let counter = 1;
 
 export const orpAdapter: OrpAdapter = {
-  saveSettings(s) { saveFiscalSettings(s); },
+  saveSettings(s) {
+    saveFiscalSettings(s);
+  },
   getReceiptNumber() {
     const y = new Date().getFullYear();
     return `ORP-${y}-${String(counter++).padStart(6, "0")}`;
@@ -45,13 +50,22 @@ export const orpAdapter: OrpAdapter = {
     const start = Date.now();
     await wait(250);
     const s = getFiscalSettings();
-    saveFiscalSettings({ ...s, connection_status: "connected", last_tested_at: new Date().toISOString(), last_error: undefined });
+    saveFiscalSettings({
+      ...s,
+      connection_status: "connected",
+      last_tested_at: new Date().toISOString(),
+      last_error: undefined,
+    });
     return { ok: true, latency_ms: Date.now() - start };
   },
   async connect() {
     await wait(200);
     const s = getFiscalSettings();
-    saveFiscalSettings({ ...s, connection_status: "connected", last_tested_at: new Date().toISOString() });
+    saveFiscalSettings({
+      ...s,
+      connection_status: "connected",
+      last_tested_at: new Date().toISOString(),
+    });
     return { ok: true };
   },
   async disconnect() {
@@ -91,13 +105,25 @@ export const orpAdapter: OrpAdapter = {
     const r = getFiscalReceipts().find((x) => x.id === id);
     return r?.status || "unknown";
   },
-  async sendReceiptToFiscalSystem() { await wait(150); return { ok: true }; },
-  async printFiscalReceipt() { await wait(150); return true; },
-  createFiscalReceipt(input) { return this.createReceipt(input); },
-  async cancelFiscalReceipt(id) { return this.cancelReceipt(id); },
+  async sendReceiptToFiscalSystem() {
+    await wait(150);
+    return { ok: true };
+  },
+  async printFiscalReceipt() {
+    await wait(150);
+    return true;
+  },
+  createFiscalReceipt(input) {
+    return this.createReceipt(input);
+  },
+  async cancelFiscalReceipt(id) {
+    return this.cancelReceipt(id);
+  },
 };
 
 // Back-compat alias for older imports.
 export const fiscal = orpAdapter;
 
-function wait(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+function wait(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}

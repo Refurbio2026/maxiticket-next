@@ -2,15 +2,27 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
-import { getEvents, type EventItem } from "@/lib/local-db";
+import { useEvents, type EventRecord } from "@/hooks/use-events";
 import {
-  getGoogleAccountFor, connectGoogleAds, disconnectGoogleAds, syncGoogleAds,
-  getMetaAccountFor, connectMetaAds, disconnectMetaAds,
-  getPixelSettings, savePixelSettings,
-  getCampaignsFor, setCampaignStatus, deleteCampaign,
-  getAutoPromote, setAutoPromote,
-  MARKETING_EVENT, simulateMetrics, saveCampaign,
-  type Campaign, type PixelSettings,
+  getGoogleAccountFor,
+  connectGoogleAds,
+  disconnectGoogleAds,
+  syncGoogleAds,
+  getMetaAccountFor,
+  connectMetaAds,
+  disconnectMetaAds,
+  getPixelSettings,
+  savePixelSettings,
+  getCampaignsFor,
+  setCampaignStatus,
+  deleteCampaign,
+  getAutoPromote,
+  setAutoPromote,
+  MARKETING_EVENT,
+  simulateMetrics,
+  saveCampaign,
+  type Campaign,
+  type PixelSettings,
 } from "@/lib/marketing-db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,9 +32,28 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Megaphone, Sparkles, RefreshCw, Plug, Unplug, TrendingUp, Target,
-  MousePointerClick, Eye as EyeIcon, Euro, Receipt, BarChart3, Rocket,
-  Calendar, MapPin, Pause, Play, Trash2, Wand2, Settings2, Facebook, ChromeIcon,
+  Megaphone,
+  Sparkles,
+  RefreshCw,
+  Plug,
+  Unplug,
+  TrendingUp,
+  Target,
+  MousePointerClick,
+  Eye as EyeIcon,
+  Euro,
+  Receipt,
+  BarChart3,
+  Rocket,
+  Calendar,
+  MapPin,
+  Pause,
+  Play,
+  Trash2,
+  Wand2,
+  Settings2,
+  Facebook,
+  ChromeIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,17 +73,10 @@ function MarketingCenter() {
     return () => window.removeEventListener(MARKETING_EVENT, h);
   }, []);
 
-  if (!user) return <div className="p-6">{t("orgMktList.loginRequired")}</div>;
-
-  const events = useMemo(
-    () => getEvents().filter((e) => e.organizer_id === user.id || user.role === "admin"),
-    [user, tick],
-  );
-  const google = getGoogleAccountFor(user.id);
-  const meta = getMetaAccountFor(user.id);
-  const campaigns = getCampaignsFor(user.id);
-  const pixels = getPixelSettings(user.id);
-  const auto = getAutoPromote(user.id);
+  // Hooky musia bežať pri každom renderi, takže guard na neprihláseného
+  // používateľa je až pod nimi (react-hooks/rules-of-hooks).
+  const { data: events = [] } = useEvents({ scope: "mine" });
+  const campaigns = user ? getCampaignsFor(user.id) : [];
 
   const totals = useMemo(() => {
     return campaigns.reduce(
@@ -72,6 +96,13 @@ function MarketingCenter() {
   const cpc = totals.clicks > 0 ? totals.spend / totals.clicks : 0;
   const roas = totals.spend > 0 ? totals.revenue / totals.spend : 0;
 
+  if (!user) return <div className="p-6">{t("orgMktList.loginRequired")}</div>;
+
+  const google = getGoogleAccountFor(user.id);
+  const meta = getMetaAccountFor(user.id);
+  const pixels = getPixelSettings(user.id);
+  const auto = getAutoPromote(user.id);
+
   return (
     <div className="space-y-6 p-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -80,9 +111,7 @@ function MarketingCenter() {
             <Megaphone className="h-6 w-6 text-primary" />
             <h1 className="text-3xl font-display font-bold tracking-tight">Marketing Center</h1>
           </div>
-          <p className="mt-1 text-muted-foreground">
-            {t("orgMktList.subtitle")}
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("orgMktList.subtitle")}</p>
         </div>
         <Button onClick={() => navigate({ to: "/organizer/marketing/new" })} className="gap-2">
           <Rocket className="h-4 w-4" /> {t("orgMktList.launchAd")}
@@ -93,14 +122,26 @@ function MarketingCenter() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KPI icon={Euro} label={t("orgMktList.kpiSpend")} value={`€${totals.spend.toFixed(2)}`} />
         <KPI icon={TrendingUp} label="ROAS" value={`${roas.toFixed(2)}×`} accent />
-        <KPI icon={MousePointerClick} label={t("orgMktList.kpiClicks")} value={totals.clicks.toLocaleString()} sub={`CPC €${cpc.toFixed(2)}`} />
-        <KPI icon={Receipt} label={t("orgMktList.kpiTickets")} value={totals.tickets.toString()} sub={`CTR ${ctr.toFixed(2)}%`} />
+        <KPI
+          icon={MousePointerClick}
+          label={t("orgMktList.kpiClicks")}
+          value={totals.clicks.toLocaleString()}
+          sub={`CPC €${cpc.toFixed(2)}`}
+        />
+        <KPI
+          icon={Receipt}
+          label={t("orgMktList.kpiTickets")}
+          value={totals.tickets.toString()}
+          sub={`CTR ${ctr.toFixed(2)}%`}
+        />
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
         <TabsList>
           <TabsTrigger value="dashboard">{t("orgMktList.tabDashboard")}</TabsTrigger>
-          <TabsTrigger value="campaigns">{t("orgMktList.tabCampaigns", { count: campaigns.length })}</TabsTrigger>
+          <TabsTrigger value="campaigns">
+            {t("orgMktList.tabCampaigns", { count: campaigns.length })}
+          </TabsTrigger>
           <TabsTrigger value="google">Google Ads</TabsTrigger>
           <TabsTrigger value="meta">Meta Ads</TabsTrigger>
           <TabsTrigger value="pixels">{t("orgMktList.tabPixels")}</TabsTrigger>
@@ -117,7 +158,10 @@ function MarketingCenter() {
               {campaigns.length === 0 ? (
                 <Empty text={t("orgMktList.emptyCampaignsChart")} />
               ) : (
-                <MiniBars data={campaigns.map((c) => ({ label: c.name, value: c.metrics.revenue_eur }))} suffix="€" />
+                <MiniBars
+                  data={campaigns.map((c) => ({ label: c.name, value: c.metrics.revenue_eur }))}
+                  suffix="€"
+                />
               )}
             </Card>
             <Card className="p-5">
@@ -130,7 +174,8 @@ function MarketingCenter() {
                 <MiniBars
                   data={campaigns.map((c) => ({
                     label: c.name,
-                    value: c.metrics.tickets_sold > 0 ? c.metrics.spend_eur / c.metrics.tickets_sold : 0,
+                    value:
+                      c.metrics.tickets_sold > 0 ? c.metrics.spend_eur / c.metrics.tickets_sold : 0,
                   }))}
                   suffix="€"
                 />
@@ -143,14 +188,22 @@ function MarketingCenter() {
               <h3 className="font-semibold flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" /> {t("orgMktList.yourEvents")}
               </h3>
-              <Link to="/organizer/events" className="text-sm text-primary hover:underline">{t("orgMktList.manageEvents")}</Link>
+              <Link to="/organizer/events" className="text-sm text-primary hover:underline">
+                {t("orgMktList.manageEvents")}
+              </Link>
             </div>
             {events.length === 0 ? (
               <Empty text={t("orgMktList.emptyEvents")} />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {events.slice(0, 6).map((e) => (
-                  <EventPromoCard key={e.id} event={e} onPromote={(id) => navigate({ to: "/organizer/marketing/new", search: { eventId: id } as any })} />
+                  <EventPromoCard
+                    key={e.id}
+                    event={e}
+                    onPromote={(id) =>
+                      navigate({ to: "/organizer/marketing/new", search: { eventId: id } as any })
+                    }
+                  />
                 ))}
               </div>
             )}
@@ -173,14 +226,18 @@ function MarketingCenter() {
           <Card className="p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary/10 p-3"><ChromeIcon className="h-6 w-6 text-primary" /></div>
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <ChromeIcon className="h-6 w-6 text-primary" />
+                </div>
                 <div>
                   <h3 className="text-lg font-semibold">Google Ads</h3>
                   <p className="text-sm text-muted-foreground">{t("orgMktList.googleDesc")}</p>
                 </div>
               </div>
               {google ? (
-                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">{t("orgMktList.connectedDot")}</Badge>
+                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">
+                  {t("orgMktList.connectedDot")}
+                </Badge>
               ) : (
                 <Badge variant="outline">{t("orgMktList.notConnected")}</Badge>
               )}
@@ -190,25 +247,59 @@ function MarketingCenter() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Info label="Customer ID" value={google.customer_id} />
                 <Info label={t("orgMktList.infoAccount")} value={google.account_name} />
-                <Info label={t("orgMktList.infoCredit")} value={`€${google.credit_eur.toFixed(2)}`} />
-                <Info label={t("orgMktList.infoLastSync")} value={new Date(google.last_sync_at).toLocaleString("sk-SK")} />
-                <Info label={t("orgMktList.infoActiveCampaigns")} value={campaigns.filter((c) => c.platform === "google" && c.status === "active").length.toString()} />
-                <Info label={t("orgMktList.infoConnectedSince")} value={new Date(google.connected_at).toLocaleDateString("sk-SK")} />
+                <Info
+                  label={t("orgMktList.infoCredit")}
+                  value={`€${google.credit_eur.toFixed(2)}`}
+                />
+                <Info
+                  label={t("orgMktList.infoLastSync")}
+                  value={new Date(google.last_sync_at).toLocaleString("sk-SK")}
+                />
+                <Info
+                  label={t("orgMktList.infoActiveCampaigns")}
+                  value={campaigns
+                    .filter((c) => c.platform === "google" && c.status === "active")
+                    .length.toString()}
+                />
+                <Info
+                  label={t("orgMktList.infoConnectedSince")}
+                  value={new Date(google.connected_at).toLocaleDateString("sk-SK")}
+                />
               </div>
             ) : null}
 
             <div className="mt-5 flex flex-wrap gap-2">
               {google ? (
                 <>
-                  <Button variant="outline" onClick={() => { syncGoogleAds(user.id); toast.success(t("orgMktList.toastSynced")); }} className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      syncGoogleAds(user.id);
+                      toast.success(t("orgMktList.toastSynced"));
+                    }}
+                    className="gap-2"
+                  >
                     <RefreshCw className="h-4 w-4" /> {t("orgMktList.sync")}
                   </Button>
-                  <Button variant="outline" onClick={() => { disconnectGoogleAds(user.id); toast(t("orgMktList.toastDisconnected")); }} className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      disconnectGoogleAds(user.id);
+                      toast(t("orgMktList.toastDisconnected"));
+                    }}
+                    className="gap-2"
+                  >
                     <Unplug className="h-4 w-4" /> {t("orgMktList.disconnect")}
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => { connectGoogleAds(user.id); toast.success(t("orgMktList.toastGoogleConnected")); }} className="gap-2">
+                <Button
+                  onClick={() => {
+                    connectGoogleAds(user.id);
+                    toast.success(t("orgMktList.toastGoogleConnected"));
+                  }}
+                  className="gap-2"
+                >
                   <Plug className="h-4 w-4" /> {t("orgMktList.connectGoogle")}
                 </Button>
               )}
@@ -221,14 +312,18 @@ function MarketingCenter() {
           <Card className="p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary/10 p-3"><Facebook className="h-6 w-6 text-primary" /></div>
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <Facebook className="h-6 w-6 text-primary" />
+                </div>
                 <div>
                   <h3 className="text-lg font-semibold">Meta Ads (Facebook / Instagram)</h3>
                   <p className="text-sm text-muted-foreground">{t("orgMktList.metaDesc")}</p>
                 </div>
               </div>
               {meta ? (
-                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">{t("orgMktList.connectedDot")}</Badge>
+                <Badge className="gap-1 bg-emerald-500/15 text-emerald-600">
+                  {t("orgMktList.connectedDot")}
+                </Badge>
               ) : (
                 <Badge variant="outline">{t("orgMktList.notConnected")}</Badge>
               )}
@@ -241,17 +336,33 @@ function MarketingCenter() {
                 <Info label="Pixel ID" value={meta.pixel_id} />
                 <Info label={t("orgMktList.infoPage")} value={meta.page_name} />
                 <Info label={t("orgMktList.infoCredit")} value={`€${meta.credit_eur.toFixed(2)}`} />
-                <Info label={t("orgMktList.infoLastSync")} value={new Date(meta.last_sync_at).toLocaleString("sk-SK")} />
+                <Info
+                  label={t("orgMktList.infoLastSync")}
+                  value={new Date(meta.last_sync_at).toLocaleString("sk-SK")}
+                />
               </div>
             ) : null}
 
             <div className="mt-5 flex flex-wrap gap-2">
               {meta ? (
-                <Button variant="outline" onClick={() => { disconnectMetaAds(user.id); toast(t("orgMktList.toastDisconnected")); }} className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    disconnectMetaAds(user.id);
+                    toast(t("orgMktList.toastDisconnected"));
+                  }}
+                  className="gap-2"
+                >
                   <Unplug className="h-4 w-4" /> {t("orgMktList.disconnect")}
                 </Button>
               ) : (
-                <Button onClick={() => { connectMetaAds(user.id); toast.success(t("orgMktList.toastMetaConnected")); }} className="gap-2">
+                <Button
+                  onClick={() => {
+                    connectMetaAds(user.id);
+                    toast.success(t("orgMktList.toastMetaConnected"));
+                  }}
+                  className="gap-2"
+                >
                   <Plug className="h-4 w-4" /> {t("orgMktList.connectMeta")}
                 </Button>
               )}
@@ -269,12 +380,20 @@ function MarketingCenter() {
           <Card className="p-6 space-y-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="font-semibold flex items-center gap-2"><Wand2 className="h-4 w-4 text-primary" /> {t("orgMktList.autoPromoteTitle")}</h3>
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Wand2 className="h-4 w-4 text-primary" /> {t("orgMktList.autoPromoteTitle")}
+                </h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
                   {t("orgMktList.autoPromoteDesc")}
                 </p>
               </div>
-              <Switch checked={auto} onCheckedChange={(v) => { setAutoPromote(user.id, v); toast.success(v ? t("orgMktList.toastAutoOn") : t("orgMktList.toastAutoOff")); }} />
+              <Switch
+                checked={auto}
+                onCheckedChange={(v) => {
+                  setAutoPromote(user.id, v);
+                  toast.success(v ? t("orgMktList.toastAutoOn") : t("orgMktList.toastAutoOff"));
+                }}
+              />
             </div>
             <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
               {t("orgMktList.autoPromoteNote")}
@@ -286,9 +405,23 @@ function MarketingCenter() {
   );
 }
 
-function KPI({ icon: Icon, label, value, sub, accent }: { icon: any; label: string; value: string; sub?: string; accent?: boolean }) {
+function KPI({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: boolean;
+}) {
   return (
-    <Card className={`p-4 ${accent ? "bg-gradient-flame text-primary-foreground border-transparent" : ""}`}>
+    <Card
+      className={`p-4 ${accent ? "bg-gradient-flame text-primary-foreground border-transparent" : ""}`}
+    >
       <div className="flex items-center justify-between">
         <div className="text-xs uppercase tracking-wider opacity-80">{label}</div>
         <Icon className="h-4 w-4 opacity-70" />
@@ -312,7 +445,13 @@ function Empty({ text }: { text: string }) {
   return <div className="py-8 text-center text-sm text-muted-foreground">{text}</div>;
 }
 
-function MiniBars({ data, suffix = "" }: { data: { label: string; value: number }[]; suffix?: string }) {
+function MiniBars({
+  data,
+  suffix = "",
+}: {
+  data: { label: string; value: number }[];
+  suffix?: string;
+}) {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
     <div className="space-y-2">
@@ -320,10 +459,16 @@ function MiniBars({ data, suffix = "" }: { data: { label: string; value: number 
         <div key={i}>
           <div className="flex justify-between text-xs">
             <span className="truncate">{d.label}</span>
-            <span className="font-mono">{d.value.toFixed(2)}{suffix}</span>
+            <span className="font-mono">
+              {d.value.toFixed(2)}
+              {suffix}
+            </span>
           </div>
           <div className="h-2 rounded-full bg-muted">
-            <div className="h-2 rounded-full bg-gradient-flame" style={{ width: `${(d.value / max) * 100}%` }} />
+            <div
+              className="h-2 rounded-full bg-gradient-flame"
+              style={{ width: `${(d.value / max) * 100}%` }}
+            />
           </div>
         </div>
       ))}
@@ -331,19 +476,34 @@ function MiniBars({ data, suffix = "" }: { data: { label: string; value: number 
   );
 }
 
-function EventPromoCard({ event, onPromote }: { event: EventItem; onPromote: (id: string) => void }) {
+function EventPromoCard({
+  event,
+  onPromote,
+}: {
+  event: EventRecord;
+  onPromote: (id: string) => void;
+}) {
   const { t } = useI18n();
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
         <h4 className="font-semibold leading-tight">{event.title}</h4>
-        <Badge variant={event.status === "published" ? "default" : "outline"} className="shrink-0 text-[10px]">
-          {event.status === "published" ? t("orgMktList.statusPublished") : t("orgMktList.statusDraft")}
+        <Badge
+          variant={event.status === "published" ? "default" : "outline"}
+          className="shrink-0 text-[10px]"
+        >
+          {event.status === "published"
+            ? t("orgMktList.statusPublished")
+            : t("orgMktList.statusDraft")}
         </Badge>
       </div>
       <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {event.event_date}</div>
-        <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {event.venue}, {event.city}</div>
+        <div className="flex items-center gap-1">
+          <Calendar className="h-3 w-3" /> {event.event_date}
+        </div>
+        <div className="flex items-center gap-1">
+          <MapPin className="h-3 w-3" /> {event.venue}, {event.city}
+        </div>
       </div>
       <Button size="sm" className="mt-3 w-full gap-2" onClick={() => onPromote(event.id)}>
         <Rocket className="h-3.5 w-3.5" /> {t("orgMktList.launchAd")}
@@ -359,58 +519,129 @@ function CampaignRow({ c }: { c: Campaign }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">{c.platform === "google" ? "Google Ads" : "Meta Ads"}</Badge>
-            <Badge className={
-              c.status === "active" ? "bg-emerald-500/15 text-emerald-600"
-              : c.status === "paused" ? "bg-amber-500/15 text-amber-600"
-              : c.status === "ended" ? "bg-muted text-muted-foreground"
-              : "bg-blue-500/15 text-blue-600"
-            }>
+            <Badge variant="outline" className="capitalize">
+              {c.platform === "google" ? "Google Ads" : "Meta Ads"}
+            </Badge>
+            <Badge
+              className={
+                c.status === "active"
+                  ? "bg-emerald-500/15 text-emerald-600"
+                  : c.status === "paused"
+                    ? "bg-amber-500/15 text-amber-600"
+                    : c.status === "ended"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-blue-500/15 text-blue-600"
+              }
+            >
               {c.status}
             </Badge>
-            {c.auto_generated && <Badge variant="outline" className="gap-1 text-[10px]"><Sparkles className="h-3 w-3" /> auto</Badge>}
+            {c.auto_generated && (
+              <Badge variant="outline" className="gap-1 text-[10px]">
+                <Sparkles className="h-3 w-3" /> auto
+              </Badge>
+            )}
           </div>
           <h4 className="mt-1 font-semibold">{c.name}</h4>
-          <div className="text-xs text-muted-foreground">{t("orgMktList.campaignMeta", { eventTitle: c.event_title, goal: c.goal, budget: c.budget_eur })}</div>
+          <div className="text-xs text-muted-foreground">
+            {t("orgMktList.campaignMeta", {
+              eventTitle: c.event_title,
+              goal: c.goal,
+              budget: c.budget_eur,
+            })}
+          </div>
         </div>
         <div className="flex gap-2">
           {c.status === "active" ? (
-            <Button size="sm" variant="outline" onClick={() => { setCampaignStatus(c.id, "paused"); toast(t("orgMktList.toastPaused")); }} className="gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setCampaignStatus(c.id, "paused");
+                toast(t("orgMktList.toastPaused"));
+              }}
+              className="gap-1"
+            >
               <Pause className="h-3.5 w-3.5" /> {t("orgMktList.pause")}
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => { setCampaignStatus(c.id, "active"); toast.success(t("orgMktList.toastActivated")); }} className="gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setCampaignStatus(c.id, "active");
+                toast.success(t("orgMktList.toastActivated"));
+              }}
+              className="gap-1"
+            >
               <Play className="h-3.5 w-3.5" /> {t("orgMktList.start")}
             </Button>
           )}
-          <Button size="sm" variant="ghost" onClick={() => {
-            const next = { ...c, metrics: simulateMetrics(c.budget_eur) };
-            saveCampaign(next);
-            toast.success(t("orgMktList.toastMetricsUpdated"));
-          }} className="gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              const next = { ...c, metrics: simulateMetrics(c.budget_eur) };
+              saveCampaign(next);
+              toast.success(t("orgMktList.toastMetricsUpdated"));
+            }}
+            className="gap-1"
+          >
             <RefreshCw className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("orgMktList.confirmDelete"))) { deleteCampaign(c.id); toast(t("orgMktList.toastDeleted")); } }}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              if (confirm(t("orgMktList.confirmDelete"))) {
+                deleteCampaign(c.id);
+                toast(t("orgMktList.toastDeleted"));
+              }
+            }}
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        <Metric icon={EyeIcon} label={t("orgMktList.metricImp")} value={c.metrics.impressions.toLocaleString()} />
-        <Metric icon={MousePointerClick} label={t("orgMktList.metricClicks")} value={c.metrics.clicks.toLocaleString()} />
+        <Metric
+          icon={EyeIcon}
+          label={t("orgMktList.metricImp")}
+          value={c.metrics.impressions.toLocaleString()}
+        />
+        <Metric
+          icon={MousePointerClick}
+          label={t("orgMktList.metricClicks")}
+          value={c.metrics.clicks.toLocaleString()}
+        />
         <Metric label="CPC" value={`€${c.metrics.cpc.toFixed(2)}`} />
         <Metric label="CTR" value={`${c.metrics.ctr.toFixed(2)}%`} />
         <Metric label={t("orgMktList.metricConv")} value={c.metrics.conversions.toString()} />
-        <Metric icon={Receipt} label={t("orgMktList.metricTickets")} value={c.metrics.tickets_sold.toString()} />
+        <Metric
+          icon={Receipt}
+          label={t("orgMktList.metricTickets")}
+          value={c.metrics.tickets_sold.toString()}
+        />
         <Metric icon={TrendingUp} label="ROAS" value={`${c.metrics.roas.toFixed(2)}×`} accent />
       </div>
     </Card>
   );
 }
 
-function Metric({ icon: Icon, label, value, accent }: { icon?: any; label: string; value: string; accent?: boolean }) {
+function Metric({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon?: any;
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
-    <div className={`rounded-md border p-2 ${accent ? "bg-primary/10 border-primary/30" : "bg-muted/30"}`}>
+    <div
+      className={`rounded-md border p-2 ${accent ? "bg-primary/10 border-primary/30" : "bg-muted/30"}`}
+    >
       <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
         {Icon && <Icon className="h-3 w-3" />} {label}
       </div>
@@ -422,32 +653,84 @@ function Metric({ icon: Icon, label, value, accent }: { icon?: any; label: strin
 function PixelForm({ initial, organizerId }: { initial: PixelSettings; organizerId: string }) {
   const { t } = useI18n();
   const [s, setS] = useState<PixelSettings>(initial);
-  const upd = <K extends keyof PixelSettings>(k: K, v: PixelSettings[K]) => setS((p) => ({ ...p, [k]: v }));
+  const upd = <K extends keyof PixelSettings>(k: K, v: PixelSettings[K]) =>
+    setS((p) => ({ ...p, [k]: v }));
   return (
     <Card className="p-6 space-y-5">
       <div>
-        <h3 className="font-semibold flex items-center gap-2"><Settings2 className="h-4 w-4 text-primary" /> {t("orgMktList.pixelTitle")}</h3>
+        <h3 className="font-semibold flex items-center gap-2">
+          <Settings2 className="h-4 w-4 text-primary" /> {t("orgMktList.pixelTitle")}
+        </h3>
         <p className="mt-1 text-sm text-muted-foreground">{t("orgMktList.pixelDesc")}</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="GA4 Measurement ID" placeholder="G-XXXXXXXXXX" value={s.ga4_measurement_id} onChange={(v) => upd("ga4_measurement_id", v)} />
-        <Field label="Google Tag Manager ID" placeholder="GTM-XXXXXXX" value={s.gtm_id} onChange={(v) => upd("gtm_id", v)} />
-        <Field label="Google Ads Conversion ID" placeholder="AW-123456789" value={s.google_ads_conversion_id} onChange={(v) => upd("google_ads_conversion_id", v)} />
-        <Field label="Google Ads Conversion Label" placeholder="abc123XYZ" value={s.google_ads_conversion_label} onChange={(v) => upd("google_ads_conversion_label", v)} />
-        <Field label="Meta Pixel ID" placeholder="1234567890" value={s.meta_pixel_id} onChange={(v) => upd("meta_pixel_id", v)} />
+        <Field
+          label="GA4 Measurement ID"
+          placeholder="G-XXXXXXXXXX"
+          value={s.ga4_measurement_id}
+          onChange={(v) => upd("ga4_measurement_id", v)}
+        />
+        <Field
+          label="Google Tag Manager ID"
+          placeholder="GTM-XXXXXXX"
+          value={s.gtm_id}
+          onChange={(v) => upd("gtm_id", v)}
+        />
+        <Field
+          label="Google Ads Conversion ID"
+          placeholder="AW-123456789"
+          value={s.google_ads_conversion_id}
+          onChange={(v) => upd("google_ads_conversion_id", v)}
+        />
+        <Field
+          label="Google Ads Conversion Label"
+          placeholder="abc123XYZ"
+          value={s.google_ads_conversion_label}
+          onChange={(v) => upd("google_ads_conversion_label", v)}
+        />
+        <Field
+          label="Meta Pixel ID"
+          placeholder="1234567890"
+          value={s.meta_pixel_id}
+          onChange={(v) => upd("meta_pixel_id", v)}
+        />
       </div>
-      <Button onClick={() => { savePixelSettings({ ...s, organizer_id: organizerId, updated_at: new Date().toISOString() }); toast.success(t("orgMktList.toastSaved")); }} className="gap-2">
+      <Button
+        onClick={() => {
+          savePixelSettings({
+            ...s,
+            organizer_id: organizerId,
+            updated_at: new Date().toISOString(),
+          });
+          toast.success(t("orgMktList.toastSaved"));
+        }}
+        className="gap-2"
+      >
         {t("orgMktList.saveSettings")}
       </Button>
     </Card>
   );
 }
 
-function Field({ label, placeholder, value, onChange }: { label: string; placeholder?: string; value?: string; onChange: (v: string) => void }) {
+function Field({
+  label,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  placeholder?: string;
+  value?: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
-      <Input placeholder={placeholder} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        placeholder={placeholder}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }

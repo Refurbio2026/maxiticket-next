@@ -7,25 +7,37 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { Flame, User as UserIcon, Building2, ShoppingCart, Shield, ChevronLeft } from "lucide-react";
+import {
+  Flame,
+  User as UserIcon,
+  Building2,
+  ShoppingCart,
+  Shield,
+  ChevronLeft,
+} from "lucide-react";
 
 type Section = "user" | "organizer" | "cashier" | "admin";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Prihlásenie · vipky.sk" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
+  // Návratový typ má kľúč voliteľný — inak by TanStack vyžadoval `search`
+  // pri každom <Link to="/login">.
+  validateSearch: (s: Record<string, unknown>): { section?: Section } => ({
     section: (s.section as Section | undefined) ?? undefined,
   }),
   component: LoginPage,
 });
 
-const SECTIONS: Record<Section, {
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  allowedRoles: AppRole[];
-  redirect: "/account" | "/organizer" | "/organizer/pos" | "/admin";
-}> = {
+const SECTIONS: Record<
+  Section,
+  {
+    title: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    allowedRoles: AppRole[];
+    redirect: "/account" | "/organizer" | "/organizer/pos" | "/admin";
+  }
+> = {
   user: {
     title: "Používateľský účet",
     description: "Moje vstupenky, objednávky a profil.",
@@ -105,7 +117,9 @@ function LoginPage() {
           </span>
         </Link>
 
-        {!section ? <SectionPicker /> : (
+        {!section ? (
+          <SectionPicker />
+        ) : (
           <Card className="max-w-md mx-auto p-8 bg-card/60 backdrop-blur-xl border-border/50">
             <button
               type="button"
@@ -124,19 +138,37 @@ function LoginPage() {
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Heslo</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
-              <Button type="submit" disabled={busy} className="w-full bg-gradient-flame text-primary-foreground shadow-glow">
+              <Button
+                type="submit"
+                disabled={busy}
+                className="w-full bg-gradient-flame text-primary-foreground shadow-glow"
+              >
                 {busy ? "Prihlasujem…" : "Prihlásiť sa"}
               </Button>
             </form>
             <div className="mt-6 text-sm text-muted-foreground text-center">
               Ešte nemáš účet?{" "}
-              <Link to="/register" className="text-primary hover:underline">Registruj sa</Link>
+              <Link to="/register" className="text-primary hover:underline">
+                Registruj sa
+              </Link>
             </div>
             <div className="mt-6 p-3 rounded-lg bg-muted/30 border border-border/40 text-xs space-y-1">
               <div className="font-semibold text-foreground mb-1">Demo účty</div>
@@ -155,8 +187,12 @@ function SectionPicker() {
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Kam sa chceš prihlásiť?</h1>
-        <p className="text-sm text-muted-foreground mt-2">Vyber sekciu vipky.sk, do ktorej patrí tvoj účet.</p>
+        <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
+          Kam sa chceš prihlásiť?
+        </h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          Vyber sekciu vipky.sk, do ktorej patrí tvoj účet.
+        </p>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         {(Object.keys(SECTIONS) as Section[]).map((key) => {
@@ -174,7 +210,9 @@ function SectionPicker() {
                   <Icon className="size-6 text-primary-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display text-lg font-bold group-hover:text-primary transition-colors">{s.title}</div>
+                  <div className="font-display text-lg font-bold group-hover:text-primary transition-colors">
+                    {s.title}
+                  </div>
                   <p className="text-sm text-muted-foreground mt-1">{s.description}</p>
                 </div>
               </div>
@@ -184,7 +222,9 @@ function SectionPicker() {
       </div>
       <div className="mt-8 text-center text-sm text-muted-foreground">
         Ešte nemáš účet?{" "}
-        <Link to="/register" className="text-primary hover:underline">Zaregistrovať sa</Link>
+        <Link to="/register" className="text-primary hover:underline">
+          Zaregistrovať sa
+        </Link>
       </div>
     </div>
   );

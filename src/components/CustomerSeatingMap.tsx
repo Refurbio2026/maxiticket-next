@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Stage, Layer, Rect, Text as KText, Group } from "react-konva";
 import type Konva from "konva";
-import type { HallLayout, Shape } from "@/lib/layouts-db";
+import type { HallLayout, Shape } from "@/lib/layout-types";
 import type { SeatInventoryRow } from "@/lib/ticketing-db";
 
 export type CustomerSeat = {

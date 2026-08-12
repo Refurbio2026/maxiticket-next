@@ -20,7 +20,10 @@ export const Route = createFileRoute("/")({
           "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
       },
       { property: "og:title", content: "vipky.sk — Každý zážitok má svoj vstup" },
-      { property: "og:description", content: "Vstupenky na koncerty, festivaly, šport a kultúru. Bez skrytých poplatkov." },
+      {
+        property: "og:description",
+        content: "Vstupenky na koncerty, festivaly, šport a kultúru. Bez skrytých poplatkov.",
+      },
     ],
   }),
   component: Index,

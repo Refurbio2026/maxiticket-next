@@ -12,11 +12,11 @@ Kód generovania je hotový (`src/lib/google-wallet.server.ts` +
 `src/lib/wallet.functions.ts`). Zapne sa automaticky, keď pridáš tieto tajné
 kľúče (Secrets) v projekte:
 
-| Secret | Odkiaľ ho vezmeš |
-| --- | --- |
-| `GOOGLE_WALLET_ISSUER_ID` | číslo vydavateľa z Google Wallet konzoly |
-| `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` | celý JSON súbor service accountu (vlož ako jeden riadok) |
-| `GOOGLE_WALLET_ISSUER_NAME` *(nepovinné)* | názov, ktorý sa zobrazí v peňaženke (napr. „MaxiTicket") |
+| Secret                                    | Odkiaľ ho vezmeš                                         |
+| ----------------------------------------- | -------------------------------------------------------- |
+| `GOOGLE_WALLET_ISSUER_ID`                 | číslo vydavateľa z Google Wallet konzoly                 |
+| `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON`      | celý JSON súbor service accountu (vlož ako jeden riadok) |
+| `GOOGLE_WALLET_ISSUER_NAME` _(nepovinné)_ | názov, ktorý sa zobrazí v peňaženke (napr. „MaxiTicket") |
 
 ### Postup krok za krokom
 

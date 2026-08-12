@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { getEvent, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
-import { getLayout, listLayouts, type HallLayout } from "@/lib/layouts-db";
+import { useEvent, type EventRecord } from "@/hooks/use-events";
+import { useLayouts } from "@/hooks/use-layouts";
+import type { HallLayout } from "@/lib/layout-types";
 import {
   getInventory,
   INV_EVENT,
@@ -65,7 +66,7 @@ function parseSeatLabel(label: string) {
   return { sector, row, number };
 }
 
-function defaultLayoutForEvent(event: EventItem): HallLayout {
+function defaultLayoutForEvent(event: EventRecord): HallLayout {
   const now = new Date().toISOString();
   return {
     id: `default-layout-${event.id}`,
@@ -121,27 +122,30 @@ function hasSelectableSeats(layout?: HallLayout | null): layout is HallLayout {
 function EventDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const [event, setEvent] = useState<EventItem | undefined>(undefined);
+  // Podujatie prichádza z databázy; rozloženie sály a obsadenosť sedadiel
+  // zatiaľ ostávajú v localStorage (migrujú sa v neskoršej fáze).
+  const { data: eventData, isLoading } = useEvent(id);
+  const event = eventData ?? undefined;
+  const { data: layouts = [] } = useLayouts();
   const [layout, setLayout] = useState<HallLayout | null>(null);
   const [inventory, setInventory] = useState<SeatInventoryRow[]>([]);
   const [selected, setSelected] = useState<Selected[]>([]);
   const [qty, setQty] = useState(1);
-  const [loaded, setLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const loaded = !isLoading;
 
   useEffect(() => {
     const load = () => {
       releaseExpired();
-      const e = getEvent(id);
-      setEvent(e);
+      const e = event;
       if (!e) {
         setLayout(null);
         setInventory([]);
-        setLoaded(true);
         return;
       }
-      const layouts = listLayouts();
-      const explicitLayout = e.venue_layout_id ? getLayout(e.venue_layout_id) : undefined;
+      const explicitLayout = e.venue_layout_id
+        ? layouts.find((l) => l.id === e.venue_layout_id)
+        : undefined;
       const matchedLayout = layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase());
       const fallbackLayout =
         e.sale_type !== "standing" ? (layouts[0] ?? defaultLayoutForEvent(e)) : undefined;
@@ -154,20 +158,17 @@ function EventDetail() {
             : null,
       );
       setInventory(getInventory(id));
-      setLoaded(true);
     };
     load();
     const t = setInterval(load, 15000);
-    window.addEventListener(EVENTS_EVENT, load);
     window.addEventListener(INV_EVENT, load);
     window.addEventListener("storage", load);
     return () => {
       clearInterval(t);
-      window.removeEventListener(EVENTS_EVENT, load);
       window.removeEventListener(INV_EVENT, load);
       window.removeEventListener("storage", load);
     };
-  }, [id]);
+  }, [id, event, layouts]);
 
   const isMap = !!layout && event?.sale_type !== "standing";
   const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0);
@@ -216,7 +217,6 @@ function EventDetail() {
     };
   }, [event, selected.length]);
 
-
   const total = isMap ? selected.reduce((sum, s) => sum + s.price, 0) : qty * basePrice;
 
   const checkout = () => {
@@ -224,7 +224,12 @@ function EventDetail() {
     setSubmitting(true);
     try {
       const items = isMap
-        ? selected.map((s) => ({ seat_id: s.seat_id, label: s.label, price: s.price }))
+        ? selected.map((s) => ({
+            seat_id: s.seat_id,
+            label: s.label,
+            price: s.price,
+            is_vip: s.is_vip,
+          }))
         : Array.from({ length: qty }).map((_, i) => ({
             label: `Vstupenka ${i + 1}`,
             price: basePrice,
@@ -348,11 +353,7 @@ function EventDetail() {
                 label="Organizátor"
                 value={event.organizer_name || "vipky.sk partner"}
               />
-              <InfoTile
-                icon={<MapPin className="size-4" />}
-                label="Miesto"
-                value={event.venue}
-              />
+              <InfoTile icon={<MapPin className="size-4" />} label="Miesto" value={event.venue} />
             </div>
 
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -440,13 +441,19 @@ function EventDetail() {
                   <h2 className="font-display font-semibold text-lg mb-3">
                     Podmienky vstupu a časté otázky
                   </h2>
-                  <Accordion type="single" collapsible className="rounded-xl border border-border/50 bg-card/40">
+                  <Accordion
+                    type="single"
+                    collapsible
+                    className="rounded-xl border border-border/50 bg-card/40"
+                  >
                     <AccordionItem value="entry" className="px-4">
                       <AccordionTrigger className="text-sm font-semibold">
                         Podmienky vstupu
                       </AccordionTrigger>
                       <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                        <p>• Vstup je povolený od 16 rokov, deti do 12 rokov v sprievode dospelého.</p>
+                        <p>
+                          • Vstup je povolený od 16 rokov, deti do 12 rokov v sprievode dospelého.
+                        </p>
                         <p>• Pri vstupe ukáž QR kód z emailu alebo z tejto stránky.</p>
                         <p>• Dvere sa otvárajú 60 minút pred začiatkom podujatia.</p>
                       </AccordionContent>
@@ -456,7 +463,8 @@ function EventDetail() {
                         Musím vstupenku tlačiť?
                       </AccordionTrigger>
                       <AccordionContent className="text-sm text-muted-foreground">
-                        Nie. Stačí QR kód na mobile. Ak chceš, vstupenku si vieš stiahnuť aj ako PDF.
+                        Nie. Stačí QR kód na mobile. Ak chceš, vstupenku si vieš stiahnuť aj ako
+                        PDF.
                       </AccordionContent>
                     </AccordionItem>
                     <AccordionItem value="refund" className="px-4">
@@ -464,7 +472,8 @@ function EventDetail() {
                         Môžem vstupenku vrátiť alebo vymeniť?
                       </AccordionTrigger>
                       <AccordionContent className="text-sm text-muted-foreground">
-                        Vstupenky sú nevratné. V prípade zrušenia podujatia ti automaticky vrátime celú sumu.
+                        Vstupenky sú nevratné. V prípade zrušenia podujatia ti automaticky vrátime
+                        celú sumu.
                       </AccordionContent>
                     </AccordionItem>
                     <AccordionItem value="payment" className="px-4 border-b-0">
@@ -472,13 +481,13 @@ function EventDetail() {
                         Aké spôsoby platby akceptujete?
                       </AccordionTrigger>
                       <AccordionContent className="text-sm text-muted-foreground">
-                        Platobné karty Visa, Mastercard a Apple/Google Pay. Všetky platby sú šifrované.
+                        Platobné karty Visa, Mastercard a Apple/Google Pay. Všetky platby sú
+                        šifrované.
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
                 </div>
               </div>
-
 
               <Card className="hidden lg:block p-6 bg-card/60 border-border/50 h-fit lg:sticky lg:top-[120px]">
                 <div className="flex items-center justify-between mb-1">

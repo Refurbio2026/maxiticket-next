@@ -90,8 +90,12 @@ export function SupportChat() {
                 <Bot className="size-5 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <div className="font-display font-semibold text-sm truncate">{t("support.title")}</div>
-                <div className="text-[11px] text-muted-foreground truncate">{t("support.subtitle")}</div>
+                <div className="font-display font-semibold text-sm truncate">
+                  {t("support.title")}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {t("support.subtitle")}
+                </div>
               </div>
             </div>
 

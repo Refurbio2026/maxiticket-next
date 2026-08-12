@@ -68,7 +68,13 @@ export type EventCategory = {
 };
 
 const DEFAULT_CATEGORIES_NAMES = [
-  "Koncert", "Festival", "Šport", "Konferencia", "Divadlo", "Stand-up", "Kultúra",
+  "Koncert",
+  "Festival",
+  "Šport",
+  "Konferencia",
+  "Divadlo",
+  "Stand-up",
+  "Kultúra",
 ];
 
 const isBrowser = () => typeof window !== "undefined";
@@ -89,9 +95,9 @@ function write<T>(key: string, value: T) {
 }
 
 export const uid = () =>
-  (isBrowser() && typeof crypto !== "undefined" && "randomUUID" in crypto
+  isBrowser() && typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2) + Date.now().toString(36));
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 // ---------- Users ----------
 
@@ -149,108 +155,8 @@ export function ensureSeed() {
     }));
     write(CATEGORIES_KEY, seeded);
   }
-  // Seed demo events once so the public flow (events list, detail, checkout) is testable.
-  const events = read<EventItem[]>(EVENTS_KEY, []);
-  if (events.length === 0) {
-    const now = new Date();
-    const addDays = (d: number) => {
-      const x = new Date(now);
-      x.setDate(x.getDate() + d);
-      return x.toISOString().slice(0, 10);
-    };
-    const demo: EventItem[] = [
-      {
-        id: uid(),
-        organizer_id: "demo-organizer",
-        organizer_name: "Demo Events s.r.o.",
-        title: "Letný Open Air Festival",
-        category: "Festival",
-        event_date: addDays(21),
-        event_time: "18:00",
-        venue: "Amfiteáter Bratislava",
-        city: "Bratislava",
-        address: "Tyršovo nábrežie 1, Bratislava",
-        description: "Najväčší letný open air festival roka s headlinermi zo Slovenska aj zahraničia.",
-        image_url: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200&q=80",
-        status: "published",
-        created_at: now.toISOString(),
-        sale_type: "standing",
-        base_price: 39,
-        total_tickets: 5000,
-        tickets: [
-          { id: uid(), name: "General Admission", price: 39, quantity: 4500 },
-          { id: uid(), name: "VIP", price: 89, quantity: 500 },
-        ],
-      },
-      {
-        id: uid(),
-        organizer_id: "demo-organizer",
-        organizer_name: "Demo Events s.r.o.",
-        title: "Symfonický koncert: Beethoven",
-        category: "Koncert",
-        event_date: addDays(35),
-        event_time: "19:30",
-        venue: "Slovenská filharmónia",
-        city: "Bratislava",
-        address: "Námestie E. Suchoňa 1",
-        description: "Beethovenova 9. symfónia v podaní Slovenskej filharmónie.",
-        image_url: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=1200&q=80",
-        status: "published",
-        created_at: now.toISOString(),
-        sale_type: "seating",
-        base_price: 29,
-        total_tickets: 800,
-        tickets: [
-          { id: uid(), name: "Parter", price: 49, quantity: 400 },
-          { id: uid(), name: "Balkón", price: 29, quantity: 400 },
-        ],
-      },
-      {
-        id: uid(),
-        organizer_id: "demo-organizer",
-        organizer_name: "Demo Events s.r.o.",
-        title: "Stand-up: Komediálna noc",
-        category: "Stand-up",
-        event_date: addDays(10),
-        event_time: "20:00",
-        venue: "Štúdio L+S",
-        city: "Bratislava",
-        description: "Najlepší slovenskí komici na jednom pódiu.",
-        image_url: "https://images.unsplash.com/photo-1527224538127-2104bb71c51b?w=1200&q=80",
-        status: "published",
-        created_at: now.toISOString(),
-        sale_type: "standing",
-        base_price: 19,
-        total_tickets: 300,
-        tickets: [
-          { id: uid(), name: "Vstupenka", price: 19, quantity: 300 },
-        ],
-      },
-      {
-        id: uid(),
-        organizer_id: "demo-organizer",
-        organizer_name: "Demo Events s.r.o.",
-        title: "Slovan vs. Trnava — derby",
-        category: "Šport",
-        event_date: addDays(14),
-        event_time: "17:00",
-        venue: "Tehelné pole",
-        city: "Bratislava",
-        description: "Najsledovanejšie derby slovenskej ligy.",
-        image_url: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&q=80",
-        status: "published",
-        created_at: now.toISOString(),
-        sale_type: "seating_map",
-        base_price: 15,
-        total_tickets: 22000,
-        tickets: [
-          { id: uid(), name: "Sektor A", price: 25, quantity: 5000 },
-          { id: uid(), name: "Sektor B", price: 15, quantity: 17000 },
-        ],
-      },
-    ];
-    write(EVENTS_KEY, demo);
-  }
+  // Podujatia sa už neseedujú do localStorage — katalóg beží na Supabase
+  // (viď @/hooks/use-events). Demo podujatia zakladaj cez admin rozhranie.
 }
 
 export function getUsers(): StoredUser[] {
@@ -279,7 +185,15 @@ export function setCurrentUserId(id: string | null) {
 }
 
 // ---------- Events ----------
+//
+// ZASTARANÉ (fáza 2). Katalóg podujatí žije v Supabase — čítaj a zapisuj ho
+// cez `@/hooks/use-events` (useEvents / useEvent / useUpsertEvent /
+// useDeleteEvent), ktoré volajú server funkcie v `@/lib/events.functions`.
+// Tieto funkcie už nikto nepoužíva; ostávajú len pre typ `EventItem`, na
+// ktorom stoja staršie POS a marketing moduly. Nepridávaj na ne nové volania —
+// podujatie zapísané sem sa v katalógu nezobrazí a checkout ho neuvidí.
 
+/** @deprecated Použi `useEvents()` z `@/hooks/use-events`. */
 export function getEvents(): EventItem[] {
   return read<EventItem[]>(EVENTS_KEY, []);
 }
@@ -288,10 +202,12 @@ export function saveEvents(events: EventItem[]) {
   write(EVENTS_KEY, events);
 }
 
+/** @deprecated Použi `useEvent(id)` z `@/hooks/use-events`. */
 export function getEvent(id: string): EventItem | undefined {
   return getEvents().find((e) => e.id === id);
 }
 
+/** @deprecated Použi `useUpsertEvent()` z `@/hooks/use-events`. */
 export function upsertEvent(event: EventItem) {
   const events = getEvents();
   const idx = events.findIndex((e) => e.id === event.id);
@@ -300,6 +216,7 @@ export function upsertEvent(event: EventItem) {
   saveEvents(events);
 }
 
+/** @deprecated Použi `useDeleteEvent()` z `@/hooks/use-events`. */
 export function deleteEvent(id: string) {
   saveEvents(getEvents().filter((e) => e.id !== id));
 }
@@ -339,4 +256,3 @@ export function emit(name: string) {
   if (!isBrowser()) return;
   window.dispatchEvent(new Event(name));
 }
-

@@ -37,7 +37,11 @@ function AdminLayout() {
 
   return (
     <div className="">
-      <SidebarProvider style={{ "--sidebar-width": "16rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties}>
+      <SidebarProvider
+        style={
+          { "--sidebar-width": "16rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties
+        }
+      >
         <div className="flex min-h-screen w-full bg-background text-foreground">
           <AdminSidebar />
           <SidebarInset className="flex flex-1 flex-col">
@@ -52,4 +56,3 @@ function AdminLayout() {
     </div>
   );
 }
-

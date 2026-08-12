@@ -12,7 +12,6 @@ import appCss from "../styles.css?url";
 import { Providers } from "@/components/providers";
 import { SupportChat } from "@/components/support/SupportChat";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -76,15 +75,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "vstupenky.sk" },
-      { name: "description", content: "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite." },
+      {
+        name: "description",
+        content:
+          "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
+      },
       { property: "og:title", content: "vstupenky.sk" },
-      { property: "og:description", content: "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite." },
+      {
+        property: "og:description",
+        content:
+          "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "vstupenky.sk" },
-      { name: "twitter:description", content: "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/08198c61-f32f-4a0a-83c9-b29624671e41/id-preview-097e51e0--dff07d0a-f011-4a35-b195-c8c7bc1b200f.lovable.app-1780556826884.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/08198c61-f32f-4a0a-83c9-b29624671e41/id-preview-097e51e0--dff07d0a-f011-4a35-b195-c8c7bc1b200f.lovable.app-1780556826884.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/08198c61-f32f-4a0a-83c9-b29624671e41/id-preview-097e51e0--dff07d0a-f011-4a35-b195-c8c7bc1b200f.lovable.app-1780556826884.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/08198c61-f32f-4a0a-83c9-b29624671e41/id-preview-097e51e0--dff07d0a-f011-4a35-b195-c8c7bc1b200f.lovable.app-1780556826884.png",
+      },
     ],
     links: [
       {
@@ -128,4 +147,3 @@ function RootComponent() {
     </Providers>
   );
 }
-

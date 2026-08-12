@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useRouterState, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { getEvents, EVENTS_EVENT, type EventItem } from "@/lib/local-db";
+import { useEvents, type EventRecord } from "@/hooks/use-events";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
@@ -8,7 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -18,7 +22,10 @@ export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
       { title: "Podujatia · vipky.sk" },
-      { name: "description", content: "Objavte všetky podujatia, koncerty, festivaly a kultúru na vipky.sk." },
+      {
+        name: "description",
+        content: "Objavte všetky podujatia, koncerty, festivaly a kultúru na vipky.sk.",
+      },
     ],
   }),
   component: EventsPage,
@@ -26,16 +33,20 @@ export const Route = createFileRoute("/events")({
 
 const ALL = "__all__";
 
-function priceOf(e: EventItem) {
+function priceOf(e: EventRecord) {
   return Number(e.base_price ?? e.tickets?.[0]?.price ?? 0);
 }
 
 function EventsPage() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const search = useSearch({ strict: false }) as {
-    q?: string; city?: string; category?: string; date?: string;
+    q?: string;
+    city?: string;
+    category?: string;
+    date?: string;
   };
-  const [events, setEvents] = useState<EventItem[]>([]);
+  // Katalóg číta publikované podujatia z databázy (server ich už radí podľa dátumu).
+  const { data: events = [], isLoading } = useEvents();
 
   // filters (prefilled from URL search params on first render)
   const [q, setQ] = useState(search.q ?? "");
@@ -56,22 +67,6 @@ function EventsPage() {
       setDateTo(search.date);
     }
   }, [search.q, search.city, search.category, search.date]);
-
-  useEffect(() => {
-    const load = () =>
-      setEvents(
-        getEvents()
-          .filter((e) => e.status === "published")
-          .sort((a, b) => a.event_date.localeCompare(b.event_date)),
-      );
-    load();
-    window.addEventListener(EVENTS_EVENT, load);
-    window.addEventListener("storage", load);
-    return () => {
-      window.removeEventListener(EVENTS_EVENT, load);
-      window.removeEventListener("storage", load);
-    };
-  }, []);
 
   const { cities, categories, priceCeiling } = useMemo(() => {
     const c = new Set<string>();
@@ -104,12 +99,20 @@ function EventsPage() {
   }, [events, q, city, category, dateFrom, dateTo, maxPrice]);
 
   const reset = () => {
-    setQ(""); setCity(ALL); setCategory(ALL);
-    setDateFrom(""); setDateTo(""); setMaxPrice(null);
+    setQ("");
+    setCity(ALL);
+    setCategory(ALL);
+    setDateFrom("");
+    setDateTo("");
+    setMaxPrice(null);
   };
   const activeFilters =
-    (q ? 1 : 0) + (city !== ALL ? 1 : 0) + (category !== ALL ? 1 : 0) +
-    (dateFrom ? 1 : 0) + (dateTo ? 1 : 0) + (maxPrice != null ? 1 : 0);
+    (q ? 1 : 0) +
+    (city !== ALL ? 1 : 0) +
+    (category !== ALL ? 1 : 0) +
+    (dateFrom ? 1 : 0) +
+    (dateTo ? 1 : 0) +
+    (maxPrice != null ? 1 : 0);
 
   if (pathname !== "/events") return <Outlet />;
 
@@ -129,20 +132,32 @@ function EventsPage() {
 
       <FilterBlock label="Mesto">
         <Select value={city} onValueChange={setCity}>
-          <SelectTrigger><SelectValue placeholder="Všetky" /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder="Všetky" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>Všetky mestá</SelectItem>
-            {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {cities.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </FilterBlock>
 
       <FilterBlock label="Kategória">
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger><SelectValue placeholder="Všetky" /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder="Všetky" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>Všetky kategórie</SelectItem>
-            {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {categories.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </FilterBlock>
@@ -179,14 +194,25 @@ function EventsPage() {
         <div className="mb-8">
           <h1 className="font-display text-5xl font-bold tracking-tight">Podujatia</h1>
           <p className="text-muted-foreground mt-2">
-            {filtered.length} {filtered.length === 1 ? "podujatie" : filtered.length < 5 ? "podujatia" : "podujatí"} · všetko na jednom mieste
+            {filtered.length}{" "}
+            {filtered.length === 1 ? "podujatie" : filtered.length < 5 ? "podujatia" : "podujatí"} ·
+            všetko na jednom mieste
           </p>
         </div>
 
         <div className="lg:hidden mb-4">
-          <Button variant="outline" onClick={() => setShowMobileFilters((v) => !v)} className="gap-2 w-full">
+          <Button
+            variant="outline"
+            onClick={() => setShowMobileFilters((v) => !v)}
+            className="gap-2 w-full"
+          >
             <SlidersHorizontal className="size-4" />
-            Filtre {activeFilters > 0 && <span className="ml-1 rounded-full bg-primary text-primary-foreground text-[10px] px-2 py-0.5">{activeFilters}</span>}
+            Filtre{" "}
+            {activeFilters > 0 && (
+              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-[10px] px-2 py-0.5">
+                {activeFilters}
+              </span>
+            )}
           </Button>
           {showMobileFilters && (
             <Card className="mt-3 p-5 bg-card/60 border-border/50">{filterPanel}</Card>
@@ -199,11 +225,19 @@ function EventsPage() {
           </aside>
 
           <div>
-            {filtered.length === 0 ? (
+            {isLoading ? (
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <Card key={i} className="h-72 animate-pulse bg-card/40 border-border/40" />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
               <Card className="p-12 text-center bg-card/60 border-dashed border-border/50">
                 <Calendar className="size-10 text-muted-foreground mx-auto mb-3" />
                 <div className="font-semibold">Žiadne podujatia nezodpovedajú filtrom</div>
-                <p className="text-sm text-muted-foreground mt-1">Skús zmeniť kritériá vyhľadávania.</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Skús zmeniť kritériá vyhľadávania.
+                </p>
                 {activeFilters > 0 && (
                   <Button variant="outline" size="sm" onClick={reset} className="mt-4 gap-1.5">
                     <X className="size-3.5" /> Vyčistiť filtre
@@ -213,7 +247,10 @@ function EventsPage() {
             ) : (
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {filtered.map((e) => (
-                  <Card key={e.id} className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 hover:shadow-glow transition group">
+                  <Card
+                    key={e.id}
+                    className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 hover:shadow-glow transition group"
+                  >
                     <Link
                       to="/events/$id"
                       params={{ id: e.id }}
@@ -224,8 +261,12 @@ function EventsPage() {
                         style={e.image_url ? { backgroundImage: `url(${e.image_url})` } : undefined}
                       />
                       <div className="p-5 space-y-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">{e.category}</span>
-                        <h3 className="font-display font-semibold text-lg leading-tight">{e.title}</h3>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                          {e.category}
+                        </span>
+                        <h3 className="font-display font-semibold text-lg leading-tight">
+                          {e.title}
+                        </h3>
                         <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <Calendar className="size-3.5" /> {e.event_date} · {e.event_time}
                         </div>
@@ -235,9 +276,16 @@ function EventsPage() {
                         <div className="pt-2 flex items-center justify-between">
                           <div className="text-sm">
                             <span className="text-muted-foreground">od </span>
-                            <span className="font-display font-bold text-base">€{priceOf(e).toFixed(2)}</span>
+                            <span className="font-display font-bold text-base">
+                              €{priceOf(e).toFixed(2)}
+                            </span>
                           </div>
-                          <span className={cn(buttonVariants({ size: "sm" }), "bg-gradient-flame text-primary-foreground shadow-glow")}>
+                          <span
+                            className={cn(
+                              buttonVariants({ size: "sm" }),
+                              "bg-gradient-flame text-primary-foreground shadow-glow",
+                            )}
+                          >
                             Kúpiť vstupenky
                           </span>
                         </div>

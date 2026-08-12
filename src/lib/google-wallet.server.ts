@@ -88,7 +88,9 @@ function b64url(input: Buffer | string): string {
 
 // Google Wallet class/object ids must match [A-Za-z0-9._-].
 function idSuffix(raw: string): string {
-  const cleaned = String(raw).replace(/[^A-Za-z0-9._-]/g, "-").slice(0, 100);
+  const cleaned = String(raw)
+    .replace(/[^A-Za-z0-9._-]/g, "-")
+    .slice(0, 100);
   return cleaned || "x";
 }
 

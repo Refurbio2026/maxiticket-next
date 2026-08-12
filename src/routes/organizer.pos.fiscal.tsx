@@ -3,8 +3,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
-  getFiscalSettings, getFiscalReceipts, POS_EVENT, logAudit,
-  type FiscalSettings, type FiscalReceipt,
+  getFiscalSettings,
+  getFiscalReceipts,
+  POS_EVENT,
+  logAudit,
+  type FiscalSettings,
+  type FiscalReceipt,
 } from "@/lib/pos-db";
 import { orpAdapter } from "@/lib/fiscal-adapter";
 import { Card } from "@/components/ui/card";
@@ -32,7 +36,11 @@ function FiscalPage() {
   useEffect(() => {
     setSettings(getFiscalSettings());
     if (!user) return;
-    setReceipts(getFiscalReceipts().filter((r) => user.role === "admin" || r.organizer_id === user.id).slice(0, 20));
+    setReceipts(
+      getFiscalReceipts()
+        .filter((r) => user.role === "admin" || r.organizer_id === user.id)
+        .slice(0, 20),
+    );
   }, [user, tick]);
 
   useEffect(() => {
@@ -43,7 +51,13 @@ function FiscalPage() {
 
   const audit = (action: string, meta?: Record<string, unknown>) => {
     if (!user) return;
-    logAudit({ user_id: user.id, user_name: user.full_name || user.email, action, entity: "orp_settings", meta });
+    logAudit({
+      user_id: user.id,
+      user_name: user.full_name || user.email,
+      action,
+      entity: "orp_settings",
+      meta,
+    });
   };
 
   const save = () => {
@@ -60,8 +74,13 @@ function FiscalPage() {
         toast.success(t("orgPosFiscal.toastTestOk"));
         setSettings(getFiscalSettings());
         audit("orp.test_connection", { latency_ms: r.latency_ms });
-      } else toast.error(t("orgPosFiscal.toastTestFailed", { error: r.error || t("orgPosFiscal.unknownError") }));
-    } finally { setBusy(false); }
+      } else
+        toast.error(
+          t("orgPosFiscal.toastTestFailed", { error: r.error || t("orgPosFiscal.unknownError") }),
+        );
+    } finally {
+      setBusy(false);
+    }
   };
 
   const connect = async () => {
@@ -73,7 +92,9 @@ function FiscalPage() {
         setSettings(getFiscalSettings());
         audit("orp.connect");
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const disconnect = async () => {
@@ -83,7 +104,9 @@ function FiscalPage() {
       setSettings(getFiscalSettings());
       audit("orp.disconnect");
       toast.success(t("orgPosFiscal.toastDisconnected"));
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const cancelReceipt = async (id: string) => {
@@ -94,76 +117,159 @@ function FiscalPage() {
   };
 
   const status = settings.connection_status;
-  const statusVariant = status === "connected" ? "default" : status === "error" ? "destructive" : "outline";
-  const statusLabel = status === "connected" ? t("orgPosFiscal.statusConnected") : status === "error" ? t("orgPosFiscal.statusError") : t("orgPosFiscal.statusDisconnected");
+  const statusVariant =
+    status === "connected" ? "default" : status === "error" ? "destructive" : "outline";
+  const statusLabel =
+    status === "connected"
+      ? t("orgPosFiscal.statusConnected")
+      : status === "error"
+        ? t("orgPosFiscal.statusError")
+        : t("orgPosFiscal.statusDisconnected");
 
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPosFiscal.title")}</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight">
+            {t("orgPosFiscal.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("orgPosFiscal.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-center">
           <span
             className={`size-2.5 rounded-full ${status === "connected" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.7)]" : status === "error" ? "bg-destructive" : "bg-muted-foreground/40"}`}
           />
-          <Badge variant={statusVariant} className="gap-1.5"><Wifi className="size-3.5" />{statusLabel}</Badge>
-          <Badge variant="outline">{settings.mode === "mock" ? t("orgPosFiscal.modeMock") : t("orgPosFiscal.modeProduction")}</Badge>
+          <Badge variant={statusVariant} className="gap-1.5">
+            <Wifi className="size-3.5" />
+            {statusLabel}
+          </Badge>
+          <Badge variant="outline">
+            {settings.mode === "mock"
+              ? t("orgPosFiscal.modeMock")
+              : t("orgPosFiscal.modeProduction")}
+          </Badge>
         </div>
       </div>
 
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="grid md:grid-cols-2 gap-4">
           <Field label={t("orgPosFiscal.fieldMode")}>
-            <Select value={settings.mode} onChange={(v) => setSettings({ ...settings, mode: v as FiscalSettings["mode"] })}
-              options={[{ v: "mock", l: t("orgPosFiscal.optModeMock") }, { v: "production", l: t("orgPosFiscal.optModeProduction") }]} />
+            <Select
+              value={settings.mode}
+              onChange={(v) => setSettings({ ...settings, mode: v as FiscalSettings["mode"] })}
+              options={[
+                { v: "mock", l: t("orgPosFiscal.optModeMock") },
+                { v: "production", l: t("orgPosFiscal.optModeProduction") },
+              ]}
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldFiscalType")}>
-            <Select value={settings.provider} onChange={(v) => setSettings({ ...settings, provider: v as FiscalSettings["provider"] })}
-              options={[{ v: "ORP", l: "ORP" }, { v: "eKasa", l: t("orgPosFiscal.optEkasaProvider") }]} />
+            <Select
+              value={settings.provider}
+              onChange={(v) =>
+                setSettings({ ...settings, provider: v as FiscalSettings["provider"] })
+              }
+              options={[
+                { v: "ORP", l: "ORP" },
+                { v: "eKasa", l: t("orgPosFiscal.optEkasaProvider") },
+              ]}
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldOrpProvider")}>
-            <Input value={settings.orp_provider} onChange={(e) => setSettings({ ...settings, orp_provider: e.target.value })} placeholder={t("orgPosFiscal.orpProviderPlaceholder")} />
+            <Input
+              value={settings.orp_provider}
+              onChange={(e) => setSettings({ ...settings, orp_provider: e.target.value })}
+              placeholder={t("orgPosFiscal.orpProviderPlaceholder")}
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldApiUrl")}>
-            <Input value={settings.api_url} onChange={(e) => setSettings({ ...settings, api_url: e.target.value })} placeholder="https://…" />
+            <Input
+              value={settings.api_url}
+              onChange={(e) => setSettings({ ...settings, api_url: e.target.value })}
+              placeholder="https://…"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldApiKey")}>
-            <Input type="password" value={settings.api_key} onChange={(e) => setSettings({ ...settings, api_key: e.target.value })} placeholder="••••••••" />
+            <Input
+              type="password"
+              value={settings.api_key}
+              onChange={(e) => setSettings({ ...settings, api_key: e.target.value })}
+              placeholder="••••••••"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldClientId")}>
-            <Input value={settings.client_id} onChange={(e) => setSettings({ ...settings, client_id: e.target.value })} placeholder="client_id" />
+            <Input
+              value={settings.client_id}
+              onChange={(e) => setSettings({ ...settings, client_id: e.target.value })}
+              placeholder="client_id"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldClientSecret")}>
-            <Input type="password" value={settings.client_secret} onChange={(e) => setSettings({ ...settings, client_secret: e.target.value })} placeholder="••••••••" />
+            <Input
+              type="password"
+              value={settings.client_secret}
+              onChange={(e) => setSettings({ ...settings, client_secret: e.target.value })}
+              placeholder="••••••••"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldIco")}>
-            <Input value={settings.ico} onChange={(e) => setSettings({ ...settings, ico: e.target.value })} placeholder="12345678" />
+            <Input
+              value={settings.ico}
+              onChange={(e) => setSettings({ ...settings, ico: e.target.value })}
+              placeholder="12345678"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldDic")}>
-            <Input value={settings.dic} onChange={(e) => setSettings({ ...settings, dic: e.target.value })} placeholder="2020000000" />
+            <Input
+              value={settings.dic}
+              onChange={(e) => setSettings({ ...settings, dic: e.target.value })}
+              placeholder="2020000000"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldIcDph")}>
-            <Input value={settings.ic_dph} onChange={(e) => setSettings({ ...settings, ic_dph: e.target.value })} placeholder="SK2020000000" />
+            <Input
+              value={settings.ic_dph}
+              onChange={(e) => setSettings({ ...settings, ic_dph: e.target.value })}
+              placeholder="SK2020000000"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldPosCode")}>
-            <Input value={settings.pos_code} onChange={(e) => setSettings({ ...settings, pos_code: e.target.value })} placeholder="0000" />
+            <Input
+              value={settings.pos_code}
+              onChange={(e) => setSettings({ ...settings, pos_code: e.target.value })}
+              placeholder="0000"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldPremisesCode")}>
-            <Input value={settings.premises_code} onChange={(e) => setSettings({ ...settings, premises_code: e.target.value })} placeholder="PREV-001" />
+            <Input
+              value={settings.premises_code}
+              onChange={(e) => setSettings({ ...settings, premises_code: e.target.value })}
+              placeholder="PREV-001"
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldPremisesName")}>
-            <Input value={settings.premises_name} onChange={(e) => setSettings({ ...settings, premises_name: e.target.value })} placeholder={t("orgPosFiscal.premisesNamePlaceholder")} />
+            <Input
+              value={settings.premises_name}
+              onChange={(e) => setSettings({ ...settings, premises_name: e.target.value })}
+              placeholder={t("orgPosFiscal.premisesNamePlaceholder")}
+            />
           </Field>
           <Field label={t("orgPosFiscal.fieldPremisesAddress")}>
-            <Input value={settings.premises_address} onChange={(e) => setSettings({ ...settings, premises_address: e.target.value })} placeholder={t("orgPosFiscal.premisesAddressPlaceholder")} />
+            <Input
+              value={settings.premises_address}
+              onChange={(e) => setSettings({ ...settings, premises_address: e.target.value })}
+              placeholder={t("orgPosFiscal.premisesAddressPlaceholder")}
+            />
           </Field>
         </div>
 
         <Separator className="my-5" />
         <div className="flex flex-wrap gap-2">
-          <Button onClick={save} disabled={busy} className="bg-gradient-flame text-primary-foreground shadow-glow">
+          <Button
+            onClick={save}
+            disabled={busy}
+            className="bg-gradient-flame text-primary-foreground shadow-glow"
+          >
             <Save className="size-4 mr-2" /> {t("orgPosFiscal.saveSettings")}
           </Button>
           <Button variant="outline" onClick={test} disabled={busy}>
@@ -180,7 +286,8 @@ function FiscalPage() {
           )}
           {settings.last_tested_at && (
             <div className="text-xs text-muted-foreground self-center">
-              {t("orgPosFiscal.lastTest")}: {new Date(settings.last_tested_at).toLocaleString("sk-SK")}
+              {t("orgPosFiscal.lastTest")}:{" "}
+              {new Date(settings.last_tested_at).toLocaleString("sk-SK")}
             </div>
           )}
         </div>
@@ -218,13 +325,23 @@ function FiscalPage() {
                     <td className="capitalize">{r.payment_method}</td>
                     <td className="text-right">€{r.total.toFixed(2)}</td>
                     <td>
-                      <Badge variant={r.status === "issued" ? "default" : "destructive"} className="text-[10px]">
-                        {r.status === "issued" ? t("orgPosFiscal.receiptValid") : t("orgPosFiscal.receiptCancelled")}
+                      <Badge
+                        variant={r.status === "issued" ? "default" : "destructive"}
+                        className="text-[10px]"
+                      >
+                        {r.status === "issued"
+                          ? t("orgPosFiscal.receiptValid")
+                          : t("orgPosFiscal.receiptCancelled")}
                       </Badge>
                     </td>
                     <td>
                       {r.status === "issued" && (
-                        <Button size="icon" variant="ghost" className="size-7 text-destructive" onClick={() => cancelReceipt(r.id)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-7 text-destructive"
+                          onClick={() => cancelReceipt(r.id)}
+                        >
                           <Ban className="size-3.5" />
                         </Button>
                       )}
@@ -247,17 +364,34 @@ function FiscalPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">{label}</Label>
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+        {label}
+      </Label>
       {children}
     </div>
   );
 }
 
-function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { v: string; l: string }[] }) {
+function Select({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { v: string; l: string }[];
+}) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm">
-      {options.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full h-10 rounded-md bg-background border border-border/50 px-3 text-sm"
+    >
+      {options.map((o) => (
+        <option key={o.v} value={o.v}>
+          {o.l}
+        </option>
+      ))}
     </select>
   );
 }

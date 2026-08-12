@@ -118,7 +118,9 @@ function ReturnPage() {
             <>
               <AlertTriangle className="size-10 mx-auto text-destructive" />
               <h1 className="font-display text-2xl font-bold mt-4">Chýba číslo objednávky</h1>
-              <p className="text-muted-foreground mt-2 text-sm">Skontroluj odkaz a skús to znova.</p>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Skontroluj odkaz a skús to znova.
+              </p>
             </>
           )}
         </Card>
