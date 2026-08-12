@@ -30,3 +30,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Lokálne premenné — nikdy do repa (secrets sú v /opt/maxiticket/.env)
+.env
+.env.*
+!.env.example

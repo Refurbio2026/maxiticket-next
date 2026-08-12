@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -59,10 +58,34 @@ type Item = {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Stránka nad generovanými dátami z `admin-mock.ts` — v navigácii skrytá. */
+  /** Stránka nad generovanými dátami z `admin-mock.ts` — treba ju ešte dorobiť. */
   demo?: boolean;
+  /**
+   * Stránka funguje, ale ukladá do localStorage prehliadača, nie do databázy.
+   * Iný počítač = iné dáta, server o nich nevie.
+   */
+  local?: boolean;
 };
 type Group = { label: string; items: Item[] };
+
+/** Bodka za názvom hovorí, v akom stave stránka je. Demo stránky bodku nemajú. */
+function StatusDot({ item }: { item: Item }) {
+  if (item.demo) return null;
+  return (
+    <span
+      className={
+        item.local
+          ? "ml-auto size-1.5 shrink-0 rounded-full border border-amber-500"
+          : "ml-auto size-1.5 shrink-0 rounded-full bg-emerald-500"
+      }
+      title={
+        item.local
+          ? "Funguje, ale dáta sa ukladajú len do tohto prehliadača"
+          : "Hotové — beží na databáze"
+      }
+    />
+  );
+}
 
 const groups: Group[] = [
   {
@@ -78,14 +101,9 @@ const groups: Group[] = [
         icon: Receipt,
         demo: true,
       },
-      {
-        title: "Vyúčtovacie protokoly",
-        url: "/admin/maxiticket/protocols",
-        icon: FileText,
-        demo: true,
-      },
+      { title: "Vyúčtovacie protokoly", url: "/admin/maxiticket/protocols", icon: FileText },
       { title: "Náklady organizátorov", url: "/admin/maxiticket/costs", icon: Wallet, demo: true },
-      { title: "Organizátori", url: "/admin/maxiticket/organizers", icon: Users, demo: true },
+      { title: "Organizátori", url: "/admin/maxiticket/organizers", icon: Users },
       {
         title: "Platby organizátorom",
         url: "/admin/maxiticket/payments",
@@ -109,11 +127,13 @@ const groups: Group[] = [
         title: "Účtovanie / výpisy z banky",
         url: "/admin/maxiticket/accounting-bank",
         icon: Landmark,
+        local: true,
       },
       {
         title: "Účtovanie / report",
         url: "/admin/maxiticket/accounting-report",
         icon: ClipboardList,
+        local: true,
       },
       {
         title: "Účtovanie / kontroly",
@@ -151,17 +171,17 @@ const groups: Group[] = [
   {
     label: "POS / Pokladňa",
     items: [
-      { title: "Pokladne", url: "/admin/pos/cashiers", icon: Users },
-      { title: "Predaje", url: "/admin/pos/sales", icon: ShoppingCart },
-      { title: "Uzávierky", url: "/admin/pos/closings", icon: ClipboardList },
-      { title: "Terminály", url: "/admin/pos/terminals", icon: Scan },
-      { title: "ORP / eKasa", url: "/admin/pos/fiscal", icon: Receipt },
+      { title: "Pokladne", url: "/admin/pos/cashiers", icon: Users, local: true },
+      { title: "Predaje", url: "/admin/pos/sales", icon: ShoppingCart, local: true },
+      { title: "Uzávierky", url: "/admin/pos/closings", icon: ClipboardList, local: true },
+      { title: "Terminály", url: "/admin/pos/terminals", icon: Scan, local: true },
+      { title: "ORP / eKasa", url: "/admin/pos/fiscal", icon: Receipt, local: true },
     ],
   },
   {
     label: "Dáta",
     items: [
-      { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers },
+      { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers, local: true },
       { title: "Skupiny podujatí", url: "/admin/data/groups", icon: FolderTree, demo: true },
       {
         title: "Cenové kategórie",
@@ -192,14 +212,14 @@ const groups: Group[] = [
   },
   {
     label: "Marketing",
-    items: [{ title: "Reklamné kampane", url: "/admin/marketing", icon: Megaphone }],
+    items: [{ title: "Reklamné kampane", url: "/admin/marketing", icon: Megaphone, local: true }],
   },
   {
     label: "Systém",
     items: [
-      { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet },
+      { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet, local: true },
       { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail, demo: true },
-      { title: "Používatelia", url: "/admin/system/users", icon: UserCog, demo: true },
+      { title: "Používatelia", url: "/admin/system/users", icon: UserCog },
     ],
   },
   {
@@ -211,41 +231,19 @@ const groups: Group[] = [
   },
 ];
 
-const DEMO_KEY = "mt_admin_show_demo";
-
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
 
-  // Stránky nad generovanými dátami z `admin-mock.ts` sú predvolene skryté.
-  // Vymyslené čísla v administrácii sú horšie než chýbajúca položka — človek
-  // im uverí. Kým sa nenapoja na databázu, zobrazia sa len na požiadanie.
-  // Routes samotné ostávajú funkčné, aby uložené odkazy neprestali fungovať.
-  const [showDemo, setShowDemo] = useState(false);
-  useEffect(() => {
-    try {
-      setShowDemo(localStorage.getItem(DEMO_KEY) === "1");
-    } catch {
-      /* súkromný režim prehliadača */
-    }
-  }, []);
-  const toggleDemo = () => {
-    setShowDemo((v) => {
-      const next = !v;
-      try {
-        localStorage.setItem(DEMO_KEY, next ? "1" : "0");
-      } catch {
-        /* ignorujeme */
-      }
-      return next;
-    });
-  };
-
-  const visibleGroups = groups
-    .map((g) => ({ ...g, items: g.items.filter((i) => showDemo || !i.demo) }))
-    .filter((g) => g.items.length > 0);
-  const hiddenCount = groups.reduce((n, g) => n + g.items.filter((i) => i.demo).length, 0);
+  // Nič sa neskrýva — skrytá položka sa ľahko zabudne. Stav je vidieť na bodke
+  // za názvom: plná = beží na databáze, dutá = ukladá len do prehliadača,
+  // žiadna = stránka nad ukážkovými dátami, ktorú treba dorobiť.
+  const visibleGroups = groups;
+  const all = groups.flatMap((g) => g.items);
+  const demoCount = all.filter((i) => i.demo).length;
+  const localCount = all.filter((i) => i.local).length;
+  const liveCount = all.length - demoCount - localCount;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/40">
@@ -292,11 +290,7 @@ export function AdminSidebar() {
                           {!collapsed && (
                             <>
                               <span className="truncate text-sm">{item.title}</span>
-                              {item.demo && (
-                                <span className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                  demo
-                                </span>
-                              )}
+                              <StatusDot item={item} />
                             </>
                           )}
                         </Link>
@@ -310,21 +304,31 @@ export function AdminSidebar() {
         ))}
       </SidebarContent>
 
-      {!collapsed && hiddenCount > 0 && (
+      {!collapsed && (
         <SidebarFooter className="border-t border-border/40 px-3 py-3">
-          <button
-            type="button"
-            onClick={toggleDemo}
-            className="w-full rounded-md px-2 py-1.5 text-left text-[11px] leading-snug text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            {showDemo ? (
-              <>Skryť {hiddenCount} demo sekcií</>
-            ) : (
-              <>
-                Skrytých {hiddenCount} sekcií nad ukážkovými dátami — <u>zobraziť</u>
-              </>
-            )}
-          </button>
+          <div className="space-y-1.5 px-2 text-[11px] leading-snug text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <span>
+                <span className="font-semibold text-foreground">{liveCount}</span> hotových — bežia
+                na databáze
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="size-1.5 shrink-0 rounded-full border border-amber-500" />
+              <span>
+                <span className="font-semibold text-foreground">{localCount}</span> len v
+                prehliadači — dáta sa neukladajú na server
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="size-1.5 shrink-0 rounded-full border border-dashed border-border" />
+              <span>
+                <span className="font-semibold text-foreground">{demoCount}</span> bez bodky —
+                ukážkové dáta, treba dorobiť
+              </span>
+            </div>
+          </div>
         </SidebarFooter>
       )}
     </Sidebar>

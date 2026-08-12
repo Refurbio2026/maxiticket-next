@@ -334,26 +334,139 @@ export type Database = {
           },
         ];
       };
-      profiles: {
+      platform_settings: {
         Row: {
-          created_at: string;
-          full_name: string | null;
-          id: string;
+          default_commission_rate: number;
+          id: boolean;
           updated_at: string;
         };
         Insert: {
-          created_at?: string;
-          full_name?: string | null;
-          id: string;
+          default_commission_rate?: number;
+          id?: boolean;
           updated_at?: string;
         };
         Update: {
-          created_at?: string;
-          full_name?: string | null;
-          id?: string;
+          default_commission_rate?: number;
+          id?: boolean;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      profiles: {
+        Row: {
+          billing_address: string | null;
+          commission_rate: number | null;
+          company_name: string | null;
+          created_at: string;
+          dic: string | null;
+          full_name: string | null;
+          ic_dph: string | null;
+          ico: string | null;
+          id: string;
+          payout_iban: string | null;
+          phone: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          billing_address?: string | null;
+          commission_rate?: number | null;
+          company_name?: string | null;
+          created_at?: string;
+          dic?: string | null;
+          full_name?: string | null;
+          ic_dph?: string | null;
+          ico?: string | null;
+          id: string;
+          payout_iban?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          billing_address?: string | null;
+          commission_rate?: number | null;
+          company_name?: string | null;
+          created_at?: string;
+          dic?: string | null;
+          full_name?: string | null;
+          ic_dph?: string | null;
+          ico?: string | null;
+          id?: string;
+          payout_iban?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      settlements: {
+        Row: {
+          commission_amount: number;
+          commission_rate: number;
+          created_at: string;
+          created_by: string | null;
+          event_id: string | null;
+          gross_amount: number;
+          id: string;
+          net_amount: number;
+          note: string | null;
+          organizer_id: string;
+          paid_at: string | null;
+          payout_reference: string | null;
+          period_from: string;
+          period_to: string;
+          refunded_amount: number;
+          status: "draft" | "approved" | "paid";
+          tickets_sold: number;
+          updated_at: string;
+        };
+        Insert: {
+          commission_amount?: number;
+          commission_rate?: number;
+          created_at?: string;
+          created_by?: string | null;
+          event_id?: string | null;
+          gross_amount?: number;
+          id?: string;
+          net_amount?: number;
+          note?: string | null;
+          organizer_id: string;
+          paid_at?: string | null;
+          payout_reference?: string | null;
+          period_from: string;
+          period_to: string;
+          refunded_amount?: number;
+          status?: "draft" | "approved" | "paid";
+          tickets_sold?: number;
+          updated_at?: string;
+        };
+        Update: {
+          commission_amount?: number;
+          commission_rate?: number;
+          created_at?: string;
+          created_by?: string | null;
+          event_id?: string | null;
+          gross_amount?: number;
+          id?: string;
+          net_amount?: number;
+          note?: string | null;
+          organizer_id?: string;
+          paid_at?: string | null;
+          payout_reference?: string | null;
+          period_from?: string;
+          period_to?: string;
+          refunded_amount?: number;
+          status?: "draft" | "approved" | "paid";
+          tickets_sold?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "settlements_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       seat_inventory: {
         Row: {
@@ -694,6 +807,7 @@ export type Database = {
       };
     };
     Enums: {
+      settlement_status: "draft" | "approved" | "paid";
       app_role: "user" | "organizer" | "admin";
       event_status: "draft" | "published";
       order_status:

@@ -8,11 +8,19 @@ GoPay platby, SuperFaktúra, QR vstupenky, skener na vstupe, POS pokladne, walle
 ```bash
 bun install          # bun je package manager (bun.lock, bunfig.toml)
 bun run dev          # vite dev
-bun run build        # vite build (Nitro SSR)
 bun run lint         # eslint
 bun run format       # prettier --write .
 npx tsc --noEmit     # typecheck (nie je npm skript)
+
+# BUILD VŽDY S PRESETOM, inak zhodíš beh na tomto serveri:
+NITRO_PRESET=node-server bun run build
+npx pm2 restart maxiticket --update-env
 ```
+
+`NITRO_PRESET` je v `/opt/maxiticket/.env`, ktorý číta až pm2 pri spustení — build ho nevidí
+a bez neho spadne na predvolený `cloudflare-module`. Taký `.output/server/index.mjs` sa síce
+naštartuje, ale **na žiadnom porte nepočúva**, takže web je mŕtvy bez jedinej chyby v logu.
+Po builde skontroluj `grep preset .output/nitro.json`.
 
 ## Stack
 
@@ -26,9 +34,10 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 12 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 17 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `ticket_types`, `orders`, `order_items`, `seat_inventory`,
-`tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`.
+`tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`, `venue_layouts`,
+`email_logs`, `rate_limits`, `settlements`, `platform_settings`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
@@ -41,9 +50,11 @@ Zostáva na nej POS, marketing, banka, protokoly, kategórie a obsadenosť sedad
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**29 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`
-a predvolene skryté (prepínač v pätičke), `DataTablePage` na nich zobrazuje varovný banner.
-Keď niektorú napojíš na databázu, zmaž jej `demo: true`.
+**26 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+`DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
+za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
+localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
+(alebo `local: true`) a uprav počty v legende netreba — počítajú sa samy.
 
 **Katalóg podujatí je od fázy 2 v databáze.** Čítaj a zapisuj ho **výhradne** cez
 `@/hooks/use-events` — `useEvents({ scope })`, `useEvent(id)`, `useUpsertEvent()`,
@@ -55,6 +66,22 @@ Vlastníctvo sa vynucuje na serveri: `organizer_id` sa neberie z klienta (odvod�
 výnimkou je admin, ktorý smie poslať `organizer_id` a založiť podujatie za organizátora.
 
 Nové perzistentné dáta píš do Supabase, nie do localStorage.
+
+### Používatelia a role
+`users.functions.ts` + `/admin/system/users`. Rolu prideľuje výhradne admin (`setUserRole`),
+`createUserWithRole` založí účet aj s rolou a potvrdeným e-mailom. Vlastnú `admin` rolu si
+odobrať nedá — inak by sa dalo zamknúť sa z konzoly. Zápis do `user_roles` nerob nikde inde.
+
+### Vyúčtovanie organizátorom
+`settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)
+a `/admin/maxiticket/protocols` (protokoly). Provízia je **percento na organizátora**
+(`profiles.commission_rate`); `NULL` znamená predvolenú sadzbu platformy z `platform_settings`.
+
+Prepočet za obdobie: hrubá tržba = objednávky so stavom `paid`/`refunded`, ktoré sa v období
+zaplatili; refundácie sa odpočítavajú podľa **dátumu refundácie** zo záporných riadkov v
+`payments` (kvôli čiastočným refundáciám, pri ktorých objednávka ostáva `paid`). Protokol si
+čísla pri vytvorení **zmrazí** — neskoršia refundácia nesmie prepísať to, čo bolo odsúhlasené
+a vyplatené. Vyplatený protokol sa nedá zmazať.
 
 ### Anonymné dotazy na `events` musia vymenovať stĺpce
 
