@@ -180,7 +180,7 @@ const groups: Group[] = [
   {
     label: "Dáta",
     items: [
-      { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers, local: true },
+      { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers },
       { title: "Skupiny podujatí", url: "/admin/data/groups", icon: FolderTree, demo: true },
       {
         title: "Cenové kategórie",

@@ -34,18 +34,19 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 28 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 29 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
 `venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
 `pos_cashiers`, `pos_sessions`, `pos_closings`, `pos_receipt_counters`, `coupons`,
-`coupon_redemptions`, `email_templates`, `scanner_devices`, `refund_reasons`.
+`coupon_redemptions`, `email_templates`, `scanner_devices`, `refund_reasons`,
+`event_categories`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
 **2. localStorage „databáza" (demo)** — `src/lib/local-db.ts` + `pos-db.ts`, `bank-db.ts`,
 `cashier-db.ts`, `marketing-db.ts`, `wallet-db.ts`, `ticketing-db.ts`, `admin-mock.ts`.
-Zostáva na nej marketing, banka, účtovné reporty, kategórie podujatí, wallet nastavenia a z POS
+Zostáva na nej marketing, banka, účtovné reporty, wallet nastavenia a z POS
 už len eKasa a stav terminálu (`payment-terminal-adapter.ts`, `fiscal-adapter.ts` — simulácia
 hardvéru). Evidencia zariadení je od 13. 8. v databáze (`scanner_devices`).
 `ticketing-db.ts` je už len košík (výber sedadiel v tomto prehliadači do kliknutia na „Zaplatiť");
@@ -84,6 +85,20 @@ textové `events.venue` / `city` / `address` **zostávajú vyplnené** — čít
 PDF aj e-maily a podujatie musí prežiť zmazanie miesta. `upsertEvent` ich pri uložení kopíruje
 z miesta, premenovanie miesta ich prepíše vo všetkých jeho podujatiach. Miesto si nesie
 `default_layout_id`, ktoré sa v admin formulári predvyplní aj s `sale_type = seating_map`.
+
+### Kategórie podujatí
+
+`event_categories` + `event-categories.functions.ts` + `/admin/data/categories`. Predtým žili
+na troch nezosúladených miestach: localStorage v admin stránke, natvrdo zapísaný zoznam
+v `admin.events.events.tsx` a voľný text v `events.category`.
+
+`events.category` **ostáva textom** — číta ho verejný katalóg aj filtre a podujatie musí prežiť
+zmazanie kategórie. Číselník je zdroj pravdy pre ponuku vo formulári; **premenovanie sa prepíše
+do podujatí** (`upsertEventCategory`), inak by ich filter zaradil pod názov, ktorý neexistuje.
+Kategóriu, ktorú niektoré podujatie používa, `deleteEventCategory` nezmaže — deaktivuje ju
+(`active = false`), takže z ponuky zmizne, ale dá sa vrátiť. Formulár podujatia navyše doplní
+do ponuky aktuálnu hodnotu podujatia, aj keď je kategória zrušená — bez toho by uloženie ticho
+prepísalo kategóriu na inú.
 
 ### Termíny podujatí
 

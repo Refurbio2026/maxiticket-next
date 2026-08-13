@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { getCategory } from "@/lib/local-db";
+import { listEventCategories } from "@/lib/event-categories.functions";
 import { listOrganizers } from "@/lib/events.functions";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -44,7 +44,16 @@ function NewEventForCategory() {
   const { categoryId } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const category = useMemo(() => getCategory(categoryId), [categoryId]);
+  // Kategória je v databáze; ponuku aj názov si vypýtame zo servera.
+  const fetchCategories = useServerFn(listEventCategories);
+  const { data: categories = [] } = useQuery({
+    queryKey: ["event-categories", "active"],
+    queryFn: () => fetchCategories({ data: { only_active: true } }),
+  });
+  const category = useMemo(
+    () => categories.find((c) => c.id === categoryId),
+    [categories, categoryId],
+  );
   const upsert = useUpsertEvent();
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState<FormState>({

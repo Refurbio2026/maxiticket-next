@@ -11,6 +11,7 @@ import {
 import { useLayouts } from "@/hooks/use-layouts";
 import { listVenues } from "@/lib/venues.functions";
 import { listOrganizers } from "@/lib/events.functions";
+import { listEventCategories } from "@/lib/event-categories.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,16 +42,6 @@ export const Route = createFileRoute("/admin/events/events")({
   head: () => ({ meta: [{ title: "Podujatia · vipky.sk Admin" }] }),
   component: Page,
 });
-
-const CATEGORIES = [
-  "Koncert",
-  "Festival",
-  "Šport",
-  "Divadlo",
-  "Konferencia",
-  "Stand-up",
-  "Kultúra",
-];
 
 /** Riadok v editore typov vstupeniek. Čísla držíme ako text, nech sa dá pole vyprázdniť. */
 type TicketRow = { id?: string; name: string; price: string; quantity: string };
@@ -152,6 +143,12 @@ function Page() {
   const { data: venues = [] } = useQuery({
     queryKey: ["venues"],
     queryFn: () => fetchVenues({ data: undefined as never }),
+  });
+  // Kategórie sú číselník v databáze — spravujú sa v Dáta → Kategórie podujatí.
+  const fetchCategories = useServerFn(listEventCategories);
+  const { data: categories = [] } = useQuery({
+    queryKey: ["event-categories", "active"],
+    queryFn: () => fetchCategories({ data: { only_active: true } }),
   });
   const fetchOrganizers = useServerFn(listOrganizers);
   const { data: organizers = [] } = useQuery({
@@ -450,11 +447,16 @@ function Page() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>
+                      {c.name}
                     </SelectItem>
                   ))}
+                  {/* Kategória zrušená v číselníku by inak z formulára zmizla
+                      a uloženie by ju podujatiu ticho prepísalo. */}
+                  {form.category && !categories.some((c) => c.name === form.category) && (
+                    <SelectItem value={form.category}>{form.category}</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </Field>
