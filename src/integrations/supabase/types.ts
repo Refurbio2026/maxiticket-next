@@ -1279,6 +1279,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      order_notes: {
+        Row: {
+          author_id: string | null;
+          body: string;
+          created_at: string;
+          id: string;
+          order_id: string;
+          pinned: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          author_id?: string | null;
+          body: string;
+          created_at?: string;
+          id?: string;
+          order_id: string;
+          pinned?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          author_id?: string | null;
+          body?: string;
+          created_at?: string;
+          id?: string;
+          order_id?: string;
+          pinned?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       event_performers: {
         Row: {
           created_at: string;

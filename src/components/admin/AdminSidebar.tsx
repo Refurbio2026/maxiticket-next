@@ -164,7 +164,7 @@ const groups: Group[] = [
     items: [
       { title: "Predaj", url: "/admin/sales/sales", icon: ShoppingCart },
       { title: "Storno", url: "/admin/sales/cancellations", icon: Ban },
-      { title: "Poznámky", url: "/admin/sales/notes", icon: StickyNote, demo: true },
+      { title: "Poznámky", url: "/admin/sales/notes", icon: StickyNote },
     ],
   },
   {

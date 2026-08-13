@@ -25,10 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, RefreshCw, ExternalLink, Search, Undo2 } from "lucide-react";
+import { Loader2, RefreshCw, ExternalLink, Search, Undo2, StickyNote } from "lucide-react";
 import { listAdminOrders, type AdminOrderRow } from "@/lib/admin-stats.functions";
 import { refundOrder } from "@/lib/refunds.functions";
 import { listRefundReasons } from "@/lib/refund-reasons.functions";
+import { countOrderNotes } from "@/lib/order-notes.functions";
+import { OrderNotesDialog, type OrderNotesTarget } from "@/components/admin/OrderNotesDialog";
 
 export const Route = createFileRoute("/admin/sales/sales")({
   head: () => ({ meta: [{ title: "Predaj · vipky.sk Admin" }] }),
@@ -60,6 +62,7 @@ function Page() {
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
+  const [notesFor, setNotesFor] = useState<OrderNotesTarget | null>(null);
   const [refundFor, setRefundFor] = useState<AdminOrderRow | null>(null);
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
@@ -77,6 +80,16 @@ function Page() {
   });
 
   const rows = q.data || [];
+
+  // Počty poznámok pre práve zobrazené objednávky — bez toho by nebolo vidieť,
+  // kde už niekto niečo zapísal.
+  const fetchNoteCounts = useServerFn(countOrderNotes);
+  const noteCounts = useQuery({
+    queryKey: ["order-note-counts", rows.map((r) => r.id).join(",")],
+    enabled: rows.length > 0,
+    queryFn: () => fetchNoteCounts({ data: { order_ids: rows.map((r) => r.id) } }),
+  });
+
   const totalAmount = rows
     .filter((r) => r.status === "paid")
     .reduce((s, r) => s + r.total_amount, 0);
@@ -260,7 +273,28 @@ function Page() {
                       <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(r.paid_at || r.created_at).toLocaleString("sk")}
                       </td>
-                      <td className="p-3 text-right">
+                      <td className="p-3 text-right whitespace-nowrap space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setNotesFor({
+                              order_id: r.id,
+                              subtitle: `#${r.id.slice(0, 8).toUpperCase()} · ${
+                                r.customer_name || r.customer_email || "—"
+                              } · ${r.event_title ?? "—"}`,
+                            })
+                          }
+                          className="gap-1.5"
+                        >
+                          <StickyNote className="size-3.5" />
+                          Poznámky
+                          {(noteCounts.data?.[r.id] ?? 0) > 0 && (
+                            <Badge variant="outline" className="ml-1 text-[10px] px-1.5">
+                              {noteCounts.data?.[r.id]}
+                            </Badge>
+                          )}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -279,6 +313,8 @@ function Page() {
           </table>
         </div>
       </Card>
+
+      <OrderNotesDialog target={notesFor} onClose={() => setNotesFor(null)} />
 
       <Dialog open={!!refundFor} onOpenChange={(o) => !o && setRefundFor(null)}>
         <DialogContent>
