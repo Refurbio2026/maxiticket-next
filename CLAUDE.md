@@ -34,13 +34,13 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 34 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 35 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
 `venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
 `pos_cashiers`, `pos_sessions`, `pos_closings`, `pos_receipt_counters`, `coupons`,
 `coupon_redemptions`, `email_templates`, `scanner_devices`, `refund_reasons`,
-`event_categories`, `performers`, `event_performers`, `order_notes`, `organizer_costs`, `event_groups`.
+`event_categories`, `performers`, `event_performers`, `order_notes`, `organizer_costs`, `event_groups`, `site_pages`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
@@ -57,7 +57,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**10 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**9 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -184,6 +184,20 @@ podujatia.
 Na rozdiel od kategórie tu podujatie **nedrží žiadny text** — skupina je voliteľná a `on delete
 set null` znamená, že po jej zániku podujatie ostane bez nej. Katalóg filtruje podľa
 `group_name`, ktoré dopĺňa `loadGroupNames` v `events.functions.ts`.
+
+### Obsahové stránky webu
+
+`site_pages` + `site-pages.functions.ts` + `/admin/data/content`, verejne na `/p/$slug`.
+Pätička vypisuje **len publikované** stránky (`listFooterPages`) — dovtedy odkazovala na
+`/about`, ktoré neexistovalo.
+
+Text **nie je HTML**: prázdny riadok = odsek, `## ` = nadpis, `- ` = odrážka. Obsah zadáva človek
+v admine, vložené HTML by bola diera. `upsertSitePage` odmietne publikovať stránku s prázdnym
+telom a nepublikovaná stránka sa navonok tvári, že neexistuje.
+
+Migrácia zakladá kostry (O nás, obchodné podmienky, ochrana osobných údajov, reklamačný poriadok)
+**bez textu** — právne dokumenty si píše prevádzkovateľ, vymyslené znenie by bolo horšie než
+žiadne.
 
 ### Termíny podujatí
 

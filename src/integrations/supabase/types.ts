@@ -1327,6 +1327,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      site_pages: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          meta_description: string | null;
+          published: boolean;
+          show_in_footer: boolean;
+          slug: string;
+          sort_order: number;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          meta_description?: string | null;
+          published?: boolean;
+          show_in_footer?: boolean;
+          slug: string;
+          sort_order?: number;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          meta_description?: string | null;
+          published?: boolean;
+          show_in_footer?: boolean;
+          slug?: string;
+          sort_order?: number;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       order_notes: {
         Row: {
           author_id: string | null;

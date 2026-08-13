@@ -1,5 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Instagram, Facebook, Youtube, Twitter } from "lucide-react";
+import { listFooterPages } from "@/lib/site-pages.functions";
 import { useI18n } from "@/hooks/use-i18n";
 import logo from "@/assets/logo.png";
 
@@ -18,7 +21,6 @@ const cols: Col[] = [
   {
     titleKey: "footer.company",
     l: [
-      { labelKey: "footer.about", to: "/about" },
       { labelKey: "nav.contact", to: "/contact" },
       { labelKey: "nav.support", to: "/support" },
     ],
@@ -42,6 +44,14 @@ const socials: { Icon: typeof Instagram; href: string; label: string }[] = [
 
 export function Footer() {
   const { t } = useI18n();
+
+  // Obsahové stránky (O nás, obchodné podmienky…) sa v pätičke objavia až keď
+  // sú naozaj napísané a publikované — inak by odkazovala do prázdna.
+  const fetchPages = useServerFn(listFooterPages);
+  const { data: pages = [] } = useQuery({
+    queryKey: ["footer-pages"],
+    queryFn: () => fetchPages({ data: undefined as never }),
+  });
 
   return (
     <footer className="border-t border-border bg-surface/40 pt-20 pb-10">
@@ -80,6 +90,19 @@ export function Footer() {
                     </Link>
                   </li>
                 ))}
+                {/* Obsahové stránky patria pod „Spoločnosť". */}
+                {c.titleKey === "footer.company" &&
+                  pages.map((p) => (
+                    <li key={p.slug}>
+                      <Link
+                        to="/p/$slug"
+                        params={{ slug: p.slug }}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {p.title}
+                      </Link>
+                    </li>
+                  ))}
               </ul>
             </div>
           ))}

@@ -24,6 +24,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
 import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
@@ -166,6 +167,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
   id: '/marketing',
@@ -535,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/events/$id': typeof EventsIdRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
+  '/p/$slug': typeof PSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -615,6 +622,7 @@ export interface FileRoutesByTo {
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -700,6 +708,7 @@ export interface FileRoutesById {
   '/events/$id': typeof EventsIdRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
+  '/p/$slug': typeof PSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -786,6 +795,7 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/organizer/events'
     | '/organizer/marketing'
+    | '/p/$slug'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -866,6 +876,7 @@ export interface FileRouteTypes {
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
+    | '/p/$slug'
     | '/admin'
     | '/organizer'
     | '/admin/data/categories'
@@ -950,6 +961,7 @@ export interface FileRouteTypes {
     | '/events/$id'
     | '/organizer/events'
     | '/organizer/marketing'
+    | '/p/$slug'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -1031,6 +1043,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
+  PSlugRoute: typeof PSlugRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
   ApiPublicEventsByTokenRoute: typeof ApiPublicEventsByTokenRoute
@@ -1145,6 +1158,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/organizer/marketing': {
       id: '/organizer/marketing'
@@ -1812,6 +1832,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
+  PSlugRoute: PSlugRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
   ApiPublicEventsByTokenRoute: ApiPublicEventsByTokenRoute,
