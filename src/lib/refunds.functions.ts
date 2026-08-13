@@ -54,11 +54,21 @@ export const refundOrder = createServerFn({ method: "POST" })
     }
 
     const total = Number(order.total_amount);
-    const amount = data.amount ?? total;
-    if (amount <= 0 || amount > total + 0.01) {
-      throw new Error(`Neplatná suma refundu (max ${total.toFixed(2)} ${order.currency}).`);
+    // Čiastočný refund necháva objednávku v stave `paid`, takže bez súčtu už
+    // vrátenej sumy by sa dala vrátiť aj viackrát dokola.
+    const alreadyRefunded = Number(order.refunded_amount || 0);
+    const remaining = total - alreadyRefunded;
+    const amount = data.amount ?? remaining;
+    if (amount <= 0 || amount > remaining + 0.01) {
+      throw new Error(
+        alreadyRefunded > 0
+          ? `Z objednávky už bolo vrátených ${alreadyRefunded.toFixed(2)} ${order.currency} — vrátiť sa dá najviac ${remaining.toFixed(2)}.`
+          : `Neplatná suma refundu (max ${total.toFixed(2)} ${order.currency}).`,
+      );
     }
-    const full = Math.abs(amount - total) < 0.01;
+    // „Plný" znamená, že objednávka je po tomto refunde vrátená celá — aj keď
+    // sa k tomu prišlo dvoma čiastočnými.
+    const full = Math.abs(alreadyRefunded + amount - total) < 0.01;
 
     // 1) Call GoPay if we have a payment id; otherwise treat as manual refund.
     let providerOk = false;
@@ -108,7 +118,20 @@ export const refundOrder = createServerFn({ method: "POST" })
       raw_response: providerRaw,
     });
 
-    // 3) Update order status (full only). Partial keeps it paid.
+    // 3) Zápis refundu na objednávku. Bez toho by sa dôvod aj čas dali zistiť
+    // len z ladiaceho logu platby a prehľad Storno by nemal z čoho čítať.
+    const refundedAt = new Date().toISOString();
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        refunded_at: refundedAt,
+        refunded_amount: Number((alreadyRefunded + amount).toFixed(2)),
+        refund_reason: data.reason || order.refund_reason || null,
+        refunded_by: context.userId,
+      })
+      .eq("id", order.id);
+
+    // 4) Stav mení len plný refund. Čiastočný necháva objednávku zaplatenú.
     if (full) {
       await supabaseAdmin.from("orders").update({ status: "refunded" }).eq("id", order.id);
       // Free seats and invalidate tickets
@@ -126,7 +149,7 @@ export const refundOrder = createServerFn({ method: "POST" })
         .is("refunded_at", null);
     }
 
-    // 4) Notify customer — try the queue if email infra is set up, else skip.
+    // 5) Notify customer — try the queue if email infra is set up, else skip.
     let email_queued = false;
     let email_skipped_reason: string | undefined;
     if (data.notify_customer && order.customer_email) {

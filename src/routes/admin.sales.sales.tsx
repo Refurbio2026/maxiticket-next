@@ -81,9 +81,15 @@ function Page() {
     .filter((r) => r.status === "paid")
     .reduce((s, r) => s + r.total_amount, 0);
 
+  // Čiastočný refund necháva objednávku zaplatenú, takže sa dá refundovať
+  // opakovane — ponúkame vždy len zostatok, nie celú sumu.
+  const refundRemaining = refundFor
+    ? Math.max(0, refundFor.total_amount - refundFor.refunded_amount)
+    : 0;
+
   function openRefund(r: AdminOrderRow) {
     setRefundFor(r);
-    setRefundAmount(r.total_amount.toFixed(2));
+    setRefundAmount(Math.max(0, r.total_amount - r.refunded_amount).toFixed(2));
     setRefundReason("");
     setReasonCode("");
     setNotifyCustomer(true);
@@ -285,6 +291,14 @@ function Page() {
                   <span className="font-mono">#{refundFor.id.slice(0, 8).toUpperCase()}</span> ·{" "}
                   {refundFor.customer_email} · spolu{" "}
                   <strong>{fmtEur(refundFor.total_amount, refundFor.currency)}</strong>
+                  {refundFor.refunded_amount > 0 && (
+                    <>
+                      {" "}
+                      · už vrátené{" "}
+                      <strong>{fmtEur(refundFor.refunded_amount, refundFor.currency)}</strong>,
+                      zostáva <strong>{fmtEur(refundRemaining, refundFor.currency)}</strong>
+                    </>
+                  )}
                 </>
               )}
             </DialogDescription>
@@ -298,7 +312,7 @@ function Page() {
                 type="number"
                 step="0.01"
                 min="0.01"
-                max={refundFor?.total_amount}
+                max={refundRemaining}
                 value={refundAmount}
                 onChange={(e) => setRefundAmount(e.target.value)}
               />
@@ -310,7 +324,7 @@ function Page() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  onClick={() => refundFor && setRefundAmount(refundFor.total_amount.toFixed(2))}
+                  onClick={() => setRefundAmount(refundRemaining.toFixed(2))}
                 >
                   100 %
                 </Button>
@@ -318,9 +332,7 @@ function Page() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  onClick={() =>
-                    refundFor && setRefundAmount((refundFor.total_amount / 2).toFixed(2))
-                  }
+                  onClick={() => setRefundAmount((refundRemaining / 2).toFixed(2))}
                 >
                   50 %
                 </Button>

@@ -825,9 +825,18 @@ export const voidPosSale = createServerFn({ method: "POST" })
     }
 
     const now = new Date().toISOString();
+    // `void_reason` zostáva kvôli prehľadu pokladne, `refund_*` je spoločný
+    // záznam pre Storno — pokladňa aj web tak píšu na to isté miesto.
     await supabaseAdmin
       .from("orders")
-      .update({ status: "refunded", void_reason: data.reason })
+      .update({
+        status: "refunded",
+        void_reason: data.reason,
+        refunded_at: now,
+        refunded_amount: Number(order.total_amount),
+        refund_reason: data.reason,
+        refunded_by: context.userId,
+      })
       .eq("id", order.id);
     await supabaseAdmin
       .from("tickets")

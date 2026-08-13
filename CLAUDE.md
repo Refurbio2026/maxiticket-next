@@ -57,7 +57,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**19 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**18 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -114,6 +114,20 @@ počíta z `event_dates` (budúci termín v predaji + publikované podujatie), *
 ukazuje do minulosti. `deletePerformer` účinkujúceho priradeného k podujatiu nezmaže, len ho
 skryje (`active = false`); `on delete cascade` by ho inak vyhodil zo zostavy podujatia, ktoré
 sa možno predalo s jeho menom na plagáte.
+
+### Storno a refundácie
+
+`orders.refunded_at` / `refunded_amount` / `refund_reason` / `refunded_by` + `cancellations.functions.ts`
++ `/admin/sales/cancellations`. Píše do nich webový refund (`refundOrder`) aj storno z pokladne
+(`voidPosSale`) — pokladňa navyše ponecháva `void_reason` kvôli vlastnému prehľadu.
+
+**`refunded_amount` je kumulatívne.** Čiastočný refund necháva objednávku v stave `paid`, takže
+bez súčtu už vrátenej sumy sa dala vrátiť aj viackrát dokola; server teraz počíta zostatok
+(`total_amount - refunded_amount`) a nad neho refund neprejde. Prehľad preto nefiltruje podľa
+stavu, ale podľa `refunded_amount > 0` — inak by čiastočné refundy vypadli.
+
+Dôvod refundu **nečítaj z `payment_logs`** — to je ladiaci log poskytovateľa platby, nie obchodný
+záznam; obchodný záznam je `refund_reason`.
 
 ### Termíny podujatí
 

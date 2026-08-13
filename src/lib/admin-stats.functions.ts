@@ -187,6 +187,8 @@ export type AdminOrderRow = {
   paid_at: string | null;
   status: string;
   total_amount: number;
+  /** Koľko z objednávky už bolo vrátené — čiastočný refund ju necháva `paid`. */
+  refunded_amount: number;
   currency: string;
   customer_name: string | null;
   customer_email: string | null;
@@ -214,7 +216,7 @@ export const listAdminOrders = createServerFn({ method: "POST" })
     let q = supabaseAdmin
       .from("orders")
       .select(
-        "id, created_at, paid_at, status, total_amount, currency, customer_name, customer_email, superfaktura_invoice_number, superfaktura_invoice_pdf_url, events ( title ), order_items ( quantity )",
+        "id, created_at, paid_at, status, total_amount, refunded_amount, currency, customer_name, customer_email, superfaktura_invoice_number, superfaktura_invoice_pdf_url, events ( title ), order_items ( quantity )",
       )
       .order("created_at", { ascending: false })
       .limit(data.limit);
@@ -231,6 +233,7 @@ export const listAdminOrders = createServerFn({ method: "POST" })
       paid_at: r.paid_at,
       status: r.status,
       total_amount: Number(r.total_amount || 0),
+      refunded_amount: Number(r.refunded_amount || 0),
       currency: r.currency,
       customer_name: r.customer_name,
       customer_email: r.customer_email,
