@@ -57,7 +57,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**12 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**11 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -168,6 +168,11 @@ objednávok; „mimo protokolov" je `tržba − Σ settlements.gross_amount`, te
 porovná so zmrazenými číslami. **Rozdiel nie je chyba** — najčastejšie je to refundácia, ktorá
 prišla až po vystavení protokolu. Pripnuté náklady prepočet nevidí (majú `settlement_id`), preto
 sa do porovnania pripočítavajú späť.
+
+`sales-reports.functions.ts` + `/admin/reports/sales` je ten istý základ (zaplatené objednávky)
+zoskupený piatimi spôsobmi — podujatie, organizátor, kanál, kategória, deň. Filter podľa
+organizátora sa uplatňuje **až po načítaní**: objednávka o organizátorovi nevie, vlastníkom je
+podujatie.
 
 ### Termíny podujatí
 

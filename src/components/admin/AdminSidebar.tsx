@@ -210,7 +210,7 @@ const groups: Group[] = [
     label: "Reporty",
     items: [
       { title: "AVF Reporty", url: "/admin/reports/avf", icon: FileBarChart, demo: true },
-      { title: "Reporty predajov", url: "/admin/reports/sales", icon: TrendingUp, demo: true },
+      { title: "Reporty predajov", url: "/admin/reports/sales", icon: TrendingUp },
     ],
   },
 ];
