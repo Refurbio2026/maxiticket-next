@@ -179,6 +179,15 @@ export type Database = {
           customer_email: string | null;
           customer_name: string | null;
           customer_phone: string | null;
+          cashier_id: string | null;
+          channel: string;
+          discount_amount: number;
+          fiscal_receipt_id: string | null;
+          payment_method: string | null;
+          pos_session_id: string | null;
+          promo_code: string | null;
+          receipt_number: string | null;
+          void_reason: string | null;
           event_id: string;
           event_date_id: string;
           expires_at: string | null;
@@ -201,6 +210,15 @@ export type Database = {
           customer_email?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
+          cashier_id?: string | null;
+          channel?: string;
+          discount_amount?: number;
+          fiscal_receipt_id?: string | null;
+          payment_method?: string | null;
+          pos_session_id?: string | null;
+          promo_code?: string | null;
+          receipt_number?: string | null;
+          void_reason?: string | null;
           event_id: string;
           event_date_id: string;
           expires_at?: string | null;
@@ -223,6 +241,15 @@ export type Database = {
           customer_email?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
+          cashier_id?: string | null;
+          channel?: string;
+          discount_amount?: number;
+          fiscal_receipt_id?: string | null;
+          payment_method?: string | null;
+          pos_session_id?: string | null;
+          promo_code?: string | null;
+          receipt_number?: string | null;
+          void_reason?: string | null;
           event_id?: string;
           event_date_id?: string;
           expires_at?: string | null;
@@ -763,6 +790,167 @@ export type Database = {
         };
         Relationships: [];
       };
+      pos_cashiers: {
+        Row: {
+          created_at: string;
+          display_name: string;
+          first_name: string;
+          id: string;
+          last_name: string;
+          organizer_id: string;
+          permissions: string[];
+          pin_hash: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name: string;
+          first_name: string;
+          id?: string;
+          last_name: string;
+          organizer_id: string;
+          permissions?: string[];
+          pin_hash: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string;
+          first_name?: string;
+          id?: string;
+          last_name?: string;
+          organizer_id?: string;
+          permissions?: string[];
+          pin_hash?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      pos_sessions: {
+        Row: {
+          cashier_id: string;
+          closed_at: string | null;
+          closing_cash: number | null;
+          id: string;
+          note: string | null;
+          opened_at: string;
+          opening_cash: number;
+          organizer_id: string;
+          status: string;
+        };
+        Insert: {
+          cashier_id: string;
+          closed_at?: string | null;
+          closing_cash?: number | null;
+          id?: string;
+          note?: string | null;
+          opened_at?: string;
+          opening_cash?: number;
+          organizer_id: string;
+          status?: string;
+        };
+        Update: {
+          cashier_id?: string;
+          closed_at?: string | null;
+          closing_cash?: number | null;
+          id?: string;
+          note?: string | null;
+          opened_at?: string;
+          opening_cash?: number;
+          organizer_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pos_sessions_cashier_id_fkey";
+            columns: ["cashier_id"];
+            isOneToOne: false;
+            referencedRelation: "pos_cashiers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pos_closings: {
+        Row: {
+          card_total: number;
+          cash_difference: number | null;
+          cash_total: number;
+          cashier_id: string | null;
+          counted_cash: number | null;
+          created_at: string;
+          created_by: string | null;
+          free_total: number;
+          gross_total: number;
+          id: string;
+          note: string | null;
+          opening_cash: number;
+          orders_count: number;
+          organizer_id: string;
+          period_from: string;
+          period_to: string;
+          session_id: string | null;
+          tickets_count: number;
+          transfer_total: number;
+          voided_count: number;
+          voided_total: number;
+        };
+        Insert: {
+          card_total?: number;
+          cash_difference?: number | null;
+          cash_total?: number;
+          cashier_id?: string | null;
+          counted_cash?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          free_total?: number;
+          gross_total?: number;
+          id?: string;
+          note?: string | null;
+          opening_cash?: number;
+          orders_count?: number;
+          organizer_id: string;
+          period_from: string;
+          period_to: string;
+          session_id?: string | null;
+          tickets_count?: number;
+          transfer_total?: number;
+          voided_count?: number;
+          voided_total?: number;
+        };
+        Update: {
+          card_total?: number;
+          cash_difference?: number | null;
+          cash_total?: number;
+          cashier_id?: string | null;
+          counted_cash?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          free_total?: number;
+          gross_total?: number;
+          id?: string;
+          note?: string | null;
+          opening_cash?: number;
+          orders_count?: number;
+          organizer_id?: string;
+          period_from?: string;
+          period_to?: string;
+          session_id?: string | null;
+          tickets_count?: number;
+          transfer_total?: number;
+          voided_count?: number;
+          voided_total?: number;
+        };
+        Relationships: [];
+      };
+      pos_receipt_counters: {
+        Row: { last_number: number; organizer_id: string; year: number };
+        Insert: { last_number?: number; organizer_id: string; year: number };
+        Update: { last_number?: number; organizer_id?: string; year?: number };
+        Relationships: [];
+      };
       event_dates: {
         Row: {
           created_at: string;
@@ -890,6 +1078,12 @@ export type Database = {
           p_seats: Json;
         };
         Returns: undefined;
+      };
+      next_receipt_number: {
+        Args: {
+          p_organizer_id: string;
+        };
+        Returns: string;
       };
       expire_stale_orders: {
         Args: Record<string, never>;

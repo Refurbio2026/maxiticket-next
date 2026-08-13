@@ -2,26 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
-import { type Ticket, uid } from "@/lib/local-db";
-import { useEvents, type EventRecord } from "@/hooks/use-events";
+import { type Ticket } from "@/lib/local-db";
+import { useEvents } from "@/hooks/use-events";
+import { getFiscalSettings, getFiscalReceipts, type PaymentMethod } from "@/lib/pos-db";
 import {
-  addSale,
-  getSales,
-  nextReceiptNumber,
-  voidSale,
-  logAudit,
-  computeClosing,
-  POS_EVENT,
-  addSession,
-  addTickets,
-  getTickets,
-  getFiscalSettings,
-  getFiscalReceipts,
-  type PaymentMethod,
-  type PosSale,
-  type PosSaleItem,
-  type PosTicket,
-} from "@/lib/pos-db";
+  useActivePosSession,
+  useClosePosSession,
+  useCreatePosSale,
+  usePosCashiers,
+  usePosClosingPreview,
+  usePosSales,
+  useVoidPosSale,
+  setActiveSessionId,
+  type PosCashierRecord,
+} from "@/hooks/use-pos";
+import type { PosSaleRecord } from "@/lib/pos.functions";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { fiscal } from "@/lib/fiscal-adapter";
 import { printTickets } from "@/lib/print-tickets";
@@ -60,14 +55,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { CashierLoginGate } from "@/components/pos/CashierLoginGate";
-import {
-  getActiveSession,
-  getActiveCashier,
-  closeSession as closeCashierSession,
-  setActiveSessionId,
-  type Cashier,
-  type CashierSession,
-} from "@/lib/cashier-db";
 
 export const Route = createFileRoute("/organizer/pos/")({
   head: () => ({ meta: [{ title: "Pokladňa · vipky.sk" }] }),
@@ -81,6 +68,7 @@ function PosPage() {
   const { user } = useAuth();
   const { data: events = [] } = useEvents({ scope: "mine" });
   const [eventId, setEventId] = useState<string>("");
+  const [dateId, setDateId] = useState<string>("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discountPct, setDiscountPct] = useState<number>(0);
   const [promo, setPromo] = useState<string>("");
@@ -88,26 +76,39 @@ function PosPage() {
     "disconnected" | "connected" | "busy" | "error"
   >("disconnected");
   const [processing, setProcessing] = useState(false);
-  const [lastSale, setLastSale] = useState<PosSale | null>(null);
-  const [refresh, setRefresh] = useState(0);
-  const [activeCashier, setActiveCashier] = useState<Cashier | null>(null);
-  const [activeSession, setActiveSession] = useState<CashierSession | null>(null);
+  const [lastSale, setLastSale] = useState<PosSaleRecord | null>(null);
 
-  // Hydrate active cashier session from localStorage
-  useEffect(() => {
-    setActiveCashier(getActiveCashier());
-    setActiveSession(getActiveSession());
-  }, [refresh]);
+  // Smena aj tržby sú v databáze; prehliadač si pamätá len to, ktorá smena je
+  // otvorená na tejto pokladni.
+  const { session: activeSession, activate } = useActivePosSession();
+  const { data: cashiers = [] } = usePosCashiers();
+  const activeCashier: PosCashierRecord | null =
+    cashiers.find((c) => c.id === activeSession?.cashier_id) ?? null;
 
-  useEffect(() => {
-    const tick = () => setRefresh((r) => r + 1);
-    window.addEventListener(POS_EVENT, tick);
-    return () => {
-      window.removeEventListener(POS_EVENT, tick);
-    };
-  }, [user]);
+  const createSale = useCreatePosSale();
+  const voidSaleMutation = useVoidPosSale();
+  const closeSession = useClosePosSession();
+
+  const todayStart = new Date().toISOString().slice(0, 10) + "T00:00:00.000Z";
+  const { data: todayStats } = usePosClosingPreview({
+    from: todayStart,
+    enabled: !!activeSession,
+  });
+  const { data: recentSales = [] } = usePosSales({ limit: 8 });
 
   const selectedEvent = useMemo(() => events.find((e) => e.id === eventId), [events, eventId]);
+  const sellableDates = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (selectedEvent?.dates ?? []).filter(
+      (d) => d.status === "on_sale" && d.event_date >= today,
+    );
+  }, [selectedEvent]);
+  const activeDate = sellableDates.find((d) => d.id === dateId) ?? sellableDates[0];
+
+  // Pri prepnutí podujatia sa výber termínu prestaví na najbližší.
+  useEffect(() => {
+    setDateId(sellableDates[0]?.id ?? "");
+  }, [eventId, sellableDates]);
 
   const subtotal = cart.reduce((s, i) => s + i.ticket.price * i.qty, 0);
   const discount = Math.round(((subtotal * discountPct) / 100) * 100) / 100;
@@ -160,91 +161,68 @@ function PosPage() {
       toast.error(t("orgPos.noSalePermission"));
       return;
     }
+    if (!activeDate) {
+      toast.error("Podujatie nemá termín v predaji.");
+      return;
+    }
     setProcessing(true);
     try {
-      const order_id = uid();
-      let terminal_tx_id: string | undefined;
+      // Platobný terminál aj eKasa sú zatiaľ adaptéry (simulácia) — ich číslo
+      // dokladu sa uloží k objednávke, keď pribudne skutočné zariadenie.
+      let terminalTxId: string | undefined;
       if (method === "card") {
         if (terminalStatus !== "connected") await paymentTerminal.connectTerminal();
-        const r = await paymentTerminal.sendPayment(total, "EUR", order_id, user.id);
+        const r = await paymentTerminal.sendPayment(total, "EUR", activeSession.id, user.id);
         if (!r.ok) throw new Error(r.error || t("orgPos.paymentDeclined"));
-        terminal_tx_id = r.tx_id;
+        terminalTxId = r.tx_id;
       }
-      const orpSettings = getFiscalSettings();
-      let fr: Awaited<ReturnType<typeof fiscal.createReceipt>> | null = null;
-      if (orpSettings.connection_status === "connected") {
-        fr = await fiscal.createReceipt({
+      let fiscalReceiptId: string | undefined;
+      if (getFiscalSettings().connection_status === "connected") {
+        const fr = await fiscal.createReceipt({
           organizer_id: user.id,
-          sale_id: order_id,
+          sale_id: terminalTxId || activeSession.id,
           total,
           payment_method: method,
           items: cart.map((i) => ({ name: i.ticket.name, qty: i.qty, unit_price: i.ticket.price })),
         });
         await fiscal.sendReceiptToFiscalSystem(fr);
+        fiscalReceiptId = fr.id;
       }
 
-      const items: PosSaleItem[] = cart.map((i) => ({
-        ticket_id: i.ticket.id,
-        ticket_name: i.ticket.name,
-        unit_price: i.ticket.price,
-        quantity: i.qty,
-        subtotal: i.ticket.price * i.qty,
-      }));
-      const qr_codes: string[] = [];
-      const tickets: PosTicket[] = [];
-      for (const i of cart) {
-        for (let k = 0; k < i.qty; k++) {
-          const tid = uid();
-          // unikátny QR kód per kus
-          const code = `MT-${order_id}-${i.ticket.id}-${tid}`;
-          qr_codes.push(code);
-          tickets.push({
-            id: tid,
-            code,
-            organizer_id: user.id,
-            event_id: selectedEvent.id,
-            sale_id: order_id,
-            ticket_type_id: i.ticket.id,
-            ticket_type_name: i.ticket.name,
-            price: i.ticket.price,
-            status: "valid",
-            created_at: new Date().toISOString(),
-          });
-        }
-      }
-      addTickets(tickets);
+      // Ceny počíta server z databázy — pokladňa posiela len to, ČO predáva.
+      const sale = await createSale.mutateAsync({
+        session_id: activeSession.id,
+        event_id: selectedEvent.id,
+        event_date_id: activeDate.id,
+        payment_method: method,
+        discount_pct: discountPct,
+        promo_code: discountPct > 0 ? promo.toUpperCase() : null,
+        fiscal_receipt_id: fiscalReceiptId ?? null,
+        items: cart.map((i) => ({ ticket_type_id: i.ticket.id, quantity: i.qty })),
+      });
 
-      const sale: PosSale = {
-        id: order_id,
-        receipt_number: nextReceiptNumber(),
-        organizer_id: user.id,
-        cashier_id: activeCashier.id,
-        cashier_name: activeCashier.display_name,
-        cashier_session_id: activeSession.id,
+      setLastSale({
+        id: sale.order_id,
+        receipt_number: sale.receipt_number,
+        created_at: new Date().toISOString(),
         event_id: selectedEvent.id,
         event_title: selectedEvent.title,
-        items,
-        subtotal,
-        discount,
-        promo_code: discountPct > 0 ? promo.toUpperCase() : undefined,
-        total,
+        event_date: `${activeDate.event_date} ${activeDate.event_time}`,
+        cashier_id: activeCashier.id,
+        cashier_name: activeCashier.display_name,
+        pos_session_id: activeSession.id,
         payment_method: method,
         status: "paid",
-        fiscal_receipt_id: fr?.id,
-        terminal_tx_id,
-        created_at: new Date().toISOString(),
-        qr_codes,
-      };
-      addSale(sale);
-      logAudit({
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        action: "pos.sale",
-        entity: "pos_sales",
-        entity_id: sale.id,
-        meta: { total, method, tickets: qr_codes.length, receipt: sale.receipt_number },
+        subtotal: sale.subtotal,
+        discount: sale.discount,
+        total: sale.total,
+        items: cart.map((i) => ({
+          label: i.ticket.name,
+          quantity: i.qty,
+          unit_price: i.ticket.price,
+        })),
+        tickets: sale.tickets,
       });
-      setLastSale(sale);
       setCart([]);
       setDiscountPct(0);
       setPromo("");
@@ -256,55 +234,45 @@ function PosPage() {
     }
   };
 
-  // Dashboard data
-  const today = new Date().toISOString().slice(0, 10);
-  const todayStats = user ? computeClosing(user.id, today) : null;
-  const recent = user
-    ? getSales()
-        .filter((s) => s.organizer_id === user.id)
-        .slice(0, 8)
-    : [];
-  void refresh;
+  const recent = recentSales;
 
-  const voidLast = (id: string) => {
+  const voidLast = async (id: string) => {
+    if (!activeSession) return;
     const reason = prompt(t("orgPos.voidReasonPrompt")) || "";
     if (!reason) return;
-    voidSale(id, reason);
-    if (user)
-      logAudit({
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        action: "pos.void",
-        entity: "pos_sales",
-        entity_id: id,
-        meta: { reason },
+    try {
+      await voidSaleMutation.mutateAsync({
+        order_id: id,
+        session_id: activeSession.id,
+        reason,
       });
-    toast.success(t("orgPos.saleVoided"));
+      toast.success(t("orgPos.saleVoided"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Storno zlyhalo");
+    }
   };
 
   // Cashier login gate — must happen before everything else.
-  if (user && (!activeCashier || !activeSession)) {
+  if (user && !activeSession) {
     return (
       <div className="space-y-6">
         <h1 className="font-display text-4xl font-bold tracking-tight">{t("orgPos.titleEkasa")}</h1>
-        <CashierLoginGate
-          organizerId={user.id}
-          onAuthed={(c, s) => {
-            setActiveCashier(c);
-            setActiveSession(s);
-          }}
-        />
+        <CashierLoginGate organizerId={user.id} onAuthed={(_c, s) => activate(s.id)} />
       </div>
     );
   }
 
-  const logoutCashier = () => {
+  const logoutCashier = async () => {
     if (!activeSession) return;
     if (!confirm(t("orgPos.logoutConfirm"))) return;
-    closeCashierSession(activeSession.id);
+    try {
+      await closeSession.mutateAsync({ session_id: activeSession.id });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Smenu sa nepodarilo uzavrieť");
+      return;
+    }
     setActiveSessionId(null);
-    setActiveCashier(null);
-    setActiveSession(null);
+    activate(null);
     setCart([]);
     setEventId("");
     toast.success(t("orgPos.cashierLoggedOut"));
@@ -354,29 +322,7 @@ function PosPage() {
           <Button
             size="lg"
             disabled={!eventId}
-            onClick={() => {
-              if (user && eventId) {
-                const ev = events.find((e) => e.id === eventId);
-                addSession({
-                  id: uid(),
-                  organizer_id: user.id,
-                  cashier_id: user.id,
-                  cashier_name: user.full_name || user.email,
-                  event_id: eventId,
-                  event_title: ev?.title || "",
-                  opened_at: new Date().toISOString(),
-                  status: "open",
-                });
-                logAudit({
-                  user_id: user.id,
-                  user_name: user.full_name || user.email,
-                  action: "pos.session_open",
-                  entity: "pos_sessions",
-                  entity_id: eventId,
-                });
-                toast.success(t("orgPos.posOpened"));
-              }
-            }}
+            onClick={() => toast.success(t("orgPos.posOpened"))}
             className="w-full mt-5 h-14 text-base bg-gradient-flame text-primary-foreground shadow-glow"
           >
             <ShoppingCart className="size-5 mr-2" /> {t("orgPos.openPosButton")}
@@ -497,6 +443,34 @@ function PosPage() {
                     </div>
                   </button>
                 ))}
+              </div>
+            )}
+            {sellableDates.length > 1 && (
+              <div className="mt-4">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                  Termín
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {sellableDates.map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => {
+                        setDateId(d.id);
+                        setCart([]);
+                      }}
+                      className={`px-3 py-2 rounded-lg text-sm border transition ${
+                        activeDate?.id === d.id
+                          ? "bg-primary/15 border-primary text-foreground"
+                          : "bg-muted/40 border-border/50 hover:border-primary/50"
+                      }`}
+                    >
+                      {d.event_date} · {d.event_time}
+                      {d.note && (
+                        <span className="block text-[11px] text-muted-foreground">{d.note}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </Card>
@@ -724,7 +698,13 @@ function PosPage() {
           </DialogHeader>
           {lastSale &&
             (() => {
-              const saleTickets = getTickets().filter((t) => t.sale_id === lastSale.id);
+              const saleTickets = lastSale.tickets.map((tk, i) => ({
+                id: tk.id,
+                code: tk.qr_code,
+                ticket_type_name: tk.seat_label,
+                price: lastSale.items[Math.min(i, lastSale.items.length - 1)]?.unit_price ?? 0,
+                status: lastSale.status === "paid" ? "valid" : "void",
+              }));
               const ev = events.find((e) => e.id === lastSale.event_id);
               return (
                 <div className="space-y-4 text-sm">

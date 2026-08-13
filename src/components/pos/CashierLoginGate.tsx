@@ -1,36 +1,45 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Delete, LogIn, ShieldCheck, UserCircle2, Users } from "lucide-react";
+import { ArrowLeft, Delete, LogIn, Loader2, ShieldCheck, UserCircle2, Users } from "lucide-react";
 import { toast } from "sonner";
+import { verifyCashierPin } from "@/lib/pos.functions";
 import {
-  getActiveCashiersForOrganizer,
-  verifyPin,
-  openSession,
-  type Cashier,
-  type CashierSession,
-} from "@/lib/cashier-db";
+  usePosCashiers,
+  useOpenPosSession,
+  type PosCashierRecord,
+  type PosSessionRecord,
+} from "@/hooks/use-pos";
 
 type Props = {
   organizerId: string;
-  onAuthed: (cashier: Cashier, session: CashierSession) => void;
+  onAuthed: (cashier: PosCashierRecord, session: PosSessionRecord) => void;
 };
 
+/**
+ * Prihlásenie pokladníka k pokladni.
+ *
+ * BEZPEČNOSŤ: PIN overuje server (`verifyCashierPin` aj `openPosSession`).
+ * Kontrola v prehliadači by sa dala obísť konzolou a hash pokladníka by sme
+ * museli poslať klientovi — ten sa tak k nemu vôbec nedostane.
+ */
 export function CashierLoginGate({ organizerId, onAuthed }: Props) {
-  const [cashiers, setCashiers] = useState<Cashier[]>([]);
-  const [selected, setSelected] = useState<Cashier | null>(null);
+  const { data: cashiers = [], isLoading } = usePosCashiers(organizerId);
+  const verifyPin = useServerFn(verifyCashierPin);
+  const openSession = useOpenPosSession();
+
+  const [selected, setSelected] = useState<PosCashierRecord | null>(null);
   const [pin, setPin] = useState("");
   const [openingCash, setOpeningCash] = useState<string>("0");
   const [step, setStep] = useState<"pick" | "pin" | "cash">("pick");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    setCashiers(getActiveCashiersForOrganizer(organizerId));
-  }, [organizerId]);
+  const active = useMemo(() => cashiers.filter((c) => c.status === "active"), [cashiers]);
 
-  const initials = (c: Cashier) =>
+  const initials = (c: PosCashierRecord) =>
     (c.first_name?.[0] ?? "") + (c.last_name?.[0] ?? "") || c.display_name.slice(0, 2);
 
   const pinKeys = useMemo(() => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"], []);
@@ -48,13 +57,16 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
     if (value.length < 4) return toast.error("PIN musí mať aspoň 4 znaky");
     setBusy(true);
     try {
-      const ok = await verifyPin(value, selected.pin_hash);
+      const { ok } = await verifyPin({ data: { cashier_id: selected.id, pin: value } });
       if (!ok) {
         toast.error("Nesprávny PIN");
         setPin("");
         return;
       }
       setStep("cash");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Overenie PIN-u zlyhalo");
+      setPin("");
     } finally {
       setBusy(false);
     }
@@ -69,20 +81,34 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pin, step, selected]);
 
-  const finishLogin = () => {
+  const finishLogin = async () => {
     if (!selected) return;
     const cash = Number(openingCash || "0");
-    const session = openSession({
-      cashier_id: selected.id,
-      cashier_display_name: selected.display_name,
-      organizer_id: organizerId,
-      opening_cash_amount: isFinite(cash) ? cash : 0,
-    });
-    toast.success(`Vitaj, ${selected.display_name}!`);
-    onAuthed(selected, session);
+    try {
+      const session = await openSession.mutateAsync({
+        cashier_id: selected.id,
+        pin,
+        opening_cash: isFinite(cash) ? cash : 0,
+      });
+      toast.success(`Vitaj, ${selected.display_name}!`);
+      setPin("");
+      onAuthed(selected, session);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Pokladnicu sa nepodarilo otvoriť");
+      setStep("pin");
+      setPin("");
+    }
   };
 
-  if (cashiers.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (active.length === 0) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Card className="p-10 max-w-md text-center bg-card/70 border-dashed border-border/50">
@@ -113,7 +139,7 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
               </p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {cashiers.map((c) => (
+              {active.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => {
@@ -133,7 +159,7 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
                         {c.first_name} {c.last_name}
                       </div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">
-                        {c.permissions.length} oprávnení
+                        {c.open_session_id ? "otvorená smena" : `${c.permissions.length} oprávnení`}
                       </div>
                     </div>
                   </div>
@@ -193,7 +219,12 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
               disabled={busy || pin.length < 4}
               className="w-full mt-5 h-12 bg-gradient-flame text-primary-foreground shadow-glow"
             >
-              <LogIn className="size-4 mr-2" /> Prihlásiť
+              {busy ? (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              ) : (
+                <LogIn className="size-4 mr-2" />
+              )}
+              Prihlásiť
             </Button>
           </div>
         )}
@@ -218,8 +249,10 @@ export function CashierLoginGate({ organizerId, onAuthed }: Props) {
             />
             <Button
               onClick={finishLogin}
+              disabled={openSession.isPending}
               className="w-full mt-5 h-12 bg-gradient-flame text-primary-foreground shadow-glow"
             >
+              {openSession.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
               Otvoriť pokladnicu
             </Button>
             <button

@@ -171,9 +171,9 @@ const groups: Group[] = [
   {
     label: "POS / Pokladňa",
     items: [
-      { title: "Pokladne", url: "/admin/pos/cashiers", icon: Users, local: true },
-      { title: "Predaje", url: "/admin/pos/sales", icon: ShoppingCart, local: true },
-      { title: "Uzávierky", url: "/admin/pos/closings", icon: ClipboardList, local: true },
+      { title: "Pokladne", url: "/admin/pos/cashiers", icon: Users },
+      { title: "Predaje", url: "/admin/pos/sales", icon: ShoppingCart },
+      { title: "Uzávierky", url: "/admin/pos/closings", icon: ClipboardList },
       { title: "Terminály", url: "/admin/pos/terminals", icon: Scan, local: true },
       { title: "ORP / eKasa", url: "/admin/pos/fiscal", icon: Receipt, local: true },
     ],

@@ -34,16 +34,18 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 19 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 23 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
-`venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`.
+`venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
+`pos_cashiers`, `pos_sessions`, `pos_closings`, `pos_receipt_counters`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
 **2. localStorage „databáza" (demo)** — `src/lib/local-db.ts` + `pos-db.ts`, `bank-db.ts`,
 `cashier-db.ts`, `marketing-db.ts`, `wallet-db.ts`, `ticketing-db.ts`, `admin-mock.ts`.
-Zostáva na nej POS, marketing, banka, účtovné reporty, kategórie podujatí a wallet nastavenia.
+Zostáva na nej marketing, banka, účtovné reporty, kategórie podujatí, wallet nastavenia a z POS
+už len zariadenia a eKasa (`payment-terminal-adapter.ts`, `fiscal-adapter.ts` — simulácia hardvéru).
 `ticketing-db.ts` je už len košík (výber sedadiel v tomto prehliadači do kliknutia na „Zaplatiť");
 skutočná obsadenosť je v `seat_inventory`.
 
@@ -104,6 +106,30 @@ podujatia (podujatie bez termínu sa nedá kúpiť).
 
 Obsadenosť pre zákaznícku mapu vracia `getSeatAvailability({ event_date_id })` z databázy;
 localStorage v `ticketing-db.ts` už drží len košík tohto prehliadača a kľúčuje sa `event_date_id`.
+
+### Pokladňa (POS)
+
+`pos.functions.ts` + `@/hooks/use-pos` + `/organizer/pos*` a `/admin/pos/*`. **Predaj z pokladne
+vytvára tie isté `orders` / `order_items` / `tickets` ako web** — líši sa `channel = 'pos'`,
+`payment_method` (`cash` / `card` / `transfer` / `free`), `cashier_id`, `pos_session_id`
+a `receipt_number`. Vďaka tomu funguje skener, kapacita, štatistiky aj provízia bez druhej vetvy.
+Nikdy nezakladaj samostatnú „POS objednávku" mimo `orders`.
+
+- **Ceny počíta server** rovnako ako pri webovom predaji; pokladňa posiela len čo predáva. Zľava
+  ide ako percento (`discount_pct`), uloží sa do `orders.discount_amount`.
+- **PIN pokladníka** hashuje server (`HMAC-SHA256(TICKET_QR_SECRET, "<cashierId>:<pin>")`) a
+  overuje v konštantnom čase s limitom 10 pokusov / 15 min. Do prehliadača sa hash nikdy nedostane.
+- **Oprávnenia** (`pos_cashiers.permissions`) sa vynucujú na serveri — `sale`, `void`,
+  `close_register` atď. Kontrola v UI je len pohodlie.
+- **Smena** (`pos_sessions`) je na pokladníka jedna otvorená (parciálny unique index). Prehliadač
+  si pamätá len jej id (`mt_pos_session_id`); platnosť potvrdzuje server.
+- **Storno** cez `voidPosSale`: objednávka → `refunded`, vstupenky dostanú `refunded_at` (skener
+  ich odmietne) a sedadlá sa vrátia do predaja.
+- **Uzávierka** (`pos_closings`) je zmrazený doklad — neskorší predaj ani storno ňou nehýbe.
+- Čísla dokladov dáva `next_receipt_number(organizer_id)` (rad na organizátora a rok, atomicky).
+- **eKasa a platobný terminál sú stále simulácia** (`fiscal-adapter.ts`,
+  `payment-terminal-adapter.ts`). Číslo fiškálneho dokladu sa uloží do `orders.fiscal_receipt_id`;
+  na reálnu prevádzku treba certifikát a poskytovateľa.
 
 ### Vyúčtovanie organizátorom
 `settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)

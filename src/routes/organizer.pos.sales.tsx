@@ -2,17 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
-import {
-  getSales,
-  getFiscalReceipts,
-  getTickets,
-  POS_EVENT,
-  voidSale,
-  logAudit,
-  type PosSale,
-  type FiscalReceipt,
-  type PosTicket,
-} from "@/lib/pos-db";
+import { getFiscalReceipts, type FiscalReceipt } from "@/lib/pos-db";
+import { usePosSales, useVoidPosSale, useActivePosSession } from "@/hooks/use-pos";
+import type { PosSaleRecord } from "@/lib/pos.functions";
 import { useEvents } from "@/hooks/use-events";
 import { orpAdapter } from "@/lib/fiscal-adapter";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
@@ -39,28 +31,17 @@ export const Route = createFileRoute("/organizer/pos/sales")({
 function SalesPage() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const [sales, setSales] = useState<PosSale[]>([]);
-  const [receipts, setReceipts] = useState<FiscalReceipt[]>([]);
-  const [tickets, setTickets] = useState<PosTicket[]>([]);
+  const { data: sales = [] } = usePosSales({ limit: 500 });
   const { data: events = [] } = useEvents({ scope: "mine" });
-  const [detail, setDetail] = useState<PosSale | null>(null);
+  const { session } = useActivePosSession();
+  const voidSaleMutation = useVoidPosSale();
+  const [receipts, setReceipts] = useState<FiscalReceipt[]>([]);
+  const [detail, setDetail] = useState<PosSaleRecord | null>(null);
   const [q, setQ] = useState("");
-  const [tick, setTick] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
-    setSales(getSales().filter((s) => user.role === "admin" || s.organizer_id === user.id));
-    setReceipts(getFiscalReceipts());
-    setTickets(getTickets());
-  }, [user, tick]);
-
+  // Fiškálne doklady zatiaľ žijú v adaptéri (eKasa čaká na certifikát).
+  useEffect(() => setReceipts(getFiscalReceipts()), []);
   const receiptById = (id?: string) => (id ? receipts.find((r) => r.id === id) : undefined);
-
-  useEffect(() => {
-    const h = () => setTick((t) => t + 1);
-    window.addEventListener(POS_EVENT, h);
-    return () => window.removeEventListener(POS_EVENT, h);
-  }, []);
 
   const filtered = sales.filter((s) => {
     if (!q) return true;
@@ -68,7 +49,7 @@ function SalesPage() {
     return (
       s.receipt_number.toLowerCase().includes(k) ||
       s.event_title.toLowerCase().includes(k) ||
-      s.cashier_name.toLowerCase().includes(k)
+      (s.cashier_name || "").toLowerCase().includes(k)
     );
   });
 
@@ -90,7 +71,7 @@ function SalesPage() {
         s.payment_method,
         s.total.toFixed(2),
         s.status,
-        s.cashier_name,
+        s.cashier_name || "",
       ]),
     ];
     const csv = rows
@@ -103,21 +84,20 @@ function SalesPage() {
   };
 
   const onVoid = async (id: string) => {
+    if (!session) {
+      toast.error("Storno urobí prihlásený pokladník — otvor smenu v pokladni.");
+      return;
+    }
     const reason = prompt(t("orgPosSales.voidReasonPrompt")) || "";
     if (!reason || !user) return;
     const sale = sales.find((s) => s.id === id);
-    voidSale(id, reason);
-    if (sale?.fiscal_receipt_id) await orpAdapter.cancelReceipt(sale.fiscal_receipt_id);
-    if (sale?.terminal_tx_id) await paymentTerminal.cancelPayment(sale.terminal_tx_id);
-    logAudit({
-      user_id: user.id,
-      user_name: user.full_name || user.email,
-      action: "pos.void",
-      entity: "pos_sales",
-      entity_id: id,
-      meta: { reason },
-    });
-    toast.success(t("orgPosSales.voidSuccess"));
+    try {
+      await voidSaleMutation.mutateAsync({ order_id: id, session_id: session.id, reason });
+      if (sale?.fiscal_receipt_id) await orpAdapter.cancelReceipt(sale.fiscal_receipt_id);
+      toast.success(t("orgPosSales.voidSuccess"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Storno zlyhalo");
+    }
   };
 
   return (
@@ -250,7 +230,13 @@ function SalesPage() {
           </DialogHeader>
           {detail &&
             (() => {
-              const saleTickets = tickets.filter((t) => t.sale_id === detail.id);
+              const saleTickets = detail.tickets.map((tk, i) => ({
+                id: tk.id,
+                code: tk.qr_code,
+                ticket_type_name: tk.seat_label,
+                price: detail.items[Math.min(i, detail.items.length - 1)]?.unit_price ?? 0,
+                status: detail.status === "paid" ? "valid" : "refunded",
+              }));
               const ev = events.find((e) => e.id === detail.event_id);
               return (
                 <div className="space-y-4 text-sm">

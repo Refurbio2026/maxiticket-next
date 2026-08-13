@@ -73,7 +73,10 @@ export const listOrganizerAccounts = createServerFn({ method: "POST" })
           .in("id", ids),
         supabaseAdmin.from("events").select("id, organizer_id").in("organizer_id", ids),
         supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-        supabaseAdmin.from("settlements").select("organizer_id, net_amount, status").in("organizer_id", ids),
+        supabaseAdmin
+          .from("settlements")
+          .select("organizer_id, net_amount, status")
+          .in("organizer_id", ids),
       ]);
 
     const emails = new Map((authList?.users || []).map((u) => [u.id, u.email || ""]));
@@ -177,7 +180,10 @@ export const updatePlatformSettings = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     const { error } = await supabaseAdmin
       .from("platform_settings")
-      .update({ default_commission_rate: data.default_commission_rate, updated_at: new Date().toISOString() })
+      .update({
+        default_commission_rate: data.default_commission_rate,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", true);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -341,7 +347,9 @@ export const previewSettlement = createServerFn({ method: "POST" })
 
 export const createSettlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => PeriodInput.extend({ note: z.string().max(2000).optional() }).parse(input))
+  .inputValidator((input) =>
+    PeriodInput.extend({ note: z.string().max(2000).optional() }).parse(input),
+  )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     await assertAdmin(context.userId);
     const p = await computePreview(data);

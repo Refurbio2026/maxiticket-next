@@ -1,11 +1,32 @@
-import type { PosTicket, PosSale } from "./pos-db";
-import type { EventItem } from "./local-db";
+// Tlač vstupeniek z pokladne. Typy sú zámerne minimálne (štruktúrne), aby sem
+// šlo podať aj vstupenku z databázy aj starý localStorage záznam.
+export type PrintableTicket = {
+  id: string;
+  code: string;
+  ticket_type_name: string;
+  price: number;
+  status: string;
+};
+export type PrintableSale = { id: string; receipt_number: string; event_title: string };
+export type PrintableEvent = {
+  title?: string;
+  event_date?: string;
+  event_time?: string;
+  venue?: string;
+  city?: string;
+};
 
 function qrUrl(code: string) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(code)}`;
 }
 
-function ticketHtml(t: PosTicket, sale: PosSale, ev?: EventItem, index?: number, total?: number) {
+function ticketHtml(
+  t: PrintableTicket,
+  sale: PrintableSale,
+  ev?: PrintableEvent,
+  index?: number,
+  total?: number,
+) {
   const date = ev?.event_date || "";
   const time = ev?.event_time || "";
   const venue = ev ? `${ev.venue || ""}${ev.city ? ", " + ev.city : ""}` : "";
@@ -42,7 +63,7 @@ function escapeHtml(s: string) {
   );
 }
 
-export function printTickets(tickets: PosTicket[], sale: PosSale, ev?: EventItem) {
+export function printTickets(tickets: PrintableTicket[], sale: PrintableSale, ev?: PrintableEvent) {
   if (tickets.length === 0) return;
   const w = window.open("", "_blank", "width=820,height=900");
   if (!w) return;

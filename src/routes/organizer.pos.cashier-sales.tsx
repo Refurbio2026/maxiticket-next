@@ -2,13 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
-import {
-  getCashiersForOrganizer,
-  getSessions,
-  type Cashier,
-  type CashierSession,
-} from "@/lib/cashier-db";
-import { getSales, POS_EVENT, type PosSale } from "@/lib/pos-db";
+import { usePosCashiers, usePosSales, type PosCashierRecord } from "@/hooks/use-pos";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { listPosSessions } from "@/lib/pos.functions";
+
+type Cashier = PosCashierRecord;
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,25 +23,16 @@ export const Route = createFileRoute("/organizer/pos/cashier-sales")({
 function CashierSalesPage() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const [cashiers, setCashiers] = useState<Cashier[]>([]);
-  const [sales, setSales] = useState<PosSale[]>([]);
-  const [sessions, setSessions] = useState<CashierSession[]>([]);
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [detail, setDetail] = useState<Cashier | null>(null);
-  const [tick, setTick] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
-    setCashiers(getCashiersForOrganizer(user.id));
-    setSales(getSales().filter((s) => s.organizer_id === user.id));
-    setSessions(getSessions().filter((s) => s.organizer_id === user.id));
-  }, [user, tick]);
-
-  useEffect(() => {
-    const h = () => setTick((t) => t + 1);
-    window.addEventListener(POS_EVENT, h);
-    return () => window.removeEventListener(POS_EVENT, h);
-  }, []);
+  const { data: cashiers = [] } = usePosCashiers();
+  const { data: sales = [] } = usePosSales({ limit: 500 });
+  const fetchSessions = useServerFn(listPosSessions);
+  const { data: sessions = [] } = useQuery({
+    queryKey: ["pos", "sessions", "all"],
+    queryFn: () => fetchSessions({ data: { status: "all", limit: 200 } }),
+  });
 
   const rows = useMemo(() => {
     return cashiers
@@ -56,7 +46,7 @@ function CashierSalesPage() {
           .filter((s) => s.payment_method === "card")
           .reduce((a, b) => a + b.total, 0);
         const total = paid.reduce((a, b) => a + b.total, 0);
-        const voids = own.filter((s) => s.status === "void").length;
+        const voids = own.filter((s) => s.status !== "paid").length;
         return { cashier: c, count: paid.length, cash, card, total, voids };
       })
       .filter((r) => r.count > 0 || r.voids > 0);
@@ -214,7 +204,7 @@ function CashierSalesPage() {
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {t("orgPosCashierSales.openingCash", {
-                          amount: s.opening_cash_amount.toFixed(2),
+                          amount: s.opening_cash.toFixed(2),
                         })}
                       </span>
                     </div>

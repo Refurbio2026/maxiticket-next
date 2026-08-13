@@ -106,8 +106,7 @@ function Page() {
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Miesta konania</h1>
           <p className="text-muted-foreground mt-1">
-            Haly, štadióny a kultúrne miesta. Podujatie si z miesta vezme adresu aj predvolenú
-            sálu.
+            Haly, štadióny a kultúrne miesta. Podujatie si z miesta vezme adresu aj predvolenú sálu.
           </p>
         </div>
         <Button

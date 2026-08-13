@@ -59,7 +59,12 @@ async function loadCounts(dateIds: string[]) {
   if (dateIds.length === 0) return { sold, reserved };
 
   const [{ data: tickets }, { data: seats }] = await Promise.all([
-    supabaseAdmin.from("tickets").select("event_date_id").in("event_date_id", dateIds),
+    // Refundovaná vstupenka nie je predaná — držiteľa už pri dverách nepustia.
+    supabaseAdmin
+      .from("tickets")
+      .select("event_date_id")
+      .in("event_date_id", dateIds)
+      .is("refunded_at", null),
     supabaseAdmin
       .from("seat_inventory")
       .select("event_date_id, status, reserved_until")
@@ -261,7 +266,8 @@ export const upsertEventDate = createServerFn({ method: "POST" })
       .insert(row)
       .select("id")
       .single();
-    if (error || !created) throw new Error(friendly(error?.message || "Termín sa nepodarilo uložiť"));
+    if (error || !created)
+      throw new Error(friendly(error?.message || "Termín sa nepodarilo uložiť"));
     return { id: created.id };
   });
 

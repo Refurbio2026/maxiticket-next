@@ -3,15 +3,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
-  getSales,
-  computeClosing,
-  addClosing,
-  getAuditLogs,
-  POS_EVENT,
-  type PosSale,
-} from "@/lib/pos-db";
-import { getActiveSession, closeSession, addClosure, computeSessionTotals } from "@/lib/cashier-db";
-import { uid } from "@/lib/local-db";
+  useActivePosSession,
+  useCreatePosClosing,
+  usePosClosingPreview,
+  usePosSales,
+  setActiveSessionId,
+} from "@/hooks/use-pos";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,22 +38,24 @@ function ClosingPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [sales, setSales] = useState<PosSale[]>([]);
-  const [tick, setTick] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
-    setSales(getSales().filter((s) => s.organizer_id === user.id && s.created_at.startsWith(date)));
-  }, [user, date, tick]);
-
-  useEffect(() => {
-    const h = () => setTick((t) => t + 1);
-    window.addEventListener(POS_EVENT, h);
-    return () => window.removeEventListener(POS_EVENT, h);
-  }, []);
+  const from = `${date}T00:00:00.000Z`;
+  const to = `${date}T23:59:59.999Z`;
+  const { data: sales = [] } = usePosSales({ from, to, limit: 500 });
+  const { data: preview } = usePosClosingPreview({ from, to });
+  const { session: activeSession, activate } = useActivePosSession();
+  const closeMutation = useCreatePosClosing();
 
   if (!user) return null;
-  const stats = computeClosing(user.id, date);
+  const stats = {
+    cash_total: preview?.cash_total ?? 0,
+    card_total: preview?.card_total ?? 0,
+    transfer_total: preview?.transfer_total ?? 0,
+    free_total: preview?.free_total ?? 0,
+    voided_total: preview?.voided_total ?? 0,
+    receipts_count: preview?.orders_count ?? 0,
+    tickets_count: preview?.tickets_count ?? 0,
+  };
   const total = stats.cash_total + stats.card_total + stats.transfer_total + stats.free_total;
 
   const exportCsv = () => {
@@ -77,7 +76,7 @@ function ClosingPage() {
         s.payment_method,
         s.total.toFixed(2),
         s.status,
-        s.cashier_name,
+        s.cashier_name || "",
       ]),
     ];
     const csv = rows
@@ -92,60 +91,47 @@ function ClosingPage() {
 
   const exportPdf = () => window.print();
 
-  const closeDay = () => {
+  const closeDay = async () => {
     if (!confirm(t("orgPosClosing.confirmCloseDay"))) return;
-    addClosing({
-      id: uid(),
-      organizer_id: user.id,
-      date,
-      created_at: new Date().toISOString(),
-      ...stats,
-    });
-    toast.success(t("orgPosClosing.dayClosed"));
+    try {
+      // Uzávierka sa v databáze zmrazí — neskorší predaj ju už neprepíše.
+      await closeMutation.mutateAsync({ from, to, close_session: false });
+      toast.success(t("orgPosClosing.dayClosed"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Uzávierka zlyhala");
+    }
   };
 
-  const closeShift = () => {
-    const active = getActiveSession();
-    if (!active) {
+  const closeShift = async () => {
+    if (!activeSession) {
       toast.info(t("orgPosClosing.noActiveShift"));
       return;
     }
     const cashStr = prompt(
-      t("orgPosClosing.countCashPrompt", { cashier: active.cashier_display_name }),
+      t("orgPosClosing.countCashPrompt", { cashier: activeSession.cashier_name }),
       "0",
     );
     if (cashStr === null) return;
     const closingCash = Number(cashStr) || 0;
-    const totals = computeSessionTotals(active.id);
-    const expected = active.opening_cash_amount + totals.total_cash_sales;
-    addClosure({
-      id: uid(),
-      cashier_id: active.cashier_id,
-      cashier_display_name: active.cashier_display_name,
-      cashier_session_id: active.id,
-      organizer_id: active.organizer_id,
-      closing_cash_amount: closingCash,
-      expected_cash_amount: expected,
-      cash_difference: closingCash - expected,
-      total_card_sales: totals.total_card_sales,
-      total_cash_sales: totals.total_cash_sales,
-      total_sales: totals.total_sales,
-      order_count: totals.order_count,
-      created_at: new Date().toISOString(),
-    });
-    closeSession(active.id, closingCash);
-    const diff = closingCash - expected;
-    const diffStr = `${diff > 0 ? "+" : ""}€${diff.toFixed(2)}`;
-    toast.success(
-      diff === 0
-        ? t("orgPosClosing.shiftClosedOk")
-        : t("orgPosClosing.shiftClosedDiff", { diff: diffStr }),
-    );
+    try {
+      const result = await closeMutation.mutateAsync({
+        session_id: activeSession.id,
+        counted_cash: closingCash,
+        close_session: true,
+      });
+      setActiveSessionId(null);
+      activate(null);
+      const diff = Math.round((closingCash - result.expected_cash) * 100) / 100;
+      const diffStr = `${diff > 0 ? "+" : ""}€${diff.toFixed(2)}`;
+      toast.success(
+        diff === 0
+          ? t("orgPosClosing.shiftClosedOk")
+          : t("orgPosClosing.shiftClosedDiff", { diff: diffStr }),
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Uzávierku smeny sa nepodarilo uložiť");
+    }
   };
-
-  const audit = getAuditLogs()
-    .filter((a) => a.created_at.startsWith(date))
-    .slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -285,27 +271,29 @@ function ClosingPage() {
 
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-          <Receipt className="size-3.5" /> {t("orgPosClosing.auditLog")}
+          <Receipt className="size-3.5" /> Hotovosť v zásuvke
         </div>
-        {audit.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("orgPosClosing.noAudit")}</p>
-        ) : (
-          <div className="space-y-2">
-            {audit.map((a) => (
-              <div key={a.id} className="text-xs flex gap-3 items-start">
-                <span className="text-muted-foreground font-mono">
-                  {new Date(a.created_at).toLocaleTimeString("sk-SK")}
-                </span>
-                <span className="font-medium">{a.user_name}</span>
-                <span className="text-primary">{a.action}</span>
-                <span className="text-muted-foreground truncate">{JSON.stringify(a.meta)}</span>
-              </div>
-            ))}
+        {activeSession ? (
+          <div className="grid sm:grid-cols-3 gap-4 text-sm">
+            <div>
+              <div className="text-xs text-muted-foreground">Pokladník</div>
+              <div className="font-medium">{activeSession.cashier_name}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Počiatočná hotovosť</div>
+              <div className="font-medium">€{activeSession.opening_cash.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Očakávaná hotovosť</div>
+              <div className="font-medium">€{(preview?.expected_cash ?? 0).toFixed(2)}</div>
+            </div>
           </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Žiadna otvorená smena — čísla vyššie sú za celý deň.
+          </p>
         )}
       </Card>
-      <Separator />
-      <p className="text-xs text-muted-foreground">{t("orgPosClosing.demoNote")}</p>
     </div>
   );
 }

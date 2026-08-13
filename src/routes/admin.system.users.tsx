@@ -79,7 +79,8 @@ function Page() {
   });
 
   const roleMutation = useMutation({
-    mutationFn: (v: { user_id: string; role: AppRole; enabled: boolean }) => changeRole({ data: v }),
+    mutationFn: (v: { user_id: string; role: AppRole; enabled: boolean }) =>
+      changeRole({ data: v }),
     onSuccess: (_r, v) => {
       qc.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success(

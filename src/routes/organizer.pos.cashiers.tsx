@@ -3,18 +3,24 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
-  getCashiersForOrganizer,
-  upsertCashier,
-  deleteCashier,
-  setCashierStatus,
-  resetCashierPin,
-  hashPin,
-  ALL_PERMISSIONS,
-  type Cashier,
-  type CashierPermission,
-} from "@/lib/cashier-db";
-import { getSales, POS_EVENT, type PosSale } from "@/lib/pos-db";
-import { uid } from "@/lib/local-db";
+  usePosCashiers,
+  useUpsertCashier,
+  useDeleteCashier,
+  usePosSales,
+  type PosCashierRecord,
+} from "@/hooks/use-pos";
+import type { CashierPermission } from "@/lib/pos.functions";
+
+type Cashier = PosCashierRecord;
+
+const ALL_PERMISSIONS: { key: CashierPermission; label: string }[] = [
+  { key: "sale", label: "Predaj vstupeniek" },
+  { key: "void", label: "Storno predaja" },
+  { key: "refund", label: "Refundácia" },
+  { key: "open_register", label: "Otvorenie pokladne" },
+  { key: "close_register", label: "Uzávierka pokladne" },
+  { key: "view_sales", label: "Zobrazenie tržieb" },
+];
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,27 +65,16 @@ const EMPTY_FORM: FormState = {
 function CashiersPage() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const [list, setList] = useState<Cashier[]>([]);
-  const [sales, setSales] = useState<PosSale[]>([]);
-  const [tick, setTick] = useState(0);
+  const { data: list = [] } = usePosCashiers();
+  const { data: sales = [] } = usePosSales({ limit: 200 });
+  const saveCashier = useUpsertCashier();
+  const removeCashier = useDeleteCashier();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Cashier | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [resetFor, setResetFor] = useState<Cashier | null>(null);
   const [newPin, setNewPin] = useState("");
   const [historyFor, setHistoryFor] = useState<Cashier | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    setList(getCashiersForOrganizer(user.id));
-    setSales(getSales().filter((s) => s.organizer_id === user.id));
-  }, [user, tick]);
-
-  useEffect(() => {
-    const h = () => setTick((t) => t + 1);
-    window.addEventListener(POS_EVENT, h);
-    return () => window.removeEventListener(POS_EVENT, h);
-  }, []);
 
   const startCreate = () => {
     setEditing(null);
@@ -108,62 +103,75 @@ function CashiersPage() {
     if (editing && form.pin && form.pin.length < 4)
       return toast.error(t("orgPosCashiers.errNewPinMin4"));
 
-    const now = new Date().toISOString();
-    if (editing) {
-      const next: Cashier = {
-        ...editing,
+    try {
+      // PIN hashuje server — do prehliadača sa nikdy nedostane hash pokladníka.
+      await saveCashier.mutateAsync({
+        id: editing?.id,
         first_name: form.first_name,
         last_name: form.last_name,
         display_name: form.display_name,
+        pin: form.pin || undefined,
         status: form.status,
         permissions: form.permissions,
-        updated_at: now,
-      };
-      if (form.pin) next.pin_hash = await hashPin(form.pin);
-      upsertCashier(next);
-      toast.success(t("orgPosCashiers.updated"));
-    } else {
-      const pin_hash = await hashPin(form.pin);
-      upsertCashier({
-        id: uid(),
-        organizer_id: user.id,
-        first_name: form.first_name,
-        last_name: form.last_name,
-        display_name: form.display_name,
-        pin_hash,
-        status: form.status,
-        permissions: form.permissions,
-        created_at: now,
-        updated_at: now,
       });
-      toast.success(t("orgPosCashiers.created"));
+      toast.success(editing ? t("orgPosCashiers.updated") : t("orgPosCashiers.created"));
+      setOpen(false);
+      setEditing(null);
+      setForm(EMPTY_FORM);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Uloženie zlyhalo");
     }
-    setOpen(false);
-    setEditing(null);
-    setForm(EMPTY_FORM);
   };
 
-  const remove = (c: Cashier) => {
+  const remove = async (c: Cashier) => {
     if (!confirm(t("orgPosCashiers.confirmDelete", { name: c.display_name }))) return;
-    deleteCashier(c.id);
-    toast.success(t("orgPosCashiers.deleted"));
+    try {
+      const res = await removeCashier.mutateAsync(c.id);
+      // Pokladníka s históriou nemažeme — doklad musí vedieť, kto ho vystavil.
+      toast.success(res.deactivated ? "Pokladník deaktivovaný" : t("orgPosCashiers.deleted"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Zmazanie zlyhalo");
+    }
   };
 
-  const toggleStatus = (c: Cashier) => {
+  const toggleStatus = async (c: Cashier) => {
     const next: "active" | "inactive" = c.status === "active" ? "inactive" : "active";
-    setCashierStatus(c.id, next);
-    toast.success(
-      next === "active" ? t("orgPosCashiers.activated") : t("orgPosCashiers.deactivated"),
-    );
+    try {
+      await saveCashier.mutateAsync({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        display_name: c.display_name,
+        status: next,
+        permissions: c.permissions,
+      });
+      toast.success(
+        next === "active" ? t("orgPosCashiers.activated") : t("orgPosCashiers.deactivated"),
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Zmena stavu zlyhala");
+    }
   };
 
   const submitReset = async () => {
     if (!resetFor) return;
     if (newPin.length < 4) return toast.error(t("orgPosCashiers.errPinMin4"));
-    await resetCashierPin(resetFor.id, newPin);
-    toast.success(t("orgPosCashiers.pinReset"));
-    setResetFor(null);
-    setNewPin("");
+    try {
+      await saveCashier.mutateAsync({
+        id: resetFor.id,
+        first_name: resetFor.first_name,
+        last_name: resetFor.last_name,
+        display_name: resetFor.display_name,
+        pin: newPin,
+        status: resetFor.status,
+        permissions: resetFor.permissions,
+      });
+      toast.success(t("orgPosCashiers.pinReset"));
+      setResetFor(null);
+      setNewPin("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Zmena PIN-u zlyhala");
+    }
   };
 
   const historySales = useMemo(
@@ -233,7 +241,7 @@ function CashiersPage() {
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {t("orgPosCashiers.updatedAt", {
-                            date: new Date(c.updated_at).toLocaleDateString("sk-SK"),
+                            date: new Date(c.created_at).toLocaleDateString("sk-SK"),
                           })}
                         </div>
                       </td>
