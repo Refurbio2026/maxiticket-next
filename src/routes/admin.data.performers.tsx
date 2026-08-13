@@ -132,12 +132,16 @@ function Page() {
     event_ids: p.events.map((e) => e.id),
   });
 
+  // Funkčný zápis stavu je tu nutnosť, nie štýl: dve zaškrtnutia v tom istom
+  // tiku by pri kopírovaní z premennej `editing` navzájom prepísali výber.
   const toggleEvent = (id: string) => {
-    if (!editing) return;
-    const has = editing.event_ids.includes(id);
-    setEditing({
-      ...editing,
-      event_ids: has ? editing.event_ids.filter((x) => x !== id) : [...editing.event_ids, id],
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const has = prev.event_ids.includes(id);
+      return {
+        ...prev,
+        event_ids: has ? prev.event_ids.filter((x) => x !== id) : [...prev.event_ids, id],
+      };
     });
   };
 

@@ -12,6 +12,7 @@ import { useLayouts } from "@/hooks/use-layouts";
 import { listVenues } from "@/lib/venues.functions";
 import { listOrganizers } from "@/lib/events.functions";
 import { listEventCategories } from "@/lib/event-categories.functions";
+import { listEventGroups } from "@/lib/event-groups.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ type FormState = {
   id?: string;
   title: string;
   category: string;
+  group_id: string;
   /** Za koho admin podujatie zakladá; prázdne = za seba. */
   organizer_id: string;
   event_date: string;
@@ -81,6 +83,7 @@ const OWN_ACCOUNT = "__me__";
 const blankForm = (): FormState => ({
   title: "",
   category: "Koncert",
+  group_id: "",
   organizer_id: OWN_ACCOUNT,
   event_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
   event_time: "19:00",
@@ -106,6 +109,7 @@ function formFromEvent(e: EventRecord): FormState {
     id: e.id,
     title: e.title,
     category: e.category,
+    group_id: e.group_id ?? "",
     organizer_id: e.organizer_id,
     event_date: e.event_date,
     event_time: (e.event_time || "").slice(0, 5),
@@ -146,6 +150,13 @@ function Page() {
   });
   // Kategórie sú číselník v databáze — spravujú sa v Dáta → Kategórie podujatí.
   const fetchCategories = useServerFn(listEventCategories);
+  // Skupiny (série) sú číselník v databáze — spravujú sa v Dáta → Skupiny podujatí.
+  const fetchGroups = useServerFn(listEventGroups);
+  const { data: groups = [] } = useQuery({
+    queryKey: ["event-groups", "active"],
+    queryFn: () => fetchGroups({ data: { only_active: true } }),
+  });
+
   const { data: categories = [] } = useQuery({
     queryKey: ["event-categories", "active"],
     queryFn: () => fetchCategories({ data: { only_active: true } }),
@@ -237,6 +248,7 @@ function Page() {
         organizer_id: form.organizer_id === OWN_ACCOUNT ? undefined : form.organizer_id,
         title: form.title.trim(),
         category: form.category,
+        group_id: form.group_id || null,
         event_date: form.event_date,
         event_time: form.event_time,
         venue_id: form.venue_id || null,
@@ -276,6 +288,7 @@ function Page() {
       await upsert.mutateAsync({
         title: "Test koncert s mapou sedenia",
         category: "Koncert",
+        group_id: "",
         event_date: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
         event_time: "20:00",
         venue: layout.name,
@@ -457,6 +470,24 @@ function Page() {
                   {form.category && !categories.some((c) => c.name === form.category) && (
                     <SelectItem value={form.category}>{form.category}</SelectItem>
                   )}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Séria / skupina">
+              <Select
+                value={form.group_id || "none"}
+                onValueChange={(v) => setForm({ ...form, group_id: v === "none" ? "" : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— bez skupiny —</SelectItem>
+                  {groups.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>

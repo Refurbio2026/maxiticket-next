@@ -9,7 +9,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // `scanner_token` je zdieľané tajomstvo, ktoré autorizuje skenovanie vstupeniek —
 // nesmie sa dostať do odpovede pre verejnosť. Nikdy tu nepoužívaj select("*").
 const EVENT_COLUMNS =
-  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_id, venue_layout_id, base_price, total_tickets, vip_price, created_at, updated_at";
+  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_id, venue_layout_id, group_id, base_price, total_tickets, vip_price, created_at, updated_at";
 
 export type EventTicketType = {
   id: string;
@@ -48,6 +48,9 @@ export type EventRecord = {
   /** Termíny; `event_date` vyššie je len ten najbližší z nich. */
   dates: EventDateSummary[];
   sale_type?: "standing" | "seating" | "seating_map";
+  /** Séria / festivalový ročník, do ktorého podujatie patrí. */
+  group_id?: string;
+  group_name?: string;
   venue_id?: string;
   venue_layout_id?: string;
   base_price?: number;
@@ -62,6 +65,7 @@ function mapEvent(
   tickets: EventTicketType[],
   dates: EventDateSummary[],
   organizerName?: string,
+  groupName?: string,
 ): EventRecord {
   const opt = <T>(v: unknown): T | undefined =>
     v === null || v === undefined ? undefined : (v as T);
@@ -85,10 +89,20 @@ function mapEvent(
     sale_type: opt<EventRecord["sale_type"]>(row.sale_type),
     venue_id: opt<string>(row.venue_id),
     venue_layout_id: opt<string>(row.venue_layout_id),
+    group_id: opt<string>(row.group_id),
+    group_name: groupName,
     base_price: row.base_price === null ? undefined : Number(row.base_price),
     total_tickets: opt<number>(row.total_tickets),
     vip_price: row.vip_price === null ? undefined : Number(row.vip_price),
   };
+}
+
+/** Názvy skupín pre podujatia — katalóg podľa nich filtruje. */
+async function loadGroupNames(groupIds: (string | null | undefined)[]) {
+  const ids = [...new Set(groupIds.filter(Boolean))] as string[];
+  if (ids.length === 0) return new Map<string, string>();
+  const { data } = await supabaseAdmin.from("event_groups").select("id, name").in("id", ids);
+  return new Map((data || []).map((g) => [g.id, g.name]));
 }
 
 /** Načíta typy lístkov pre zadané podujatia naraz (bez N+1 dotazov). */
@@ -175,10 +189,11 @@ export const listEvents = createServerFn({ method: "POST" })
 
     const list = (rows || []) as EventRow[];
     const ids = list.map((r) => r.id as string);
-    const [tickets, dates, names] = await Promise.all([
+    const [tickets, dates, names, groups] = await Promise.all([
       loadTicketTypes(ids),
       loadDates(ids),
       loadOrganizerNames(list.map((r) => r.organizer_id as string)),
+      loadGroupNames(list.map((r) => r.group_id as string | null)),
     ]);
     return list.map((r) =>
       mapEvent(
@@ -186,6 +201,7 @@ export const listEvents = createServerFn({ method: "POST" })
         tickets.get(r.id as string) || [],
         dates.get(r.id as string) || [],
         names.get(r.organizer_id as string),
+        r.group_id ? groups.get(r.group_id as string) : undefined,
       ),
     );
   });
@@ -210,16 +226,18 @@ export const getEventById = createServerFn({ method: "POST" })
       if (!allowed) return null;
     }
 
-    const [tickets, dates, names] = await Promise.all([
+    const [tickets, dates, names, groups] = await Promise.all([
       loadTicketTypes([r.id as string]),
       loadDates([r.id as string]),
       loadOrganizerNames([r.organizer_id as string]),
+      loadGroupNames([r.group_id as string | null]),
     ]);
     return mapEvent(
       r,
       tickets.get(r.id as string) || [],
       dates.get(r.id as string) || [],
       names.get(r.organizer_id as string),
+      r.group_id ? groups.get(r.group_id as string) : undefined,
     );
   });
 
@@ -248,6 +266,7 @@ const EventInput = z.object({
   sale_type: z.enum(["standing", "seating", "seating_map"]).default("standing"),
   venue_id: z.string().uuid().optional().nullable(),
   venue_layout_id: z.string().max(200).optional().nullable(),
+  group_id: z.string().uuid().optional().nullable(),
   base_price: z.number().nonnegative().optional().nullable(),
   total_tickets: z.number().int().nonnegative().optional().nullable(),
   vip_price: z.number().nonnegative().optional().nullable(),
@@ -318,6 +337,7 @@ export const upsertEvent = createServerFn({ method: "POST" })
       sale_type: data.sale_type,
       venue_id: data.venue_id ?? null,
       venue_layout_id: data.venue_layout_id ?? null,
+      group_id: data.group_id ?? null,
       base_price: data.base_price ?? null,
       total_tickets: data.total_tickets ?? null,
       vip_price: data.vip_price ?? null,

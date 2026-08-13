@@ -45,6 +45,7 @@ import {
   Mail,
   Info,
   Music,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -463,6 +464,18 @@ function EventDetail() {
                       {event.description}
                     </p>
                   </div>
+                )}
+
+                {event.group_name && (
+                  <Link
+                    to="/events"
+                    search={{ group: event.group_name }}
+                    className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-2 text-sm hover:border-primary/50 transition-colors"
+                  >
+                    <Layers className="size-4 text-primary" />
+                    Súčasť série <strong>{event.group_name}</strong>
+                    <span className="text-muted-foreground">— zobraziť celú →</span>
+                  </Link>
                 )}
 
                 {(performers.data ?? []).length > 0 && (

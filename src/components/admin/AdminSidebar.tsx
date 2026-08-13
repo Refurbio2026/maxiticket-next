@@ -166,7 +166,7 @@ const groups: Group[] = [
     label: "Dáta",
     items: [
       { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers },
-      { title: "Skupiny podujatí", url: "/admin/data/groups", icon: FolderTree, demo: true },
+      { title: "Skupiny podujatí", url: "/admin/data/groups", icon: FolderTree },
       {
         title: "Cenové kategórie",
         url: "/admin/data/price-categories",

@@ -44,6 +44,7 @@ function EventsPage() {
     q?: string;
     city?: string;
     category?: string;
+    group?: string;
     date?: string;
   };
   // Katalóg číta publikované podujatia z databázy (server ich už radí podľa dátumu).
@@ -53,6 +54,7 @@ function EventsPage() {
   const [q, setQ] = useState(search.q ?? "");
   const [city, setCity] = useState<string>(search.city || ALL);
   const [category, setCategory] = useState<string>(search.category || ALL);
+  const [group, setGroup] = useState<string>(search.group || ALL);
   const [dateFrom, setDateFrom] = useState(search.date ?? "");
   const [dateTo, setDateTo] = useState(search.date ?? "");
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
@@ -63,25 +65,30 @@ function EventsPage() {
     if (search.q !== undefined) setQ(search.q);
     if (search.city !== undefined) setCity(search.city || ALL);
     if (search.category !== undefined) setCategory(search.category || ALL);
+    if (search.group !== undefined) setGroup(search.group || ALL);
     if (search.date !== undefined) {
       setDateFrom(search.date);
       setDateTo(search.date);
     }
-  }, [search.q, search.city, search.category, search.date]);
+  }, [search.q, search.city, search.category, search.group, search.date]);
 
-  const { cities, categories, priceCeiling } = useMemo(() => {
+  const { cities, categories, groups, priceCeiling } = useMemo(() => {
     const c = new Set<string>();
     const k = new Set<string>();
+    const g = new Set<string>();
     let max = 0;
     events.forEach((e) => {
       if (e.city) c.add(e.city);
       if (e.category) k.add(e.category);
+      // Séria sa v ponuke objaví, len keď do nej niečo naozaj patrí.
+      if (e.group_name) g.add(e.group_name);
       const p = priceOf(e);
       if (p > max) max = p;
     });
     return {
       cities: Array.from(c).sort(),
       categories: Array.from(k).sort(),
+      groups: Array.from(g).sort(),
       priceCeiling: Math.max(50, Math.ceil(max / 10) * 10),
     };
   }, [events]);
@@ -92,17 +99,19 @@ function EventsPage() {
       if (qq && !`${e.title} ${e.venue} ${e.city}`.toLowerCase().includes(qq)) return false;
       if (city !== ALL && e.city !== city) return false;
       if (category !== ALL && e.category !== category) return false;
+      if (group !== ALL && e.group_name !== group) return false;
       if (dateFrom && e.event_date < dateFrom) return false;
       if (dateTo && e.event_date > dateTo) return false;
       if (maxPrice != null && priceOf(e) > maxPrice) return false;
       return true;
     });
-  }, [events, q, city, category, dateFrom, dateTo, maxPrice]);
+  }, [events, q, city, category, group, dateFrom, dateTo, maxPrice]);
 
   const reset = () => {
     setQ("");
     setCity(ALL);
     setCategory(ALL);
+    setGroup(ALL);
     setDateFrom("");
     setDateTo("");
     setMaxPrice(null);
@@ -111,6 +120,7 @@ function EventsPage() {
     (q ? 1 : 0) +
     (city !== ALL ? 1 : 0) +
     (category !== ALL ? 1 : 0) +
+    (group !== ALL ? 1 : 0) +
     (dateFrom ? 1 : 0) +
     (dateTo ? 1 : 0) +
     (maxPrice != null ? 1 : 0);
@@ -162,6 +172,24 @@ function EventsPage() {
           </SelectContent>
         </Select>
       </FilterBlock>
+
+      {groups.length > 0 && (
+        <FilterBlock label="Séria">
+          <Select value={group} onValueChange={setGroup}>
+            <SelectTrigger>
+              <SelectValue placeholder="Všetky" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Všetky série</SelectItem>
+              {groups.map((g) => (
+                <SelectItem key={g} value={g}>
+                  {g}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FilterBlock>
+      )}
 
       <FilterBlock label="Dátum od">
         <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />

@@ -63,6 +63,7 @@ export type Database = {
           event_date: string;
           event_time: string;
           id: string;
+          group_id: string | null;
           image_url: string | null;
           organizer_id: string;
           sale_type: Database["public"]["Enums"]["sale_type"];
@@ -86,6 +87,7 @@ export type Database = {
           event_date: string;
           event_time: string;
           id?: string;
+          group_id?: string | null;
           image_url?: string | null;
           organizer_id: string;
           sale_type?: Database["public"]["Enums"]["sale_type"];
@@ -109,6 +111,7 @@ export type Database = {
           event_date?: string;
           event_time?: string;
           id?: string;
+          group_id?: string | null;
           image_url?: string | null;
           organizer_id?: string;
           sale_type?: Database["public"]["Enums"]["sale_type"];
@@ -1350,6 +1353,42 @@ export type Database = {
           id?: string;
           order_id?: string;
           pinned?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      event_groups: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          id: string;
+          image_url: string | null;
+          name: string;
+          slug: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
           updated_at?: string;
         };
         Relationships: [];
