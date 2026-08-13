@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useEvents, type EventRecord } from "@/hooks/use-events";
+import { pocetPodujati } from "@/lib/plural";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
@@ -194,9 +195,7 @@ function EventsPage() {
         <div className="mb-8">
           <h1 className="font-display text-5xl font-bold tracking-tight">Podujatia</h1>
           <p className="text-muted-foreground mt-2">
-            {filtered.length}{" "}
-            {filtered.length === 1 ? "podujatie" : filtered.length < 5 ? "podujatia" : "podujatí"} ·
-            všetko na jednom mieste
+            {pocetPodujati(filtered.length)} · všetko na jednom mieste
           </p>
         </div>
 

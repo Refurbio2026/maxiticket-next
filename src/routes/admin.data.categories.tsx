@@ -9,6 +9,7 @@ import {
   type EventCategoryRecord,
 } from "@/lib/event-categories.functions";
 import { useEvents } from "@/hooks/use-events";
+import { pocetPodujati } from "@/lib/plural";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,7 +90,7 @@ function Page() {
       invalidate();
       toast.success(
         res.deactivated
-          ? `Kategóriu používa ${res.events_count} podujatí — namiesto zmazania je deaktivovaná.`
+          ? `Kategóriu používa ${pocetPodujati(res.events_count)} — namiesto zmazania je deaktivovaná.`
           : "Zmazané",
       );
     },

@@ -34,13 +34,13 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 29 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 31 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
 `venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
 `pos_cashiers`, `pos_sessions`, `pos_closings`, `pos_receipt_counters`, `coupons`,
 `coupon_redemptions`, `email_templates`, `scanner_devices`, `refund_reasons`,
-`event_categories`.
+`event_categories`, `performers`, `event_performers`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
@@ -57,7 +57,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**20 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**19 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -99,6 +99,21 @@ Kategóriu, ktorú niektoré podujatie používa, `deleteEventCategory` nezmaže
 (`active = false`), takže z ponuky zmizne, ale dá sa vrátiť. Formulár podujatia navyše doplní
 do ponuky aktuálnu hodnotu podujatia, aj keď je kategória zrušená — bez toho by uloženie ticho
 prepísalo kategóriu na inú.
+
+### Účinkujúci
+
+`performers` + `event_performers` + `performers.functions.ts` + `/admin/data/performers`.
+Väzba na podujatie je M:N — na festivale hrá viac umelcov, jeden umelec vystupuje na viacerých
+podujatiach. Zostava sa priraďuje z karty účinkujúceho (`upsertPerformer` s `event_ids` prepíše
+celú väzbu naraz), vypisuje ju verejná `/artists` aj detail podujatia.
+
+Žáner je **voľný text, nie číselník** — filtre na `/artists` sa skladajú z toho, čo je reálne
+vyplnené, a v admin formulári je k nemu len `datalist` proti preklepom. „Nadchádzajúce" sa
+počíta z `event_dates` (budúci termín v predaji + publikované podujatie), **nie** z
+`events.event_date` — ten je len odtlačok najbližšieho termínu a pri odohranom podujatí
+ukazuje do minulosti. `deletePerformer` účinkujúceho priradeného k podujatiu nezmaže, len ho
+skryje (`active = false`); `on delete cascade` by ho inak vyhodil zo zostavy podujatia, ktoré
+sa možno predalo s jeho menom na plagáte.
 
 ### Termíny podujatí
 

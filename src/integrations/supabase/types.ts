@@ -1225,6 +1225,69 @@ export type Database = {
         };
         Relationships: [];
       };
+      performers: {
+        Row: {
+          active: boolean;
+          bio: string | null;
+          city: string | null;
+          created_at: string;
+          genre: string | null;
+          id: string;
+          image_url: string | null;
+          name: string;
+          slug: string;
+          updated_at: string;
+          website: string | null;
+        };
+        Insert: {
+          active?: boolean;
+          bio?: string | null;
+          city?: string | null;
+          created_at?: string;
+          genre?: string | null;
+          id?: string;
+          image_url?: string | null;
+          name: string;
+          slug: string;
+          updated_at?: string;
+          website?: string | null;
+        };
+        Update: {
+          active?: boolean;
+          bio?: string | null;
+          city?: string | null;
+          created_at?: string;
+          genre?: string | null;
+          id?: string;
+          image_url?: string | null;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+          website?: string | null;
+        };
+        Relationships: [];
+      };
+      event_performers: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          performer_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          performer_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          performer_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
       event_dates: {
         Row: {
           created_at: string;

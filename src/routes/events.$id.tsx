@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEvent, type EventRecord } from "@/hooks/use-events";
 import { getSeatAvailability } from "@/lib/event-dates.functions";
+import { listEventPerformers } from "@/lib/performers.functions";
 import { useLayouts } from "@/hooks/use-layouts";
 import type { HallLayout } from "@/lib/layout-types";
 import {
@@ -43,6 +44,7 @@ import {
   QrCode,
   Mail,
   Info,
+  Music,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -189,6 +191,13 @@ function EventDetail() {
     enabled: !!activeDate,
     refetchInterval: 15_000,
     queryFn: () => fetchAvailability({ data: { event_date_id: activeDate!.id } }),
+  });
+
+  const fetchPerformers = useServerFn(listEventPerformers);
+  const performers = useQuery({
+    queryKey: ["event-performers", id],
+    enabled: !!id,
+    queryFn: () => fetchPerformers({ data: { event_id: id } }),
   });
 
   useEffect(() => {
@@ -453,6 +462,39 @@ function EventDetail() {
                     <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
                       {event.description}
                     </p>
+                  </div>
+                )}
+
+                {(performers.data ?? []).length > 0 && (
+                  <div>
+                    <h2 className="font-display font-semibold text-lg mb-3">Účinkujú</h2>
+                    <div className="flex flex-wrap gap-3">
+                      {(performers.data ?? []).map((p) => (
+                        <Link
+                          key={p.id}
+                          to="/artists"
+                          className="flex items-center gap-2.5 rounded-full border border-border/60 bg-card/60 pl-1.5 pr-4 py-1.5 hover:border-primary/50 transition-colors"
+                        >
+                          {p.image_url ? (
+                            <img
+                              src={p.image_url}
+                              alt=""
+                              className="size-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="size-8 rounded-full bg-muted/50 grid place-items-center">
+                              <Music className="size-3.5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="leading-tight">
+                            <div className="text-sm font-semibold">{p.name}</div>
+                            {p.genre && (
+                              <div className="text-[11px] text-muted-foreground">{p.genre}</div>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
 

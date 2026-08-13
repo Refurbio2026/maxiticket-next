@@ -198,7 +198,7 @@ const groups: Group[] = [
       { title: "Sektor / Loc1", url: "/admin/data/sectors", icon: Grid3x3, demo: true },
       { title: "Rad / Loc2", url: "/admin/data/rows", icon: Rows, demo: true },
       { title: "Strana / Side", url: "/admin/data/sides", icon: SplitSquareHorizontal, demo: true },
-      { title: "Účinkujúci", url: "/admin/data/performers", icon: Star, demo: true },
+      { title: "Účinkujúci", url: "/admin/data/performers", icon: Star },
       { title: "Obsah / stránky", url: "/admin/data/content", icon: FileCode, demo: true },
     ],
   },
