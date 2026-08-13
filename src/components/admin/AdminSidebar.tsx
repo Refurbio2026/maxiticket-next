@@ -104,12 +104,7 @@ const groups: Group[] = [
       { title: "Vyúčtovacie protokoly", url: "/admin/maxiticket/protocols", icon: FileText },
       { title: "Náklady organizátorov", url: "/admin/maxiticket/costs", icon: Wallet },
       { title: "Organizátori", url: "/admin/maxiticket/organizers", icon: Users },
-      {
-        title: "Platby organizátorom",
-        url: "/admin/maxiticket/payments",
-        icon: CreditCard,
-        demo: true,
-      },
+      { title: "Platby organizátorom", url: "/admin/maxiticket/payments", icon: CreditCard },
       {
         title: "Vstupenky organizátorov",
         url: "/admin/maxiticket/tickets",
@@ -146,7 +141,7 @@ const groups: Group[] = [
         url: "/admin/maxiticket/refund-types",
         icon: RotateCcw,
       },
-      { title: "Bilancie", url: "/admin/maxiticket/balances", icon: Scale, demo: true },
+      { title: "Bilancie", url: "/admin/maxiticket/balances", icon: Scale },
     ],
   },
   {
