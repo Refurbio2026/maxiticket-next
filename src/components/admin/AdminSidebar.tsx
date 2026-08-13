@@ -102,7 +102,7 @@ const groups: Group[] = [
         demo: true,
       },
       { title: "Vyúčtovacie protokoly", url: "/admin/maxiticket/protocols", icon: FileText },
-      { title: "Náklady organizátorov", url: "/admin/maxiticket/costs", icon: Wallet, demo: true },
+      { title: "Náklady organizátorov", url: "/admin/maxiticket/costs", icon: Wallet },
       { title: "Organizátori", url: "/admin/maxiticket/organizers", icon: Users },
       {
         title: "Platby organizátorom",

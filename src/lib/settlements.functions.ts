@@ -208,8 +208,19 @@ export type SettlementPreview = {
   gross_amount: number;
   refunded_amount: number;
   commission_amount: number;
+  /** Náklady, ktoré sa organizátorovi sťahujú z výplaty. */
+  costs_amount: number;
+  cost_lines: SettlementCostLine[];
   net_amount: number;
   lines: SettlementEventLine[];
+};
+
+export type SettlementCostLine = {
+  id: string;
+  title: string;
+  cost_date: string;
+  amount: number;
+  event_title: string | null;
 };
 
 const PeriodInput = z.object({
@@ -224,6 +235,40 @@ const PeriodInput = z.object({
  * refundácie sa odpočítavajú podľa dátumu refundácie, nie objednávky — inak by
  * protokol za minulý mesiac menil sumu spätne pri každom vrátení peňazí.
  */
+/**
+ * Nevyúčtované náklady organizátora s dátumom v období. Náklad viazaný na
+ * podujatie sa pri protokole za jedno podujatie berie len ten jeho.
+ */
+async function loadOpenCosts(input: z.infer<typeof PeriodInput>): Promise<SettlementCostLine[]> {
+  let q = supabaseAdmin
+    .from("organizer_costs")
+    .select("id, title, cost_date, amount, event_id")
+    .eq("organizer_id", input.organizer_id)
+    .is("settlement_id", null)
+    .gte("cost_date", input.period_from)
+    .lte("cost_date", input.period_to)
+    .order("cost_date", { ascending: true });
+  if (input.event_id) q = q.eq("event_id", input.event_id);
+
+  const { data: rows } = await q;
+  const costs = rows || [];
+  if (costs.length === 0) return [];
+
+  const eventIds = [...new Set(costs.map((c) => c.event_id).filter(Boolean))] as string[];
+  const { data: events } = eventIds.length
+    ? await supabaseAdmin.from("events").select("id, title").in("id", eventIds)
+    : { data: [] as { id: string; title: string }[] };
+  const titles = new Map((events || []).map((e) => [e.id, e.title]));
+
+  return costs.map((c) => ({
+    id: c.id,
+    title: c.title,
+    cost_date: c.cost_date,
+    amount: Number(c.amount || 0),
+    event_title: c.event_id ? (titles.get(c.event_id) ?? null) : null,
+  }));
+}
+
 async function computePreview(input: z.infer<typeof PeriodInput>): Promise<SettlementPreview> {
   const from = `${input.period_from}T00:00:00.000Z`;
   const to = `${input.period_to}T23:59:59.999Z`;
@@ -256,9 +301,20 @@ async function computePreview(input: z.infer<typeof PeriodInput>): Promise<Settl
     gross_amount: 0,
     refunded_amount: 0,
     commission_amount: 0,
+    costs_amount: 0,
+    cost_lines: [],
     net_amount: 0,
     lines: [],
   };
+
+  // Nevyúčtované náklady za obdobie. Ťaháme ich aj vtedy, keď organizátor
+  // v období nič nepredal — dlh za tlač vstupeniek nezmizne tým, že sa nepredalo.
+  const costLines = await loadOpenCosts(input);
+  const costsAmount = round2(costLines.reduce((s, c) => s + c.amount, 0));
+  empty.costs_amount = costsAmount;
+  empty.cost_lines = costLines;
+  empty.net_amount = round2(-costsAmount);
+
   if (eventIds.length === 0) return empty;
 
   const { data: orders } = await supabaseAdmin
@@ -332,7 +388,8 @@ async function computePreview(input: z.infer<typeof PeriodInput>): Promise<Settl
     gross_amount: round2(gross),
     refunded_amount: round2(refunded),
     commission_amount: commission,
-    net_amount: round2(base - commission),
+    // Náklady idú až po provízii — provízia sa počíta z tržby, nie zo zisku.
+    net_amount: round2(base - commission - costsAmount),
     lines: lines.sort((a, b) => b.gross - a.gross),
   };
 }
@@ -365,6 +422,7 @@ export const createSettlement = createServerFn({ method: "POST" })
         commission_rate: p.commission_rate,
         commission_amount: p.commission_amount,
         refunded_amount: p.refunded_amount,
+        costs_amount: p.costs_amount,
         net_amount: p.net_amount,
         note: data.note || null,
         created_by: context.userId,
@@ -372,6 +430,17 @@ export const createSettlement = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error || !created) throw new Error(error?.message || "Protokol sa nepodarilo vytvoriť");
+
+    // Náklady označíme za vyúčtované, inak by sa odpočítali aj v ďalšom protokole.
+    if (p.cost_lines.length > 0) {
+      await supabaseAdmin
+        .from("organizer_costs")
+        .update({ settlement_id: created.id })
+        .in(
+          "id",
+          p.cost_lines.map((c) => c.id),
+        );
+    }
     return { id: created.id };
   });
 
@@ -387,6 +456,7 @@ export type SettlementRow = {
   refunded_amount: number;
   commission_rate: number;
   commission_amount: number;
+  costs_amount: number;
   net_amount: number;
   status: "draft" | "approved" | "paid";
   paid_at: string | null;
@@ -441,6 +511,7 @@ export const listSettlements = createServerFn({ method: "POST" })
       refunded_amount: Number(r.refunded_amount),
       commission_rate: Number(r.commission_rate),
       commission_amount: Number(r.commission_amount),
+      costs_amount: Number(r.costs_amount || 0),
       net_amount: Number(r.net_amount),
       status: r.status,
       paid_at: r.paid_at,
@@ -488,6 +559,11 @@ export const deleteSettlement = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (row?.status === "paid") throw new Error("Vyplatený protokol sa nedá zmazať.");
+    // Náklady sa vrátia medzi nevyúčtované, nech nezmiznú z ďalšieho protokolu.
+    await supabaseAdmin
+      .from("organizer_costs")
+      .update({ settlement_id: null })
+      .eq("settlement_id", data.id);
     const { error } = await supabaseAdmin.from("settlements").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

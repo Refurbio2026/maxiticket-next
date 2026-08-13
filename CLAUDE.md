@@ -34,13 +34,13 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 32 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 33 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
 `venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
 `pos_cashiers`, `pos_sessions`, `pos_closings`, `pos_receipt_counters`, `coupons`,
 `coupon_redemptions`, `email_templates`, `scanner_devices`, `refund_reasons`,
-`event_categories`, `performers`, `event_performers`, `order_notes`.
+`event_categories`, `performers`, `event_performers`, `order_notes`, `organizer_costs`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
@@ -57,7 +57,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**17 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**16 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -136,6 +136,20 @@ záznam; obchodný záznam je `refund_reason`.
 zákazník ju nikdy nevidí, preto k tabuľke nemá prístup `anon` a RLS ju púšťa len adminovi alebo
 organizátorovi daného podujatia. `pinned` drží varovanie navrchu zoznamu. Autor je `author_id`
 s `on delete set null` — poznámka po zmazaní účtu ostáva.
+
+### Náklady organizátorov
+
+`organizer_costs` + `organizer-costs.functions.ts` + `/admin/maxiticket/costs`. Položky, ktoré sa
+organizátorovi sťahujú z výplaty (tlač vstupeniek, prenájom čítačiek, reklama).
+
+**`settlement_id` rozhoduje o všetkom.** Kým je NULL, náklad je nevyúčtovaný a `computePreview` ho
+odpočíta; pri vytvorení protokolu sa naň prepíše, takže sa neodpočíta druhýkrát. Zmazanie
+protokolu ho vráti späť na NULL. Náklad zahrnutý v protokole sa **nedá meniť ani mazať** — bol by
+to zásah do čísel, ktoré organizátor už odsúhlasil; protokol si súčet navyše zmrazuje do
+`settlements.costs_amount`.
+
+Poradie výpočtu: `net = (tržba − refundácie) − provízia − náklady`. **Provízia sa počíta z tržby,
+nie zo zisku po nákladoch.**
 
 ### Termíny podujatí
 

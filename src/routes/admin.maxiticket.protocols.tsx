@@ -198,6 +198,7 @@ function Page() {
                 <th className="px-4 py-3 font-medium text-right">Hrubá tržba</th>
                 <th className="px-4 py-3 font-medium text-right">Refundácie</th>
                 <th className="px-4 py-3 font-medium text-right">Provízia</th>
+                <th className="px-4 py-3 font-medium text-right">Náklady</th>
                 <th className="px-4 py-3 font-medium text-right">Na výplatu</th>
                 <th className="px-4 py-3 font-medium">Stav</th>
                 <th className="px-4 py-3" />
@@ -206,14 +207,14 @@ function Page() {
             <tbody>
               {settlements.isLoading && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
                     <Loader2 className="mx-auto size-5 animate-spin" />
                   </td>
                 </tr>
               )}
               {!settlements.isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
                     Zatiaľ žiadny protokol. Vytvor prvý tlačidlom hore.
                   </td>
                 </tr>
@@ -236,6 +237,9 @@ function Page() {
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
                     − {fmtEur(s.commission_amount)}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                    {s.costs_amount ? `− ${fmtEur(s.costs_amount)}` : "—"}
                     <div className="text-[10px] text-muted-foreground">{s.commission_rate} %</div>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums">
@@ -381,6 +385,30 @@ function Page() {
                       </tbody>
                     </table>
                   )}
+                  {p.cost_lines.length > 0 && (
+                    <div className="rounded-lg border border-border/40 p-3">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                        Náklady, ktoré protokol stiahne
+                      </div>
+                      <ul className="space-y-1 text-sm">
+                        {p.cost_lines.map((c) => (
+                          <li key={c.id} className="flex justify-between gap-3">
+                            <span className="truncate">
+                              {c.title}
+                              <span className="text-muted-foreground text-xs">
+                                {" "}
+                                · {c.cost_date}
+                                {c.event_title ? ` · ${c.event_title}` : ""}
+                              </span>
+                            </span>
+                            <span className="tabular-nums whitespace-nowrap">
+                              − {fmtEur(c.amount)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="grid gap-1 border-t border-border/40 pt-3 text-sm sm:w-72 sm:ml-auto">
                     <Row label="Hrubá tržba" value={fmtEur(p.gross_amount)} />
                     {p.refunded_amount > 0 && (
@@ -391,6 +419,9 @@ function Page() {
                       value={`− ${fmtEur(p.commission_amount)}`}
                       muted
                     />
+                    {p.costs_amount > 0 && (
+                      <Row label="Náklady" value={`− ${fmtEur(p.costs_amount)}`} muted />
+                    )}
                     <div className="flex justify-between border-t border-border/40 pt-2 font-semibold">
                       <span>Na výplatu</span>
                       <span className="tabular-nums">{fmtEur(p.net_amount)}</span>

@@ -448,6 +448,7 @@ export type Database = {
       settlements: {
         Row: {
           commission_amount: number;
+          costs_amount: number;
           commission_rate: number;
           created_at: string;
           created_by: string | null;
@@ -468,6 +469,7 @@ export type Database = {
         };
         Insert: {
           commission_amount?: number;
+          costs_amount?: number;
           commission_rate?: number;
           created_at?: string;
           created_by?: string | null;
@@ -488,6 +490,7 @@ export type Database = {
         };
         Update: {
           commission_amount?: number;
+          costs_amount?: number;
           commission_rate?: number;
           created_at?: string;
           created_by?: string | null;
@@ -1276,6 +1279,48 @@ export type Database = {
           slug?: string;
           updated_at?: string;
           website?: string | null;
+        };
+        Relationships: [];
+      };
+      organizer_costs: {
+        Row: {
+          amount: number;
+          cost_date: string;
+          created_at: string;
+          created_by: string | null;
+          event_id: string | null;
+          id: string;
+          note: string | null;
+          organizer_id: string;
+          settlement_id: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          amount: number;
+          cost_date?: string;
+          created_at?: string;
+          created_by?: string | null;
+          event_id?: string | null;
+          id?: string;
+          note?: string | null;
+          organizer_id: string;
+          settlement_id?: string | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          cost_date?: string;
+          created_at?: string;
+          created_by?: string | null;
+          event_id?: string | null;
+          id?: string;
+          note?: string | null;
+          organizer_id?: string;
+          settlement_id?: string | null;
+          title?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
