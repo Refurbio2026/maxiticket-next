@@ -75,6 +75,7 @@ function SuccessPage() {
           setOrder({
             id: sb.id,
             event_id: sb.event_id,
+            event_date_id: sb.event_date_id,
             customer_name: sb.customer_name || undefined,
             customer_email: sb.customer_email || undefined,
             customer_phone: sb.customer_phone || undefined,

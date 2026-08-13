@@ -4,6 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { verifyTicket } from "@/lib/qr-token.server";
+import { loadEventInfo } from "@/lib/event-info.server";
 
 type ScanResult = "valid" | "duplicate" | "invalid" | "reentry" | "refunded";
 
@@ -65,7 +66,7 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
         const query = supabaseAdmin
           .from("tickets")
           .select(
-            "id, event_id, order_id, seat_label, seat_id, qr_code, qr_token, scan_count, last_scan_at, used_at, refunded_at, allow_reentry, scanned_by, issued_at",
+            "id, event_id, event_date_id, order_id, seat_label, seat_id, qr_code, qr_token, scan_count, last_scan_at, used_at, refunded_at, allow_reentry, scanned_by, issued_at",
           );
         const { data: ticket } = ticketId
           ? await query.eq("id", ticketId).maybeSingle()
@@ -126,17 +127,15 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
         }
 
         // Load context (order + event)
-        const [orderRes, eventRes] = await Promise.all([
+        const [orderRes, eventInfo] = await Promise.all([
           supabaseAdmin
             .from("orders")
             .select("id, customer_name, customer_email, total_amount, paid_at, created_at")
             .eq("id", ticket.order_id)
             .maybeSingle(),
-          supabaseAdmin
-            .from("events")
-            .select("id, title, event_date, event_time, venue, city")
-            .eq("id", ticket.event_id)
-            .maybeSingle(),
+          // Skener musí ukázať termín tej vstupenky, nie najbližší termín
+          // podujatia — inak sa pri repríze nedá odlíšiť včerajší lístok.
+          loadEventInfo(ticket.event_id, ticket.event_date_id),
         ]);
 
         const canReentry = allowReentry || ticket.allow_reentry;
@@ -209,7 +208,7 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
             last_scan_at: ticket.last_scan_at,
           },
           order: orderRes.data,
-          event: eventRes.data,
+          event: eventInfo ? { id: ticket.event_id, ...eventInfo } : null,
         });
       },
     },

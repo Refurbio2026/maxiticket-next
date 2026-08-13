@@ -11,6 +11,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendMail, isMailConfigured } from "./mailer.server";
 import { generateTicketsPdfBase64 } from "./ticket-pdf.server";
 import { signOrderAccess } from "./order-access.server";
+import { loadEventInfo } from "./event-info.server";
 
 function getOrigin(): string {
   const fromEnv = process.env.PUBLIC_SITE_URL || process.env.SITE_URL;
@@ -103,18 +104,15 @@ export async function sendTicketsEmail(
   if (order.tickets_emailed_at && !opts?.force) return { sent: false, reason: "already_sent" };
   if (!order.customer_email) return { sent: false, reason: "no_email" };
 
-  const [{ data: tickets }, { data: event }] = await Promise.all([
+  const [{ data: tickets }, event] = await Promise.all([
     supabaseAdmin
       .from("tickets")
       .select("seat_label, qr_code")
       .eq("order_id", orderId)
       .order("issued_at", { ascending: true }),
-    supabaseAdmin
-      .from("events")
-      // BEZPEČNOSŤ: bez `scanner_token` — do e-mailu zákazníkovi nepatrí.
-      .select("title, event_date, event_time, venue, city")
-      .eq("id", order.event_id)
-      .maybeSingle(),
+    // Dátum patrí termínu objednávky, nie podujatiu — repríza nesmie prepísať
+    // deň konania na už odoslanej vstupenke.
+    loadEventInfo(order.event_id, order.event_date_id),
   ]);
 
   if (!tickets || tickets.length === 0) return { sent: false, reason: "no_tickets" };

@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEvent, type EventRecord } from "@/hooks/use-events";
+import { getSeatAvailability } from "@/lib/event-dates.functions";
 import { useLayouts } from "@/hooks/use-layouts";
 import type { HallLayout } from "@/lib/layout-types";
 import {
@@ -53,6 +56,34 @@ export const Route = createFileRoute("/events/$id")({
 });
 
 type Selected = { seat_id: string; label: string; price: number; is_vip: boolean };
+
+const dayNames = ["nedeľa", "pondelok", "utorok", "streda", "štvrtok", "piatok", "sobota"];
+const monthNames = [
+  "januára",
+  "februára",
+  "marca",
+  "apríla",
+  "mája",
+  "júna",
+  "júla",
+  "augusta",
+  "septembra",
+  "októbra",
+  "novembra",
+  "decembra",
+];
+
+function formatLongDate(iso: string) {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${dayNames[d.getDay()]} ${d.getDate()}. ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function formatShortDate(iso: string) {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getDate()}. ${d.getMonth() + 1}.`;
+}
 
 function parseSeatLabel(label: string) {
   const parts = label.split("·").map((part) => part.trim());
@@ -128,19 +159,45 @@ function EventDetail() {
   const event = eventData ?? undefined;
   const { data: layouts = [] } = useLayouts();
   const [layout, setLayout] = useState<HallLayout | null>(null);
-  const [inventory, setInventory] = useState<SeatInventoryRow[]>([]);
+  const [localHolds, setLocalHolds] = useState<SeatInventoryRow[]>([]);
   const [selected, setSelected] = useState<Selected[]>([]);
   const [qty, setQty] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [dateId, setDateId] = useState<string>("");
   const loaded = !isLoading;
+
+  // Kupuje sa konkrétny termín. Predvolí sa najbližší v predaji — pri
+  // jednodňovom podujatí je to jediná možnosť a výber sa vôbec nezobrazí.
+  const sellableDates = useMemo(() => {
+    // Odohraný termín sa nekupuje. Porovnávame na deň, aby dnešné večerné
+    // predstavenie ostalo v predaji ešte aj popoludní.
+    const today = new Date().toISOString().slice(0, 10);
+    return (event?.dates ?? []).filter((d) => d.status === "on_sale" && d.event_date >= today);
+  }, [event]);
+  const activeDate = sellableDates.find((d) => d.id === dateId) ?? sellableDates[0];
+
+  useEffect(() => {
+    if (!activeDate) return;
+    if (dateId !== activeDate.id) setDateId(activeDate.id);
+  }, [activeDate, dateId]);
+
+  // Obsadenosť ťaháme z databázy, aby dvaja kupujúci na dvoch počítačoch videli
+  // ten istý stav; localStorage vie len o vlastnom prehliadači.
+  const fetchAvailability = useServerFn(getSeatAvailability);
+  const availability = useQuery({
+    queryKey: ["seat-availability", activeDate?.id ?? null],
+    enabled: !!activeDate,
+    refetchInterval: 15_000,
+    queryFn: () => fetchAvailability({ data: { event_date_id: activeDate!.id } }),
+  });
 
   useEffect(() => {
     const load = () => {
       releaseExpired();
       const e = event;
-      if (!e) {
+      if (!e || !activeDate) {
         setLayout(null);
-        setInventory([]);
+        setLocalHolds([]);
         return;
       }
       const explicitLayout = e.venue_layout_id
@@ -157,7 +214,7 @@ function EventDetail() {
             ? defaultLayoutForEvent(e)
             : null,
       );
-      setInventory(getInventory(id));
+      setLocalHolds(getInventory(activeDate.id));
     };
     load();
     const t = setInterval(load, 15000);
@@ -168,33 +225,53 @@ function EventDetail() {
       window.removeEventListener(INV_EVENT, load);
       window.removeEventListener("storage", load);
     };
-  }, [id, event, layouts]);
+  }, [id, event, layouts, activeDate]);
+
+  // Mapa vidí obsadené sedadlá z databázy aj tie, ktoré si práve drží tento
+  // košík — inak by vlastný výber vyzeral ako voľné miesto.
+  const inventory = useMemo<SeatInventoryRow[]>(() => {
+    const rows = new Map<string, SeatInventoryRow>();
+    for (const t of availability.data?.taken ?? []) {
+      rows.set(t.seat_id, {
+        event_date_id: activeDate?.id ?? "",
+        seat_id: t.seat_id,
+        status: t.status,
+        price: 0,
+      });
+    }
+    for (const h of localHolds) rows.set(h.seat_id, h);
+    return [...rows.values()];
+  }, [availability.data, localHolds, activeDate]);
 
   const isMap = !!layout && event?.sale_type !== "standing";
   const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0);
   const vipPrice = event?.vip_price ?? basePrice;
   const priceFrom = Math.min(...[basePrice, vipPrice].filter((p) => p > 0)) || basePrice;
 
-  // availability calculation
+  // Dostupnosť: pri mape sedadiel je kapacita počet sedadiel v rozložení,
+  // inak kapacita termínu (a až keď nie je nastavená, kapacita podujatia).
   const totalCapacity =
     layout?.shapes
       .filter((s) => s.kind === "seats")
       .reduce((sum, s) => sum + ((s as any).rows ?? 0) * ((s as any).cols ?? 0), 0) ??
+    activeDate?.total_tickets ??
     event?.total_tickets ??
     0;
-  const takenCount = inventory.filter((r) => r.status !== "available").length;
+  const takenCount = isMap
+    ? inventory.filter((r) => r.status !== "available").length
+    : (availability.data?.taken_count ?? 0);
   const availableCount = Math.max(0, totalCapacity - takenCount);
   const lowAvailability = totalCapacity > 0 && availableCount / totalCapacity < 0.2;
 
   const toggleSeat = (s: Selected) => {
-    if (!event) return;
+    if (!event || !activeDate) return;
     const already = selected.some((x) => x.seat_id === s.seat_id);
     if (already) {
-      releaseHeldSeat(event.id, s.seat_id);
+      releaseHeldSeat(activeDate.id, s.seat_id);
       setSelected((prev) => prev.filter((x) => x.seat_id !== s.seat_id));
       return;
     }
-    const ok = holdSeat(event.id, s, 2);
+    const ok = holdSeat(activeDate.id, s, 2);
     if (!ok) {
       toast.error("Sedadlo si práve berie iný kupujúci. Vyber prosím iné.");
       return;
@@ -205,9 +282,10 @@ function EventDetail() {
   // Refresh holds every 60s while the cart is open, and release them when
   // the user leaves the page without proceeding to checkout.
   useEffect(() => {
-    if (!event || selected.length === 0) return;
-    const t = setInterval(() => extendHolds(event.id, 2), 60_000);
-    const onUnload = () => releaseAllHolds(event.id);
+    if (!activeDate || selected.length === 0) return;
+    const held = activeDate.id;
+    const t = setInterval(() => extendHolds(held, 2), 60_000);
+    const onUnload = () => releaseAllHolds(held);
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
     return () => {
@@ -215,12 +293,16 @@ function EventDetail() {
       window.removeEventListener("beforeunload", onUnload);
       window.removeEventListener("pagehide", onUnload);
     };
-  }, [event, selected.length]);
+  }, [activeDate, selected.length]);
 
   const total = isMap ? selected.reduce((sum, s) => sum + s.price, 0) : qty * basePrice;
 
   const checkout = () => {
     if (!event) return;
+    if (!activeDate) {
+      toast.error("Toto podujatie nemá termín v predaji.");
+      return;
+    }
     setSubmitting(true);
     try {
       const items = isMap
@@ -241,12 +323,13 @@ function EventDetail() {
       }
       const order = createOrder({
         event_id: event.id,
+        event_date_id: activeDate.id,
         items,
         total_amount: total,
       });
       if (isMap) {
         const ok = reserveSeats(
-          event.id,
+          activeDate.id,
           selected.map((s) => ({
             seat_id: s.seat_id,
             label: s.label,
@@ -317,11 +400,17 @@ function EventDetail() {
                 </h1>
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-white/90">
                   <span className="inline-flex items-center gap-1.5">
-                    <Calendar className="size-4" /> {event.event_date}
+                    <Calendar className="size-4" />
+                    {activeDate ? formatLongDate(activeDate.event_date) : event.event_date}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <Clock className="size-4" /> {event.event_time}
+                    <Clock className="size-4" /> {activeDate?.event_time ?? event.event_time}
                   </span>
+                  {sellableDates.length > 1 && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Ticket className="size-4" /> {sellableDates.length} termínov
+                    </span>
+                  )}
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin className="size-4" /> {event.venue}, {event.city}
                   </span>
@@ -365,6 +454,52 @@ function EventDetail() {
                       {event.description}
                     </p>
                   </div>
+                )}
+
+                {sellableDates.length > 1 && (
+                  <div>
+                    <h2 className="font-display font-semibold text-lg mb-3">Vyber termín</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {sellableDates.map((d) => {
+                        const active = d.id === activeDate?.id;
+                        return (
+                          <button
+                            key={d.id}
+                            onClick={() => {
+                              if (active) return;
+                              // Sedadlá platia vždy len pre jeden termín, takže
+                              // pri prepnutí sa výber aj držané miesta zahodia.
+                              if (activeDate) releaseAllHolds(activeDate.id);
+                              setSelected([]);
+                              setDateId(d.id);
+                            }}
+                            className={`rounded-xl border px-4 py-2.5 text-left transition ${
+                              active
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-border/50 bg-card/40 hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="font-display font-semibold">
+                              {formatShortDate(d.event_date)}{" "}
+                              <span className="text-sm font-normal text-muted-foreground">
+                                {d.event_time}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {dayNames[new Date(`${d.event_date}T00:00:00`).getDay()]}
+                              {d.note ? ` · ${d.note}` : ""}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {sellableDates.length === 0 && (
+                  <Card className="p-6 bg-card/60 border-dashed text-sm text-muted-foreground">
+                    Podujatie momentálne nemá termín v predaji.
+                  </Card>
                 )}
 
                 {isMap && layout ? (
@@ -496,7 +631,14 @@ function EventDetail() {
                     {isMap ? selected.length : qty} ks
                   </span>
                 </div>
-                <div className="text-xs text-muted-foreground mb-4 line-clamp-1">{event.title}</div>
+                <div className="text-xs text-muted-foreground mb-4">
+                  <div className="line-clamp-1">{event.title}</div>
+                  {activeDate && (
+                    <div className="mt-0.5">
+                      {formatLongDate(activeDate.event_date)} · {activeDate.event_time}
+                    </div>
+                  )}
+                </div>
 
                 {isMap ? (
                   selected.length === 0 ? (
@@ -566,7 +708,7 @@ function EventDetail() {
 
                 <Button
                   onClick={checkout}
-                  disabled={submitting || (isMap && selected.length === 0)}
+                  disabled={submitting || !activeDate || (isMap && selected.length === 0)}
                   className="w-full mt-5 bg-gradient-flame text-primary-foreground shadow-glow"
                   size="lg"
                 >
@@ -603,7 +745,7 @@ function EventDetail() {
               </div>
               <Button
                 onClick={checkout}
-                disabled={submitting || (isMap && selected.length === 0)}
+                disabled={submitting || !activeDate || (isMap && selected.length === 0)}
                 className="bg-gradient-flame text-primary-foreground shadow-glow"
               >
                 <Ticket className="size-4 mr-2" />

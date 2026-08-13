@@ -269,6 +269,14 @@ function Page() {
                   <td className="p-3 text-muted-foreground">{e.category}</td>
                   <td className="p-3 text-muted-foreground">
                     {e.event_date} · {e.event_time}
+                    {e.dates && e.dates.length > 1 && (
+                      <Link
+                        to="/admin/events/dates"
+                        className="ml-2 text-primary hover:underline whitespace-nowrap"
+                      >
+                        +{e.dates.length - 1} ďalších
+                      </Link>
+                    )}
                   </td>
                   <td className="p-3 text-muted-foreground">
                     {e.sale_type === "seating_map"
@@ -378,6 +386,13 @@ function Page() {
                 value={form.event_date}
                 onChange={(e) => setForm({ ...form, event_date: e.target.value })}
               />
+              <p className="text-[11px] text-muted-foreground">
+                Prvý termín. Ďalšie pridáš v{" "}
+                <Link to="/admin/events/dates" className="text-primary hover:underline">
+                  Termínoch
+                </Link>
+                .
+              </p>
             </Field>
             <Field label="Čas začiatku">
               <Input

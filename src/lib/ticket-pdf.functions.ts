@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { verifyOrderAccess } from "./order-access.server";
+import { loadEventInfo } from "./event-info.server";
 import {
   generateTicketsPdfBase64,
   generateEventTicketsPdfBase64,
@@ -31,23 +32,19 @@ export const renderOrderTicketsPdf = createServerFn({ method: "POST" })
 
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, event_id, customer_email, status")
+      .select("id, event_id, event_date_id, customer_email, status")
       .eq("id", data.order_id)
       .maybeSingle();
     if (!order) throw new Error("Objednávka sa nenašla");
 
-    const [{ data: tickets }, { data: event }] = await Promise.all([
+    const [{ data: tickets }, event] = await Promise.all([
       supabaseAdmin
         .from("tickets")
         .select("seat_label, qr_code")
         .eq("order_id", order.id)
         .order("issued_at", { ascending: true }),
-      supabaseAdmin
-        // Bez `scanner_token` — na vstupenku ani do odpovede nepatrí.
-        .from("events")
-        .select("title, event_date, event_time, venue, city")
-        .eq("id", order.event_id)
-        .maybeSingle(),
+      // Dátum berieme z termínu objednávky, nie z podujatia.
+      loadEventInfo(order.event_id, order.event_date_id),
     ]);
 
     if (!tickets || tickets.length === 0) {
@@ -57,7 +54,7 @@ export const renderOrderTicketsPdf = createServerFn({ method: "POST" })
     const base64 = await generateTicketsPdfBase64({
       orderId: order.id,
       customerEmail: order.customer_email,
-      event: (event as PdfEventInfo | null) ?? null,
+      event,
       tickets: tickets.map((t) => ({
         seat_label: t.seat_label ?? "Vstupenka",
         qr_code: t.qr_code ?? "",
@@ -76,7 +73,11 @@ export const renderOrderTicketsPdf = createServerFn({ method: "POST" })
  */
 export const renderEventTicketsPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ event_id: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({ event_id: z.string().uuid(), event_date_id: z.string().uuid().optional() })
+      .parse(input),
+  )
   .handler(async ({ data, context }): Promise<PdfResult> => {
     const { data: event } = await supabaseAdmin
       .from("events")
@@ -95,18 +96,22 @@ export const renderEventTicketsPdf = createServerFn({ method: "POST" })
       if (!isAdmin) throw new Error("Forbidden: podujatie patrí inému organizátorovi");
     }
 
-    const { data: tickets } = await supabaseAdmin
+    // Bez zadaného termínu vyexportujeme celé podujatie; so zadaným len ten deň,
+    // čo je to, s čím organizátor naozaj príde k dverám.
+    let ticketQuery = supabaseAdmin
       .from("tickets")
       .select("seat_label, qr_code, order_id, used_at, orders ( customer_name, customer_email )")
-      .eq("event_id", event.id)
-      .order("issued_at", { ascending: true });
+      .eq("event_id", event.id);
+    if (data.event_date_id) ticketQuery = ticketQuery.eq("event_date_id", data.event_date_id);
+    const { data: tickets } = await ticketQuery.order("issued_at", { ascending: true });
 
     if (!tickets || tickets.length === 0) {
       throw new Error("Pre toto podujatie zatiaľ neexistujú žiadne predané lístky.");
     }
 
+    const info = (await loadEventInfo(event.id, data.event_date_id)) as PdfEventInfo;
     const base64 = await generateEventTicketsPdfBase64({
-      event: event as PdfEventInfo,
+      event: info,
       tickets: tickets.map((t: any) => ({
         seat_label: t.seat_label ?? "Vstupenka",
         qr_code: t.qr_code ?? "",
@@ -121,5 +126,5 @@ export const renderEventTicketsPdf = createServerFn({ method: "POST" })
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .slice(0, 40);
-    return { filename: `qr-listky-${slug}-${event.event_date}.pdf`, base64 };
+    return { filename: `qr-listky-${slug}-${info.event_date}.pdf`, base64 };
   });

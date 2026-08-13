@@ -6,7 +6,8 @@ import { uid } from "./local-db";
 export type SeatStatus = "available" | "reserved" | "sold";
 
 export type SeatInventoryRow = {
-  event_id: string;
+  /** Obsadenosť sa vedie po TERMÍNOCH — to isté sedadlo je na piatok a sobotu voľné zvlášť. */
+  event_date_id: string;
   seat_id: string; // shape.id from layout
   status: SeatStatus;
   price: number;
@@ -31,6 +32,7 @@ export type OrderItem = {
 export type Order = {
   id: string;
   event_id: string;
+  event_date_id: string;
   customer_name?: string;
   customer_email?: string;
   customer_phone?: string;
@@ -80,8 +82,8 @@ function emit(name: string) {
 
 // -------- Seat inventory --------
 
-export function getInventory(eventId: string): SeatInventoryRow[] {
-  return read<SeatInventoryRow[]>(INV_KEY, []).filter((r) => r.event_id === eventId);
+export function getInventory(dateId: string): SeatInventoryRow[] {
+  return read<SeatInventoryRow[]>(INV_KEY, []).filter((r) => r.event_date_id === dateId);
 }
 
 function setAllInventory(rows: SeatInventoryRow[]) {
@@ -106,7 +108,7 @@ export function releaseExpired() {
 
 /** Reserves seats. Accepts rows already held by the same cart session. Returns false on conflict. */
 export function reserveSeats(
-  eventId: string,
+  dateId: string,
   seats: Array<{ seat_id: string; price: number; label: string; is_vip?: boolean }>,
   orderId: string,
   minutes = 10,
@@ -114,10 +116,10 @@ export function reserveSeats(
   releaseExpired();
   const myHoldKey = `hold:${getCartSessionId()}`;
   const all = read<SeatInventoryRow[]>(INV_KEY, []);
-  const byKey = new Map(all.map((r) => [`${r.event_id}::${r.seat_id}`, r]));
+  const byKey = new Map(all.map((r) => [`${r.event_date_id}::${r.seat_id}`, r]));
   // conflict check — allow rows we already hold in this session
   for (const s of seats) {
-    const row = byKey.get(`${eventId}::${s.seat_id}`);
+    const row = byKey.get(`${dateId}::${s.seat_id}`);
     if (!row) continue;
     if (row.status === "available") continue;
     if (row.status === "reserved" && row.order_id === myHoldKey) continue;
@@ -125,10 +127,10 @@ export function reserveSeats(
   }
   const until = new Date(Date.now() + minutes * 60_000).toISOString();
   for (const s of seats) {
-    const key = `${eventId}::${s.seat_id}`;
+    const key = `${dateId}::${s.seat_id}`;
     const existing = byKey.get(key);
     const row: SeatInventoryRow = {
-      event_id: eventId,
+      event_date_id: dateId,
       seat_id: s.seat_id,
       status: "reserved",
       price: s.price,
@@ -172,21 +174,21 @@ function holdKey() {
 
 /** Soft-lock a single seat for the current cart session. Returns false on conflict. */
 export function holdSeat(
-  eventId: string,
+  dateId: string,
   seat: { seat_id: string; price: number; label: string; is_vip?: boolean },
   minutes = 2,
 ): boolean {
-  return reserveSeats(eventId, [seat], holdKey(), minutes);
+  return reserveSeats(dateId, [seat], holdKey(), minutes);
 }
 
 /** Release a single held seat (only if held by this session). */
-export function releaseHeldSeat(eventId: string, seatId: string) {
+export function releaseHeldSeat(dateId: string, seatId: string) {
   const mine = holdKey();
   const all = read<SeatInventoryRow[]>(INV_KEY, []);
   let changed = false;
   for (const r of all) {
     if (
-      r.event_id === eventId &&
+      r.event_date_id === dateId &&
       r.seat_id === seatId &&
       r.order_id === mine &&
       r.status === "reserved"
@@ -201,13 +203,13 @@ export function releaseHeldSeat(eventId: string, seatId: string) {
 }
 
 /** Extend reservation deadline on all seats currently held by this session. */
-export function extendHolds(eventId: string, minutes = 2) {
+export function extendHolds(dateId: string, minutes = 2) {
   const mine = holdKey();
   const until = new Date(Date.now() + minutes * 60_000).toISOString();
   const all = read<SeatInventoryRow[]>(INV_KEY, []);
   let changed = false;
   for (const r of all) {
-    if (r.event_id === eventId && r.order_id === mine && r.status === "reserved") {
+    if (r.event_date_id === dateId && r.order_id === mine && r.status === "reserved") {
       r.reserved_until = until;
       changed = true;
     }
@@ -216,12 +218,12 @@ export function extendHolds(eventId: string, minutes = 2) {
 }
 
 /** Release every seat currently held by this session for the given event. */
-export function releaseAllHolds(eventId: string) {
+export function releaseAllHolds(dateId: string) {
   const mine = holdKey();
   const all = read<SeatInventoryRow[]>(INV_KEY, []);
   let changed = false;
   for (const r of all) {
-    if (r.event_id === eventId && r.order_id === mine && r.status === "reserved") {
+    if (r.event_date_id === dateId && r.order_id === mine && r.status === "reserved") {
       r.status = "available";
       r.reserved_until = undefined;
       r.order_id = undefined;
@@ -231,10 +233,10 @@ export function releaseAllHolds(eventId: string) {
   if (changed) setAllInventory(all);
 }
 
-export function markSold(eventId: string, orderId: string) {
+export function markSold(dateId: string, orderId: string) {
   const all = read<SeatInventoryRow[]>(INV_KEY, []);
   for (const r of all) {
-    if (r.event_id === eventId && r.order_id === orderId) {
+    if (r.event_date_id === dateId && r.order_id === orderId) {
       r.status = "sold";
       r.reserved_until = undefined;
     }
@@ -273,12 +275,14 @@ export function upsertOrder(o: Order) {
 
 export function createOrder(input: {
   event_id: string;
+  event_date_id: string;
   items: OrderItem[];
   total_amount: number;
 }): Order {
   const order: Order = {
     id: uid(),
     event_id: input.event_id,
+    event_date_id: input.event_date_id,
     items: input.items,
     total_amount: input.total_amount,
     status: "pending",
@@ -321,7 +325,7 @@ export function simulatePayment(orderId: string): Order | undefined {
   order.status = "paid";
   order.paid_at = new Date().toISOString();
   upsertOrder(order);
-  markSold(order.event_id, order.id);
+  markSold(order.event_date_id, order.id);
   issueTicketsForOrder(order);
   return order;
 }

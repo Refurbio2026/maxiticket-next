@@ -59,6 +59,7 @@ async function settle(orderId: string) {
             id,
             order_id: order.id,
             event_id: order.event_id,
+            event_date_id: order.event_date_id,
             seat_id: it.seat_id,
             seat_label: it.label + (it.quantity > 1 ? ` #${i + 1}` : ""),
             qr_code: token,

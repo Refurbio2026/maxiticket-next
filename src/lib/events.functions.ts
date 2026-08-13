@@ -18,6 +18,16 @@ export type EventTicketType = {
   quantity: number;
 };
 
+/** Termín podujatia tak, ako ho potrebuje katalóg a výber dátumu pri nákupe. */
+export type EventDateSummary = {
+  id: string;
+  event_date: string;
+  event_time: string;
+  status: "on_sale" | "cancelled";
+  total_tickets?: number;
+  note?: string;
+};
+
 /** Tvar zhodný s pôvodným `EventItem` z local-db, aby sa konzumenti menili minimálne. */
 export type EventRecord = {
   id: string;
@@ -35,6 +45,8 @@ export type EventRecord = {
   status: "draft" | "published";
   created_at: string;
   tickets: EventTicketType[];
+  /** Termíny; `event_date` vyššie je len ten najbližší z nich. */
+  dates: EventDateSummary[];
   sale_type?: "standing" | "seating" | "seating_map";
   venue_id?: string;
   venue_layout_id?: string;
@@ -45,7 +57,12 @@ export type EventRecord = {
 
 type EventRow = Record<string, unknown>;
 
-function mapEvent(row: EventRow, tickets: EventTicketType[], organizerName?: string): EventRecord {
+function mapEvent(
+  row: EventRow,
+  tickets: EventTicketType[],
+  dates: EventDateSummary[],
+  organizerName?: string,
+): EventRecord {
   const opt = <T>(v: unknown): T | undefined =>
     v === null || v === undefined ? undefined : (v as T);
   return {
@@ -64,6 +81,7 @@ function mapEvent(row: EventRow, tickets: EventTicketType[], organizerName?: str
     status: row.status as "draft" | "published",
     created_at: row.created_at as string,
     tickets,
+    dates,
     sale_type: opt<EventRecord["sale_type"]>(row.sale_type),
     venue_id: opt<string>(row.venue_id),
     venue_layout_id: opt<string>(row.venue_layout_id),
@@ -86,6 +104,31 @@ async function loadTicketTypes(eventIds: string[]): Promise<Map<string, EventTic
     const list = byEvent.get(t.event_id) || [];
     list.push({ id: t.id, name: t.name, price: Number(t.price), quantity: t.quantity });
     byEvent.set(t.event_id, list);
+  }
+  return byEvent;
+}
+
+/** Načíta termíny pre zadané podujatia naraz (bez N+1 dotazov). */
+async function loadDates(eventIds: string[]): Promise<Map<string, EventDateSummary[]>> {
+  const byEvent = new Map<string, EventDateSummary[]>();
+  if (eventIds.length === 0) return byEvent;
+  const { data } = await supabaseAdmin
+    .from("event_dates")
+    .select("id, event_id, event_date, event_time, status, total_tickets, note")
+    .in("event_id", eventIds)
+    .order("event_date", { ascending: true })
+    .order("event_time", { ascending: true });
+  for (const d of data || []) {
+    const list = byEvent.get(d.event_id) || [];
+    list.push({
+      id: d.id,
+      event_date: d.event_date,
+      event_time: (d.event_time || "").slice(0, 5),
+      status: d.status === "cancelled" ? "cancelled" : "on_sale",
+      total_tickets: d.total_tickets ?? undefined,
+      note: d.note ?? undefined,
+    });
+    byEvent.set(d.event_id, list);
   }
   return byEvent;
 }
@@ -132,12 +175,18 @@ export const listEvents = createServerFn({ method: "POST" })
 
     const list = (rows || []) as EventRow[];
     const ids = list.map((r) => r.id as string);
-    const [tickets, names] = await Promise.all([
+    const [tickets, dates, names] = await Promise.all([
       loadTicketTypes(ids),
+      loadDates(ids),
       loadOrganizerNames(list.map((r) => r.organizer_id as string)),
     ]);
     return list.map((r) =>
-      mapEvent(r, tickets.get(r.id as string) || [], names.get(r.organizer_id as string)),
+      mapEvent(
+        r,
+        tickets.get(r.id as string) || [],
+        dates.get(r.id as string) || [],
+        names.get(r.organizer_id as string),
+      ),
     );
   });
 
@@ -161,11 +210,17 @@ export const getEventById = createServerFn({ method: "POST" })
       if (!allowed) return null;
     }
 
-    const [tickets, names] = await Promise.all([
+    const [tickets, dates, names] = await Promise.all([
       loadTicketTypes([r.id as string]),
+      loadDates([r.id as string]),
       loadOrganizerNames([r.organizer_id as string]),
     ]);
-    return mapEvent(r, tickets.get(r.id as string) || [], names.get(r.organizer_id as string));
+    return mapEvent(
+      r,
+      tickets.get(r.id as string) || [],
+      dates.get(r.id as string) || [],
+      names.get(r.organizer_id as string),
+    );
   });
 
 const TicketTypeInput = z.object({
@@ -248,11 +303,12 @@ export const upsertEvent = createServerFn({ method: "POST" })
       }
     }
 
+    // POZOR: `event_date` / `event_time` na podujatí sú len odtlačok najbližšieho
+    // termínu — udržiava ich trigger `trg_event_dates_sync_event`. Preto ich tu
+    // pri úprave nezapisujeme; meníme samotný termín a databáza si to premietne.
     const row = {
       title: data.title,
       category: data.category,
-      event_date: data.event_date,
-      event_time: data.event_time,
       venue,
       city,
       address,
@@ -277,11 +333,37 @@ export const upsertEvent = createServerFn({ method: "POST" })
     } else {
       const { data: created, error } = await supabaseAdmin
         .from("events")
-        .insert(row)
+        .insert({ ...row, event_date: data.event_date, event_time: data.event_time })
         .select("id")
         .single();
       if (error || !created) throw new Error(error?.message || "Podujatie sa nepodarilo vytvoriť");
       eventId = created.id;
+    }
+
+    // Termíny. Podujatie bez termínu sa nedá kúpiť, takže prvý vzniká hneď pri
+    // založení. Pri úprave posunieme termín len vtedy, keď je jediný — pri
+    // repríze by inak formulár podujatia prepísal jeden z viacerých dátumov.
+    const { data: existingDates } = await supabaseAdmin
+      .from("event_dates")
+      .select("id")
+      .eq("event_id", eventId)
+      .order("event_date", { ascending: true })
+      .order("event_time", { ascending: true });
+    if (!existingDates || existingDates.length === 0) {
+      await supabaseAdmin.from("event_dates").insert({
+        event_id: eventId,
+        event_date: data.event_date,
+        event_time: data.event_time,
+      });
+    } else if (existingDates.length === 1) {
+      await supabaseAdmin
+        .from("event_dates")
+        .update({
+          event_date: data.event_date,
+          event_time: data.event_time,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingDates[0].id);
     }
 
     // Typy lístkov: dorovnáme na stav poslaný klientom. Odstránené riadky sa

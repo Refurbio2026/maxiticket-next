@@ -42,6 +42,8 @@ function CheckoutPage() {
   const [order, setOrder] = useState<Order | undefined>();
   const { data: eventData } = useEvent(order?.event_id);
   const event = eventData ?? undefined;
+  // Objednávka je na jeden konkrétny termín — `event.event_date` je len najbližší.
+  const orderDate = event?.dates?.find((d) => d.id === order?.event_date_id);
   const [loaded, setLoaded] = useState(false);
   const [now, setNow] = useState(Date.now());
 
@@ -92,6 +94,7 @@ function CheckoutPage() {
       const { order_id: supabaseOrderId } = await submit({
         data: {
           event_id: order.event_id,
+          event_date_id: order.event_date_id,
           customer: {
             first_name: form.first_name,
             last_name: form.last_name,
@@ -270,7 +273,8 @@ function CheckoutPage() {
             <div className="mb-4 pb-4 border-b border-border/40">
               <div className="font-semibold">{event.title}</div>
               <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                <Calendar className="size-3.5" /> {event.event_date} · {event.event_time}
+                <Calendar className="size-3.5" /> {orderDate?.event_date ?? event.event_date} ·{" "}
+                {orderDate?.event_time ?? event.event_time}
               </div>
               <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <MapPin className="size-3.5" /> {event.venue}, {event.city}

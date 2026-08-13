@@ -110,12 +110,19 @@ type PricedItem = {
   is_vip: boolean;
 };
 
-/** Koľko kusov daného typu už drží nevypršaná alebo zaplatená objednávka. */
-async function committedQuantity(eventId: string, ticketTypeId: string | null): Promise<number> {
+/**
+ * Koľko kusov daného typu už drží nevypršaná alebo zaplatená objednávka.
+ * Počíta sa v rámci TERMÍNU — vypredaná piatková repríza nesmie zavrieť predaj
+ * na sobotu.
+ */
+async function committedQuantity(
+  eventDateId: string,
+  ticketTypeId: string | null,
+): Promise<number> {
   let q = supabaseAdmin
     .from("order_items")
-    .select("quantity, orders!inner(event_id, status)")
-    .eq("orders.event_id", eventId)
+    .select("quantity, orders!inner(event_date_id, status)")
+    .eq("orders.event_date_id", eventDateId)
     .in("orders.status", ["pending", "awaiting_payment", "paid"]);
   q = ticketTypeId ? q.eq("ticket_type_id", ticketTypeId) : q.is("ticket_type_id", null);
   const { data } = await q;
@@ -128,6 +135,9 @@ export const submitOrder = createServerFn({ method: "POST" })
     z
       .object({
         event_id: z.string().uuid(),
+        // Ktorý termín sa kupuje. Bez neho vezmeme najbližší v predaji, aby
+        // staršie odkazy a jednodňové podujatia fungovali ako doteraz.
+        event_date_id: z.string().uuid().optional(),
         customer: CustomerSchema,
         items: z.array(ItemSchema).min(1).max(100),
       })
@@ -183,6 +193,37 @@ export const submitOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!event) throw new Error("Podujatie sa nenašlo");
     if (event.status !== "published") throw new Error("Podujatie nie je v predaji");
+
+    // --- Termín ---
+    // Kupuje sa vždy konkrétny termín. Ten určuje obsadenosť sedadiel aj
+    // kapacitu, takže si ho server overí sám — klient ho nesmie „prehodiť"
+    // na cudzie podujatie.
+    const today = new Date().toISOString().slice(0, 10);
+    let eventDate: { id: string; total_tickets: number | null };
+    if (data.event_date_id) {
+      const { data: row } = await supabaseAdmin
+        .from("event_dates")
+        .select("id, event_id, status, total_tickets, event_date")
+        .eq("id", data.event_date_id)
+        .maybeSingle();
+      if (!row || row.event_id !== data.event_id) throw new Error("Termín sa nenašiel");
+      if (row.status !== "on_sale") throw new Error("Tento termín nie je v predaji");
+      if (row.event_date < today) throw new Error("Tento termín už prebehol");
+      eventDate = { id: row.id, total_tickets: row.total_tickets };
+    } else {
+      const { data: rows } = await supabaseAdmin
+        .from("event_dates")
+        .select("id, total_tickets, event_date, event_time")
+        .eq("event_id", data.event_id)
+        .eq("status", "on_sale")
+        .gte("event_date", today)
+        .order("event_date", { ascending: true })
+        .order("event_time", { ascending: true })
+        .limit(1);
+      const nearest = rows?.[0];
+      if (!nearest) throw new Error("Podujatie nemá žiadny termín v predaji");
+      eventDate = { id: nearest.id, total_tickets: nearest.total_tickets };
+    }
 
     const { data: ticketTypes } = await supabaseAdmin
       .from("ticket_types")
@@ -263,11 +304,13 @@ export const submitOrder = createServerFn({ method: "POST" })
       byType.set(p.ticket_type_id, (byType.get(p.ticket_type_id) || 0) + p.quantity);
     }
     for (const [typeId, requested] of byType) {
+      // Kapacita termínu má prednosť pred kapacitou podujatia — matiné môže mať
+      // otvorený menší sektor než večerné predstavenie.
       const capacity = typeId
         ? Number(typeById.get(typeId)?.quantity ?? 0)
-        : Number(event.total_tickets ?? 0);
+        : Number(eventDate.total_tickets ?? event.total_tickets ?? 0);
       if (capacity <= 0) continue; // 0 = kapacita nie je nastavená, nelimitujeme
-      const taken = await committedQuantity(data.event_id, typeId);
+      const taken = await committedQuantity(eventDate.id, typeId);
       if (taken + requested > capacity) {
         const left = Math.max(0, capacity - taken);
         throw new Error(
@@ -285,6 +328,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         event_id: data.event_id,
+        event_date_id: eventDate.id,
         customer_name: `${data.customer.first_name} ${data.customer.last_name}`.trim(),
         customer_email: data.customer.email,
         customer_phone: data.customer.phone || null,
@@ -317,6 +361,7 @@ export const submitOrder = createServerFn({ method: "POST" })
     if (seats.length > 0) {
       const { error: seatErr } = await supabaseAdmin.rpc("reserve_seats", {
         p_event_id: data.event_id,
+        p_event_date_id: eventDate.id,
         p_order_id: order.id,
         p_reserved_until: expiresAt,
         p_seats: seats.map((s) => ({
@@ -505,6 +550,7 @@ async function settleOrderIfPaid(orderId: string) {
             id,
             order_id: order.id,
             event_id: order.event_id,
+            event_date_id: order.event_date_id,
             seat_id: it.seat_id,
             seat_label: it.label + ((it.quantity || 1) > 1 ? ` #${i + 1}` : ""),
             qr_code: token,
@@ -614,24 +660,42 @@ export const getOrderSummary = createServerFn({ method: "POST" })
       .eq("id", data.order_id)
       .single();
     if (error || !order) return { order: null, items: [], tickets: [], event: null };
-    const [{ data: items }, { data: tickets }, { data: event }] = await Promise.all([
-      supabaseAdmin.from("order_items").select("*").eq("order_id", order.id),
-      supabaseAdmin.from("tickets").select("*").eq("order_id", order.id),
-      // BEZPEČNOSŤ: nie select("*") — ten by kupujúcemu poslal aj `scanner_token`,
-      // teda tajomstvo, ktorým sa autorizuje označovanie vstupeniek za použité.
-      supabaseAdmin
-        .from("events")
-        .select("id, title, category, event_date, event_time, venue, city, address, image_url")
-        .eq("id", order.event_id)
-        .maybeSingle(),
-    ]);
+    const [{ data: items }, { data: tickets }, { data: event }, { data: eventDate }] =
+      await Promise.all([
+        supabaseAdmin.from("order_items").select("*").eq("order_id", order.id),
+        supabaseAdmin.from("tickets").select("*").eq("order_id", order.id),
+        // BEZPEČNOSŤ: nie select("*") — ten by kupujúcemu poslal aj `scanner_token`,
+        // teda tajomstvo, ktorým sa autorizuje označovanie vstupeniek za použité.
+        supabaseAdmin
+          .from("events")
+          .select("id, title, category, event_date, event_time, venue, city, address, image_url")
+          .eq("id", order.event_id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("event_dates")
+          .select("event_date, event_time")
+          .eq("id", order.event_date_id)
+          .maybeSingle(),
+      ]);
+
+    // Zákazník musí vidieť termín, ktorý si kúpil — `events.event_date` je len
+    // najbližší termín podujatia a po pridaní reprízy by ukázal iný deň.
+    const eventForOrder =
+      event && eventDate
+        ? { ...event, event_date: eventDate.event_date, event_time: eventDate.event_time }
+        : event;
 
     const authorized = verifyOrderAccess(order.id, data.access_token);
     const safeOrder = authorized
       ? order
       : { ...order, customer_name: null, customer_email: null, customer_phone: null };
 
-    return { order: safeOrder, items: items || [], tickets: tickets || [], event: event || null };
+    return {
+      order: safeOrder,
+      items: items || [],
+      tickets: tickets || [],
+      event: eventForOrder || null,
+    };
   });
 
 // Admin: re-issue invoice manually

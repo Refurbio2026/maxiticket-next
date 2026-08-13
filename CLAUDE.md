@@ -34,16 +34,18 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 18 tabuliek s RLS:
-`profiles`, `user_roles`, `events`, `ticket_types`, `orders`, `order_items`, `seat_inventory`,
-`tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`, `venue_layouts`,
-`email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`.
+**1. Supabase (reálne, produkčné)** — 19 tabuliek s RLS:
+`profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
+`seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
+`venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
 **2. localStorage „databáza" (demo)** — `src/lib/local-db.ts` + `pos-db.ts`, `bank-db.ts`,
 `cashier-db.ts`, `marketing-db.ts`, `wallet-db.ts`, `ticketing-db.ts`, `admin-mock.ts`.
-Zostáva na nej POS, marketing, banka, protokoly, kategórie a obsadenosť sedadiel.
+Zostáva na nej POS, marketing, banka, účtovné reporty, kategórie podujatí a wallet nastavenia.
+`ticketing-db.ts` je už len košík (výber sedadiel v tomto prehliadači do kliknutia na „Zaplatiť");
+skutočná obsadenosť je v `seat_inventory`.
 
 **Rozloženia sál sú v databáze** (`venue_layouts`). Čítaj ich cez `@/hooks/use-layouts`
 (`useLayouts`, `useLayout`, `useUpsertLayout`, `useDeleteLayout`, `toLayoutInput`), typy a čisté
@@ -78,6 +80,30 @@ textové `events.venue` / `city` / `address` **zostávajú vyplnené** — čít
 PDF aj e-maily a podujatie musí prežiť zmazanie miesta. `upsertEvent` ich pri uložení kopíruje
 z miesta, premenovanie miesta ich prepíše vo všetkých jeho podujatiach. Miesto si nesie
 `default_layout_id`, ktoré sa v admin formulári predvyplní aj s `sale_type = seating_map`.
+
+### Termíny podujatí
+
+`event_dates` + `event-dates.functions.ts` + `/admin/events/dates`. Jedno podujatie má zoznam
+termínov a **predaj sa viaže na termín, nie na podujatie**: `orders.event_date_id`,
+`tickets.event_date_id` aj `seat_inventory.event_date_id` sú `not null` a unikátnosť sedadla je
+`(event_date_id, seat_id)`. To isté sedadlo je tak na piatok a sobotu voľné zvlášť.
+
+**`events.event_date` / `event_time` sú len odtlačok najbližšieho termínu.** Udržiava ich trigger
+`trg_event_dates_sync_event` (funkcia `sync_event_primary_date`), aby katalóg, zoznamy a
+zoraďovanie fungovali bez zmeny. Preto:
+
+- do `events.event_date` **nezapisuj priamo** — meň termín, trigger to premietne (`upsertEvent`
+  pri úprave dátum podujatia vôbec neposiela a posunie termín len vtedy, keď je jediný);
+- dátum na vstupenku, do e-mailu a do skenera ber cez `loadEventInfo(eventId, eventDateId)`
+  z `lib/event-info.server.ts` — inak by po pridaní reprízy zostarli už vydané vstupenky.
+
+Kapacita: `event_dates.total_tickets` má prednosť pred `events.total_tickets` (`NULL` = zdedí sa).
+Zrušený termín (`status = 'cancelled'`) sa nepredáva, ale ostáva aj s vydanými vstupenkami —
+`deleteEventDate` preto termín s objednávkami odmietne zmazať, rovnako ako posledný termín
+podujatia (podujatie bez termínu sa nedá kúpiť).
+
+Obsadenosť pre zákaznícku mapu vracia `getSeatAvailability({ event_date_id })` z databázy;
+localStorage v `ticketing-db.ts` už drží len košík tohto prehliadača a kľúčuje sa `event_date_id`.
 
 ### Vyúčtovanie organizátorom
 `settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)
@@ -138,7 +164,10 @@ Zóny: verejný web (`index`, `events*`, `checkout*`, `scanner`, `support`, `acc
   zápis jeden atómický príkaz. Nikdy nerob slepý upsert do `seat_inventory` ani nedeľ kontrolu
   a zápis na dva dotazy — medzi ne sa zmestí súbežný kupujúci.
 - **Kapacita** — položky bez sedadla sa porovnávajú s `ticket_types.quantity`, resp.
-  `events.total_tickets`; kapacita 0 znamená „neobmedzené".
+  `event_dates.total_tickets` a až potom `events.total_tickets`; počíta sa **v rámci termínu**
+  (vypredaný piatok nesmie zavrieť predaj na sobotu). Kapacita 0 znamená „neobmedzené".
+- **Termín** — `submitOrder` si `event_date_id` overí (musí patriť podujatiu, byť `on_sale` a
+  nesmie byť v minulosti); bez neho vezme najbližší termín v predaji.
 - **Limity** — verejné endpointy, ktoré niečo stoja alebo blokujú, idú cez
   `hit_rate_limit()` (pevné okno, atomický inkrement). `submitOrder`: 20/h na IP, 10/h na e-mail,
   max 20 vstupeniek a 2 nedoplatené objednávky naraz. `askSupport`: 30/h na IP.
@@ -230,7 +259,8 @@ Migrácie sú nasadené a zapísané v `supabase_migrations.schema_migrations`, 
 schémy rob novou migráciou v `supabase/migrations/`, nie ručným SQL.
 
 Funkcie v databáze: `has_role()`, `handle_new_user()`, `update_updated_at_column()`,
-`reserve_seats()` (atómická rezervácia) a `expire_stale_orders()`. Posledná menovaná beží
+`reserve_seats(p_event_id, p_event_date_id, p_order_id, p_seats, p_reserved_until)` (atómická
+rezervácia), `sync_event_primary_date()` a `expire_stale_orders()`. Posledná menovaná beží
 každých 5 minút cez `pg_cron` (úloha `expire-stale-orders`) a navyše ju oportunisticky volá
 `submitOrder`. Zoznam úloh: `select * from cron.job;`
 

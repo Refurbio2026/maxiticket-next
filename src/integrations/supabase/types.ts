@@ -180,6 +180,7 @@ export type Database = {
           customer_name: string | null;
           customer_phone: string | null;
           event_id: string;
+          event_date_id: string;
           expires_at: string | null;
           gopay_payment_id: string | null;
           gopay_payment_url: string | null;
@@ -201,6 +202,7 @@ export type Database = {
           customer_name?: string | null;
           customer_phone?: string | null;
           event_id: string;
+          event_date_id: string;
           expires_at?: string | null;
           gopay_payment_id?: string | null;
           gopay_payment_url?: string | null;
@@ -222,6 +224,7 @@ export type Database = {
           customer_name?: string | null;
           customer_phone?: string | null;
           event_id?: string;
+          event_date_id?: string;
           expires_at?: string | null;
           gopay_payment_id?: string | null;
           gopay_payment_url?: string | null;
@@ -475,6 +478,7 @@ export type Database = {
         Row: {
           created_at: string;
           event_id: string;
+          event_date_id: string;
           id: string;
           is_vip: boolean;
           label: string | null;
@@ -488,6 +492,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           event_id: string;
+          event_date_id: string;
           id?: string;
           is_vip?: boolean;
           label?: string | null;
@@ -501,6 +506,7 @@ export type Database = {
         Update: {
           created_at?: string;
           event_id?: string;
+          event_date_id?: string;
           id?: string;
           is_vip?: boolean;
           label?: string | null;
@@ -647,6 +653,7 @@ export type Database = {
         Row: {
           allow_reentry: boolean;
           event_id: string;
+          event_date_id: string;
           id: string;
           issued_at: string;
           last_scan_at: string | null;
@@ -663,6 +670,7 @@ export type Database = {
         Insert: {
           allow_reentry?: boolean;
           event_id: string;
+          event_date_id: string;
           id?: string;
           issued_at?: string;
           last_scan_at?: string | null;
@@ -679,6 +687,7 @@ export type Database = {
         Update: {
           allow_reentry?: boolean;
           event_id?: string;
+          event_date_id?: string;
           id?: string;
           issued_at?: string;
           last_scan_at?: string | null;
@@ -753,6 +762,50 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      event_dates: {
+        Row: {
+          created_at: string;
+          event_date: string;
+          event_id: string;
+          event_time: string;
+          id: string;
+          note: string | null;
+          status: string;
+          total_tickets: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_date: string;
+          event_id: string;
+          event_time: string;
+          id?: string;
+          note?: string | null;
+          status?: string;
+          total_tickets?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          event_date?: string;
+          event_id?: string;
+          event_time?: string;
+          id?: string;
+          note?: string | null;
+          status?: string;
+          total_tickets?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_dates_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       venues: {
         Row: {
@@ -831,6 +884,7 @@ export type Database = {
       reserve_seats: {
         Args: {
           p_event_id: string;
+          p_event_date_id: string;
           p_order_id: string;
           p_reserved_until: string;
           p_seats: Json;
