@@ -181,6 +181,7 @@ export type Database = {
           customer_phone: string | null;
           cashier_id: string | null;
           channel: string;
+          coupon_id: string | null;
           discount_amount: number;
           fiscal_receipt_id: string | null;
           payment_method: string | null;
@@ -212,6 +213,7 @@ export type Database = {
           customer_phone?: string | null;
           cashier_id?: string | null;
           channel?: string;
+          coupon_id?: string | null;
           discount_amount?: number;
           fiscal_receipt_id?: string | null;
           payment_method?: string | null;
@@ -243,6 +245,7 @@ export type Database = {
           customer_phone?: string | null;
           cashier_id?: string | null;
           channel?: string;
+          coupon_id?: string | null;
           discount_amount?: number;
           fiscal_receipt_id?: string | null;
           payment_method?: string | null;
@@ -951,6 +954,244 @@ export type Database = {
         Update: { last_number?: number; organizer_id?: string; year?: number };
         Relationships: [];
       };
+      coupons: {
+        Row: {
+          code: string;
+          created_at: string;
+          created_by: string | null;
+          discount_type: string;
+          discount_value: number;
+          event_id: string | null;
+          id: string;
+          max_uses: number | null;
+          max_uses_per_email: number | null;
+          min_order_amount: number;
+          note: string | null;
+          organizer_id: string | null;
+          status: string;
+          updated_at: string;
+          used_count: number;
+          valid_from: string | null;
+          valid_until: string | null;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          created_by?: string | null;
+          discount_type?: string;
+          discount_value: number;
+          event_id?: string | null;
+          id?: string;
+          max_uses?: number | null;
+          max_uses_per_email?: number | null;
+          min_order_amount?: number;
+          note?: string | null;
+          organizer_id?: string | null;
+          status?: string;
+          updated_at?: string;
+          used_count?: number;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          discount_type?: string;
+          discount_value?: number;
+          event_id?: string | null;
+          id?: string;
+          max_uses?: number | null;
+          max_uses_per_email?: number | null;
+          min_order_amount?: number;
+          note?: string | null;
+          organizer_id?: string | null;
+          status?: string;
+          updated_at?: string;
+          used_count?: number;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "coupons_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string;
+          created_at: string;
+          discount_amount: number;
+          email: string | null;
+          id: string;
+          order_id: string | null;
+        };
+        Insert: {
+          coupon_id: string;
+          created_at?: string;
+          discount_amount?: number;
+          email?: string | null;
+          id?: string;
+          order_id?: string | null;
+        };
+        Update: {
+          coupon_id?: string;
+          created_at?: string;
+          discount_amount?: number;
+          email?: string | null;
+          id?: string;
+          order_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey";
+            columns: ["coupon_id"];
+            isOneToOne: false;
+            referencedRelation: "coupons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "coupon_redemptions_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      email_templates: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          html: string;
+          key: string;
+          name: string;
+          subject: string;
+          text_body: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          html: string;
+          key: string;
+          name: string;
+          subject: string;
+          text_body?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          html?: string;
+          key?: string;
+          name?: string;
+          subject?: string;
+          text_body?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      scanner_devices: {
+        Row: {
+          created_at: string;
+          device_type: string;
+          event_id: string | null;
+          id: string;
+          last_seen_at: string | null;
+          location: string | null;
+          name: string;
+          note: string | null;
+          organizer_id: string;
+          serial_number: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          device_type?: string;
+          event_id?: string | null;
+          id?: string;
+          last_seen_at?: string | null;
+          location?: string | null;
+          name: string;
+          note?: string | null;
+          organizer_id: string;
+          serial_number?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          device_type?: string;
+          event_id?: string | null;
+          id?: string;
+          last_seen_at?: string | null;
+          location?: string | null;
+          name?: string;
+          note?: string | null;
+          organizer_id?: string;
+          serial_number?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "scanner_devices_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      refund_reasons: {
+        Row: {
+          active: boolean;
+          code: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          organizer_fault: boolean;
+          requires_note: boolean;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          code: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          organizer_fault?: boolean;
+          requires_note?: boolean;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          code?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          organizer_fault?: boolean;
+          requires_note?: boolean;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       event_dates: {
         Row: {
           created_at: string;
@@ -1084,6 +1325,28 @@ export type Database = {
           p_organizer_id: string;
         };
         Returns: string;
+      };
+      check_coupon: {
+        Args: {
+          p_code: string;
+          p_event_id: string | null;
+          p_amount: number;
+          p_email?: string | null;
+          p_claim?: boolean;
+        };
+        Returns: { coupon_id: string | null; discount: number; error_code: string | null }[];
+      };
+      release_coupon: {
+        Args: {
+          p_coupon_id: string;
+        };
+        Returns: undefined;
+      };
+      touch_scanner_device: {
+        Args: {
+          p_device_id: string;
+        };
+        Returns: undefined;
       };
       expire_stale_orders: {
         Args: Record<string, never>;

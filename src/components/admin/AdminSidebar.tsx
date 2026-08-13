@@ -122,7 +122,7 @@ const groups: Group[] = [
         icon: ShieldCheck,
         demo: true,
       },
-      { title: "Zariadenia / čítačky", url: "/admin/maxiticket/devices", icon: Scan, demo: true },
+      { title: "Zariadenia / čítačky", url: "/admin/maxiticket/devices", icon: Scan },
       {
         title: "Účtovanie / výpisy z banky",
         url: "/admin/maxiticket/accounting-bank",
@@ -145,7 +145,6 @@ const groups: Group[] = [
         title: "Typy refundácií",
         url: "/admin/maxiticket/refund-types",
         icon: RotateCcw,
-        demo: true,
       },
       { title: "Bilancie", url: "/admin/maxiticket/balances", icon: Scale, demo: true },
     ],
@@ -157,7 +156,7 @@ const groups: Group[] = [
       { title: "Termíny", url: "/admin/events/dates", icon: CalendarClock },
       { title: "Editor hál", url: "/admin/events/venue-layouts", icon: LayoutGrid },
       { title: "Miesta konania", url: "/admin/events/venues", icon: MapPin },
-      { title: "Zľavové kupóny", url: "/admin/events/coupons", icon: Tag, demo: true },
+      { title: "Zľavové kupóny", url: "/admin/events/coupons", icon: Tag },
     ],
   },
   {
@@ -218,7 +217,7 @@ const groups: Group[] = [
     label: "Systém",
     items: [
       { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet, local: true },
-      { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail, demo: true },
+      { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail },
       { title: "Používatelia", url: "/admin/system/users", icon: UserCog },
     ],
   },

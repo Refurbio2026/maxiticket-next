@@ -1,5 +1,6 @@
 // POST /api/public/tickets/scan
-// Body: { token: string, event_id: string, scanner_user_id?: string, scanner_name?: string, allow_reentry?: boolean }
+// Body: { token: string, event_id: string, scanner_user_id?: string, scanner_name?: string,
+//         device_id?: string, allow_reentry?: boolean }
 // Returns ticket info + result: valid | duplicate | invalid | reentry
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -37,7 +38,18 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
         const eventToken = body?.event_token ? String(body.event_token).trim() : null;
         const scannedBy = body?.scanner_user_id ? String(body.scanner_user_id) : null;
         const scannerName = body?.scanner_name ? String(body.scanner_name) : null;
+        const deviceId = body?.device_id ? String(body.device_id) : null;
         const allowReentry = Boolean(body?.allow_reentry);
+
+        // Zariadenie si poznačíme, že žije. Beží to na pozadí — keby sa zápis
+        // nepodaril, sken sa tým nesmie zdržať ani zhodiť.
+        if (deviceId) {
+          void supabaseAdmin
+            .rpc("touch_scanner_device", { p_device_id: deviceId })
+            .then(({ error }) => {
+              if (error) console.error("touch_scanner_device zlyhalo", error.message);
+            });
+        }
 
         // SECURITY: scanning is authorized ONLY by knowledge of the event's
         // scanner_token (the shared scanner secret). We never trust a raw

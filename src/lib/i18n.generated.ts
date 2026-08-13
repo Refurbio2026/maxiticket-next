@@ -230,6 +230,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.addToCart": "+ Pridať do košíka",
     "orgPos.afterOpenDesc": "Po otvorení sa zobrazí predajná obrazovka s vstupenkami a košíkom.",
     "orgPos.apply": "Použiť",
+    "orgPos.remove": "Odobrať",
     "orgPos.capacity": "Kapacita: {{count}}",
     "orgPos.cart": "Košík",
     "orgPos.cartEmpty": "Košík je prázdny",
@@ -786,6 +787,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.addToCart": "+ Add to cart",
     "orgPos.afterOpenDesc": "After opening, the sales screen with tickets and cart will appear.",
     "orgPos.apply": "Apply",
+    "orgPos.remove": "Remove",
     "orgPos.capacity": "Capacity: {{count}}",
     "orgPos.cart": "Cart",
     "orgPos.cartEmpty": "Cart is empty",
@@ -1344,6 +1346,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.afterOpenDesc":
       "Nach dem Öffnen erscheint der Verkaufsbildschirm mit Tickets und Warenkorb.",
     "orgPos.apply": "Anwenden",
+    "orgPos.remove": "Entfernen",
     "orgPos.capacity": "Kapazität: {{count}}",
     "orgPos.cart": "Warenkorb",
     "orgPos.cartEmpty": "Warenkorb ist leer",
@@ -1905,6 +1908,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgPos.afterOpenDesc":
       "Megnyitás után megjelenik az eladási képernyő a jegyekkel és a kosárral.",
     "orgPos.apply": "Alkalmaz",
+    "orgPos.remove": "Eltávolítás",
     "orgPos.capacity": "Kapacitás: {{count}}",
     "orgPos.cart": "Kosár",
     "orgPos.cartEmpty": "A kosár üres",

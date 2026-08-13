@@ -132,21 +132,20 @@ export const refundOrder = createServerFn({ method: "POST" })
     if (data.notify_customer && order.customer_email) {
       try {
         const orderShort = order.id.slice(0, 8).toUpperCase();
+
+        // Znenie je šablóna `refund` v databáze; keď chýba, použije sa vstavaná.
+        const { renderEmail } = await import("./email-templates.server");
+        const rendered = await renderEmail("refund", {
+          customer_name: order.customer_name || "",
+          order_short: orderShort,
+          amount: amount.toFixed(2),
+          currency: order.currency || "EUR",
+          refund_type: full ? "Plný refund" : "Čiastočný refund",
+          reason: data.reason || "",
+        });
         const subject = full
-          ? `vipky.sk — refund objednávky #${orderShort}`
-          : `vipky.sk — čiastočný refund objednávky #${orderShort}`;
-        const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#fff;padding:24px;color:#111">
-<h2 style="margin:0 0 12px">Refund spracovaný</h2>
-<p>Dobrý deň ${order.customer_name || ""},</p>
-<p>refund za vašu objednávku <strong>#${orderShort}</strong> bol úspešne spracovaný.</p>
-<table style="border-collapse:collapse;margin:16px 0">
-  <tr><td style="padding:4px 12px 4px 0;color:#666">Suma:</td><td><strong>${amount.toFixed(2)} ${order.currency || "EUR"}</strong></td></tr>
-  <tr><td style="padding:4px 12px 4px 0;color:#666">Typ:</td><td>${full ? "Plný refund" : "Čiastočný refund"}</td></tr>
-  ${data.reason ? `<tr><td style="padding:4px 12px 4px 0;color:#666;vertical-align:top">Dôvod:</td><td>${data.reason}</td></tr>` : ""}
-</table>
-<p>Suma sa vráti na pôvodný spôsob platby (zvyčajne do 5 pracovných dní).</p>
-<p style="color:#888;font-size:12px;margin-top:24px">vipky.sk</p>
-</body></html>`;
+          ? rendered.subject
+          : rendered.subject.replace("refund objednávky", "čiastočný refund objednávky");
 
         // Pôvodne to volalo RPC `enqueue_email` do fronty `transactional_emails`.
         // Tá funkcia v databáze neexistuje (ani schéma pgmq), takže oznámenie
@@ -156,8 +155,8 @@ export const refundOrder = createServerFn({ method: "POST" })
         const sent = await sendMail({
           to: order.customer_email,
           subject,
-          html,
-          text: `Refund za objednávku #${orderShort} vo výške ${amount.toFixed(2)} ${order.currency || "EUR"} bol spracovaný.`,
+          html: rendered.html,
+          text: rendered.text,
         });
         await supabaseAdmin.from("email_logs").insert({
           order_id: order.id,

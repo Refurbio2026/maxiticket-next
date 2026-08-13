@@ -9,6 +9,7 @@ import {
   type Order,
 } from "@/lib/ticketing-db";
 import { submitOrder, createGoPayPaymentForOrder } from "@/lib/payments.functions";
+import { previewCoupon } from "@/lib/coupons.functions";
 import { useEvent } from "@/hooks/use-events";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
@@ -73,6 +74,41 @@ function CheckoutPage() {
   const submit = useServerFn(submitOrder);
   const createPayment = useServerFn(createGoPayPaymentForOrder);
 
+  // Zľavový kupón. Toto je len náhľad — záväzne ho uplatní až server pri
+  // zakladaní objednávky, takže s hodnotami v prehliadači sa nedá hýbať.
+  const checkCoupon = useServerFn(previewCoupon);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+
+  const applyCoupon = async () => {
+    if (!order || !couponInput.trim()) return;
+    setCheckingCoupon(true);
+    try {
+      const result = await checkCoupon({
+        data: {
+          code: couponInput.trim(),
+          event_id: order.event_id,
+          amount: order.total_amount,
+          email: form.email || undefined,
+        },
+      });
+      if (!result.ok) {
+        setCoupon(null);
+        toast.error(result.message || "Kupón sa nepodarilo uplatniť");
+        return;
+      }
+      setCoupon({ code: result.code, discount: result.discount });
+      toast.success(`Kupón ${result.code} uplatnený: −€${result.discount.toFixed(2)}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kupón sa nepodarilo overiť");
+    } finally {
+      setCheckingCoupon(false);
+    }
+  };
+
+  const payable = order ? Math.max(0, order.total_amount - (coupon?.discount ?? 0)) : 0;
+
   const pay = async () => {
     if (!order) return;
     if (!form.first_name || !form.last_name || !form.email) {
@@ -108,6 +144,7 @@ function CheckoutPage() {
             is_vip: it.is_vip ?? false,
             quantity: 1,
           })),
+          coupon_code: coupon?.code || undefined,
         },
       });
       const { payment_url } = await createPayment({ data: { order_id: supabaseOrderId } });
@@ -238,7 +275,7 @@ function CheckoutPage() {
                 ? "Pripravujem GoPay…"
                 : expired
                   ? "Rezervácia vypršala"
-                  : `Zaplatiť cez GoPay €${order.total_amount.toFixed(2)}`}
+                  : `Zaplatiť cez GoPay €${payable.toFixed(2)}`}
             </Button>
 
             <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
@@ -291,11 +328,62 @@ function CheckoutPage() {
             ))}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Spolu</span>
-            <span className="font-display text-2xl font-bold">
-              €{order.total_amount.toFixed(2)}
-            </span>
+          <div className="mt-4 pt-4 border-t border-border/40 space-y-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Zľavový kód
+            </Label>
+            {coupon ? (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm">
+                <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                  {coupon.code}
+                </span>
+                <button
+                  onClick={() => {
+                    setCoupon(null);
+                    setCouponInput("");
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Odobrať
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                  placeholder="napr. LETO25"
+                  className="font-mono"
+                />
+                <Button
+                  variant="outline"
+                  onClick={applyCoupon}
+                  disabled={checkingCoupon || !couponInput.trim()}
+                >
+                  {checkingCoupon ? "…" : "Uplatniť"}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-border/40 space-y-1">
+            {coupon && (
+              <>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Medzisúčet</span>
+                  <span>€{order.total_amount.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-emerald-600 dark:text-emerald-400">
+                  <span>Zľava {coupon.code}</span>
+                  <span>−€{coupon.discount.toFixed(2)}</span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Spolu</span>
+              <span className="font-display text-2xl font-bold">€{payable.toFixed(2)}</span>
+            </div>
           </div>
 
           <div

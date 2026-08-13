@@ -34,18 +34,20 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 23 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 28 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
 `venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
-`pos_cashiers`, `pos_sessions`, `pos_closings`, `pos_receipt_counters`.
+`pos_cashiers`, `pos_sessions`, `pos_closings`, `pos_receipt_counters`, `coupons`,
+`coupon_redemptions`, `email_templates`, `scanner_devices`, `refund_reasons`.
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
 **2. localStorage „databáza" (demo)** — `src/lib/local-db.ts` + `pos-db.ts`, `bank-db.ts`,
 `cashier-db.ts`, `marketing-db.ts`, `wallet-db.ts`, `ticketing-db.ts`, `admin-mock.ts`.
 Zostáva na nej marketing, banka, účtovné reporty, kategórie podujatí, wallet nastavenia a z POS
-už len zariadenia a eKasa (`payment-terminal-adapter.ts`, `fiscal-adapter.ts` — simulácia hardvéru).
+už len eKasa a stav terminálu (`payment-terminal-adapter.ts`, `fiscal-adapter.ts` — simulácia
+hardvéru). Evidencia zariadení je od 13. 8. v databáze (`scanner_devices`).
 `ticketing-db.ts` je už len košík (výber sedadiel v tomto prehliadači do kliknutia na „Zaplatiť");
 skutočná obsadenosť je v `seat_inventory`.
 
@@ -54,7 +56,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**25 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**20 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -115,8 +117,9 @@ vytvára tie isté `orders` / `order_items` / `tickets` ako web** — líši sa 
 a `receipt_number`. Vďaka tomu funguje skener, kapacita, štatistiky aj provízia bez druhej vetvy.
 Nikdy nezakladaj samostatnú „POS objednávku" mimo `orders`.
 
-- **Ceny počíta server** rovnako ako pri webovom predaji; pokladňa posiela len čo predáva. Zľava
-  ide ako percento (`discount_pct`), uloží sa do `orders.discount_amount`.
+- **Ceny počíta server** rovnako ako pri webovom predaji; pokladňa posiela len čo predáva. Ručná
+  zľava pokladníka ide ako percento (`discount_pct`); keď je zadaný kupón (`promo_code`), má
+  prednosť a zľavu určí `check_coupon`. Výsledok je vždy v `orders.discount_amount`.
 - **PIN pokladníka** hashuje server (`HMAC-SHA256(TICKET_QR_SECRET, "<cashierId>:<pin>")`) a
   overuje v konštantnom čase s limitom 10 pokusov / 15 min. Do prehliadača sa hash nikdy nedostane.
 - **Oprávnenia** (`pos_cashiers.permissions`) sa vynucujú na serveri — `sale`, `void`,
@@ -130,6 +133,50 @@ Nikdy nezakladaj samostatnú „POS objednávku" mimo `orders`.
 - **eKasa a platobný terminál sú stále simulácia** (`fiscal-adapter.ts`,
   `payment-terminal-adapter.ts`). Číslo fiškálneho dokladu sa uloží do `orders.fiscal_receipt_id`;
   na reálnu prevádzku treba certifikát a poskytovateľa.
+
+### Zľavové kupóny
+
+`coupons` + `coupon_redemptions` + `coupons.functions.ts` / `coupons.server.ts` a
+`/admin/events/coupons`. Kód je jedinečný v celej platforme (`unique (upper(code))`).
+Rozsah platnosti: `event_id` → jedno podujatie, inak `organizer_id` → všetky jeho podujatia,
+a keď je aj ten `NULL`, ide o kupón platformy (zakladá ho admin).
+
+**Kontrolu aj inkrement robí jedna funkcia v databáze** — `check_coupon(code, event_id, amount,
+email, claim)` si riadok kupónu uzamkne (`for update`), overí stav, platnosť, minimálnu sumu,
+celkový limit aj limit na e-mail, vypočíta zľavu a pri `claim => true` zvýši `used_count`.
+Nikdy nekontroluj kupón dvoma dotazmi — medzi ne sa zmestí súbežný kupujúci a posledné
+použitie sa minie dvakrát. Keď objednávka po uplatnení zlyhá, zavolaj `releaseCoupon()`
+(všetky chybové vetvy v `submitOrder` aj `createPosSale` to už robia).
+
+Klient posiela **iba kód**, nikdy sumu ani percento. `previewCoupon` je verejný náhľad
+(limit 30 pokusov / 10 min na IP, aby sa kódy nedali uhádnuť skriptom) a počítadlo nezvyšuje.
+Uplatnenie sa zapíše do `orders.coupon_id` / `discount_amount` / `promo_code` a do
+`coupon_redemptions` (unique na `order_id` — na objednávku ide najviac jeden kupón).
+V pokladni má kupón prednosť pred ručnou zľavou pokladníka (`discount_pct`).
+
+### Emailové šablóny
+
+`email_templates` + `email-templates.ts` (izomorfné, vstavané znenie + renderer),
+`email-templates.server.ts` (`renderEmail`) a `/admin/system/email-templates`.
+Kľúče sú `tickets` a `refund`; nový kľúč pridávaj **spolu s kódom, ktorý ho odošle**.
+
+Šablóna v databáze je nepovinná — keď riadok chýba alebo má `enabled = false`, použije sa
+`DEFAULT_TEMPLATES` z kódu. Odosielanie tak nikdy nezávisí od toho, či niekto šablónu založil.
+Podporujeme len `{{kľúč}}` a `{{#if kľúč}} … {{/if}}`; hodnoty sa do HTML escapujú
+(do predmetu a čistého textu nie).
+
+### Zariadenia a dôvody refundácie
+
+`scanner_devices` + `devices.functions.ts` + `/admin/maxiticket/devices`. Skener pri dverách si
+čítačku vyberie zo zoznamu (`listScannerDevicesForEvent` sa autorizuje **skenovacím kódom
+podujatia**, nie prihlásením — tablet sa neprihlasuje) a jej meno ide do
+`ticket_scans.scanner_name`. Posledné použitie zapisuje `touch_scanner_device()` mimo hlavnej
+cesty, aby zlyhanie zápisu nezdržalo sken.
+
+`refund_reasons` + `refund-reasons.functions.ts` + `/admin/maxiticket/refund-types`. Číselník
+číta ktokoľvek prihlásený, mení ho len admin. Refundačný dialóg posiela do `refundOrder`
+názov dôvodu (plus povinnú poznámku pri `requires_note`), takže sa z refundácií dá robiť
+štatistika — predtým to bol voľný text.
 
 ### Vyúčtovanie organizátorom
 `settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)

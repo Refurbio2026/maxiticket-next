@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { newSignedTicket } from "./qr-token.server";
+import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
 
 export const CASHIER_PERMISSIONS = [
   "sale",
@@ -639,10 +640,32 @@ export const createPosSale = createServerFn({ method: "POST" })
     }
 
     const subtotal = priced.reduce((s, it) => s + it.unit_price * it.quantity, 0);
+
+    // Zľavový kupón overuje a uplatňuje server. Predtým mala pokladňa trojicu
+    // kódov natvrdo v komponente — dali sa prečítať z JavaScriptu prehliadača
+    // a použiť donekonečna. Ručná zľava pokladníka (`discount_pct`) platí len
+    // vtedy, keď kupón zadaný nie je.
+    let couponId: string | null = null;
+    let couponDiscount = 0;
+    if (data.promo_code?.trim()) {
+      const result = await checkCoupon({
+        code: data.promo_code,
+        eventId: data.event_id,
+        amount: subtotal,
+        email: data.customer_email ?? null,
+        claim: true,
+      });
+      if (!result.ok) throw new Error(couponErrorMessage(result.error));
+      couponId = result.coupon_id;
+      couponDiscount = result.discount;
+    }
+
     const discount =
       data.payment_method === "free"
         ? subtotal
-        : Math.round(((subtotal * data.discount_pct) / 100) * 100) / 100;
+        : couponId
+          ? couponDiscount
+          : Math.round(((subtotal * data.discount_pct) / 100) * 100) / 100;
     const total = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
 
     const { data: receipt } = await supabaseAdmin.rpc("next_receipt_number", {
@@ -661,7 +684,8 @@ export const createPosSale = createServerFn({ method: "POST" })
         pos_session_id: session.id,
         receipt_number: receipt as string,
         discount_amount: discount,
-        promo_code: data.promo_code || null,
+        coupon_id: couponId,
+        promo_code: couponId ? data.promo_code!.trim().toUpperCase() : null,
         fiscal_receipt_id: data.fiscal_receipt_id || null,
         customer_name: data.customer_name || null,
         customer_email: data.customer_email || null,
@@ -672,7 +696,10 @@ export const createPosSale = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (orderErr || !order) throw new Error(orderErr?.message || "Predaj sa nepodarilo uložiť");
+    if (orderErr || !order) {
+      if (couponId) await releaseCoupon(couponId);
+      throw new Error(orderErr?.message || "Predaj sa nepodarilo uložiť");
+    }
 
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(
       priced.map((it) => ({
@@ -684,7 +711,10 @@ export const createPosSale = createServerFn({ method: "POST" })
         quantity: it.quantity,
       })),
     );
-    if (itemsErr) throw new Error(itemsErr.message);
+    if (itemsErr) {
+      if (couponId) await releaseCoupon(couponId);
+      throw new Error(itemsErr.message);
+    }
 
     // Sedadlá cez tú istú atómickú funkciu ako web — dvaja kupujúci (jeden pri
     // pokladni, druhý na webe) nemôžu dostať to isté miesto.
@@ -705,6 +735,7 @@ export const createPosSale = createServerFn({ method: "POST" })
       if (seatErr) {
         await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
         await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        if (couponId) await releaseCoupon(couponId);
         throw new Error(
           seatErr.message?.includes("SEATS_TAKEN")
             ? "Niektoré sedadlá si medzitým vzal iný kupujúci."
@@ -735,6 +766,15 @@ export const createPosSale = createServerFn({ method: "POST" })
     );
     const { error: ticketErr } = await supabaseAdmin.from("tickets").insert(tickets);
     if (ticketErr) throw new Error(ticketErr.message);
+
+    if (couponId) {
+      await recordRedemption({
+        couponId,
+        orderId: order.id,
+        email: data.customer_email ?? null,
+        discount,
+      });
+    }
 
     return {
       order_id: order.id,

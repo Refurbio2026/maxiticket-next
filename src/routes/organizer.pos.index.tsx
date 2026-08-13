@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import { type Ticket } from "@/lib/local-db";
@@ -17,6 +18,7 @@ import {
   type PosCashierRecord,
 } from "@/hooks/use-pos";
 import type { PosSaleRecord } from "@/lib/pos.functions";
+import { previewCoupon } from "@/lib/coupons.functions";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { fiscal } from "@/lib/fiscal-adapter";
 import { printTickets } from "@/lib/print-tickets";
@@ -72,6 +74,17 @@ function PosPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discountPct, setDiscountPct] = useState<number>(0);
   const [promo, setPromo] = useState<string>("");
+  /**
+   * Kupón overený serverom (`null` = nie je uplatnený). Držíme si aj typ zľavy,
+   * aby sa suma prepočítala pri zmene košíka bez ďalšieho dotazu; záväzne ju
+   * aj tak počíta server pri uložení predaja.
+   */
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    type: "percent" | "amount";
+    value: number;
+  } | null>(null);
+  const [checkingPromo, setCheckingPromo] = useState(false);
   const [terminalStatus, setTerminalStatus] = useState<
     "disconnected" | "connected" | "busy" | "error"
   >("disconnected");
@@ -85,6 +98,7 @@ function PosPage() {
   const activeCashier: PosCashierRecord | null =
     cashiers.find((c) => c.id === activeSession?.cashier_id) ?? null;
 
+  const checkCouponFn = useServerFn(previewCoupon);
   const createSale = useCreatePosSale();
   const voidSaleMutation = useVoidPosSale();
   const closeSession = useClosePosSession();
@@ -110,8 +124,22 @@ function PosPage() {
     setDateId(sellableDates[0]?.id ?? "");
   }, [eventId, sellableDates]);
 
+  // Kupón môže platiť len na jedno podujatie — po prepnutí sa musí overiť znovu.
+  useEffect(() => {
+    setAppliedCoupon(null);
+    setPromo("");
+  }, [eventId]);
+
   const subtotal = cart.reduce((s, i) => s + i.ticket.price * i.qty, 0);
-  const discount = Math.round(((subtotal * discountPct) / 100) * 100) / 100;
+  // Kupón má prednosť pred ručnou zľavou — rovnako to počíta aj server.
+  const discount = appliedCoupon
+    ? Math.min(
+        appliedCoupon.type === "percent"
+          ? Math.round(((subtotal * appliedCoupon.value) / 100) * 100) / 100
+          : appliedCoupon.value,
+        subtotal,
+      )
+    : Math.round(((subtotal * discountPct) / 100) * 100) / 100;
   const total = Math.max(0, subtotal - discount);
 
   const addToCart = (t: Ticket) => {
@@ -132,16 +160,42 @@ function PosPage() {
       c.flatMap((i) => (i.ticket.id === id ? (i.qty <= 1 ? [] : [{ ...i, qty: i.qty - 1 }]) : [i])),
     );
   const remove = (id: string) => setCart((c) => c.filter((i) => i.ticket.id !== id));
-  const applyPromo = () => {
+  /**
+   * Kupón overuje server nad tabuľkou `coupons`. Predtým tu bola trojica kódov
+   * natvrdo v komponente — dala sa prečítať z JavaScriptu a použiť donekonečna.
+   * Toto je len náhľad, záväzne kupón uplatní až `createPosSale`.
+   */
+  const applyPromo = async () => {
     const code = promo.trim().toUpperCase();
-    if (!code) return;
-    const map: Record<string, number> = { WELCOME10: 10, VIP20: 20, EARLYBIRD: 15 };
-    if (map[code]) {
-      setDiscountPct(map[code]);
-      toast.success(t("orgPos.promoApplied", { pct: map[code] }));
-    } else {
-      toast.error(t("orgPos.invalidPromo"));
+    if (!code || !eventId) return;
+    setCheckingPromo(true);
+    try {
+      const result = await checkCouponFn({
+        data: { code, event_id: eventId, amount: subtotal },
+      });
+      if (!result.ok) {
+        setAppliedCoupon(null);
+        toast.error(result.message || t("orgPos.invalidPromo"));
+        return;
+      }
+      setAppliedCoupon({
+        code: result.code,
+        type: result.discount_type ?? "percent",
+        value: result.discount_value ?? 0,
+      });
+      setDiscountPct(0);
+      toast.success(`${result.code}: −€${result.discount.toFixed(2)}`);
+    } catch (e) {
+      setAppliedCoupon(null);
+      toast.error(e instanceof Error ? e.message : t("orgPos.invalidPromo"));
+    } finally {
+      setCheckingPromo(false);
     }
+  };
+
+  const clearPromo = () => {
+    setPromo("");
+    setAppliedCoupon(null);
   };
 
   const connect = async () => {
@@ -195,8 +249,8 @@ function PosPage() {
         event_id: selectedEvent.id,
         event_date_id: activeDate.id,
         payment_method: method,
-        discount_pct: discountPct,
-        promo_code: discountPct > 0 ? promo.toUpperCase() : null,
+        discount_pct: appliedCoupon ? 0 : discountPct,
+        promo_code: appliedCoupon ? appliedCoupon.code : null,
         fiscal_receipt_id: fiscalReceiptId ?? null,
         items: cart.map((i) => ({ ticket_type_id: i.ticket.id, quantity: i.qty })),
       });
@@ -225,7 +279,7 @@ function PosPage() {
       });
       setCart([]);
       setDiscountPct(0);
-      setPromo("");
+      clearPromo();
       toast.success(t("orgPos.saleCompleted", { number: sale.receipt_number }));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("orgPos.paymentError"));
@@ -564,11 +618,18 @@ function PosPage() {
               <Input
                 placeholder={t("orgPos.promoPlaceholder")}
                 value={promo}
-                onChange={(e) => setPromo(e.target.value)}
-                className="h-9"
+                onChange={(e) => setPromo(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && applyPromo()}
+                className="h-9 font-mono"
+                disabled={!!appliedCoupon}
               />
-              <Button variant="outline" size="sm" onClick={applyPromo}>
-                {t("orgPos.apply")}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={appliedCoupon ? clearPromo : applyPromo}
+                disabled={checkingPromo || (!promo.trim() && !appliedCoupon)}
+              >
+                {appliedCoupon ? t("orgPos.remove") : t("orgPos.apply")}
               </Button>
             </div>
             <div className="flex justify-between text-sm">
@@ -577,7 +638,9 @@ function PosPage() {
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm text-primary">
-                <span>{t("orgPos.discount", { pct: discountPct })}</span>
+                <span>
+                  {appliedCoupon ? appliedCoupon.code : t("orgPos.discount", { pct: discountPct })}
+                </span>
                 <span>−€{discount.toFixed(2)}</span>
               </div>
             )}

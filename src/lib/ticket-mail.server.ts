@@ -12,19 +12,12 @@ import { sendMail, isMailConfigured } from "./mailer.server";
 import { generateTicketsPdfBase64 } from "./ticket-pdf.server";
 import { signOrderAccess } from "./order-access.server";
 import { loadEventInfo } from "./event-info.server";
+import { renderEmail } from "./email-templates.server";
 
 function getOrigin(): string {
   const fromEnv = process.env.PUBLIC_SITE_URL || process.env.SITE_URL;
   if (fromEnv) return fromEnv.replace(/\/+$/, "");
   return "https://vipky.sk";
-}
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 type MailEvent = {
@@ -34,55 +27,6 @@ type MailEvent = {
   venue: string;
   city: string;
 };
-
-function buildHtml(opts: {
-  customerName: string;
-  orderShort: string;
-  event: MailEvent | null;
-  ticketCount: number;
-  total: number;
-  currency: string;
-  ticketsUrl: string;
-  invoiceUrl?: string | null;
-}): string {
-  const { customerName, orderShort, event, ticketCount, total, currency, ticketsUrl, invoiceUrl } =
-    opts;
-  const eventBlock = event
-    ? `
-      <tr><td style="padding:4px 0;color:#64748b;">Podujatie</td><td style="padding:4px 0;font-weight:600;">${esc(event.title)}</td></tr>
-      <tr><td style="padding:4px 0;color:#64748b;">Kedy</td><td style="padding:4px 0;">${esc(event.event_date)} · ${esc(event.event_time)}</td></tr>
-      <tr><td style="padding:4px 0;color:#64748b;">Kde</td><td style="padding:4px 0;">${esc(event.venue)}, ${esc(event.city)}</td></tr>`
-    : "";
-
-  return `<!doctype html>
-<html lang="sk"><body style="margin:0;background:#f1f5f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
-  <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
-    <div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;">
-      <div style="font-size:22px;font-weight:700;">vipky.sk</div>
-    </div>
-    <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px;">
-      <h1 style="margin:0 0 8px;font-size:20px;">Vstupenky sú tvoje 🎟️</h1>
-      <p style="margin:0 0 16px;color:#475569;line-height:1.5;">
-        Ahoj ${esc(customerName)}, platba prebehla v poriadku.
-        ${ticketCount === 1 ? "Vstupenku nájdeš" : `${ticketCount} vstupenky nájdeš`} v prílohe tohto e-mailu ako PDF.
-      </p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px;">
-        ${eventBlock}
-        <tr><td style="padding:4px 0;color:#64748b;">Objednávka</td><td style="padding:4px 0;font-family:monospace;">${esc(orderShort)}</td></tr>
-        <tr><td style="padding:4px 0;color:#64748b;">Zaplatené</td><td style="padding:4px 0;font-weight:600;">${total.toFixed(2)} ${esc(currency)}</td></tr>
-      </table>
-      <a href="${esc(ticketsUrl)}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:600;">
-        Zobraziť vstupenky online
-      </a>
-      ${invoiceUrl ? `<p style="margin:16px 0 0;font-size:13px;"><a href="${esc(invoiceUrl)}" style="color:#2563eb;">Stiahnuť faktúru (PDF)</a></p>` : ""}
-      <p style="margin:20px 0 0;font-size:13px;color:#64748b;line-height:1.5;">
-        Pri vstupe stačí ukázať QR kód z mobilu alebo vytlačenú vstupenku.
-        Otázky? Napíš na <a href="mailto:support@vipky.sk" style="color:#2563eb;">support@vipky.sk</a>.
-      </p>
-    </div>
-  </div>
-</body></html>`;
-}
 
 /**
  * Pošle vstupenky k zaplatenej objednávke. Bezpečné volať opakovane —
@@ -119,7 +63,6 @@ export async function sendTicketsEmail(
 
   const orderShort = order.id.slice(0, 8).toUpperCase();
   const ticketsUrl = `${getOrigin()}/checkout/success/${order.id}?t=${signOrderAccess(order.id)}`;
-  const subject = event ? `Vstupenky: ${event.title}` : `Vstupenky · objednávka ${orderShort}`;
 
   let attachments;
   try {
@@ -138,22 +81,35 @@ export async function sendTicketsEmail(
     console.error("PDF pre e-mail zlyhalo", order.id, e);
   }
 
-  const html = buildHtml({
-    customerName: (order.customer_name || "").split(" ")[0] || "zákazník",
-    orderShort,
-    event: (event as MailEvent | null) ?? null,
-    ticketCount: tickets.length,
-    total: Number(order.total_amount),
+  // Znenie e-mailu je šablóna v databáze (upravuje ju admin). Keď chýba,
+  // `renderEmail` vráti vstavané znenie, takže odoslanie nikdy nezávisí od
+  // toho, či niekto šablónu založil.
+  const ev = (event as MailEvent | null) ?? null;
+  const rendered = await renderEmail("tickets", {
+    customer_name: (order.customer_name || "").split(" ")[0] || "zákazník",
+    order_short: orderShort,
+    event_title: ev?.title ?? "",
+    event_date: ev?.event_date ?? "",
+    event_time: ev?.event_time ?? "",
+    venue: ev?.venue ?? "",
+    city: ev?.city ?? "",
+    ticket_count: tickets.length,
+    ticket_sentence:
+      tickets.length === 1 ? "Vstupenku nájdeš" : `${tickets.length} vstupenky nájdeš`,
+    total: Number(order.total_amount).toFixed(2),
     currency: order.currency || "EUR",
-    ticketsUrl,
-    invoiceUrl: order.superfaktura_invoice_pdf_url,
+    tickets_url: ticketsUrl,
+    invoice_url: order.superfaktura_invoice_pdf_url ?? "",
   });
+
+  // Bez názvu podujatia by bol predmet „Vstupenky: " — vtedy radšej číslo objednávky.
+  const subject = ev ? rendered.subject : `Vstupenky · objednávka ${orderShort}`;
 
   const result = await sendMail({
     to: order.customer_email,
     subject,
-    html,
-    text: `Platba prebehla v poriadku. Vstupenky nájdeš v prílohe alebo online: ${ticketsUrl}`,
+    html: rendered.html,
+    text: rendered.text,
     attachments,
   });
 

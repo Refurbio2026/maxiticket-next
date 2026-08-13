@@ -9,6 +9,7 @@ import { createPaidInvoice } from "./superfaktura.server";
 import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
 import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
+import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
 import { getRequest } from "@tanstack/react-start/server";
 
 /** Tvar z rozloženia sály — potrebujeme z neho len id a či je VIP. */
@@ -140,6 +141,8 @@ export const submitOrder = createServerFn({ method: "POST" })
         event_date_id: z.string().uuid().optional(),
         customer: CustomerSchema,
         items: z.array(ItemSchema).min(1).max(100),
+        // Kód zľavového kupónu. Zľavu počíta server — klient posiela len kód.
+        coupon_code: z.string().max(40).optional().nullable(),
       })
       .parse(input),
   )
@@ -321,7 +324,29 @@ export const submitOrder = createServerFn({ method: "POST" })
       }
     }
 
-    const total = priced.reduce((s, it) => s + it.unit_price * it.quantity, 0);
+    const subtotal = priced.reduce((s, it) => s + it.unit_price * it.quantity, 0);
+
+    // --- Zľavový kupón ---
+    // Uplatňuje ho server: klient pošle iba kód, sumu ani percento nie.
+    // `claim: true` zároveň zvýši počítadlo použití v tej istej transakcii,
+    // takže dvaja súbežní kupujúci nemôžu minúť to isté posledné použitie.
+    // Keď objednávka ďalej neprejde, použitie vrátime cez `releaseCoupon`.
+    let couponId: string | null = null;
+    let discount = 0;
+    if (data.coupon_code?.trim()) {
+      const result = await checkCoupon({
+        code: data.coupon_code,
+        eventId: data.event_id,
+        amount: subtotal,
+        email,
+        claim: true,
+      });
+      if (!result.ok) throw new Error(couponErrorMessage(result.error));
+      couponId = result.coupon_id;
+      discount = result.discount;
+    }
+
+    const total = Math.round((subtotal - discount) * 100) / 100;
     const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
 
     const { data: order, error: orderErr } = await supabaseAdmin
@@ -333,14 +358,19 @@ export const submitOrder = createServerFn({ method: "POST" })
         customer_email: data.customer.email,
         customer_phone: data.customer.phone || null,
         total_amount: total,
+        discount_amount: discount,
+        coupon_id: couponId,
+        promo_code: couponId ? data.coupon_code!.trim().toUpperCase() : null,
         currency: "EUR",
         status: "pending",
         expires_at: expiresAt,
       })
       .select()
       .single();
-    if (orderErr || !order)
+    if (orderErr || !order) {
+      if (couponId) await releaseCoupon(couponId);
       throw new Error(orderErr?.message || "Nepodarilo sa vytvoriť objednávku");
+    }
 
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(
       priced.map((it) => ({
@@ -352,7 +382,10 @@ export const submitOrder = createServerFn({ method: "POST" })
         quantity: it.quantity,
       })),
     );
-    if (itemsErr) throw new Error(itemsErr.message);
+    if (itemsErr) {
+      if (couponId) await releaseCoupon(couponId);
+      throw new Error(itemsErr.message);
+    }
 
     // Rezervácia sedadiel je jeden atómický príkaz v databáze (reserve_seats).
     // Kontrola obsadenosti a zápis sa už nedajú rozdeliť, takže dvaja súbežní
@@ -375,6 +408,7 @@ export const submitOrder = createServerFn({ method: "POST" })
         // Objednávka ostala bez sedadiel — zmažeme ju, nech nezavadzia.
         await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
         await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        if (couponId) await releaseCoupon(couponId);
         throw new Error(
           seatErr.message?.includes("SEATS_TAKEN")
             ? "Niektoré sedadlá si medzitým vzal iný kupujúci. Vyber prosím iné."
@@ -383,7 +417,13 @@ export const submitOrder = createServerFn({ method: "POST" })
       }
     }
 
-    return { order_id: order.id, total_amount: total };
+    // Uplatnenie zapisujeme až keď je objednávka kompletná — z týchto riadkov
+    // sa počíta limit na e-mail aj prehľad využitia kupónu.
+    if (couponId) {
+      await recordRedemption({ couponId, orderId: order.id, email, discount });
+    }
+
+    return { order_id: order.id, total_amount: total, discount_amount: discount };
   });
 
 // 2) Create GoPay payment for an existing pending order.

@@ -20,6 +20,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useServerFn } from "@tanstack/react-start";
+import { listScannerDevicesForEvent, type ScannerDeviceOption } from "@/lib/devices.functions";
 
 type ScanResult = "valid" | "duplicate" | "invalid" | "reentry" | "refunded";
 type ScanResponse = {
@@ -70,6 +72,14 @@ function ScannerPage() {
   const [manualCode, setManualCode] = useState("");
   const [last, setLast] = useState<ScanResponse | null>(null);
   const [busy, setBusy] = useState(false);
+  // Ktorá čítačka pri dverách toto je. Meno ide ku každému skenu, takže je
+  // spätne vidieť, ktorý vchod vstupenku načítal.
+  const [devices, setDevices] = useState<ScannerDeviceOption[]>([]);
+  const [deviceId, setDeviceId] = useState<string>(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("mt_scanner_device") || "",
+  );
+  const activeDevice = devices.find((d) => d.id === deviceId);
+  const fetchDevices = useServerFn(listScannerDevicesForEvent);
   const [stats, setStats] = useState<{
     sold: number;
     used: number;
@@ -110,6 +120,36 @@ function ScannerPage() {
       cancelled = true;
     };
   }, [eventToken]);
+
+  // Čítačky organizátora pre toto podujatie. Autorizuje sa skenovacím kódom,
+  // takže tablet pri dverách nepotrebuje prihlásenie.
+  useEffect(() => {
+    if (!eventToken) {
+      setDevices([]);
+      return;
+    }
+    let cancelled = false;
+    fetchDevices({ data: { event_token: eventToken } })
+      .then((list) => {
+        if (cancelled) return;
+        setDevices(list);
+        // Keď uložená čítačka pre toto podujatie neplatí, výber sa zruší.
+        setDeviceId((current) => (list.some((d) => d.id === current) ? current : ""));
+      })
+      .catch(() => {
+        if (!cancelled) setDevices([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [eventToken, fetchDevices]);
+
+  // Výber čítačky si tablet pamätá — obsluha ho nastaví raz za večer.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (deviceId) localStorage.setItem("mt_scanner_device", deviceId);
+    else localStorage.removeItem("mt_scanner_device");
+  }, [deviceId]);
 
   // Live stats
   useEffect(() => {
@@ -165,7 +205,8 @@ function ScannerPage() {
       token: ticketToken,
       event_token: eventToken,
       event_id: event.id,
-      scanner_name: "Vstupná čítačka",
+      device_id: deviceId || undefined,
+      scanner_name: activeDevice?.name || "Vstupná čítačka",
       allow_reentry: opts?.allowReentry || false,
     };
     try {
@@ -321,19 +362,37 @@ function ScannerPage() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-xl"
-            onClick={() => {
-              setEvent(null);
-              setEventToken("");
-              setTokenInput("");
-              setLast(null);
-            }}
-          >
-            Zmeniť podujatie
-          </Button>
+          <div className="flex items-center gap-2">
+            {devices.length > 0 && (
+              <select
+                value={deviceId}
+                onChange={(e) => setDeviceId(e.target.value)}
+                className="h-9 rounded-xl border border-border/60 bg-card px-3 text-sm"
+                title="Ktorá čítačka toto je"
+              >
+                <option value="">Bez zariadenia</option>
+                {devices.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                    {d.location ? ` · ${d.location}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              onClick={() => {
+                setEvent(null);
+                setEventToken("");
+                setTokenInput("");
+                setLast(null);
+              }}
+            >
+              Zmeniť podujatie
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-[1.2fr_1fr] gap-6">

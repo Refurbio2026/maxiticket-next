@@ -28,6 +28,7 @@ import {
 import { Loader2, RefreshCw, ExternalLink, Search, Undo2 } from "lucide-react";
 import { listAdminOrders, type AdminOrderRow } from "@/lib/admin-stats.functions";
 import { refundOrder } from "@/lib/refunds.functions";
+import { listRefundReasons } from "@/lib/refund-reasons.functions";
 
 export const Route = createFileRoute("/admin/sales/sales")({
   head: () => ({ meta: [{ title: "Predaj · vipky.sk Admin" }] }),
@@ -51,14 +52,24 @@ const STATUSES: { value: string; label: string; cls?: string }[] = [
 function Page() {
   const fetchOrders = useServerFn(listAdminOrders);
   const doRefund = useServerFn(refundOrder);
+  const fetchReasons = useServerFn(listRefundReasons);
+  const reasons = useQuery({
+    queryKey: ["refund-reasons", "active"],
+    queryFn: () => fetchReasons({ data: { only_active: true } }),
+  });
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [refundFor, setRefundFor] = useState<AdminOrderRow | null>(null);
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
+  /** Kód vybraného dôvodu z číselníka; prázdny = obsluha píše vlastný text. */
+  const [reasonCode, setReasonCode] = useState("");
   const [notifyCustomer, setNotifyCustomer] = useState(true);
   const [refunding, setRefunding] = useState(false);
+  // Až za deklaráciou `reasonCode` — inak sa číta pred inicializáciou a celá
+  // stránka pri renderovaní spadne.
+  const selectedReason = (reasons.data ?? []).find((r) => r.code === reasonCode);
 
   const q = useQuery({
     queryKey: ["admin-orders", status, activeSearch],
@@ -74,6 +85,7 @@ function Page() {
     setRefundFor(r);
     setRefundAmount(r.total_amount.toFixed(2));
     setRefundReason("");
+    setReasonCode("");
     setNotifyCustomer(true);
   }
 
@@ -90,7 +102,7 @@ function Page() {
         data: {
           order_id: refundFor.id,
           amount: amt,
-          reason: refundReason || null,
+          reason: [selectedReason?.name, refundReason.trim()].filter(Boolean).join(" — ") || null,
           notify_customer: notifyCustomer,
         },
       });
@@ -314,14 +326,32 @@ function Page() {
                 </Button>
               </div>
             </div>
-            <div>
-              <Label htmlFor="refund-reason">Dôvod (voliteľné)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="refund-reason">Dôvod</Label>
+              <Select value={reasonCode} onValueChange={setReasonCode}>
+                <SelectTrigger id="refund-reason">
+                  <SelectValue placeholder="Vyber dôvod z číselníka" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(reasons.data ?? []).map((r) => (
+                    <SelectItem key={r.code} value={r.code}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedReason?.description && (
+                <p className="text-xs text-muted-foreground">{selectedReason.description}</p>
+              )}
               <Textarea
-                id="refund-reason"
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
-                placeholder="napr. zrušené podujatie, požiadavka zákazníka…"
-                rows={3}
+                placeholder={
+                  selectedReason?.requires_note
+                    ? "Doplň prosím vysvetlenie — pri tomto dôvode je povinné."
+                    : "Doplňujúca poznámka (voliteľné)"
+                }
+                rows={2}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -340,7 +370,15 @@ function Page() {
             <Button variant="ghost" onClick={() => setRefundFor(null)} disabled={refunding}>
               Zrušiť
             </Button>
-            <Button onClick={submitRefund} disabled={refunding} className="gap-1.5">
+            <Button
+              onClick={submitRefund}
+              disabled={
+                refunding ||
+                !reasonCode ||
+                (!!selectedReason?.requires_note && !refundReason.trim())
+              }
+              className="gap-1.5"
+            >
               {refunding && <Loader2 className="size-4 animate-spin" />}
               Spracovať refund
             </Button>
