@@ -10,6 +10,7 @@ import {
 } from "@/hooks/use-events";
 import { useLayouts } from "@/hooks/use-layouts";
 import { listVenues } from "@/lib/venues.functions";
+import { listOrganizers } from "@/lib/events.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Sparkles, ExternalLink, QrCode, Loader2 } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, QrCode, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { renderEventTicketsPdf } from "@/lib/ticket-pdf.functions";
@@ -51,10 +52,16 @@ const CATEGORIES = [
   "Kultúra",
 ];
 
+/** Riadok v editore typov vstupeniek. Čísla držíme ako text, nech sa dá pole vyprázdniť. */
+type TicketRow = { id?: string; name: string; price: string; quantity: string };
+
 type FormState = {
+  /** Prázdne = zakladá sa nové podujatie. */
+  id?: string;
   title: string;
   category: string;
-  organizer_name: string;
+  /** Za koho admin podujatie zakladá; prázdne = za seba. */
+  organizer_id: string;
   event_date: string;
   event_time: string;
   venue_id: string;
@@ -70,15 +77,20 @@ type FormState = {
   base_price: string;
   vip_price: string;
   total_tickets: string;
+  tickets: TicketRow[];
+  /** Koľko termínov podujatie má — riadi, či sa dátum vo formulári vôbec uloží. */
+  date_count: number;
 };
 
 /** Hodnota pre „miesto nie je v číselníku" — Select neznesie prázdny string. */
 const CUSTOM_VENUE = "__custom__";
+/** Hodnota pre „podujatie zakladám sám za seba". */
+const OWN_ACCOUNT = "__me__";
 
 const blankForm = (): FormState => ({
   title: "",
   category: "Koncert",
-  organizer_name: "",
+  organizer_id: OWN_ACCOUNT,
   event_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
   event_time: "19:00",
   venue_id: "",
@@ -93,7 +105,42 @@ const blankForm = (): FormState => ({
   base_price: "25",
   vip_price: "55",
   total_tickets: "100",
+  tickets: [{ name: "Štandard", price: "25", quantity: "100" }],
+  date_count: 0,
 });
+
+/** Naplní formulár existujúcim podujatím. */
+function formFromEvent(e: EventRecord): FormState {
+  return {
+    id: e.id,
+    title: e.title,
+    category: e.category,
+    organizer_id: e.organizer_id,
+    event_date: e.event_date,
+    event_time: (e.event_time || "").slice(0, 5),
+    venue_id: e.venue_id ?? "",
+    // Bez väzby na číselník sa názov aj mesto píšu ručne — inak by ich uloženie
+    // prepísalo prázdnymi hodnotami.
+    venue_manual: !e.venue_id,
+    venue: e.venue ?? "",
+    city: e.city ?? "",
+    description: e.description ?? "",
+    image_url: e.image_url ?? "",
+    status: e.status,
+    sale_type: (e.sale_type ?? "standing") as SaleType,
+    venue_layout_id: e.venue_layout_id ?? "",
+    base_price: e.base_price != null ? String(e.base_price) : "0",
+    vip_price: e.vip_price != null ? String(e.vip_price) : "0",
+    total_tickets: e.total_tickets != null ? String(e.total_tickets) : "0",
+    tickets: (e.tickets ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      price: String(t.price),
+      quantity: String(t.quantity),
+    })),
+    date_count: e.dates?.length ?? 0,
+  };
+}
 
 function Page() {
   // Admin vidí všetky podujatia vrátane konceptov (vynucuje to server podľa roly).
@@ -105,6 +152,11 @@ function Page() {
   const { data: venues = [] } = useQuery({
     queryKey: ["venues"],
     queryFn: () => fetchVenues({ data: undefined as never }),
+  });
+  const fetchOrganizers = useServerFn(listOrganizers);
+  const { data: organizers = [] } = useQuery({
+    queryKey: ["organizers"],
+    queryFn: () => fetchOrganizers({ data: undefined as never }),
   });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(blankForm());
@@ -152,6 +204,23 @@ function Page() {
     setOpen(true);
   };
 
+  const openEdit = (e: EventRecord) => {
+    setForm(formFromEvent(e));
+    setOpen(true);
+  };
+
+  const editing = !!form.id;
+
+  const setTicket = (index: number, patch: Partial<TicketRow>) =>
+    setForm((f) => ({
+      ...f,
+      tickets: f.tickets.map((t, i) => (i === index ? { ...t, ...patch } : t)),
+    }));
+  const addTicket = () =>
+    setForm((f) => ({ ...f, tickets: [...f.tickets, { name: "", price: "0", quantity: "0" }] }));
+  const removeTicket = (index: number) =>
+    setForm((f) => ({ ...f, tickets: f.tickets.filter((_, i) => i !== index) }));
+
   const submit = async () => {
     if (!form.title.trim()) return toast.error("Vyplň názov podujatia");
     if (!form.venue_id && (!form.venue.trim() || !form.city.trim())) {
@@ -160,8 +229,15 @@ function Page() {
     if (form.sale_type === "seating_map" && !form.venue_layout_id) {
       return toast.error("Vyber rozloženie haly z Editora hál");
     }
+    if (form.tickets.some((t) => !t.name.trim())) {
+      return toast.error("Každý typ vstupenky potrebuje názov");
+    }
     try {
       await upsert.mutateAsync({
+        id: form.id,
+        // `organizer_id` rešpektuje server len adminovi; prázdne = podujatie
+        // ostane tomu, komu patrí (resp. pri zakladaní prihlásenému).
+        organizer_id: form.organizer_id === OWN_ACCOUNT ? undefined : form.organizer_id,
         title: form.title.trim(),
         category: form.category,
         event_date: form.event_date,
@@ -177,18 +253,19 @@ function Page() {
         base_price: Number(form.base_price) || 0,
         vip_price: Number(form.vip_price) || 0,
         total_tickets: Number(form.total_tickets) || 0,
-        tickets: [
-          {
-            name: "Štandard",
-            price: Number(form.base_price) || 0,
-            quantity: Number(form.total_tickets) || 0,
-          },
-        ],
+        // Zoznam typov je úplný: čo tu nie je, server zmaže. Preto sa pri
+        // úprave posielajú aj s `id` — bez neho by sa predané typy zahodili.
+        tickets: form.tickets.map((t) => ({
+          id: t.id,
+          name: t.name.trim(),
+          price: Number(t.price) || 0,
+          quantity: Number(t.quantity) || 0,
+        })),
       });
       setOpen(false);
-      toast.success("Podujatie vytvorené");
+      toast.success(editing ? "Podujatie uložené" : "Podujatie vytvorené");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Podujatie sa nepodarilo vytvoriť");
+      toast.error(err instanceof Error ? err.message : "Podujatie sa nepodarilo uložiť");
     }
   };
 
@@ -319,6 +396,14 @@ function Page() {
                       )}
                       QR lístky
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => openEdit(e)}
+                    >
+                      <Pencil className="size-3.5" /> Upraviť
+                    </Button>
                     {e.status === "draft" ? (
                       <Button size="sm" variant="outline" onClick={() => setStatus(e, "published")}>
                         Publikovať
@@ -347,7 +432,7 @@ function Page() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nové podujatie</DialogTitle>
+            <DialogTitle>{editing ? "Upraviť podujatie" : "Nové podujatie"}</DialogTitle>
           </DialogHeader>
           <div className="grid sm:grid-cols-2 gap-4 py-2">
             <Field label="Názov podujatia" className="sm:col-span-2">
@@ -374,24 +459,55 @@ function Page() {
               </Select>
             </Field>
             <Field label="Organizátor">
-              <Input
-                value={form.organizer_name}
-                onChange={(e) => setForm({ ...form, organizer_name: e.target.value })}
-                placeholder="Demo Organizátor"
-              />
+              <Select
+                value={form.organizer_id}
+                onValueChange={(v) => setForm({ ...form, organizer_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={OWN_ACCOUNT}>Ja (admin)</SelectItem>
+                  {organizers.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.full_name}
+                      {o.email ? ` · ${o.email}` : ""}
+                    </SelectItem>
+                  ))}
+                  {/* Vlastník bez roly organizátora by inak zo zoznamu vypadol
+                      a uloženie by podujatie ticho prepísalo na iného. */}
+                  {form.organizer_id !== OWN_ACCOUNT &&
+                    !organizers.some((o) => o.id === form.organizer_id) && (
+                      <SelectItem value={form.organizer_id}>Súčasný vlastník</SelectItem>
+                    )}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Dátum">
               <Input
                 type="date"
                 value={form.event_date}
                 onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+                disabled={form.date_count > 1}
               />
               <p className="text-[11px] text-muted-foreground">
-                Prvý termín. Ďalšie pridáš v{" "}
-                <Link to="/admin/events/dates" className="text-primary hover:underline">
-                  Termínoch
-                </Link>
-                .
+                {form.date_count > 1 ? (
+                  <>
+                    Podujatie má {form.date_count} termínov — meň ich v{" "}
+                    <Link to="/admin/events/dates" className="text-primary hover:underline">
+                      Termínoch
+                    </Link>
+                    .
+                  </>
+                ) : (
+                  <>
+                    {editing ? "Posunie jediný termín" : "Prvý termín"}. Ďalšie pridáš v{" "}
+                    <Link to="/admin/events/dates" className="text-primary hover:underline">
+                      Termínoch
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
             </Field>
             <Field label="Čas začiatku">
@@ -399,6 +515,7 @@ function Page() {
                 type="time"
                 value={form.event_time}
                 onChange={(e) => setForm({ ...form, event_time: e.target.value })}
+                disabled={form.date_count > 1}
               />
             </Field>
             <Field label="Miesto konania" className="sm:col-span-2">
@@ -552,13 +669,82 @@ function Page() {
                 onChange={(e) => setForm({ ...form, total_tickets: e.target.value })}
               />
             </Field>
+
+            <div className="sm:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Typy vstupeniek
+                </Label>
+                <Button size="sm" variant="outline" onClick={addTicket} className="gap-1.5">
+                  <Plus className="size-3.5" /> Pridať typ
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Uplatnia sa pri predaji bez mapy sedenia a v pokladni. Pri mape sedenia rozhoduje
+                cena vstupenky a VIP cena vyššie.
+              </p>
+              {form.tickets.length === 0 ? (
+                <p className="rounded-md border border-dashed border-border/60 p-3 text-xs text-muted-foreground">
+                  Žiadny typ. Kupujúci potom platí základnú cenu.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {form.tickets.map((t, i) => (
+                    <div key={t.id ?? `new-${i}`} className="flex items-end gap-2">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Názov</Label>
+                        <Input
+                          value={t.name}
+                          placeholder="napr. Parter"
+                          onChange={(e) => setTicket(i, { name: e.target.value })}
+                        />
+                      </div>
+                      <div className="w-24 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Cena (€)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          value={t.price}
+                          onChange={(e) => setTicket(i, { price: e.target.value })}
+                        />
+                      </div>
+                      <div className="w-24 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Kapacita</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={t.quantity}
+                          onChange={(e) => setTicket(i, { quantity: e.target.value })}
+                        />
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeTicket(i)}
+                        title="Odstrániť typ"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Zrušiť
             </Button>
-            <Button onClick={submit} className="bg-gradient-flame text-primary-foreground">
-              Uložiť podujatie
+            <Button
+              onClick={submit}
+              disabled={upsert.isPending}
+              className="bg-gradient-flame text-primary-foreground"
+            >
+              {upsert.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+              {editing ? "Uložiť zmeny" : "Uložiť podujatie"}
             </Button>
           </DialogFooter>
         </DialogContent>
