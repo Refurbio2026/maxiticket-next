@@ -568,3 +568,102 @@ export const deleteSettlement = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// --- Kontrola zostavy -------------------------------------------------------
+
+export type SettlementCheck = {
+  settlement_id: string;
+  organizer_name: string;
+  period_from: string;
+  period_to: string;
+  status: "draft" | "approved" | "paid";
+  /** Čísla zmrazené v protokole. */
+  frozen: { tickets: number; gross: number; refunded: number; commission: number; net: number };
+  /** To isté prepočítané z dnešných dát. */
+  current: { tickets: number; gross: number; refunded: number; commission: number; net: number };
+  /** Rozdiel v čistej sume. Kladný = dnes by vyšlo viac, než sa vyplatilo. */
+  net_diff: number;
+  /** Náklady pripnuté k tomuto protokolu — do prepočtu sa už neponúkajú. */
+  attached_costs: number;
+  ok: boolean;
+};
+
+/**
+ * Porovná zmrazené čísla protokolov s tým, čo by vyšlo dnes.
+ *
+ * Rozdiel nie je chyba — najčastejšie je to refundácia, ktorá prišla až po
+ * vystavení protokolu. Zmyslom je vedieť o nej skôr, než sa na ňu príde
+ * v účtovníctve.
+ */
+export const checkSettlements = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ only_mismatched: z.boolean().default(false) }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<SettlementCheck[]> => {
+    await assertAdmin(context.userId);
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("settlements")
+      .select(
+        "id, organizer_id, event_id, period_from, period_to, tickets_sold, gross_amount, refunded_amount, commission_amount, costs_amount, net_amount, status",
+      )
+      .order("period_to", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    const list = rows || [];
+    if (list.length === 0) return [];
+
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, company_name")
+      .in("id", [...new Set(list.map((r) => r.organizer_id))]);
+    const names = new Map(
+      (profiles || []).map((p) => [p.id, p.company_name || p.full_name || "—"]),
+    );
+
+    const out: SettlementCheck[] = [];
+    for (const r of list) {
+      const p = await computePreview({
+        organizer_id: r.organizer_id,
+        event_id: r.event_id,
+        period_from: r.period_from,
+        period_to: r.period_to,
+      });
+
+      // Náklady už pripnuté k tomuto protokolu prepočet nevidí (majú
+      // `settlement_id`), preto ich pripočítame späť, nech je porovnanie férové.
+      const attached = Number(r.costs_amount || 0);
+      const currentNet = round2(p.net_amount - attached);
+      const frozenNet = Number(r.net_amount || 0);
+      const diff = round2(currentNet - frozenNet);
+
+      const check: SettlementCheck = {
+        settlement_id: r.id,
+        organizer_name: names.get(r.organizer_id) || "—",
+        period_from: r.period_from,
+        period_to: r.period_to,
+        status: r.status,
+        frozen: {
+          tickets: r.tickets_sold,
+          gross: Number(r.gross_amount || 0),
+          refunded: Number(r.refunded_amount || 0),
+          commission: Number(r.commission_amount || 0),
+          net: frozenNet,
+        },
+        current: {
+          tickets: p.tickets_sold,
+          gross: p.gross_amount,
+          refunded: p.refunded_amount,
+          commission: p.commission_amount,
+          net: currentNet,
+        },
+        net_diff: diff,
+        attached_costs: attached,
+        ok: Math.abs(diff) < 0.01,
+      };
+      if (!data.only_mismatched || !check.ok) out.push(check);
+    }
+    return out;
+  });

@@ -105,18 +105,8 @@ const groups: Group[] = [
       { title: "Náklady organizátorov", url: "/admin/maxiticket/costs", icon: Wallet },
       { title: "Organizátori", url: "/admin/maxiticket/organizers", icon: Users },
       { title: "Platby organizátorom", url: "/admin/maxiticket/payments", icon: CreditCard },
-      {
-        title: "Vstupenky organizátorov",
-        url: "/admin/maxiticket/tickets",
-        icon: Ticket,
-        demo: true,
-      },
-      {
-        title: "Kontrola zostavy",
-        url: "/admin/maxiticket/control",
-        icon: ShieldCheck,
-        demo: true,
-      },
+      { title: "Vstupenky organizátorov", url: "/admin/maxiticket/tickets", icon: Ticket },
+      { title: "Kontrola zostavy", url: "/admin/maxiticket/control", icon: ShieldCheck },
       { title: "Zariadenia / čítačky", url: "/admin/maxiticket/devices", icon: Scan },
       {
         title: "Účtovanie / výpisy z banky",

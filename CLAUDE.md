@@ -57,7 +57,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**14 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**12 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -160,6 +160,14 @@ Výplata = protokol v stave `approved` (na úhradu) alebo `paid` (uhradený). **
 nedostane** — najprv sa musí schváliť. „Bez IBAN-u" sa počíta zvlášť, lebo schválená výplata bez
 účtu sa nedá odoslať. Bilancia berie tržbu ako `total_amount − refunded_amount` zaplatených
 objednávok; „mimo protokolov" je `tržba − Σ settlements.gross_amount`, teda práca, ktorá čaká.
+
+`organizer-tickets.functions.ts` + `/admin/maxiticket/tickets` je ten istý druh pohľadu na
+`tickets` — vydané (bez refundovaných), naskenované a kanál predaja podľa `orders.channel`.
+
+`checkSettlements` + `/admin/maxiticket/control` prepočíta každý protokol z dnešných dát a
+porovná so zmrazenými číslami. **Rozdiel nie je chyba** — najčastejšie je to refundácia, ktorá
+prišla až po vystavení protokolu. Pripnuté náklady prepočet nevidí (majú `settlement_id`), preto
+sa do porovnania pripočítavajú späť.
 
 ### Termíny podujatí
 
