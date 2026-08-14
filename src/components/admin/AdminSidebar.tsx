@@ -104,13 +104,11 @@ const groups: Group[] = [
         title: "Účtovanie / výpisy z banky",
         url: "/admin/maxiticket/accounting-bank",
         icon: Landmark,
-        local: true,
       },
       {
         title: "Účtovanie / report",
         url: "/admin/maxiticket/accounting-report",
         icon: ClipboardList,
-        local: true,
       },
       {
         title: "Účtovanie / kontroly",
@@ -149,8 +147,8 @@ const groups: Group[] = [
       { title: "Pokladne", url: "/admin/pos/cashiers", icon: Users },
       { title: "Predaje", url: "/admin/pos/sales", icon: ShoppingCart },
       { title: "Uzávierky", url: "/admin/pos/closings", icon: ClipboardList },
-      { title: "Terminály", url: "/admin/pos/terminals", icon: Scan, local: true },
-      { title: "ORP / eKasa", url: "/admin/pos/fiscal", icon: Receipt, local: true },
+      { title: "Terminály", url: "/admin/pos/terminals", icon: Scan },
+      { title: "ORP / eKasa", url: "/admin/pos/fiscal", icon: Receipt },
     ],
   },
   {
@@ -177,7 +175,7 @@ const groups: Group[] = [
   {
     label: "Systém",
     items: [
-      { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet, local: true },
+      { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet },
       { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail },
       { title: "Používatelia", url: "/admin/system/users", icon: UserCog },
     ],

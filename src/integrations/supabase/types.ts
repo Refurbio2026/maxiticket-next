@@ -1300,6 +1300,391 @@ export type Database = {
           },
         ];
       };
+      wallet_settings: {
+        Row: {
+          apple_enabled: boolean;
+          apple_organization_name: string;
+          apple_pass_type_identifier: string | null;
+          apple_team_identifier: string | null;
+          google_enabled: boolean;
+          google_issuer_id: string | null;
+          google_issuer_name: string;
+          id: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          apple_enabled?: boolean;
+          apple_organization_name?: string;
+          apple_pass_type_identifier?: string | null;
+          apple_team_identifier?: string | null;
+          google_enabled?: boolean;
+          google_issuer_id?: string | null;
+          google_issuer_name?: string;
+          id?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          apple_enabled?: boolean;
+          apple_organization_name?: string;
+          apple_pass_type_identifier?: string | null;
+          apple_team_identifier?: string | null;
+          google_enabled?: boolean;
+          google_issuer_id?: string | null;
+          google_issuer_name?: string;
+          id?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      bank_accounts: {
+        Row: {
+          account_name: string;
+          balance: number;
+          bank_name: string;
+          connected: boolean;
+          created_at: string;
+          currency: string;
+          iban: string;
+          id: string;
+          last_sync_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          account_name: string;
+          balance?: number;
+          bank_name: string;
+          connected?: boolean;
+          created_at?: string;
+          currency?: string;
+          iban: string;
+          id?: string;
+          last_sync_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          account_name?: string;
+          balance?: number;
+          bank_name?: string;
+          connected?: boolean;
+          created_at?: string;
+          currency?: string;
+          iban?: string;
+          id?: string;
+          last_sync_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      bank_transactions: {
+        Row: {
+          account_id: string;
+          amount: number;
+          booked_on: string;
+          counterparty_iban: string | null;
+          counterparty_name: string | null;
+          created_at: string;
+          currency: string;
+          external_id: string | null;
+          id: string;
+          match_status: string;
+          matched_order_id: string | null;
+          message: string | null;
+          updated_at: string;
+          variable_symbol: string | null;
+        };
+        Insert: {
+          account_id: string;
+          amount: number;
+          booked_on: string;
+          counterparty_iban?: string | null;
+          counterparty_name?: string | null;
+          created_at?: string;
+          currency?: string;
+          external_id?: string | null;
+          id?: string;
+          match_status?: string;
+          matched_order_id?: string | null;
+          message?: string | null;
+          updated_at?: string;
+          variable_symbol?: string | null;
+        };
+        Update: {
+          account_id?: string;
+          amount?: number;
+          booked_on?: string;
+          counterparty_iban?: string | null;
+          counterparty_name?: string | null;
+          created_at?: string;
+          currency?: string;
+          external_id?: string | null;
+          id?: string;
+          match_status?: string;
+          matched_order_id?: string | null;
+          message?: string | null;
+          updated_at?: string;
+          variable_symbol?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "bank_accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_order_id_fkey";
+            columns: ["matched_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      fiscal_settings: {
+        Row: {
+          cash_register_code: string | null;
+          connection_status: string;
+          dic: string | null;
+          enabled: boolean;
+          endpoint_url: string | null;
+          ic_dph: string | null;
+          last_check_at: string | null;
+          note: string | null;
+          organizer_id: string;
+          provider: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          cash_register_code?: string | null;
+          connection_status?: string;
+          dic?: string | null;
+          enabled?: boolean;
+          endpoint_url?: string | null;
+          ic_dph?: string | null;
+          last_check_at?: string | null;
+          note?: string | null;
+          organizer_id: string;
+          provider?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          cash_register_code?: string | null;
+          connection_status?: string;
+          dic?: string | null;
+          enabled?: boolean;
+          endpoint_url?: string | null;
+          ic_dph?: string | null;
+          last_check_at?: string | null;
+          note?: string | null;
+          organizer_id?: string;
+          provider?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      fiscal_receipts: {
+        Row: {
+          cancelled_at: string | null;
+          error_message: string | null;
+          fiscal_code: string | null;
+          id: string;
+          issued_at: string;
+          order_id: string | null;
+          organizer_id: string;
+          payment_method: string | null;
+          receipt_number: string;
+          status: string;
+          total_amount: number;
+        };
+        Insert: {
+          cancelled_at?: string | null;
+          error_message?: string | null;
+          fiscal_code?: string | null;
+          id?: string;
+          issued_at?: string;
+          order_id?: string | null;
+          organizer_id: string;
+          payment_method?: string | null;
+          receipt_number: string;
+          status?: string;
+          total_amount?: number;
+        };
+        Update: {
+          cancelled_at?: string | null;
+          error_message?: string | null;
+          fiscal_code?: string | null;
+          id?: string;
+          issued_at?: string;
+          order_id?: string | null;
+          organizer_id?: string;
+          payment_method?: string | null;
+          receipt_number?: string;
+          status?: string;
+          total_amount?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_receipts_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ad_accounts: {
+        Row: {
+          account_id: string;
+          account_name: string | null;
+          business_account_id: string | null;
+          connected_at: string;
+          credit_eur: number;
+          id: string;
+          last_sync_at: string | null;
+          organizer_id: string;
+          page_name: string | null;
+          pixel_id: string | null;
+          platform: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          account_id: string;
+          account_name?: string | null;
+          business_account_id?: string | null;
+          connected_at?: string;
+          credit_eur?: number;
+          id?: string;
+          last_sync_at?: string | null;
+          organizer_id: string;
+          page_name?: string | null;
+          pixel_id?: string | null;
+          platform: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          account_id?: string;
+          account_name?: string | null;
+          business_account_id?: string | null;
+          connected_at?: string;
+          credit_eur?: number;
+          id?: string;
+          last_sync_at?: string | null;
+          organizer_id?: string;
+          page_name?: string | null;
+          pixel_id?: string | null;
+          platform?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      pixel_settings: {
+        Row: {
+          ga4_measurement_id: string | null;
+          google_ads_conversion_id: string | null;
+          google_ads_conversion_label: string | null;
+          gtm_id: string | null;
+          meta_pixel_id: string | null;
+          organizer_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          ga4_measurement_id?: string | null;
+          google_ads_conversion_id?: string | null;
+          google_ads_conversion_label?: string | null;
+          gtm_id?: string | null;
+          meta_pixel_id?: string | null;
+          organizer_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          ga4_measurement_id?: string | null;
+          google_ads_conversion_id?: string | null;
+          google_ads_conversion_label?: string | null;
+          gtm_id?: string | null;
+          meta_pixel_id?: string | null;
+          organizer_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      ad_campaigns: {
+        Row: {
+          audience: Json;
+          auto_generated: boolean;
+          budget_eur: number;
+          clicks: number;
+          conversions: number;
+          created_at: string;
+          creative: Json;
+          event_id: string | null;
+          goal: string;
+          id: string;
+          impressions: number;
+          name: string;
+          organizer_id: string;
+          platform: string;
+          revenue_eur: number;
+          spend_eur: number;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          audience?: Json;
+          auto_generated?: boolean;
+          budget_eur?: number;
+          clicks?: number;
+          conversions?: number;
+          created_at?: string;
+          creative?: Json;
+          event_id?: string | null;
+          goal?: string;
+          id?: string;
+          impressions?: number;
+          name: string;
+          organizer_id: string;
+          platform: string;
+          revenue_eur?: number;
+          spend_eur?: number;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          audience?: Json;
+          auto_generated?: boolean;
+          budget_eur?: number;
+          clicks?: number;
+          conversions?: number;
+          created_at?: string;
+          creative?: Json;
+          event_id?: string | null;
+          goal?: string;
+          id?: string;
+          impressions?: number;
+          name?: string;
+          organizer_id?: string;
+          platform?: string;
+          revenue_eur?: number;
+          spend_eur?: number;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ad_campaigns_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       event_categories: {
         Row: {
           active: boolean;
