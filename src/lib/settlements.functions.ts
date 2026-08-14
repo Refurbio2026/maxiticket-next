@@ -463,6 +463,11 @@ export type SettlementRow = {
   payout_reference: string | null;
   note: string | null;
   created_at: string;
+  /** Faktúra za províziu; `null` = ešte nebola vystavená. */
+  invoice_number: string | null;
+  invoice_pdf_url: string | null;
+  invoiced_at: string | null;
+  invoice_source: "superfaktura" | "manual" | null;
 };
 
 export const listSettlements = createServerFn({ method: "POST" })
@@ -518,6 +523,10 @@ export const listSettlements = createServerFn({ method: "POST" })
       payout_reference: r.payout_reference,
       note: r.note,
       created_at: r.created_at,
+      invoice_number: r.invoice_number ?? null,
+      invoice_pdf_url: r.invoice_pdf_url ?? null,
+      invoiced_at: r.invoiced_at ?? null,
+      invoice_source: r.invoice_source ?? null,
     }));
   });
 
@@ -666,4 +675,169 @@ export const checkSettlements = createServerFn({ method: "POST" })
       if (!data.only_mismatched || !check.ok) out.push(check);
     }
     return out;
+  });
+
+// --- Fakturovanie provízie -----------------------------------------------
+// Protokol províziu vypočíta, ale sám o sebe nie je daňový doklad. Tu sa
+// k nemu pripne faktúra — buď vystavená cez SuperFaktúru, alebo zapísaná
+// ručne, keď sa fakturuje z iného systému.
+
+/** Čo pôjde na faktúru; ukazuje sa v náhľade ešte pred vystavením. */
+export type InvoicePreview = {
+  settlement_id: string;
+  organizer_name: string;
+  organizer_email: string;
+  period_from: string;
+  period_to: string;
+  item_name: string;
+  amount: number;
+  variable_symbol: string;
+  /** Prečo sa faktúra nedá vystaviť; `null` = dá sa. */
+  blocked_reason: string | null;
+};
+
+async function loadInvoiceContext(settlementId: string) {
+  const { data: settlement } = await supabaseAdmin
+    .from("settlements")
+    .select("*")
+    .eq("id", settlementId)
+    .maybeSingle();
+  if (!settlement) throw new Error("Protokol sa nenašiel");
+
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("full_name, company_name, ico, dic, ic_dph, billing_address")
+    .eq("id", settlement.organizer_id)
+    .maybeSingle();
+
+  const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const email = authList?.users.find((u) => u.id === settlement.organizer_id)?.email || "";
+
+  return { settlement, profile, email };
+}
+
+function invoiceItemName(from: string, to: string) {
+  return `Provízia za sprostredkovanie predaja vstupeniek ${from} – ${to}`;
+}
+
+export const previewCommissionInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ settlement_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<InvoicePreview> => {
+    await assertAdmin(context.userId);
+    const { settlement, profile, email } = await loadInvoiceContext(data.settlement_id);
+
+    // Koncept sa nefakturuje — čísla sa ešte môžu zmeniť.
+    let blocked: string | null = null;
+    if (settlement.status === "draft") {
+      blocked = "Protokol je koncept. Najprv ho schváľ.";
+    } else if (settlement.invoice_number) {
+      blocked = `K protokolu už patrí faktúra ${settlement.invoice_number}.`;
+    } else if (Number(settlement.commission_amount) <= 0) {
+      blocked = "Provízia je nulová, nie je čo fakturovať.";
+    }
+
+    return {
+      settlement_id: settlement.id,
+      organizer_name: profile?.company_name || profile?.full_name || "Organizátor",
+      organizer_email: email,
+      period_from: settlement.period_from,
+      period_to: settlement.period_to,
+      item_name: invoiceItemName(settlement.period_from, settlement.period_to),
+      amount: Number(settlement.commission_amount),
+      variable_symbol: settlement.id.slice(0, 8).toUpperCase(),
+      blocked_reason: blocked,
+    };
+  });
+
+/**
+ * Vystaví faktúru za províziu cez SuperFaktúru.
+ *
+ * Faktúra ide **so splatnosťou**, nie ako zaplatená — províziu organizátor
+ * ešte neuhradil (typicky sa odpočíta z výplaty).
+ */
+export const issueCommissionInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ settlement_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { settlement, profile, email } = await loadInvoiceContext(data.settlement_id);
+    if (settlement.status === "draft") throw new Error("Protokol je koncept. Najprv ho schváľ.");
+    if (settlement.invoice_number) {
+      throw new Error(`K protokolu už patrí faktúra ${settlement.invoice_number}.`);
+    }
+    const amount = Number(settlement.commission_amount);
+    if (amount <= 0) throw new Error("Provízia je nulová, nie je čo fakturovať.");
+
+    const { createPaidInvoice } = await import("./superfaktura.server");
+    const variable = settlement.id.slice(0, 8).toUpperCase();
+    const result = await createPaidInvoice({
+      orderId: settlement.id,
+      variableSymbol: variable,
+      name: invoiceItemName(settlement.period_from, settlement.period_to),
+      alreadyPaid: false,
+      paymentType: "transfer",
+      customer: {
+        name: profile?.company_name || profile?.full_name || "Organizátor",
+        email,
+      },
+      items: [
+        {
+          name: invoiceItemName(settlement.period_from, settlement.period_to),
+          unit_price: amount,
+          quantity: 1,
+          tax: 20,
+        },
+      ],
+    });
+
+    await supabaseAdmin
+      .from("settlements")
+      .update({
+        invoice_id: result.invoice_id,
+        invoice_number: result.invoice_number,
+        invoice_pdf_url: result.pdf_url,
+        invoiced_at: new Date().toISOString(),
+        invoice_source: "superfaktura",
+      })
+      .eq("id", settlement.id);
+
+    await supabaseAdmin.from("superfaktura_logs").insert({
+      invoice_id: result.invoice_id,
+      endpoint: "/invoices/create",
+      response_payload: result.raw as never,
+      status: "ok",
+    });
+
+    return { invoice_number: result.invoice_number, pdf_url: result.pdf_url };
+  });
+
+/** Zapíše číslo faktúry vystavenej mimo systému. Prázdne číslo väzbu zruší. */
+export const setCommissionInvoiceManually = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        settlement_id: z.string().uuid(),
+        invoice_number: z.string().max(120),
+        invoice_pdf_url: z.string().max(2000).optional().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const number = data.invoice_number.trim();
+    const { error } = await supabaseAdmin
+      .from("settlements")
+      .update({
+        invoice_number: number || null,
+        invoice_pdf_url: number ? data.invoice_pdf_url || null : null,
+        invoiced_at: number ? new Date().toISOString() : null,
+        invoice_source: number ? "manual" : null,
+        // Ručne zapísané číslo nepatrí k žiadnej faktúre v SuperFaktúre.
+        invoice_id: null,
+      })
+      .eq("id", data.settlement_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

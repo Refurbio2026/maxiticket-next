@@ -457,6 +457,11 @@ export type Database = {
           created_by: string | null;
           event_id: string | null;
           gross_amount: number;
+          invoice_id: string | null;
+          invoice_number: string | null;
+          invoice_pdf_url: string | null;
+          invoice_source: string | null;
+          invoiced_at: string | null;
           id: string;
           net_amount: number;
           note: string | null;
@@ -478,6 +483,11 @@ export type Database = {
           created_by?: string | null;
           event_id?: string | null;
           gross_amount?: number;
+          invoice_id?: string | null;
+          invoice_number?: string | null;
+          invoice_pdf_url?: string | null;
+          invoice_source?: string | null;
+          invoiced_at?: string | null;
           id?: string;
           net_amount?: number;
           note?: string | null;
@@ -499,6 +509,11 @@ export type Database = {
           created_by?: string | null;
           event_id?: string | null;
           gross_amount?: number;
+          invoice_id?: string | null;
+          invoice_number?: string | null;
+          invoice_pdf_url?: string | null;
+          invoice_source?: string | null;
+          invoiced_at?: string | null;
           id?: string;
           net_amount?: number;
           note?: string | null;

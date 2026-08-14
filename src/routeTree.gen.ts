@@ -51,7 +51,6 @@ import { Route as AdminSalesSalesRouteImport } from './routes/admin.sales.sales'
 import { Route as AdminSalesNotesRouteImport } from './routes/admin.sales.notes'
 import { Route as AdminSalesCancellationsRouteImport } from './routes/admin.sales.cancellations'
 import { Route as AdminReportsSalesRouteImport } from './routes/admin.reports.sales'
-import { Route as AdminReportsAvfRouteImport } from './routes/admin.reports.avf'
 import { Route as AdminPosTerminalsRouteImport } from './routes/admin.pos.terminals'
 import { Route as AdminPosSalesRouteImport } from './routes/admin.pos.sales'
 import { Route as AdminPosFiscalRouteImport } from './routes/admin.pos.fiscal'
@@ -77,14 +76,9 @@ import { Route as AdminEventsVenueLayoutsRouteImport } from './routes/admin.even
 import { Route as AdminEventsEventsRouteImport } from './routes/admin.events.events'
 import { Route as AdminEventsDatesRouteImport } from './routes/admin.events.dates'
 import { Route as AdminEventsCouponsRouteImport } from './routes/admin.events.coupons'
-import { Route as AdminDataSidesRouteImport } from './routes/admin.data.sides'
-import { Route as AdminDataSectorsRouteImport } from './routes/admin.data.sectors'
-import { Route as AdminDataRowsRouteImport } from './routes/admin.data.rows'
 import { Route as AdminDataPriceCategoriesRouteImport } from './routes/admin.data.price-categories'
 import { Route as AdminDataPerformersRouteImport } from './routes/admin.data.performers'
 import { Route as AdminDataGroupsRouteImport } from './routes/admin.data.groups'
-import { Route as AdminDataDiscountsRouteImport } from './routes/admin.data.discounts'
-import { Route as AdminDataDiscountCategoriesRouteImport } from './routes/admin.data.discount-categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
@@ -305,11 +299,6 @@ const AdminReportsSalesRoute = AdminReportsSalesRouteImport.update({
   path: '/reports/sales',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReportsAvfRoute = AdminReportsAvfRouteImport.update({
-  id: '/reports/avf',
-  path: '/reports/avf',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminPosTerminalsRoute = AdminPosTerminalsRouteImport.update({
   id: '/pos/terminals',
   path: '/pos/terminals',
@@ -441,21 +430,6 @@ const AdminEventsCouponsRoute = AdminEventsCouponsRouteImport.update({
   path: '/events/coupons',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDataSidesRoute = AdminDataSidesRouteImport.update({
-  id: '/data/sides',
-  path: '/data/sides',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDataSectorsRoute = AdminDataSectorsRouteImport.update({
-  id: '/data/sectors',
-  path: '/data/sectors',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDataRowsRoute = AdminDataRowsRouteImport.update({
-  id: '/data/rows',
-  path: '/data/rows',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminDataPriceCategoriesRoute =
   AdminDataPriceCategoriesRouteImport.update({
     id: '/data/price-categories',
@@ -472,17 +446,6 @@ const AdminDataGroupsRoute = AdminDataGroupsRouteImport.update({
   path: '/data/groups',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDataDiscountsRoute = AdminDataDiscountsRouteImport.update({
-  id: '/data/discounts',
-  path: '/data/discounts',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDataDiscountCategoriesRoute =
-  AdminDataDiscountCategoriesRouteImport.update({
-    id: '/data/discount-categories',
-    path: '/data/discount-categories',
-    getParentRoute: () => AdminRoute,
-  } as any)
 const AdminDataContentRoute = AdminDataContentRouteImport.update({
   id: '/data/content',
   path: '/data/content',
@@ -546,14 +509,9 @@ export interface FileRoutesByFullPath {
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
   '/admin/data/content': typeof AdminDataContentRoute
-  '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
-  '/admin/data/discounts': typeof AdminDataDiscountsRoute
   '/admin/data/groups': typeof AdminDataGroupsRoute
   '/admin/data/performers': typeof AdminDataPerformersRoute
   '/admin/data/price-categories': typeof AdminDataPriceCategoriesRoute
-  '/admin/data/rows': typeof AdminDataRowsRoute
-  '/admin/data/sectors': typeof AdminDataSectorsRoute
-  '/admin/data/sides': typeof AdminDataSidesRoute
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
@@ -579,7 +537,6 @@ export interface FileRoutesByFullPath {
   '/admin/pos/fiscal': typeof AdminPosFiscalRoute
   '/admin/pos/sales': typeof AdminPosSalesRoute
   '/admin/pos/terminals': typeof AdminPosTerminalsRoute
-  '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
   '/admin/sales/notes': typeof AdminSalesNotesRoute
@@ -627,14 +584,9 @@ export interface FileRoutesByTo {
   '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
   '/admin/data/content': typeof AdminDataContentRoute
-  '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
-  '/admin/data/discounts': typeof AdminDataDiscountsRoute
   '/admin/data/groups': typeof AdminDataGroupsRoute
   '/admin/data/performers': typeof AdminDataPerformersRoute
   '/admin/data/price-categories': typeof AdminDataPriceCategoriesRoute
-  '/admin/data/rows': typeof AdminDataRowsRoute
-  '/admin/data/sectors': typeof AdminDataSectorsRoute
-  '/admin/data/sides': typeof AdminDataSidesRoute
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
@@ -660,7 +612,6 @@ export interface FileRoutesByTo {
   '/admin/pos/fiscal': typeof AdminPosFiscalRoute
   '/admin/pos/sales': typeof AdminPosSalesRoute
   '/admin/pos/terminals': typeof AdminPosTerminalsRoute
-  '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
   '/admin/sales/notes': typeof AdminSalesNotesRoute
@@ -713,14 +664,9 @@ export interface FileRoutesById {
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
   '/admin/data/content': typeof AdminDataContentRoute
-  '/admin/data/discount-categories': typeof AdminDataDiscountCategoriesRoute
-  '/admin/data/discounts': typeof AdminDataDiscountsRoute
   '/admin/data/groups': typeof AdminDataGroupsRoute
   '/admin/data/performers': typeof AdminDataPerformersRoute
   '/admin/data/price-categories': typeof AdminDataPriceCategoriesRoute
-  '/admin/data/rows': typeof AdminDataRowsRoute
-  '/admin/data/sectors': typeof AdminDataSectorsRoute
-  '/admin/data/sides': typeof AdminDataSidesRoute
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
@@ -746,7 +692,6 @@ export interface FileRoutesById {
   '/admin/pos/fiscal': typeof AdminPosFiscalRoute
   '/admin/pos/sales': typeof AdminPosSalesRoute
   '/admin/pos/terminals': typeof AdminPosTerminalsRoute
-  '/admin/reports/avf': typeof AdminReportsAvfRoute
   '/admin/reports/sales': typeof AdminReportsSalesRoute
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
   '/admin/sales/notes': typeof AdminSalesNotesRoute
@@ -800,14 +745,9 @@ export interface FileRouteTypes {
     | '/organizer/'
     | '/admin/data/categories'
     | '/admin/data/content'
-    | '/admin/data/discount-categories'
-    | '/admin/data/discounts'
     | '/admin/data/groups'
     | '/admin/data/performers'
     | '/admin/data/price-categories'
-    | '/admin/data/rows'
-    | '/admin/data/sectors'
-    | '/admin/data/sides'
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
@@ -833,7 +773,6 @@ export interface FileRouteTypes {
     | '/admin/pos/fiscal'
     | '/admin/pos/sales'
     | '/admin/pos/terminals'
-    | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
     | '/admin/sales/notes'
@@ -881,14 +820,9 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/admin/data/categories'
     | '/admin/data/content'
-    | '/admin/data/discount-categories'
-    | '/admin/data/discounts'
     | '/admin/data/groups'
     | '/admin/data/performers'
     | '/admin/data/price-categories'
-    | '/admin/data/rows'
-    | '/admin/data/sectors'
-    | '/admin/data/sides'
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
@@ -914,7 +848,6 @@ export interface FileRouteTypes {
     | '/admin/pos/fiscal'
     | '/admin/pos/sales'
     | '/admin/pos/terminals'
-    | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
     | '/admin/sales/notes'
@@ -966,14 +899,9 @@ export interface FileRouteTypes {
     | '/organizer/'
     | '/admin/data/categories'
     | '/admin/data/content'
-    | '/admin/data/discount-categories'
-    | '/admin/data/discounts'
     | '/admin/data/groups'
     | '/admin/data/performers'
     | '/admin/data/price-categories'
-    | '/admin/data/rows'
-    | '/admin/data/sectors'
-    | '/admin/data/sides'
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
@@ -999,7 +927,6 @@ export interface FileRouteTypes {
     | '/admin/pos/fiscal'
     | '/admin/pos/sales'
     | '/admin/pos/terminals'
-    | '/admin/reports/avf'
     | '/admin/reports/sales'
     | '/admin/sales/cancellations'
     | '/admin/sales/notes'
@@ -1348,13 +1275,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsSalesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/reports/avf': {
-      id: '/admin/reports/avf'
-      path: '/reports/avf'
-      fullPath: '/admin/reports/avf'
-      preLoaderRoute: typeof AdminReportsAvfRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/pos/terminals': {
       id: '/admin/pos/terminals'
       path: '/pos/terminals'
@@ -1530,27 +1450,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsCouponsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/data/sides': {
-      id: '/admin/data/sides'
-      path: '/data/sides'
-      fullPath: '/admin/data/sides'
-      preLoaderRoute: typeof AdminDataSidesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/data/sectors': {
-      id: '/admin/data/sectors'
-      path: '/data/sectors'
-      fullPath: '/admin/data/sectors'
-      preLoaderRoute: typeof AdminDataSectorsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/data/rows': {
-      id: '/admin/data/rows'
-      path: '/data/rows'
-      fullPath: '/admin/data/rows'
-      preLoaderRoute: typeof AdminDataRowsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/data/price-categories': {
       id: '/admin/data/price-categories'
       path: '/data/price-categories'
@@ -1570,20 +1469,6 @@ declare module '@tanstack/react-router' {
       path: '/data/groups'
       fullPath: '/admin/data/groups'
       preLoaderRoute: typeof AdminDataGroupsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/data/discounts': {
-      id: '/admin/data/discounts'
-      path: '/data/discounts'
-      fullPath: '/admin/data/discounts'
-      preLoaderRoute: typeof AdminDataDiscountsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/data/discount-categories': {
-      id: '/admin/data/discount-categories'
-      path: '/data/discount-categories'
-      fullPath: '/admin/data/discount-categories'
-      preLoaderRoute: typeof AdminDataDiscountCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/data/content': {
@@ -1655,14 +1540,9 @@ interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminDataCategoriesRoute: typeof AdminDataCategoriesRouteWithChildren
   AdminDataContentRoute: typeof AdminDataContentRoute
-  AdminDataDiscountCategoriesRoute: typeof AdminDataDiscountCategoriesRoute
-  AdminDataDiscountsRoute: typeof AdminDataDiscountsRoute
   AdminDataGroupsRoute: typeof AdminDataGroupsRoute
   AdminDataPerformersRoute: typeof AdminDataPerformersRoute
   AdminDataPriceCategoriesRoute: typeof AdminDataPriceCategoriesRoute
-  AdminDataRowsRoute: typeof AdminDataRowsRoute
-  AdminDataSectorsRoute: typeof AdminDataSectorsRoute
-  AdminDataSidesRoute: typeof AdminDataSidesRoute
   AdminEventsCouponsRoute: typeof AdminEventsCouponsRoute
   AdminEventsDatesRoute: typeof AdminEventsDatesRoute
   AdminEventsEventsRoute: typeof AdminEventsEventsRoute
@@ -1688,7 +1568,6 @@ interface AdminRouteChildren {
   AdminPosFiscalRoute: typeof AdminPosFiscalRoute
   AdminPosSalesRoute: typeof AdminPosSalesRoute
   AdminPosTerminalsRoute: typeof AdminPosTerminalsRoute
-  AdminReportsAvfRoute: typeof AdminReportsAvfRoute
   AdminReportsSalesRoute: typeof AdminReportsSalesRoute
   AdminSalesCancellationsRoute: typeof AdminSalesCancellationsRoute
   AdminSalesNotesRoute: typeof AdminSalesNotesRoute
@@ -1703,14 +1582,9 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminDataCategoriesRoute: AdminDataCategoriesRouteWithChildren,
   AdminDataContentRoute: AdminDataContentRoute,
-  AdminDataDiscountCategoriesRoute: AdminDataDiscountCategoriesRoute,
-  AdminDataDiscountsRoute: AdminDataDiscountsRoute,
   AdminDataGroupsRoute: AdminDataGroupsRoute,
   AdminDataPerformersRoute: AdminDataPerformersRoute,
   AdminDataPriceCategoriesRoute: AdminDataPriceCategoriesRoute,
-  AdminDataRowsRoute: AdminDataRowsRoute,
-  AdminDataSectorsRoute: AdminDataSectorsRoute,
-  AdminDataSidesRoute: AdminDataSidesRoute,
   AdminEventsCouponsRoute: AdminEventsCouponsRoute,
   AdminEventsDatesRoute: AdminEventsDatesRoute,
   AdminEventsEventsRoute: AdminEventsEventsRoute,
@@ -1736,7 +1610,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPosFiscalRoute: AdminPosFiscalRoute,
   AdminPosSalesRoute: AdminPosSalesRoute,
   AdminPosTerminalsRoute: AdminPosTerminalsRoute,
-  AdminReportsAvfRoute: AdminReportsAvfRoute,
   AdminReportsSalesRoute: AdminReportsSalesRoute,
   AdminSalesCancellationsRoute: AdminSalesCancellationsRoute,
   AdminSalesNotesRoute: AdminSalesNotesRoute,

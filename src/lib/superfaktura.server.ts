@@ -44,6 +44,13 @@ export type SfInvoiceInput = {
   customer: SfCustomer;
   items: SfItem[];
   paymentType?: "card" | "transfer" | "cash";
+  /** Popis faktúry; bez neho sa použije text pre vstupenky. */
+  name?: string;
+  /**
+   * `false` vystaví faktúru so splatnosťou (provízia organizátorovi ešte
+   * zaplatená nie je). Predvolene `true` — vstupenky sú zaplatené vopred.
+   */
+  alreadyPaid?: boolean;
 };
 
 export type SfInvoiceResult = {
@@ -54,18 +61,19 @@ export type SfInvoiceResult = {
 };
 
 /**
- * Vytvorí faktúru v SuperFaktúre označenú ako zaplatenú (lebo GoPay už zaplatil).
- * Používame /invoices/create a /invoice_payments/add — funguje univerzálne aj v sandboxe.
+ * Vytvorí faktúru v SuperFaktúre. Predvolene je označená ako zaplatená (pri
+ * vstupenkách GoPay zaplatil vopred); pre províziu organizátorovi sa posiela
+ * `alreadyPaid: false`, lebo tá sa fakturuje so splatnosťou.
  */
 export async function createPaidInvoice(input: SfInvoiceInput): Promise<SfInvoiceResult> {
   const { apiUrl } = env();
   const payload = {
     Invoice: {
-      name: `Vstupenky – objednávka ${input.variableSymbol}`,
+      name: input.name || `Vstupenky – objednávka ${input.variableSymbol}`,
       variable: input.variableSymbol,
       type: "regular",
       payment_type: input.paymentType || "card",
-      already_paid: true,
+      already_paid: input.alreadyPaid !== false,
     },
     Client: {
       name: input.customer.name,

@@ -57,11 +57,11 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**8 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
-`DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
-za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
-localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
-(alebo `local: true`) a uprav počty v legende netreba — počítajú sa samy.
+**Admin už nemá ani jednu stránku nad vymyslenými dátami.** `admin-mock.ts` aj `DataTablePage`
+sú zmazané — keby si potreboval rýchly zoznam, napíš ho nad server funkciou, nie nad generátorom.
+V `AdminSidebar` ostáva jediný príznak `local: true` pre stránky, ktoré ukladajú do localStorage;
+stav je vidieť na bodke za názvom (plná zelená = databáza, dutá oranžová = len prehliadač).
+Keď stránku napojíš na databázu, zmaž jej `local: true` — počty v legende sa počítajú samy.
 
 **Katalóg podujatí je od fázy 2 v databáze.** Čítaj a zapisuj ho **výhradne** cez
 `@/hooks/use-events` — `useEvents({ scope })`, `useEvent(id)`, `useUpsertEvent()`,
@@ -312,6 +312,20 @@ cesty, aby zlyhanie zápisu nezdržalo sken.
 číta ktokoľvek prihlásený, mení ho len admin. Refundačný dialóg posiela do `refundOrder`
 názov dôvodu (plus povinnú poznámku pri `requires_note`), takže sa z refundácií dá robiť
 štatistika — predtým to bol voľný text.
+
+### Kontroly a fakturovanie provízie
+
+Tri veci s podobným názvom, ktoré si netreba pliesť:
+
+- **Kontrola zostavy** (`/admin/maxiticket/control`, `checkSettlements`) porovná čísla zmrazené
+  v protokole s tým, čo by vyšlo dnes. Rozdiel väčšinou znamená refundáciu po vystavení protokolu.
+- **Účtovanie / kontroly** (`/admin/maxiticket/accounting-checks`, `accounting-checks.functions.ts`)
+  hľadá nezhody vnútri predaja: zaplatená objednávka bez vstupeniek, vstupenka bez `qr_token`,
+  refundovaná objednávka s platnou vstupenkou, predané sedadlo bez zaplatenej objednávky a pod.
+  Je to **len diagnostika** — žiadna kontrola dáta nemení. Novú kontrolu pridaj do `runAccountingChecks`.
+- **Zostavy / fakturovanie** (`/admin/maxiticket/billing`) pripne k protokolu faktúru za províziu.
+  Buď cez SuperFaktúru (`issueCommissionInvoice`, vystaví sa **so splatnosťou**, nie ako zaplatená —
+  na to slúži `alreadyPaid: false`), alebo ručným zápisom čísla, keď sa fakturuje z iného systému.
 
 ### Vyúčtovanie organizátorom
 `settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)

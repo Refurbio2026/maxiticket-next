@@ -58,8 +58,6 @@ type Item = {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Stránka nad generovanými dátami z `admin-mock.ts` — treba ju ešte dorobiť. */
-  demo?: boolean;
   /**
    * Stránka funguje, ale ukladá do localStorage prehliadača, nie do databázy.
    * Iný počítač = iné dáta, server o nich nevie.
@@ -68,9 +66,8 @@ type Item = {
 };
 type Group = { label: string; items: Item[] };
 
-/** Bodka za názvom hovorí, v akom stave stránka je. Demo stránky bodku nemajú. */
+/** Bodka za názvom hovorí, či stránka beží na databáze, alebo len v prehliadači. */
 function StatusDot({ item }: { item: Item }) {
-  if (item.demo) return null;
   return (
     <span
       className={
@@ -95,12 +92,7 @@ const groups: Group[] = [
   {
     label: "vipky.sk",
     items: [
-      {
-        title: "Zostavy / fakturovanie",
-        url: "/admin/maxiticket/billing",
-        icon: Receipt,
-        demo: true,
-      },
+      { title: "Zostavy / fakturovanie", url: "/admin/maxiticket/billing", icon: Receipt },
       { title: "Vyúčtovacie protokoly", url: "/admin/maxiticket/protocols", icon: FileText },
       { title: "Náklady organizátorov", url: "/admin/maxiticket/costs", icon: Wallet },
       { title: "Organizátori", url: "/admin/maxiticket/organizers", icon: Users },
@@ -124,7 +116,6 @@ const groups: Group[] = [
         title: "Účtovanie / kontroly",
         url: "/admin/maxiticket/accounting-checks",
         icon: CheckSquare,
-        demo: true,
       },
       {
         title: "Typy refundácií",
@@ -168,16 +159,6 @@ const groups: Group[] = [
       { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers },
       { title: "Skupiny podujatí", url: "/admin/data/groups", icon: FolderTree },
       { title: "Cenové kategórie", url: "/admin/data/price-categories", icon: DollarSign },
-      {
-        title: "Kategórie zliav",
-        url: "/admin/data/discount-categories",
-        icon: Percent,
-        demo: true,
-      },
-      { title: "Zľavy", url: "/admin/data/discounts", icon: PercentSquare, demo: true },
-      { title: "Sektor / Loc1", url: "/admin/data/sectors", icon: Grid3x3, demo: true },
-      { title: "Rad / Loc2", url: "/admin/data/rows", icon: Rows, demo: true },
-      { title: "Strana / Side", url: "/admin/data/sides", icon: SplitSquareHorizontal, demo: true },
       { title: "Účinkujúci", url: "/admin/data/performers", icon: Star },
       { title: "Obsah / stránky", url: "/admin/data/content", icon: FileCode },
     ],
@@ -203,10 +184,7 @@ const groups: Group[] = [
   },
   {
     label: "Reporty",
-    items: [
-      { title: "AVF Reporty", url: "/admin/reports/avf", icon: FileBarChart, demo: true },
-      { title: "Reporty predajov", url: "/admin/reports/sales", icon: TrendingUp },
-    ],
+    items: [{ title: "Reporty predajov", url: "/admin/reports/sales", icon: TrendingUp }],
   },
 ];
 
@@ -216,13 +194,11 @@ export function AdminSidebar() {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
 
   // Nič sa neskrýva — skrytá položka sa ľahko zabudne. Stav je vidieť na bodke
-  // za názvom: plná = beží na databáze, dutá = ukladá len do prehliadača,
-  // žiadna = stránka nad ukážkovými dátami, ktorú treba dorobiť.
+  // za názvom: plná = beží na databáze, dutá = ukladá len do prehliadača.
   const visibleGroups = groups;
   const all = groups.flatMap((g) => g.items);
-  const demoCount = all.filter((i) => i.demo).length;
   const localCount = all.filter((i) => i.local).length;
-  const liveCount = all.length - demoCount - localCount;
+  const liveCount = all.length - localCount;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/40">
@@ -298,13 +274,6 @@ export function AdminSidebar() {
               <span>
                 <span className="font-semibold text-foreground">{localCount}</span> len v
                 prehliadači — dáta sa neukladajú na server
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="size-1.5 shrink-0 rounded-full border border-dashed border-border" />
-              <span>
-                <span className="font-semibold text-foreground">{demoCount}</span> bez bodky —
-                ukážkové dáta, treba dorobiť
               </span>
             </div>
           </div>
