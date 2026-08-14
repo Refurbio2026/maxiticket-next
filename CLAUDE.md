@@ -12,8 +12,8 @@ bun run lint         # eslint
 bun run format       # prettier --write .
 npx tsc --noEmit     # typecheck (nie je npm skript)
 
-# BUILD VŽDY S PRESETOM, inak zhodíš beh na tomto serveri:
-NITRO_PRESET=node-server bun run build
+# BUILD VŽDY TAKTO — bez presetu aj bez haldy to zhodí beh na tomto serveri:
+NODE_OPTIONS=--max-old-space-size=3072 NITRO_PRESET=node-server bun run build
 npx pm2 restart maxiticket --update-env
 ```
 
@@ -21,6 +21,11 @@ npx pm2 restart maxiticket --update-env
 a bez neho spadne na predvolený `cloudflare-module`. Taký `.output/server/index.mjs` sa síce
 naštartuje, ale **na žiadnom porte nepočúva**, takže web je mŕtvy bez jedinej chyby v logu.
 Po builde skontroluj `grep preset .output/nitro.json`.
+
+**Halda:** bez `--max-old-space-size` build na tomto stroji (3,9 GB RAM) padne na
+`JavaScript heap out of memory`. Zákerné je, že vtedy už stihol **zmazať `.output`**, takže
+aplikácia po najbližšom reštarte nenaštartuje — web je dole, kým build nezbehne celý. Preto
+build nikdy nespúšťaj súbežne s `tsc` ani s headless prehliadačom.
 
 ## Stack
 

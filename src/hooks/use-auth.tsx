@@ -82,6 +82,10 @@ async function toAuthUser(u: SupabaseUserLike | null | undefined): Promise<AuthU
   };
 }
 
+/**
+ * Hlášky zo Supabase chodia po anglicky a idú rovno do toastu, takže bez
+ * prekladu vidí zákazník napríklad „email rate limit exceeded".
+ */
 function translateAuthError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login")) return "Nesprávny email alebo heslo";
@@ -89,6 +93,17 @@ function translateAuthError(message: string): string {
     return "Email ešte nie je potvrdený. Skontroluj si schránku.";
   if (m.includes("already registered") || m.includes("already been registered"))
     return "Účet s týmto emailom už existuje";
+  if (m.includes("email address") && m.includes("invalid"))
+    return "Táto emailová adresa nie je platná.";
+  if (m.includes("rate limit"))
+    return "Príliš veľa pokusov. Skús to prosím o pár minút.";
+  if (m.includes("password should be at least"))
+    return "Heslo je príliš krátke — použi aspoň 6 znakov.";
+  if (m.includes("signups not allowed") || m.includes("signup is disabled"))
+    return "Registrácia je momentálne vypnutá.";
+  if (m.includes("weak password")) return "Heslo je príliš slabé, zvoľ silnejšie.";
+  if (m.includes("failed to fetch") || m.includes("network"))
+    return "Server je nedostupný. Skontroluj pripojenie a skús znova.";
   return message;
 }
 
