@@ -191,6 +191,7 @@ export const getPixelSettings = createServerFn({ method: "POST" })
       google_ads_conversion_id: row?.google_ads_conversion_id ?? "",
       google_ads_conversion_label: row?.google_ads_conversion_label ?? "",
       meta_pixel_id: row?.meta_pixel_id ?? "",
+      auto_promote: row?.auto_promote ?? false,
       updated_at: row?.updated_at ?? null,
     };
   });
@@ -206,6 +207,8 @@ export const updatePixelSettings = createServerFn({ method: "POST" })
         google_ads_conversion_id: z.string().max(120).optional().nullable(),
         google_ads_conversion_label: z.string().max(120).optional().nullable(),
         meta_pixel_id: z.string().max(120).optional().nullable(),
+        /** Automaticky propagovať nové podujatia. */
+        auto_promote: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -219,6 +222,7 @@ export const updatePixelSettings = createServerFn({ method: "POST" })
         google_ads_conversion_id: data.google_ads_conversion_id || null,
         google_ads_conversion_label: data.google_ads_conversion_label || null,
         meta_pixel_id: data.meta_pixel_id || null,
+        ...(data.auto_promote === undefined ? {} : { auto_promote: data.auto_promote }),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "organizer_id" },

@@ -34,7 +34,7 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 37 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 41 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
 `venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
@@ -44,13 +44,12 @@ Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve 
 Používa ju: auth (`use-auth.tsx`), platobný tok (`payments.functions.ts`), refundácie,
 skenovanie (`api.public.tickets.scan.ts`), admin štatistiky, „moje vstupenky".
 
-**2. localStorage „databáza" (demo)** — `src/lib/local-db.ts` + `pos-db.ts`, `bank-db.ts`,
-`cashier-db.ts`, `marketing-db.ts`, `wallet-db.ts`, `ticketing-db.ts`, `admin-mock.ts`.
-Zostáva na nej marketing, banka, účtovné reporty, wallet nastavenia a z POS
-už len eKasa a stav terminálu (`payment-terminal-adapter.ts`, `fiscal-adapter.ts` — simulácia
-hardvéru). Evidencia zariadení je od 13. 8. v databáze (`scanner_devices`).
-`ticketing-db.ts` je už len košík (výber sedadiel v tomto prehliadači do kliknutia na „Zaplatiť");
-skutočná obsadenosť je v `seat_inventory`.
+**2. localStorage — už len drobnosti.** Celý admin (39 stránok) beží na databáze; `admin-mock.ts`,
+`DataTablePage`, `bank-db.ts` aj `cashier-db.ts` sú zmazané. V `src/lib` ostávajú
+`ticketing-db.ts` (košík výberu sedadiel v tomto prehliadači do kliknutia na „Zaplatiť"),
+`pos-db.ts` (adaptéry hardvéru pokladne) a čisté pomocníky v `marketing-db.ts` / `wallet-db.ts`
+(generovanie textov, ukážkové metriky, skladanie passov). **Nové perzistentné dáta píš do
+Supabase, nikdy do localStorage.**
 
 **Rozloženia sál sú v databáze** (`venue_layouts`). Čítaj ich cez `@/hooks/use-layouts`
 (`useLayouts`, `useLayout`, `useUpsertLayout`, `useDeleteLayout`, `toLayoutInput`), typy a čisté
@@ -312,6 +311,27 @@ cesty, aby zlyhanie zápisu nezdržalo sken.
 číta ktokoľvek prihlásený, mení ho len admin. Refundačný dialóg posiela do `refundOrder`
 názov dôvodu (plus povinnú poznámku pri `requires_note`), takže sa z refundácií dá robiť
 štatistika — predtým to bol voľný text.
+
+### Banka, wallet, eKasa a marketing
+
+Posledné štyri oblasti presunuté z localStorage (14. 8.):
+
+- **Banka** (`bank.functions.ts`, `/admin/maxiticket/accounting-bank`) — účty, pohyby a ich
+  párovanie s objednávkami. Páruje sa podľa variabilného symbolu (prvých osem znakov id
+  objednávky), ale **len keď sedí aj suma** — symbol vie zákazník odpísať zle a objednávka by sa
+  označila za zaplatenú neprávom. Import má `external_id` proti dvojitému nahratiu výpisu.
+  `/admin/maxiticket/accounting-report` z tých istých pohybov skladá mesačný prehľad.
+- **Wallet** (`wallet-settings.functions.ts`) — jeden riadok pre platformu. Certifikáty a
+  servisné kľúče do databázy **nepatria**, tie sú v secrets; stránka len ukáže, či na serveri sú.
+- **eKasa** (`fiscal.functions.ts`) — nastavenie na organizátora a evidencia dokladov. Odosielanie
+  na finančnú správu je stále simulácia (`fiscal-adapter.ts`), stránka to hovorí rovno.
+- **Marketing** (`marketing.functions.ts`) — reklamné účty, meracie kódy a kampane. Napojenie na
+  Google Ads a Meta je **evidencia, nie integrácia**: žiadne API sa nevolá, výkonnostné čísla
+  zadáva človek. Cielenie a kreatíva sú JSONB, lebo sa do nich nedotazujeme.
+
+Terminály (`/admin/pos/terminals`) nemajú vlastnú tabuľku — sú pohľad na `scanner_devices`,
+ktoré už pozná typy `terminal`, `printer` aj `kiosk`. Dve evidencie toho istého hardvéru by sa
+rozišli.
 
 ### Kontroly a fakturovanie provízie
 

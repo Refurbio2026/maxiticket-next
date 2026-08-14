@@ -4,13 +4,12 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import { useEvents } from "@/hooks/use-events";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listAdAccounts, upsertCampaign } from "@/lib/marketing.functions";
 import {
-  saveCampaign,
-  simulateMetrics,
   generateCreative,
   defaultAudience,
-  getGoogleAccountFor,
-  getMetaAccountFor,
   type Campaign,
   type CampaignGoal,
   type Platform,
@@ -71,6 +70,8 @@ function WizardPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fetchAccounts = useServerFn(listAdAccounts);
+  const saveCampaign = useServerFn(upsertCampaign);
   const search = Route.useSearch();
   // Hooky musia bežať pri každom renderi, takže guard na neprihláseného
   // používateľa je až pod nimi (react-hooks/rules-of-hooks).
@@ -90,10 +91,20 @@ function WizardPage() {
 
   const event = events.find((e) => e.id === eventId);
 
+  // Reklamné účty aj kampane sú v databáze — kampaň založená na jednom
+  // počítači sa tak zobrazí aj na druhom a admin ju vidí tiež.
+  // Hook musí byť NAD skorým returnom, inak sa poradie hookov medzi
+  // rendermi rozíde a React spadne.
+  const { data: adAccounts = [] } = useQuery({
+    queryKey: ["ad-accounts", user?.id ?? null],
+    enabled: !!user,
+    queryFn: () => fetchAccounts({ data: {} }),
+  });
+
   if (!user) return <div className="p-6">{t("orgMktNew.loginRequired")}</div>;
 
-  const google = getGoogleAccountFor(user.id);
-  const meta = getMetaAccountFor(user.id);
+  const google = adAccounts.find((a) => a.platform === "google" && a.status === "connected");
+  const meta = adAccounts.find((a) => a.platform === "meta" && a.status === "connected");
 
   const regenerate = () => {
     if (!event) return;
@@ -101,7 +112,7 @@ function WizardPage() {
     toast.success(t("orgMktNew.toastCreativeGenerated"));
   };
 
-  const launch = () => {
+  const launch = async () => {
     if (!event) return toast.error(t("orgMktNew.toastSelectEvent"));
     const platformConnected = platform === "google" ? !!google : !!meta;
     if (!platformConnected) {
@@ -112,25 +123,24 @@ function WizardPage() {
       );
       return;
     }
-    const c: Campaign = {
-      id: crypto.randomUUID(),
-      organizer_id: user.id,
-      organizer_name: user.full_name ?? user.email,
-      event_id: event.id,
-      event_title: event.title,
-      platform,
-      name: `${event.title} · ${platform === "google" ? "Google" : "Meta"}`,
-      goal,
-      budget_eur: budget,
-      status: "active",
-      audience,
-      creative,
-      metrics: simulateMetrics(budget),
-      created_at: new Date().toISOString(),
-    };
-    saveCampaign(c);
-    toast.success(t("orgMktNew.toastCampaignLaunched"));
-    navigate({ to: "/organizer/marketing" });
+    try {
+      await saveCampaign({
+        data: {
+          event_id: event.id,
+          platform,
+          name: `${event.title} · ${platform === "google" ? "Google" : "Meta"}`,
+          goal,
+          budget_eur: budget,
+          status: "active",
+          audience: audience as unknown as Record<string, unknown>,
+          creative: creative as unknown as Record<string, unknown>,
+        },
+      });
+      toast.success(t("orgMktNew.toastCampaignLaunched"));
+      navigate({ to: "/organizer/marketing" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kampaň sa nepodarilo uložiť");
+    }
   };
 
   if (events.length === 0) {

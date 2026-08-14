@@ -3,24 +3,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import { useEvents, type EventRecord } from "@/hooks/use-events";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
-  getGoogleAccountFor,
-  connectGoogleAds,
-  disconnectGoogleAds,
-  syncGoogleAds,
-  getMetaAccountFor,
-  connectMetaAds,
-  disconnectMetaAds,
-  getPixelSettings,
-  savePixelSettings,
-  getCampaignsFor,
-  setCampaignStatus,
-  deleteCampaign,
-  getAutoPromote,
-  setAutoPromote,
-  MARKETING_EVENT,
+  listAdAccounts,
+  upsertAdAccount,
+  deleteAdAccount,
+  getPixelSettings as fetchPixelSettings,
+  updatePixelSettings,
+  listCampaigns,
+  setCampaignStatus as setCampaignStatusFn,
+  deleteCampaign as deleteCampaignFn,
+} from "@/lib/marketing.functions";
+import {
   simulateMetrics,
-  saveCampaign,
+  type CampaignGoal,
   type Campaign,
   type PixelSettings,
 } from "@/lib/marketing-db";
@@ -66,17 +63,91 @@ function MarketingCenter() {
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const h = () => setTick((t) => t + 1);
-    window.addEventListener(MARKETING_EVENT, h);
-    return () => window.removeEventListener(MARKETING_EVENT, h);
-  }, []);
+  const qc = useQueryClient();
+  const fetchAccounts = useServerFn(listAdAccounts);
+  const saveAccount = useServerFn(upsertAdAccount);
+  const removeAccount = useServerFn(deleteAdAccount);
+  const fetchPixels = useServerFn(fetchPixelSettings);
+  const savePixels = useServerFn(updatePixelSettings);
+  const fetchCampaigns = useServerFn(listCampaigns);
+  const changeStatus = useServerFn(setCampaignStatusFn);
+  const removeCampaign = useServerFn(deleteCampaignFn);
+  const refreshMarketing = () => qc.invalidateQueries({ queryKey: ["marketing"] });
+
+  /**
+   * Pripojenie reklamného účtu je zatiaľ evidencia — skutočné OAuth s Google
+   * Ads ani Meta nemáme, takže sa len založí riadok s ukážkovým číslom účtu.
+   */
+  const connectAccount = async (platform: "google" | "meta") => {
+    await saveAccount({
+      data: {
+        platform,
+        account_id:
+          platform === "google"
+            ? `${Math.floor(100 + Math.random() * 899)}-${Math.floor(100 + Math.random() * 899)}-${Math.floor(1000 + Math.random() * 8999)}`
+            : `act_${Math.floor(100000000 + Math.random() * 899999999)}`,
+        account_name: platform === "google" ? "vipky.sk – Google Ads" : "vipky.sk – Meta Ads",
+        status: "connected",
+      },
+    });
+    refreshMarketing();
+  };
+
+  const disconnectAccount = async (id?: string) => {
+    if (!id) return;
+    await removeAccount({ data: { id } });
+    refreshMarketing();
+  };
 
   // Hooky musia bežať pri každom renderi, takže guard na neprihláseného
   // používateľa je až pod nimi (react-hooks/rules-of-hooks).
   const { data: events = [] } = useEvents({ scope: "mine" });
-  const campaigns = user ? getCampaignsFor(user.id) : [];
+
+  // Kampane aj reklamné účty sú v databáze; server ich vracia sploštené,
+  // tu ich prevedieme na tvar, s ktorým už táto stránka pracuje.
+  const { data: campaignRows = [] } = useQuery({
+    queryKey: ["marketing", "campaigns", user?.id ?? null],
+    enabled: !!user,
+    queryFn: () => fetchCampaigns({ data: {} }),
+  });
+  const { data: adAccounts = [] } = useQuery({
+    queryKey: ["marketing", "accounts", user?.id ?? null],
+    enabled: !!user,
+    queryFn: () => fetchAccounts({ data: {} }),
+  });
+  const { data: pixelRow } = useQuery({
+    queryKey: ["marketing", "pixels", user?.id ?? null],
+    enabled: !!user,
+    queryFn: () => fetchPixels({ data: {} }),
+  });
+
+  const campaigns = useMemo(
+    () =>
+      campaignRows.map((c) => ({
+        ...c,
+        organizer_name: c.organizer_name ?? undefined,
+        goal: c.goal as CampaignGoal,
+        event_id: c.event_id ?? "",
+        event_title: c.event_title ?? "",
+        audience: c.audience as never,
+        creative: c.creative as never,
+        metrics: {
+          impressions: c.impressions,
+          clicks: c.clicks,
+          spend_eur: c.spend_eur,
+          conversions: c.conversions,
+          revenue_eur: c.revenue_eur,
+          // Konverzia v ticketingu = predaná vstupenka.
+          tickets_sold: c.conversions,
+          // Odvodené ukazovatele sa nikde neukladajú — počítajú sa z čísel vyššie.
+          ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0,
+          cpc: c.clicks > 0 ? c.spend_eur / c.clicks : 0,
+          roas: c.spend_eur > 0 ? c.revenue_eur / c.spend_eur : 0,
+          updated_at: c.created_at,
+        },
+      })),
+    [campaignRows],
+  );
 
   const totals = useMemo(() => {
     return campaigns.reduce(
@@ -98,10 +169,37 @@ function MarketingCenter() {
 
   if (!user) return <div className="p-6">{t("orgMktList.loginRequired")}</div>;
 
-  const google = getGoogleAccountFor(user.id);
-  const meta = getMetaAccountFor(user.id);
-  const pixels = getPixelSettings(user.id);
-  const auto = getAutoPromote(user.id);
+  // Stránka očakáva tvar z pôvodného localStorage modelu.
+  const googleRow = adAccounts.find((a) => a.platform === "google" && a.status === "connected");
+  const metaRow = adAccounts.find((a) => a.platform === "meta" && a.status === "connected");
+  const google = googleRow
+    ? {
+        ...googleRow,
+        customer_id: googleRow.account_id,
+        account_name: googleRow.account_name ?? "",
+        last_sync_at: googleRow.last_sync_at ?? googleRow.connected_at,
+      }
+    : undefined;
+  const meta = metaRow
+    ? {
+        ...metaRow,
+        ad_account_id: metaRow.account_id,
+        business_account_id: metaRow.business_account_id ?? "",
+        pixel_id: metaRow.pixel_id ?? "",
+        page_name: metaRow.page_name ?? "",
+        last_sync_at: metaRow.last_sync_at ?? metaRow.connected_at,
+      }
+    : undefined;
+  const pixels = {
+    organizer_id: user.id,
+    updated_at: pixelRow?.updated_at ?? new Date().toISOString(),
+    ga4_measurement_id: pixelRow?.ga4_measurement_id ?? "",
+    gtm_id: pixelRow?.gtm_id ?? "",
+    google_ads_conversion_id: pixelRow?.google_ads_conversion_id ?? "",
+    google_ads_conversion_label: pixelRow?.google_ads_conversion_label ?? "",
+    meta_pixel_id: pixelRow?.meta_pixel_id ?? "",
+  };
+  const auto = pixelRow?.auto_promote ?? false;
 
   return (
     <div className="space-y-6 p-6">
@@ -274,7 +372,7 @@ function MarketingCenter() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      syncGoogleAds(user.id);
+                      refreshMarketing();
                       toast.success(t("orgMktList.toastSynced"));
                     }}
                     className="gap-2"
@@ -284,7 +382,7 @@ function MarketingCenter() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      disconnectGoogleAds(user.id);
+                      void disconnectAccount(googleRow?.id);
                       toast(t("orgMktList.toastDisconnected"));
                     }}
                     className="gap-2"
@@ -295,7 +393,7 @@ function MarketingCenter() {
               ) : (
                 <Button
                   onClick={() => {
-                    connectGoogleAds(user.id);
+                    void connectAccount("google");
                     toast.success(t("orgMktList.toastGoogleConnected"));
                   }}
                   className="gap-2"
@@ -348,7 +446,7 @@ function MarketingCenter() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    disconnectMetaAds(user.id);
+                    void disconnectAccount(metaRow?.id);
                     toast(t("orgMktList.toastDisconnected"));
                   }}
                   className="gap-2"
@@ -358,7 +456,7 @@ function MarketingCenter() {
               ) : (
                 <Button
                   onClick={() => {
-                    connectMetaAds(user.id);
+                    void connectAccount("meta");
                     toast.success(t("orgMktList.toastMetaConnected"));
                   }}
                   className="gap-2"
@@ -390,7 +488,7 @@ function MarketingCenter() {
               <Switch
                 checked={auto}
                 onCheckedChange={(v) => {
-                  setAutoPromote(user.id, v);
+                  void savePixels({ data: { auto_promote: v } }).then(refreshMarketing);
                   toast.success(v ? t("orgMktList.toastAutoOn") : t("orgMktList.toastAutoOff"));
                 }}
               />
@@ -513,6 +611,11 @@ function EventPromoCard({
 }
 
 function CampaignRow({ c }: { c: Campaign }) {
+  // Vlastné volania servera — komponent je mimo rozsahu hookov nad ním.
+  const qc = useQueryClient();
+  const changeStatus = useServerFn(setCampaignStatusFn);
+  const removeCampaign = useServerFn(deleteCampaignFn);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["marketing"] });
   const { t } = useI18n();
   return (
     <Card className="p-4">
@@ -556,7 +659,7 @@ function CampaignRow({ c }: { c: Campaign }) {
               size="sm"
               variant="outline"
               onClick={() => {
-                setCampaignStatus(c.id, "paused");
+                void changeStatus({ data: { id: c.id, status: "paused" } }).then(refresh);
                 toast(t("orgMktList.toastPaused"));
               }}
               className="gap-1"
@@ -568,7 +671,7 @@ function CampaignRow({ c }: { c: Campaign }) {
               size="sm"
               variant="outline"
               onClick={() => {
-                setCampaignStatus(c.id, "active");
+                void changeStatus({ data: { id: c.id, status: "active" } }).then(refresh);
                 toast.success(t("orgMktList.toastActivated"));
               }}
               className="gap-1"
@@ -580,8 +683,9 @@ function CampaignRow({ c }: { c: Campaign }) {
             size="sm"
             variant="ghost"
             onClick={() => {
-              const next = { ...c, metrics: simulateMetrics(c.budget_eur) };
-              saveCampaign(next);
+              // Výkonnostné čísla zatiaľ nikto nesťahuje z Google ani Meta —
+              // tlačidlo preto len znovu načíta, čo je v databáze.
+              refresh();
               toast.success(t("orgMktList.toastMetricsUpdated"));
             }}
             className="gap-1"
@@ -593,7 +697,7 @@ function CampaignRow({ c }: { c: Campaign }) {
             variant="ghost"
             onClick={() => {
               if (confirm(t("orgMktList.confirmDelete"))) {
-                deleteCampaign(c.id);
+                void removeCampaign({ data: { id: c.id } }).then(refresh);
                 toast(t("orgMktList.toastDeleted"));
               }
             }}
@@ -651,6 +755,9 @@ function Metric({
 }
 
 function PixelForm({ initial, organizerId }: { initial: PixelSettings; organizerId: string }) {
+  const qc = useQueryClient();
+  const savePixels = useServerFn(updatePixelSettings);
+  void organizerId; // meracie kódy sa ukladajú prihlásenému organizátorovi
   const { t } = useI18n();
   const [s, setS] = useState<PixelSettings>(initial);
   const upd = <K extends keyof PixelSettings>(k: K, v: PixelSettings[K]) =>
@@ -697,11 +804,15 @@ function PixelForm({ initial, organizerId }: { initial: PixelSettings; organizer
       </div>
       <Button
         onClick={() => {
-          savePixelSettings({
-            ...s,
-            organizer_id: organizerId,
-            updated_at: new Date().toISOString(),
-          });
+          void savePixels({
+            data: {
+              ga4_measurement_id: s.ga4_measurement_id,
+              gtm_id: s.gtm_id,
+              google_ads_conversion_id: s.google_ads_conversion_id,
+              google_ads_conversion_label: s.google_ads_conversion_label,
+              meta_pixel_id: s.meta_pixel_id,
+            },
+          }).then(() => qc.invalidateQueries({ queryKey: ["marketing"] }));
           toast.success(t("orgMktList.toastSaved"));
         }}
         className="gap-2"

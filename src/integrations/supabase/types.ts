@@ -1586,6 +1586,7 @@ export type Database = {
       };
       pixel_settings: {
         Row: {
+          auto_promote: boolean;
           ga4_measurement_id: string | null;
           google_ads_conversion_id: string | null;
           google_ads_conversion_label: string | null;
@@ -1595,6 +1596,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          auto_promote?: boolean;
           ga4_measurement_id?: string | null;
           google_ads_conversion_id?: string | null;
           google_ads_conversion_label?: string | null;
@@ -1604,6 +1606,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          auto_promote?: boolean;
           ga4_measurement_id?: string | null;
           google_ads_conversion_id?: string | null;
           google_ads_conversion_label?: string | null;

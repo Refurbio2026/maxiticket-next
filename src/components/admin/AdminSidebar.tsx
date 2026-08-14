@@ -170,7 +170,7 @@ const groups: Group[] = [
   },
   {
     label: "Marketing",
-    items: [{ title: "Reklamné kampane", url: "/admin/marketing", icon: Megaphone, local: true }],
+    items: [{ title: "Reklamné kampane", url: "/admin/marketing", icon: Megaphone }],
   },
   {
     label: "Systém",
@@ -267,13 +267,15 @@ export function AdminSidebar() {
                 na databáze
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="size-1.5 shrink-0 rounded-full border border-amber-500" />
-              <span>
-                <span className="font-semibold text-foreground">{localCount}</span> len v
-                prehliadači — dáta sa neukladajú na server
-              </span>
-            </div>
+            {localCount > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="size-1.5 shrink-0 rounded-full border border-amber-500" />
+                <span>
+                  <span className="font-semibold text-foreground">{localCount}</span> len v
+                  prehliadači — dáta sa neukladajú na server
+                </span>
+              </div>
+            )}
           </div>
         </SidebarFooter>
       )}
