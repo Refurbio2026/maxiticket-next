@@ -10,10 +10,8 @@ import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
 import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
+import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
-
-/** Tvar z rozloženia sály — potrebujeme z neho len id a či je VIP. */
-type LayoutShape = { id: string; kind?: string; priceCategory?: string };
 
 /**
  * IP klienta spoza nginxu.
@@ -237,25 +235,14 @@ export const submitOrder = createServerFn({ method: "POST" })
     const basePrice = Number(event.base_price ?? 0);
     const vipPrice = event.vip_price === null ? basePrice : Number(event.vip_price);
 
-    // VIP sedadlá určuje rozloženie sály, nie klient. `seat_id` má tvar
-    // `<id tvaru>::r<riadok>c<stĺpec>`, takže stačí zistiť, ktoré tvary sú VIP.
-    const requestedSeatIds = data.items.map((it) => it.seat_id).filter(Boolean) as string[];
-    const vipSeatIds = new Set<string>();
-    if (requestedSeatIds.length > 0 && event.venue_layout_id) {
-      const { data: layout } = await supabaseAdmin
-        .from("venue_layouts")
-        .select("shapes")
-        .eq("id", event.venue_layout_id)
-        .maybeSingle();
-      const vipShapes = new Set(
-        ((layout?.shapes as LayoutShape[] | null) ?? [])
-          .filter((sh) => sh.kind === "vip" || sh.priceCategory === "VIP")
-          .map((sh) => sh.id),
-      );
-      for (const seatId of requestedSeatIds) {
-        if (vipShapes.has(seatId.split("::")[0])) vipSeatIds.add(seatId);
-      }
-    }
+    // Cenu sedadla určuje jeho zóna v rozložení sály, nie klient. Spoločné
+    // ocenenie s pokladňou je v `seat-pricing.server.ts`.
+    const pricing = await loadSeatPricing({
+      eventId: data.event_id,
+      venueLayoutId: event.venue_layout_id,
+      basePrice,
+      vipPrice,
+    });
 
     // --- Ocenenie na serveri ---
     const priced: PricedItem[] = data.items.map((it) => {
@@ -272,15 +259,15 @@ export const submitOrder = createServerFn({ method: "POST" })
         };
       }
       if (it.seat_id) {
-        // Či je sedadlo VIP, si server zisťuje sám z rozloženia sály v databáze.
-        // Príznak od klienta sa ignoruje — inak by si kupujúci označil VIP
-        // sedadlo za obyčajné a zaplatil základnú cenu.
-        const vip = vipSeatIds.has(it.seat_id);
+        // Zónu aj cenu si server zisťuje sám z rozloženia sály. Príznak od
+        // klienta sa ignoruje — inak by si kupujúci označil VIP sedadlo za
+        // obyčajné a zaplatil základnú cenu.
+        const vip = pricing.isVip(it.seat_id);
         return {
           ticket_type_id: null,
           seat_id: it.seat_id,
           label: it.seat_label || it.seat_id,
-          unit_price: vip ? vipPrice : basePrice,
+          unit_price: pricing.priceFor(it.seat_id),
           quantity: 1,
           is_vip: vip,
         };

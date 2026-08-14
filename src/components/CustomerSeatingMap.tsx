@@ -15,11 +15,32 @@ type Props = {
   layout: HallLayout;
   basePrice: number;
   vipPrice: number;
+  /**
+   * Ceny cenových zón podujatia, kľúčované názvom zóny malými písmenami.
+   * Musia sedieť s tým, čo naúčtuje server (`seat-pricing.server.ts`) — inak by
+   * mapa ukázala inú sumu, než z akej sa nakoniec spraví objednávka.
+   */
+  zonePrices?: Record<string, number>;
   inventory: SeatInventoryRow[];
   selected: string[];
   onToggle: (seat: CustomerSeat) => void;
   customerSeatMapMode?: boolean;
 };
+
+/** Rovnaké poradie rozhodovania ako na serveri: zóna → VIP → základná cena. */
+function seatPrice(
+  zone: string | undefined,
+  isVip: boolean,
+  basePrice: number,
+  vipPrice: number,
+  zonePrices?: Record<string, number>,
+): number {
+  if (zone) {
+    const zonal = zonePrices?.[zone.toLowerCase()];
+    if (zonal !== undefined) return zonal;
+  }
+  return isVip ? vipPrice : basePrice;
+}
 
 const COLORS = {
   available: "#22c55e",
@@ -49,6 +70,7 @@ export function CustomerSeatingMap({
   layout,
   basePrice,
   vipPrice,
+  zonePrices,
   inventory,
   selected,
   onToggle,
@@ -271,6 +293,13 @@ export function CustomerSeatingMap({
                   const seatId = `${s.id}::r${r}c${c}`;
                   const inv = invMap.get(seatId);
                   const isVip = !!inv?.is_vip || isVipGrid;
+                  const unitPrice = seatPrice(
+                    s.priceCategory,
+                    isVip,
+                    basePrice,
+                    vipPrice,
+                    zonePrices,
+                  );
                   let fill = isVip ? COLORS.vipAvailable : COLORS.available;
                   let status: "available" | "reserved" | "sold" | "selected" = "available";
                   if (inv?.status === "sold") {
@@ -311,7 +340,7 @@ export function CustomerSeatingMap({
                         onToggle({
                           seat_id: seatId,
                           label,
-                          price: isVip ? vipPrice : basePrice,
+                          price: unitPrice,
                           is_vip: isVip,
                         });
                       }}
@@ -320,7 +349,7 @@ export function CustomerSeatingMap({
                         onToggle({
                           seat_id: seatId,
                           label,
-                          price: isVip ? vipPrice : basePrice,
+                          price: unitPrice,
                           is_vip: isVip,
                         });
                       }}
@@ -348,6 +377,7 @@ export function CustomerSeatingMap({
             if (s.kind === "seats") {
               const inv = invMap.get(s.id);
               const isVip = !!inv?.is_vip || s.priceCategory === "VIP";
+              const unitPrice = seatPrice(s.priceCategory, isVip, basePrice, vipPrice, zonePrices);
               let fill = isVip ? COLORS.vipAvailable : COLORS.available;
               let status: "available" | "reserved" | "sold" | "selected" = "available";
               if (inv?.status === "sold") {
@@ -383,7 +413,7 @@ export function CustomerSeatingMap({
                     onToggle({
                       seat_id: s.id,
                       label: seatLabel(s),
-                      price: isVip ? vipPrice : basePrice,
+                      price: unitPrice,
                       is_vip: isVip,
                     });
                   }}
@@ -392,7 +422,7 @@ export function CustomerSeatingMap({
                     onToggle({
                       seat_id: s.id,
                       label: seatLabel(s),
-                      price: isVip ? vipPrice : basePrice,
+                      price: unitPrice,
                       is_vip: isVip,
                     });
                   }}

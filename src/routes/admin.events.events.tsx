@@ -12,6 +12,11 @@ import { useLayouts } from "@/hooks/use-layouts";
 import { listVenues } from "@/lib/venues.functions";
 import { listOrganizers } from "@/lib/events.functions";
 import { listEventCategories } from "@/lib/event-categories.functions";
+import {
+  listPriceCategories,
+  listEventZonePrices,
+  setEventZonePrices,
+} from "@/lib/price-categories.functions";
 import { listEventGroups } from "@/lib/event-groups.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +76,8 @@ type FormState = {
   vip_price: string;
   total_tickets: string;
   tickets: TicketRow[];
+  /** Cena zóny sály; kľúč je id zóny, prázdny reťazec = zóna sa neúčtuje zvlášť. */
+  zone_prices: Record<string, string>;
   /** Koľko termínov podujatie má — riadi, či sa dátum vo formulári vôbec uloží. */
   date_count: number;
 };
@@ -100,6 +107,7 @@ const blankForm = (): FormState => ({
   vip_price: "55",
   total_tickets: "100",
   tickets: [{ name: "Štandard", price: "25", quantity: "100" }],
+  zone_prices: {},
   date_count: 0,
 });
 
@@ -133,6 +141,7 @@ function formFromEvent(e: EventRecord): FormState {
       price: String(t.price),
       quantity: String(t.quantity),
     })),
+    zone_prices: {},
     date_count: e.dates?.length ?? 0,
   };
 }
@@ -161,6 +170,14 @@ function Page() {
     queryKey: ["event-categories", "active"],
     queryFn: () => fetchCategories({ data: { only_active: true } }),
   });
+  // Cenové zóny sály; cenu dostávajú až tu, v konkrétnom podujatí.
+  const fetchZones = useServerFn(listPriceCategories);
+  const { data: zones = [] } = useQuery({
+    queryKey: ["price-categories", "active"],
+    queryFn: () => fetchZones({ data: { only_active: true } }),
+  });
+  const fetchZonePrices = useServerFn(listEventZonePrices);
+  const saveZonePrices = useServerFn(setEventZonePrices);
   const fetchOrganizers = useServerFn(listOrganizers);
   const { data: organizers = [] } = useQuery({
     queryKey: ["organizers"],
@@ -212,9 +229,24 @@ function Page() {
     setOpen(true);
   };
 
-  const openEdit = (e: EventRecord) => {
+  const openEdit = async (e: EventRecord) => {
     setForm(formFromEvent(e));
     setOpen(true);
+    try {
+      const prices = await fetchZonePrices({ data: { event_id: e.id } });
+      setForm((f) =>
+        f.id === e.id
+          ? {
+              ...f,
+              zone_prices: Object.fromEntries(
+                prices.map((p) => [p.price_category_id, String(p.price)]),
+              ),
+            }
+          : f,
+      );
+    } catch {
+      /* ceny zón sú doplnok — bez nich sa formulár stále dá uložiť */
+    }
   };
 
   const editing = !!form.id;
@@ -241,7 +273,7 @@ function Page() {
       return toast.error("Každý typ vstupenky potrebuje názov");
     }
     try {
-      await upsert.mutateAsync({
+      const saved = await upsert.mutateAsync({
         id: form.id,
         // `organizer_id` rešpektuje server len adminovi; prázdne = podujatie
         // ostane tomu, komu patrí (resp. pri zakladaní prihlásenému).
@@ -271,6 +303,15 @@ function Page() {
           quantity: Number(t.quantity) || 0,
         })),
       });
+      // Ceny zón sa ukladajú zvlášť — potrebujú id podujatia, ktoré pri
+      // zakladaní vzniká až teraz.
+      const zonePrices = Object.entries(form.zone_prices)
+        .filter(([, v]) => v.trim() !== "")
+        .map(([price_category_id, v]) => ({ price_category_id, price: Number(v) || 0 }));
+      if (zonePrices.length > 0 || editing) {
+        await saveZonePrices({ data: { event_id: saved.id, prices: zonePrices } });
+      }
+
       setOpen(false);
       toast.success(editing ? "Podujatie uložené" : "Podujatie vytvorené");
     } catch (err) {
@@ -702,6 +743,43 @@ function Page() {
                 onChange={(e) => setForm({ ...form, total_tickets: e.target.value })}
               />
             </Field>
+
+            {form.sale_type === "seating_map" && zones.length > 0 && (
+              <div className="sm:col-span-2 space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Ceny zón sály
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Zóny priraďuješ sedadlám v Editore hál. Prázdna cena znamená, že sa zóna neúčtuje
+                  zvlášť — sedadlo dostane VIP alebo základnú cenu vyššie.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {zones.map((z) => (
+                    <div key={z.id} className="flex items-center gap-2">
+                      <span
+                        className="size-3 shrink-0 rounded-full border border-border/50"
+                        style={{ background: z.color ?? "transparent" }}
+                      />
+                      <span className="flex-1 text-sm truncate">{z.name}</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        placeholder="—"
+                        className="w-28"
+                        value={form.zone_prices[z.id] ?? ""}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            zone_prices: { ...form.zone_prices, [z.id]: e.target.value },
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="sm:col-span-2 space-y-2">
               <div className="flex items-center justify-between">

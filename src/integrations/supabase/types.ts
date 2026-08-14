@@ -1210,6 +1210,81 @@ export type Database = {
         };
         Relationships: [];
       };
+      price_categories: {
+        Row: {
+          active: boolean;
+          color: string | null;
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          color?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          color?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      event_price_categories: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          price: number;
+          price_category_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          price: number;
+          price_category_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          price?: number;
+          price_category_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_price_categories_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_price_categories_price_category_id_fkey";
+            columns: ["price_category_id"];
+            isOneToOne: false;
+            referencedRelation: "price_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       event_categories: {
         Row: {
           active: boolean;

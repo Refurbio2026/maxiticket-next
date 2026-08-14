@@ -167,12 +167,7 @@ const groups: Group[] = [
     items: [
       { title: "Kategórie podujatí", url: "/admin/data/categories", icon: Layers },
       { title: "Skupiny podujatí", url: "/admin/data/groups", icon: FolderTree },
-      {
-        title: "Cenové kategórie",
-        url: "/admin/data/price-categories",
-        icon: DollarSign,
-        demo: true,
-      },
+      { title: "Cenové kategórie", url: "/admin/data/price-categories", icon: DollarSign },
       {
         title: "Kategórie zliav",
         url: "/admin/data/discount-categories",

@@ -34,7 +34,7 @@ tailwindcss, tsConfigPaths ani nitro ručne, sú už vnútri a duplikát appku r
 
 Projekt má **dva nezávislé zdroje dát** a treba vedieť, v ktorom sa práve nachádzaš.
 
-**1. Supabase (reálne, produkčné)** — 35 tabuliek s RLS:
+**1. Supabase (reálne, produkčné)** — 37 tabuliek s RLS:
 `profiles`, `user_roles`, `events`, `event_dates`, `ticket_types`, `orders`, `order_items`,
 `seat_inventory`, `tickets`, `payments`, `payment_logs`, `superfaktura_logs`, `ticket_scans`,
 `venue_layouts`, `email_logs`, `rate_limits`, `settlements`, `platform_settings`, `venues`,
@@ -57,7 +57,7 @@ skutočná obsadenosť je v `seat_inventory`.
 pomocníky sú v `lib/layout-types.ts` (bez localStorage, importuje ich aj server).
 Tvary a oblúkové skupiny sú JSONB — sú to voľné štruktúry editora, nedotazujeme sa do nich.
 
-**9 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
+**8 admin stránok nad `admin-mock.ts` je fikcia.** V `AdminSidebar` sú označené `demo: true`,
 `DataTablePage` na nich zobrazuje varovný banner. **Nič sa neskrýva** — stav je vidieť na bodke
 za názvom: plná zelená = beží na databáze, dutá oranžová (`local: true`) = ukladá len do
 localStorage, žiadna bodka = demo. Keď stránku napojíš na databázu, zmaž jej `demo: true`
@@ -198,6 +198,27 @@ telom a nepublikovaná stránka sa navonok tvári, že neexistuje.
 Migrácia zakladá kostry (O nás, obchodné podmienky, ochrana osobných údajov, reklamačný poriadok)
 **bez textu** — právne dokumenty si píše prevádzkovateľ, vymyslené znenie by bolo horšie než
 žiadne.
+
+### Cenové zóny sály
+
+`price_categories` (číselník zón) + `event_price_categories` (cena zóny na podujatie) +
+`price-categories.functions.ts` + `/admin/data/price-categories`.
+
+**Predtým to bola tichá chyba v peniazoch:** editor hál ponúkal päť zón (Regular, VIP, Premium,
+Early Bird, ZŤP) natvrdo zapísaných v komponente, ale ocenenie poznalo len `vip_price` a
+`base_price`. Sedadlo označené ako Premium sa predalo za základnú cenu a zákaznícka mapa mu tú
+istú cenu aj ukázala, takže si toho nikto nevšimol.
+
+Ocenenie sedadla je **spoločné pre web aj pokladňu** v `seat-pricing.server.ts` (`loadSeatPricing`)
+— nikdy ho nekopíruj do `submitOrder` ani `createPosSale`, inak sa obe vetvy rozídu. Poradie
+rozhodovania: cena zóny pre toto podujatie → `vip_price`, ak je sedadlo vo VIP zóne → `base_price`.
+Vďaka posledným dvom sa podujatie bez nastavených zón správa presne ako predtým.
+
+`CustomerSeatingMap` dostáva `zonePrices` a počíta rovnako — **zobrazená cena musí sedieť
+s účtovanou**. Keď meníš ocenenie na serveri, uprav aj mapu.
+
+Zóna sa v rozložení sály ukladá ako **názov** v JSONB tvare, nie ako id. Preto sa zóna použitá
+v podujatí nemaže, len deaktivuje, a premenovanie zóny **neprepíše** už uložené rozloženia.
 
 ### Termíny podujatí
 

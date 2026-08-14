@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { newSignedTicket } from "./qr-token.server";
+import { loadSeatPricing } from "./seat-pricing.server";
 import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
 
 export const CASHIER_PERMISSIONS = [
@@ -555,24 +556,14 @@ export const createPosSale = createServerFn({ method: "POST" })
     const basePrice = Number(event.base_price ?? 0);
     const vipPrice = event.vip_price === null ? basePrice : Number(event.vip_price);
 
-    // VIP určuje rozloženie sály, nie pokladník.
-    const seatIds = data.items.map((it) => it.seat_id).filter(Boolean) as string[];
-    const vipSeatIds = new Set<string>();
-    if (seatIds.length > 0 && event.venue_layout_id) {
-      const { data: layout } = await supabaseAdmin
-        .from("venue_layouts")
-        .select("shapes")
-        .eq("id", event.venue_layout_id)
-        .maybeSingle();
-      const shapes =
-        (layout?.shapes as { id: string; kind?: string; priceCategory?: string }[]) ?? [];
-      const vipShapes = new Set(
-        shapes.filter((s) => s.kind === "vip" || s.priceCategory === "VIP").map((s) => s.id),
-      );
-      for (const seatId of seatIds) {
-        if (vipShapes.has(seatId.split("::")[0])) vipSeatIds.add(seatId);
-      }
-    }
+    // Zónu aj cenu sedadla určuje rozloženie sály, nie pokladník. Rovnaké
+    // ocenenie ako na webe — spoločné v `seat-pricing.server.ts`.
+    const pricing = await loadSeatPricing({
+      eventId: data.event_id,
+      venueLayoutId: event.venue_layout_id,
+      basePrice,
+      vipPrice,
+    });
 
     const priced = data.items.map((it) => {
       if (it.ticket_type_id) {
@@ -588,12 +579,12 @@ export const createPosSale = createServerFn({ method: "POST" })
         };
       }
       if (it.seat_id) {
-        const vip = vipSeatIds.has(it.seat_id);
+        const vip = pricing.isVip(it.seat_id);
         return {
           ticket_type_id: null,
           seat_id: it.seat_id,
           label: it.seat_label || it.seat_id,
-          unit_price: vip ? vipPrice : basePrice,
+          unit_price: pricing.priceFor(it.seat_id),
           quantity: 1,
           is_vip: vip,
         };

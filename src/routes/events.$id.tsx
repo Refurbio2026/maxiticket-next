@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEvent, type EventRecord } from "@/hooks/use-events";
 import { getSeatAvailability } from "@/lib/event-dates.functions";
+import { listEventZonePrices } from "@/lib/price-categories.functions";
 import { listEventPerformers } from "@/lib/performers.functions";
 import { useLayouts } from "@/hooks/use-layouts";
 import type { HallLayout } from "@/lib/layout-types";
@@ -183,6 +184,18 @@ function EventDetail() {
     if (!activeDate) return;
     if (dateId !== activeDate.id) setDateId(activeDate.id);
   }, [activeDate, dateId]);
+
+  // Ceny cenových zón — mapa musí ukázať presne to, čo naúčtuje server.
+  const fetchZonePrices = useServerFn(listEventZonePrices);
+  const zonePricesQuery = useQuery({
+    queryKey: ["event-zone-prices", id],
+    queryFn: () => fetchZonePrices({ data: { event_id: id } }),
+  });
+  const zonePrices = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const z of zonePricesQuery.data ?? []) map[z.name.toLowerCase()] = z.price;
+    return map;
+  }, [zonePricesQuery.data]);
 
   // Obsadenosť ťaháme z databázy, aby dvaja kupujúci na dvoch počítačoch videli
   // ten istý stav; localStorage vie len o vlastnom prehliadači.
@@ -569,6 +582,7 @@ function EventDetail() {
                         layout={layout}
                         basePrice={basePrice}
                         vipPrice={vipPrice}
+                        zonePrices={zonePrices}
                         inventory={inventory}
                         selected={selected.map((s) => s.seat_id)}
                         onToggle={toggleSeat}

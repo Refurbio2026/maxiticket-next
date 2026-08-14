@@ -10,6 +10,9 @@ import {
   type ShapeKind,
 } from "@/lib/layout-types";
 import { useUpsertLayout, toLayoutInput } from "@/hooks/use-layouts";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listPriceCategories } from "@/lib/price-categories.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +67,21 @@ const SHAPE_COLOR: Record<ShapeKind, string> = {
   tech: "#737373",
 };
 
-const PRICE_CATEGORIES = ["Regular", "VIP", "Premium", "Early Bird", "ZŤP"];
+/** Záloha, kým sa načíta číselník zo servera — a pre prípad prázdnej tabuľky. */
+const FALLBACK_PRICE_CATEGORIES = ["Regular", "VIP", "Premium", "Early Bird", "ZŤP"];
+
+/**
+ * Názvy cenových zón z číselníka (Dáta → Cenové kategórie). Editor ich len
+ * ponúka a ukladá do tvaru; cenu dostávajú až v konkrétnom podujatí.
+ */
+function usePriceCategoryNames(): string[] {
+  const fetchZones = useServerFn(listPriceCategories);
+  const { data } = useQuery({
+    queryKey: ["price-categories", "active"],
+    queryFn: () => fetchZones({ data: { only_active: true } }),
+  });
+  return data?.length ? data.map((z) => z.name) : FALLBACK_PRICE_CATEGORIES;
+}
 
 const CANVAS_BG = "#f8fafc";
 
@@ -227,6 +244,8 @@ export function SeatingEditor({
   initial: HallLayout;
   onChange?: (l: HallLayout) => void;
 }) {
+  const priceCategories = usePriceCategoryNames();
+
   // ---------- state ----------
   const normalizedInitial = useMemo(() => normalizeLayout(initial), [initial]);
   const [layout, setLayout] = useState<HallLayout>(normalizedInitial);
@@ -1055,7 +1074,7 @@ export function SeatingEditor({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRICE_CATEGORIES.map((p) => (
+                  {priceCategories.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
                     </SelectItem>
@@ -1256,7 +1275,7 @@ export function SeatingEditor({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRICE_CATEGORIES.map((p) => (
+                  {priceCategories.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
                     </SelectItem>
@@ -1657,6 +1676,7 @@ function CurveGroupPropertiesPanel({
   onChange: (patch: Partial<CurveGroup>) => void;
   onCommit: () => void;
 }) {
+  const priceCategories = usePriceCategoryNames();
   const numberPatch =
     (key: keyof CurveGroup, min?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = +e.target.value;
@@ -1786,7 +1806,7 @@ function CurveGroupPropertiesPanel({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PRICE_CATEGORIES.map((p) => (
+            {priceCategories.map((p) => (
               <SelectItem key={p} value={p}>
                 {p}
               </SelectItem>
@@ -1817,6 +1837,7 @@ function PropertiesPanel({
   onChange: (patch: Partial<Shape>) => void;
   onCommit: () => void;
 }) {
+  const priceCategories = usePriceCategoryNames();
   return (
     <div className="space-y-3">
       <div className="rounded-md bg-muted/40 px-2 py-1.5 text-xs">
@@ -1910,7 +1931,7 @@ function PropertiesPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PRICE_CATEGORIES.map((p) => (
+                {priceCategories.map((p) => (
                   <SelectItem key={p} value={p}>
                     {p}
                   </SelectItem>
