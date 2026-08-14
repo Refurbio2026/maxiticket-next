@@ -88,7 +88,11 @@ export const getAdminOverview = createServerFn({ method: "POST" })
         .select("id", { count: "exact", head: true })
         .in("status", ["refunded"]),
       supabaseAdmin.from("orders").select("total_amount").eq("status", "paid"),
-      supabaseAdmin.from("tickets").select("event_id, events ( id, title )").limit(2000),
+      supabaseAdmin
+        .from("tickets")
+        .select("event_id, events ( id, title )")
+        .is("refunded_at", null)
+        .limit(2000),
       supabaseAdmin
         .from("orders")
         .select(
@@ -98,10 +102,12 @@ export const getAdminOverview = createServerFn({ method: "POST" })
         .limit(10),
     ]);
 
-    // tickets today (count of tickets with issued_at today)
+    // Vstupenky vydané dnes. Refundované sa nerátajú — inak by dlaždica ukazovala
+    // lístky, ktoré už neplatia, a nesedela by s tržbami vedľa nej.
     const { count: todayTickets } = await supabaseAdmin
       .from("tickets")
       .select("id", { count: "exact", head: true })
+      .is("refunded_at", null)
       .gte("issued_at", startToday);
 
     const today_revenue = (todayOrdersRes.data || []).reduce(
@@ -129,6 +135,7 @@ export const getAdminOverview = createServerFn({ method: "POST" })
     const { data: weekTickets } = await supabaseAdmin
       .from("tickets")
       .select("issued_at")
+      .is("refunded_at", null)
       .gte("issued_at", start7.toISOString());
     for (const t of weekTickets || []) {
       const key = (t as any).issued_at?.slice(0, 10);
@@ -361,15 +368,19 @@ export const getScanStatsAll = createServerFn({ method: "POST" })
 
     const rows: ScanEventRow[] = [];
     for (const e of events || []) {
+      // Refundovanú vstupenku pri dverách nenaskenujú, takže do „predaných"
+      // nepatrí — inak by zostatok na kontrole vstupu nikdy nedošiel na nulu.
       const [{ count: sold }, { count: used }] = await Promise.all([
         supabaseAdmin
           .from("tickets")
           .select("id", { count: "exact", head: true })
-          .eq("event_id", (e as any).id),
+          .eq("event_id", (e as any).id)
+          .is("refunded_at", null),
         supabaseAdmin
           .from("tickets")
           .select("id", { count: "exact", head: true })
           .eq("event_id", (e as any).id)
+          .is("refunded_at", null)
           .not("used_at", "is", null),
       ]);
       const s = sold || 0;
