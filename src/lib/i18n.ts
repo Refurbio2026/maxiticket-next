@@ -56,13 +56,13 @@ const sk: Dict = {
   "footer.myAccount": "Môj účet",
   "footer.tagline":
     "Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.",
-  "footer.rights": "© 2026 vstupenky.sk s.r.o. — Všetky práva vyhradené.",
+  "footer.rights": "© 2026 vipky.sk s.r.o. — Všetky práva vyhradené.",
   "footer.builtWith": "Postavené s vášňou v Bratislave 🇸🇰",
   // support chat
   "support.title": "Podpora",
   "support.subtitle": "Virtuálny asistent · odpovie hneď",
   "support.greeting":
-    "Ahoj! 👋 Som virtuálny asistent vstupenky.sk. Ako ti pomôžem — nákup, vstupenky, platby alebo reklamácie?",
+    "Ahoj! 👋 Som virtuálny asistent vipky.sk. Ako ti pomôžem — nákup, vstupenky, platby alebo reklamácie?",
   "support.placeholder": "Napíš svoju otázku…",
   "support.send": "Odoslať",
   "support.thinking": "Píšem…",
@@ -98,12 +98,12 @@ const en: Dict = {
   "footer.myAccount": "My account",
   "footer.tagline":
     "The most modern ticketing platform in Slovakia. Selling experiences since 2025.",
-  "footer.rights": "© 2026 vstupenky.sk s.r.o. — All rights reserved.",
+  "footer.rights": "© 2026 vipky.sk s.r.o. — All rights reserved.",
   "footer.builtWith": "Built with passion in Bratislava 🇸🇰",
   "support.title": "Support",
   "support.subtitle": "Virtual assistant · instant replies",
   "support.greeting":
-    "Hi! 👋 I'm the vstupenky.sk virtual assistant. How can I help — buying, tickets, payments or refunds?",
+    "Hi! 👋 I'm the vipky.sk virtual assistant. How can I help — buying, tickets, payments or refunds?",
   "support.placeholder": "Type your question…",
   "support.send": "Send",
   "support.thinking": "Typing…",
@@ -139,12 +139,12 @@ const de: Dict = {
   "footer.myAccount": "Mein Konto",
   "footer.tagline":
     "Die modernste Ticketing-Plattform der Slowakei. Wir verkaufen Erlebnisse seit 2025.",
-  "footer.rights": "© 2026 vstupenky.sk s.r.o. — Alle Rechte vorbehalten.",
+  "footer.rights": "© 2026 vipky.sk s.r.o. — Alle Rechte vorbehalten.",
   "footer.builtWith": "Mit Leidenschaft in Bratislava gebaut 🇸🇰",
   "support.title": "Support",
   "support.subtitle": "Virtueller Assistent · sofortige Antwort",
   "support.greeting":
-    "Hallo! 👋 Ich bin der virtuelle Assistent von vstupenky.sk. Wie kann ich helfen — Kauf, Tickets, Zahlungen oder Rückerstattungen?",
+    "Hallo! 👋 Ich bin der virtuelle Assistent von vipky.sk. Wie kann ich helfen — Kauf, Tickets, Zahlungen oder Rückerstattungen?",
   "support.placeholder": "Schreib deine Frage…",
   "support.send": "Senden",
   "support.thinking": "Schreibt…",
@@ -181,12 +181,12 @@ const hu: Dict = {
   "footer.myAccount": "Fiókom",
   "footer.tagline":
     "Szlovákia legmodernebb jegyértékesítő platformja. 2025 óta élményeket árulunk.",
-  "footer.rights": "© 2026 vstupenky.sk s.r.o. — Minden jog fenntartva.",
+  "footer.rights": "© 2026 vipky.sk s.r.o. — Minden jog fenntartva.",
   "footer.builtWith": "Szenvedéllyel készült Pozsonyban 🇸🇰",
   "support.title": "Támogatás",
   "support.subtitle": "Virtuális asszisztens · azonnali válasz",
   "support.greeting":
-    "Szia! 👋 A vstupenky.sk virtuális asszisztense vagyok. Miben segíthetek — vásárlás, jegyek, fizetés vagy visszatérítés?",
+    "Szia! 👋 A vipky.sk virtuális asszisztense vagyok. Miben segíthetek — vásárlás, jegyek, fizetés vagy visszatérítés?",
   "support.placeholder": "Írd be a kérdésed…",
   "support.send": "Küldés",
   "support.thinking": "Gépel…",

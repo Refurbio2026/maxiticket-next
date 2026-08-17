@@ -4,7 +4,7 @@
 
 export const SUPPORT_KB = `
 PLATFORMA
-- vstupenky.sk (MaxiTicket) je online platforma na predaj vstupeniek na podujatia (koncerty, festivaly, šport, divadlo, stand-up, kultúra) na Slovensku.
+- vipky.sk (MaxiTicket) je online platforma na predaj vstupeniek na podujatia (koncerty, festivaly, šport, divadlo, stand-up, kultúra) na Slovensku.
 
 AKO KÚPIŤ VSTUPENKU
 1. Na stránke Podujatia si vyber podujatie.

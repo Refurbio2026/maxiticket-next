@@ -51,7 +51,7 @@ export async function askSupportBot(messages: ChatMsg[], lang: string): Promise<
   const langName = LANG_NAME[lang] ?? "Slovak";
   const system =
     `You are the friendly virtual customer-support assistant for the Slovak online ticketing ` +
-    `platform vstupenky.sk (MaxiTicket). Help visitors with buying tickets, payments, QR tickets, ` +
+    `platform vipky.sk (MaxiTicket). Help visitors with buying tickets, payments, QR tickets, ` +
     `wallets, invoices, accounts, entry and refunds. Rules:\n` +
     `- ALWAYS reply in ${langName}.\n` +
     `- Be concise, warm and practical. Prefer short answers and clear steps.\n` +
