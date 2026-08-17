@@ -1,10 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Loader2, Receipt, ShieldCheck } from "lucide-react";
 import { listFiscalReceipts } from "@/lib/fiscal.functions";
+import { listOrganizers } from "@/lib/events.functions";
+import { FiscalSettingsCard } from "@/components/pos/FiscalSettingsCard";
 
 export const Route = createFileRoute("/admin/pos/fiscal")({
   head: () => ({ meta: [{ title: "ORP / eKasa · Admin" }] }),
@@ -15,12 +19,20 @@ const eur = (n: number) =>
   `${n.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
 function AdminFiscalPage() {
-  // Admin vidí doklady všetkých organizátorov; nastavenie si každý spravuje
-  // sám v organizátorskej sekcii.
+  // Admin vidí doklady všetkých organizátorov a po výbere jedného z nich mu
+  // vie zadať aj kódy pre finančnú správu.
   const fetchReceipts = useServerFn(listFiscalReceipts);
+  const fetchOrganizers = useServerFn(listOrganizers);
+  // Nastavenie ORP patrí konkrétnemu organizátorovi — admin si vyberie, komu ho zadáva.
+  const [organizerId, setOrganizerId] = useState<string>("");
+
+  const organizers = useQuery({
+    queryKey: ["organizers", "options"],
+    queryFn: () => fetchOrganizers({ data: undefined as never }),
+  });
   const receipts = useQuery({
-    queryKey: ["fiscal-receipts", "all"],
-    queryFn: () => fetchReceipts({ data: { limit: 200 } }),
+    queryKey: ["fiscal-receipts", organizerId || "all"],
+    queryFn: () => fetchReceipts({ data: { limit: 200, organizer_id: organizerId || undefined } }),
   });
 
   const rows = receipts.data ?? [];
@@ -49,6 +61,31 @@ function AdminFiscalPage() {
           </div>
         </div>
       </Card>
+
+      <Card className="p-5 bg-card/60 border-border/50">
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+          Organizátor
+        </Label>
+        <select
+          value={organizerId}
+          onChange={(e) => setOrganizerId(e.target.value)}
+          className="w-full md:w-96 h-10 rounded-md bg-background border border-border/50 px-3 text-sm"
+        >
+          <option value="">— vyber organizátora —</option>
+          {(organizers.data ?? []).map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.full_name}
+              {o.email ? ` (${o.email})` : ""}
+            </option>
+          ))}
+        </select>
+        <p className="text-[11px] text-muted-foreground mt-1.5">
+          Bez výberu vidíš doklady všetkých. Kódy pre finančnú správu sa zadávajú jednému
+          organizátorovi — každý má vlastnú registrovanú pokladnicu.
+        </p>
+      </Card>
+
+      {organizerId && <FiscalSettingsCard organizerId={organizerId} />}
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <Stat label="Vystavených dokladov" value={String(issued.length)} />
