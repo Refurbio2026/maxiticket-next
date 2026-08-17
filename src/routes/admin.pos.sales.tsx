@@ -3,6 +3,7 @@ import { usePosSales } from "@/hooks/use-pos";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { ReceiptDownloadButton } from "@/components/pos/ReceiptDownloadButton";
 
 export const Route = createFileRoute("/admin/pos/sales")({
   head: () => ({ meta: [{ title: "POS Predaje · Admin" }] }),
@@ -43,6 +44,7 @@ function AdminPosSalesPage() {
                 <th className="text-left">Platba</th>
                 <th className="text-right">Suma</th>
                 <th className="text-left">Stav</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -62,6 +64,9 @@ function AdminPosSalesPage() {
                     >
                       {s.status === "paid" ? "Zaplatené" : "Storno"}
                     </Badge>
+                  </td>
+                  <td className="text-right">
+                    <ReceiptDownloadButton orderId={s.id} status={s.status} />
                   </td>
                 </tr>
               ))}

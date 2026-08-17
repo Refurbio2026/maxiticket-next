@@ -22,6 +22,8 @@ import { previewCoupon } from "@/lib/coupons.functions";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { fiscal } from "@/lib/fiscal-adapter";
 import { printTickets } from "@/lib/print-tickets";
+import { getReceiptDocument } from "@/lib/pos-documents.functions";
+import { downloadBase64 } from "@/lib/download";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +92,22 @@ function PosPage() {
   >("disconnected");
   const [processing, setProcessing] = useState(false);
   const [lastSale, setLastSale] = useState<PosSaleRecord | null>(null);
+  const [receiptBusy, setReceiptBusy] = useState(false);
+
+  // Pokladničný doklad sa generuje na serveri a odkladá k objednávke, takže sa
+  // dá stiahnuť aj neskôr z prehľadu predajov — nielen hneď po predaji.
+  const fetchReceipt = useServerFn(getReceiptDocument);
+  const stiahniDoklad = async (orderId: string) => {
+    setReceiptBusy(true);
+    try {
+      const doc = await fetchReceipt({ data: { order_id: orderId, refresh: false } });
+      downloadBase64(doc.filename, doc.base64);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Doklad sa nepodarilo vytvoriť");
+    } finally {
+      setReceiptBusy(false);
+    }
+  };
 
   // Smena aj tržby sú v databáze; prehliadač si pamätá len to, ktorá smena je
   // otvorená na tejto pokladni.
@@ -831,8 +849,13 @@ function PosPage() {
                     >
                       <Mail className="size-4 mr-1.5" /> {t("orgPos.email")}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => window.print()}>
-                      <Receipt className="size-4 mr-1.5" /> {t("orgPos.printReceipt")}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={receiptBusy}
+                      onClick={() => stiahniDoklad(lastSale.id)}
+                    >
+                      <Receipt className="size-4 mr-1.5" /> Doklad (PDF)
                     </Button>
                   </DialogFooter>
                 </div>

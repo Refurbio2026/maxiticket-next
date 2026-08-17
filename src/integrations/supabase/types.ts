@@ -909,6 +909,51 @@ export type Database = {
           },
         ];
       };
+      pos_documents: {
+        Row: {
+          closing_id: string | null;
+          content_base64: string;
+          content_type: string;
+          created_at: string;
+          created_by: string | null;
+          filename: string;
+          id: string;
+          kind: string;
+          order_id: string | null;
+          organizer_id: string;
+          size_bytes: number;
+          title: string;
+        };
+        Insert: {
+          closing_id?: string | null;
+          content_base64: string;
+          content_type?: string;
+          created_at?: string;
+          created_by?: string | null;
+          filename: string;
+          id?: string;
+          kind: string;
+          order_id?: string | null;
+          organizer_id: string;
+          size_bytes: number;
+          title: string;
+        };
+        Update: {
+          closing_id?: string | null;
+          content_base64?: string;
+          content_type?: string;
+          created_at?: string;
+          created_by?: string | null;
+          filename?: string;
+          id?: string;
+          kind?: string;
+          order_id?: string | null;
+          organizer_id?: string;
+          size_bytes?: number;
+          title?: string;
+        };
+        Relationships: [];
+      };
       pos_closings: {
         Row: {
           card_total: number;

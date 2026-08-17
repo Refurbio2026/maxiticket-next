@@ -9,6 +9,7 @@ import { useEvents } from "@/hooks/use-events";
 import { orpAdapter } from "@/lib/fiscal-adapter";
 import { paymentTerminal } from "@/lib/payment-terminal-adapter";
 import { printTickets } from "@/lib/print-tickets";
+import { ReceiptDownloadButton } from "@/components/pos/ReceiptDownloadButton";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -196,6 +197,7 @@ function SalesPage() {
                         >
                           <TicketIcon className="size-3.5 mr-1" /> {t("orgPosSales.ticketsButton")}
                         </Button>
+                        <ReceiptDownloadButton orderId={s.id} status={s.status} />
                         {r && (
                           <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
                             <Link to="/organizer/pos/fiscal">{t("orgPosSales.receiptButton")}</Link>

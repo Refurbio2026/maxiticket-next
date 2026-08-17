@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { usePosClosings } from "@/hooks/use-pos";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { getClosingDocument } from "@/lib/pos-documents.functions";
+import { downloadBase64 } from "@/lib/download";
 
 export const Route = createFileRoute("/admin/pos/closings")({
   head: () => ({ meta: [{ title: "Uzávierky · Admin" }] }),
@@ -20,6 +26,22 @@ function fmtDate(iso: string) {
 
 function AdminPosClosingsPage() {
   const { data: list = [], isLoading } = usePosClosings();
+  const fetchDoc = useServerFn(getClosingDocument);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  // Uzávierky spred zavedenia dokumentov PDF ešte nemajú — server ho v takom
+  // prípade dogeneruje zo zmrazených čísel a odloží.
+  const stiahni = async (closingId: string) => {
+    setBusy(closingId);
+    try {
+      const doc = await fetchDoc({ data: { closing_id: closingId } });
+      downloadBase64(doc.filename, doc.base64);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Stiahnutie zlyhalo");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -47,6 +69,7 @@ function AdminPosClosingsPage() {
                 <th className="text-right">Dokladov</th>
                 <th className="text-right">Vstupeniek</th>
                 <th className="text-right">Rozdiel v zásuvke</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -75,6 +98,21 @@ function AdminPosClosingsPage() {
                     {c.cash_difference === null
                       ? "—"
                       : `${c.cash_difference > 0 ? "+" : ""}€${c.cash_difference.toFixed(2)}`}
+                  </td>
+                  <td className="text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy === c.id}
+                      onClick={() => stiahni(c.id)}
+                    >
+                      {busy === c.id ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Download className="size-3.5" />
+                      )}
+                      <span className="ml-1.5 hidden lg:inline">PDF</span>
+                    </Button>
                   </td>
                 </tr>
               ))}

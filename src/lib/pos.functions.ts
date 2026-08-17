@@ -11,6 +11,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { newSignedTicket } from "./qr-token.server";
 import { loadSeatPricing } from "./seat-pricing.server";
 import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
+import { buildClosingDocument } from "./pos-documents.server";
 
 export const CASHIER_PERMISSIONS = [
   "sale",
@@ -1138,7 +1139,19 @@ export const createPosClosing = createServerFn({ method: "POST" })
         .eq("id", data.session_id);
     }
 
-    return { id: created.id, ...totals, counted_cash: counted };
+    // PDF vzniká hneď pri uzávierke, nie až pri stiahnutí — dokument musí
+    // zodpovedať číslam v okamihu, keď sa hotovosť odovzdávala. Keby sa
+    // generovanie pokazilo, uzávierka je aj tak uložená a doklad sa dá
+    // dotvoriť neskôr cez `getClosingDocument`.
+    let documentId: string | null = null;
+    try {
+      const doc = await buildClosingDocument(created.id, context.userId);
+      documentId = doc.id;
+    } catch (e) {
+      console.error("[POS] PDF uzávierky sa nepodarilo vytvoriť:", e);
+    }
+
+    return { id: created.id, document_id: documentId, ...totals, counted_cash: counted };
   });
 
 export const listPosClosings = createServerFn({ method: "POST" })

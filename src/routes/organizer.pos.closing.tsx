@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
@@ -21,13 +23,16 @@ import {
   Gift,
   Ban,
   FileDown,
-  Printer,
+  FileText,
+  Download,
   ArrowLeft,
   Receipt,
   ShieldCheck,
   LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
+import { listPosDocuments, downloadPosDocument } from "@/lib/pos-documents.functions";
+import { downloadBase64 } from "@/lib/download";
 
 export const Route = createFileRoute("/organizer/pos/closing")({
   head: () => ({ meta: [{ title: "Denná uzávierka · vipky.sk" }] }),
@@ -45,6 +50,28 @@ function ClosingPage() {
   const { data: preview } = usePosClosingPreview({ from, to });
   const { session: activeSession, activate } = useActivePosSession();
   const closeMutation = useCreatePosClosing();
+
+  // Uložené uzávierky. PDF vzniká pri uzavretí, tu ho už len sťahujeme.
+  const qc = useQueryClient();
+  const fetchDocs = useServerFn(listPosDocuments);
+  const fetchDoc = useServerFn(downloadPosDocument);
+  const documents = useQuery({
+    queryKey: ["pos-documents", "closing", "me"],
+    queryFn: () => fetchDocs({ data: { kind: "closing", limit: 30 } }),
+  });
+  const [busyDoc, setBusyDoc] = useState<string | null>(null);
+
+  const stiahni = async (id: string) => {
+    setBusyDoc(id);
+    try {
+      const doc = await fetchDoc({ data: { id } });
+      downloadBase64(doc.filename, doc.base64, doc.content_type);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Stiahnutie zlyhalo");
+    } finally {
+      setBusyDoc(null);
+    }
+  };
 
   if (!user) return null;
   const stats = {
@@ -89,14 +116,15 @@ function ClosingPage() {
     a.click();
   };
 
-  const exportPdf = () => window.print();
-
   const closeDay = async () => {
     if (!confirm(t("orgPosClosing.confirmCloseDay"))) return;
     try {
       // Uzávierka sa v databáze zmrazí — neskorší predaj ju už neprepíše.
-      await closeMutation.mutateAsync({ from, to, close_session: false });
+      const res = await closeMutation.mutateAsync({ from, to, close_session: false });
       toast.success(t("orgPosClosing.dayClosed"));
+      qc.invalidateQueries({ queryKey: ["pos-documents"] });
+      // Doklad podsunieme rovno — po uzávierke ho aj tak každý hľadá ako prvé.
+      if (res.document_id) await stiahni(res.document_id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Uzávierka zlyhala");
     }
@@ -128,6 +156,8 @@ function ClosingPage() {
           ? t("orgPosClosing.shiftClosedOk")
           : t("orgPosClosing.shiftClosedDiff", { diff: diffStr }),
       );
+      qc.invalidateQueries({ queryKey: ["pos-documents"] });
+      if (result.document_id) await stiahni(result.document_id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Uzávierku smeny sa nepodarilo uložiť");
     }
@@ -160,8 +190,13 @@ function ClosingPage() {
           <Button variant="outline" onClick={exportCsv}>
             <FileDown className="size-4 mr-2" /> {t("orgPosClosing.csvButton")}
           </Button>
-          <Button variant="outline" onClick={exportPdf}>
-            <Printer className="size-4 mr-2" /> {t("orgPosClosing.pdfButton")}
+          <Button
+            variant="outline"
+            disabled={!documents.data?.length || !!busyDoc}
+            title={documents.data?.length ? documents.data[0].title : "Zatiaľ žiadna uzávierka"}
+            onClick={() => documents.data?.[0] && stiahni(documents.data[0].id)}
+          >
+            <FileText className="size-4 mr-2" /> Posledná uzávierka (PDF)
           </Button>
           <Button variant="outline" onClick={closeShift}>
             <LogOut className="size-4 mr-2" /> {t("orgPosClosing.closeShift")}
@@ -266,6 +301,41 @@ function ClosingPage() {
               </tbody>
             </table>
           </div>
+        )}
+      </Card>
+
+      <Card className="p-5 bg-card/60 border-border/50">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <FileText className="size-3.5" /> Uložené uzávierky
+        </div>
+        {documents.data === undefined ? (
+          <p className="text-sm text-muted-foreground">Načítavam…</p>
+        ) : documents.data.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Zatiaľ žiadna. PDF vznikne automaticky pri uzavretí dňa alebo smeny.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/40">
+            {documents.data.map((d) => (
+              <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{d.title}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(d.created_at).toLocaleString("sk-SK")} ·{" "}
+                    {Math.round(d.size_bytes / 1024)} kB
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busyDoc === d.id}
+                  onClick={() => stiahni(d.id)}
+                >
+                  <Download className="size-4 mr-1.5" /> Stiahnuť
+                </Button>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
 
