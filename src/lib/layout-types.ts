@@ -31,8 +31,11 @@ export type Shape = {
   rows?: number;
   cols?: number;
   seatSize?: number;
+  /** Poradie prvého radu bloku (1 = A). Sála s viacerými blokmi ich reťazí. */
   startRow?: number;
   startSeat?: number;
+  /** Označovanie radov písmenami alebo číslami. */
+  rowLabelMode?: "ABC" | "123";
   priceCategory?: string;
   capacity?: number;
   blocked?: boolean;
@@ -125,6 +128,37 @@ export function emptyLayout(name = "Nová hala"): HallLayout {
     created_at: now,
     updated_at: now,
   };
+}
+
+/** Medzera medzi sedadlami a okraje bloku. Editor aj zákaznícka mapa musia kresliť rovnako. */
+export const SEAT_GAP = 6;
+export const SEAT_PAD_X = 10;
+export const SEAT_PAD_Y = 20;
+
+/**
+ * Rozmer bloku sedadiel. Je to jediné miesto, kde sa počíta — predtým to bolo
+ * rozpísané v editore aj v zákazníckej mape a pri zmene počtu radov sa
+ * neprepočítalo vôbec, takže sedadlá pretiekli mimo rámu bloku a zákazníkovi
+ * sa pri „zmestiť na obrazovku" odrezali.
+ */
+export function seatGridSize(rows: number, cols: number, seatSize = 22) {
+  return {
+    width: Math.max(1, cols) * (seatSize + SEAT_GAP) + 2 * SEAT_PAD_X,
+    height: Math.max(1, rows) * (seatSize + SEAT_GAP) + SEAT_PAD_Y + SEAT_PAD_X,
+  };
+}
+
+/**
+ * Označenie radu. `index` je poradie v bloku od nuly, `startRow` poradie prvého
+ * radu bloku (1 = A), takže druhý blok môže pokračovať od K.
+ * Nad 26 radov prechádza na dvojpísmenové označenie (AA, AB…), aby veľká sála
+ * nekončila na znakoch `[`, `\`, `]` ako pri obyčajnom `fromCharCode`.
+ */
+export function formatRowLabel(index: number, mode: "ABC" | "123" = "ABC", startRow = 1): string {
+  const i = index + Math.max(1, startRow) - 1;
+  if (mode === "123") return String(i + 1);
+  if (i < 26) return String.fromCharCode(65 + i);
+  return String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26));
 }
 
 export function computeCapacity(shapes: Shape[]): number {

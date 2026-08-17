@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Stage, Layer, Rect, Text as KText, Group } from "react-konva";
 import type Konva from "konva";
-import type { HallLayout, Shape } from "@/lib/layout-types";
+import {
+  formatRowLabel,
+  seatGridSize,
+  SEAT_GAP,
+  SEAT_PAD_X,
+  SEAT_PAD_Y,
+  type HallLayout,
+  type Shape,
+} from "@/lib/layout-types";
 import type { SeatInventoryRow } from "@/lib/ticketing-db";
 
 export type CustomerSeat = {
@@ -111,10 +119,21 @@ export function CustomerSeatingMap({
     let maxX = -Infinity;
     let maxY = -Infinity;
     for (const s of shapes) {
+      // Pri bloku sedadiel počítame skutočný rozsah z počtu radov a stĺpcov,
+      // nie z uloženého `width`/`height`. Staršie sály majú tieto rozmery
+      // zastarané (editor ich pri zmene počtu radov neprepočítal), takže
+      // „zmestiť na obrazovku" by časť sedadiel odrezalo a k tým sedadlám by
+      // sa zákazník nedostal ani posúvaním.
+      const grid =
+        s.kind === "seats" && (s.rows ?? 0) * (s.cols ?? 0) > 1
+          ? seatGridSize(s.rows ?? 1, s.cols ?? 1, s.seatSize ?? 22)
+          : null;
+      const w = grid ? Math.max(s.width, grid.width) : s.width;
+      const h = grid ? Math.max(s.height, grid.height) : s.height;
       minX = Math.min(minX, s.x);
       minY = Math.min(minY, s.y);
-      maxX = Math.max(maxX, s.x + s.width);
-      maxY = Math.max(maxY, s.y + s.height);
+      maxX = Math.max(maxX, s.x + w);
+      maxY = Math.max(maxY, s.y + h);
     }
     return { minX, minY, maxX, maxY };
   }, [layout.shapes]);
@@ -267,12 +286,14 @@ export function CustomerSeatingMap({
               const rows = s.rows ?? 1;
               const cols = s.cols ?? 1;
               const ss = s.seatSize ?? 22;
-              const gap = 6;
-              const padX = 10;
-              const padY = 20;
+              const gap = SEAT_GAP;
+              const padX = SEAT_PAD_X;
+              const padY = SEAT_PAD_Y;
               const startRow = s.startRow ?? 1;
               const startSeat = s.startSeat ?? 1;
-              const rowLabel = (i: number) => String.fromCharCode(64 + startRow + i);
+              // Rovnaká funkcia ako v editore — inak by admin videl iné
+              // označenie radu, než čo je na vstupenke zákazníka.
+              const rowLabel = (i: number) => formatRowLabel(i, s.rowLabelMode ?? "ABC", startRow);
               const isVipGrid = s.priceCategory === "VIP";
               const nodes: React.ReactNode[] = [];
               if (s.label) {

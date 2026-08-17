@@ -3,7 +3,12 @@ import { Stage, Layer, Rect, Text as KText, Group, Circle, Transformer } from "r
 import type Konva from "konva";
 import {
   computeCapacity,
+  formatRowLabel,
+  seatGridSize,
   uid,
+  SEAT_GAP,
+  SEAT_PAD_X,
+  SEAT_PAD_Y,
   type CurveGroup,
   type HallLayout,
   type Shape,
@@ -84,13 +89,6 @@ function usePriceCategoryNames(): string[] {
 }
 
 const CANVAS_BG = "#f8fafc";
-
-const formatRowLabel = (i: number, mode: "ABC" | "123" = "ABC") =>
-  mode === "ABC"
-    ? i < 26
-      ? String.fromCharCode(65 + i)
-      : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26))
-    : String(i + 1);
 
 function buildCurveGroupSeats(group: CurveGroup, previous: Shape[] = []): Shape[] {
   const ss = group.seatSize ?? 22;
@@ -254,13 +252,20 @@ export function SeatingEditor({
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [size, setSize] = useState({ w: 800, h: 600 });
-  const [history, setHistory] = useState<HallLayout[]>([normalizedInitial]);
-  const [hIdx, setHIdx] = useState(0);
+  // História a poloha v nej sú jeden stav. Keď boli dva, dva zápisy v tom istom
+  // tiku čítali starú hodnotu a jeden krok sa stratil — „Späť" potom preskočilo.
+  const [hist, setHist] = useState<{ items: HallLayout[]; idx: number }>({
+    items: [normalizedInitial],
+    idx: 0,
+  });
+  const history = hist.items;
+  const hIdx = hist.idx;
   const [seatsDialog, setSeatsDialog] = useState(false);
   const [seatsForm, setSeatsForm] = useState({
     rows: 8,
     cols: 12,
     rowLabelMode: "ABC" as "ABC" | "123",
+    startRow: 1,
     startSeat: 1,
     seatSize: 22,
     sectorName: "Sektor A",
@@ -323,15 +328,12 @@ export function SeatingEditor({
   }, [layout]);
 
   // ---------- history ----------
-  const pushHistory = useCallback(
-    (next: HallLayout) => {
-      const trimmed = history.slice(0, hIdx + 1);
-      const newH = [...trimmed, next].slice(-100);
-      setHistory(newH);
-      setHIdx(newH.length - 1);
-    },
-    [history, hIdx],
-  );
+  const pushHistory = useCallback((next: HallLayout) => {
+    setHist((h) => {
+      const items = [...h.items.slice(0, h.idx + 1), next].slice(-100);
+      return { items, idx: items.length - 1 };
+    });
+  }, []);
 
   const setShapes = useCallback(
     (updater: (prev: Shape[]) => Shape[], commit = true) => {
@@ -347,16 +349,18 @@ export function SeatingEditor({
   );
 
   const undo = () => {
-    if (hIdx <= 0) return;
-    const i = hIdx - 1;
-    setHIdx(i);
-    setLayout(history[i]);
+    setHist((h) => {
+      if (h.idx <= 0) return h;
+      setLayout(h.items[h.idx - 1]);
+      return { ...h, idx: h.idx - 1 };
+    });
   };
   const redo = () => {
-    if (hIdx >= history.length - 1) return;
-    const i = hIdx + 1;
-    setHIdx(i);
-    setLayout(history[i]);
+    setHist((h) => {
+      if (h.idx >= h.items.length - 1) return h;
+      setLayout(h.items[h.idx + 1]);
+      return { ...h, idx: h.idx + 1 };
+    });
   };
 
   // ---------- transformer attach ----------
@@ -507,10 +511,7 @@ export function SeatingEditor({
 
   const addSeatGrid = (cx: number, cy: number) => {
     const f = seatsForm;
-    const ss = f.seatSize;
-    const gap = 6;
-    const w = f.cols * (ss + gap) + 20;
-    const h = f.rows * (ss + gap) + 30;
+    const { width: w, height: h } = seatGridSize(f.rows, f.cols, f.seatSize);
     const s: Shape = {
       id: uid(),
       kind: "seats",
@@ -520,12 +521,14 @@ export function SeatingEditor({
       height: h,
       rows: f.rows,
       cols: f.cols,
-      seatSize: ss,
+      seatSize: f.seatSize,
       color: f.color,
       label: f.sectorName,
       priceCategory: f.priceCategory,
-      startRow: 1,
+      startRow: f.startRow,
       startSeat: f.startSeat,
+      // Voľba z dialógu sa predtým zahodila — mriežka vždy kreslila A, B, C.
+      rowLabelMode: f.rowLabelMode,
     };
     setShapes((arr) => [...arr, s]);
     setSelectedIds([s.id]);
@@ -698,6 +701,11 @@ export function SeatingEditor({
         : null,
     [selectedIds, layout.curveGroups],
   );
+
+  const selectedIsSeatGrid =
+    !!selectedShape &&
+    selectedShape.kind === "seats" &&
+    (selectedShape.rows ?? 0) * (selectedShape.cols ?? 0) > 1;
 
   const capacity = useMemo(() => computeCapacity(layout.shapes), [layout.shapes]);
 
@@ -921,7 +929,10 @@ export function SeatingEditor({
                 <Transformer
                   ref={trRef}
                   rotateEnabled={!selectedCurveGroup}
-                  resizeEnabled={!selectedCurveGroup}
+                  // Blok sedadiel sa nedá ťahať za roh — sedadlá by sa
+                  // nerozmnožili ani nezväčšili, len by sa rozišiel rám.
+                  // Mení sa počtom radov, stĺpcov a veľkosťou sedadla.
+                  resizeEnabled={!selectedCurveGroup && !selectedIsSeatGrid}
                   flipEnabled={false}
                   anchorSize={8}
                   anchorStroke="#3b82f6"
@@ -1056,6 +1067,23 @@ export function SeatingEditor({
                   setSeatsForm({ ...seatsForm, startSeat: Math.max(1, +e.target.value || 1) })
                 }
               />
+            </div>
+            <div className="space-y-1.5 col-span-2">
+              <Label>Prvý rad bloku</Label>
+              <Input
+                type="number"
+                min={1}
+                value={seatsForm.startRow}
+                onChange={(e) =>
+                  setSeatsForm({ ...seatsForm, startRow: Math.max(1, +e.target.value || 1) })
+                }
+              />
+              <p className="text-[11px] text-muted-foreground">
+                1 = {formatRowLabel(0, seatsForm.rowLabelMode, 1)}. Druhý blok, ktorý má nadväzovať,
+                začni tam, kde prvý skončil — teraz by mal rady{" "}
+                {formatRowLabel(0, seatsForm.rowLabelMode, seatsForm.startRow)}–
+                {formatRowLabel(seatsForm.rows - 1, seatsForm.rowLabelMode, seatsForm.startRow)}.
+              </p>
             </div>
             <div className="space-y-1.5 col-span-2">
               <Label>Názov sektora</Label>
@@ -1543,11 +1571,13 @@ function ShapeNode({
     const rows = shape.rows ?? 1;
     const cols = shape.cols ?? 1;
     const ss = shape.seatSize ?? 22;
-    const gap = 6;
-    const padX = 10;
-    const padY = 20;
+    const gap = SEAT_GAP;
+    const padX = SEAT_PAD_X;
+    const padY = SEAT_PAD_Y;
     const seatNodes: React.ReactNode[] = [];
-    const rowLabel = (i: number) => String.fromCharCode(65 + i);
+    // Rovnaké označenie, aké uvidí zákazník a aké sa vytlačí na vstupenke.
+    const rowLabel = (i: number) =>
+      formatRowLabel(i, shape.rowLabelMode ?? "ABC", shape.startRow ?? 1);
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cx = padX + c * (ss + gap) + ss / 2;
@@ -1579,6 +1609,9 @@ function ShapeNode({
     }
     return (
       <Group {...common}>
+        {/* Neviditeľná plocha bloku. Bez nej sa dal blok chytiť len presne na
+            sedadle a klik do medzery medzi sedadlami výber zrušil. */}
+        <Rect x={0} y={0} width={shape.width} height={shape.height} fill="rgba(0,0,0,0.001)" />
         {shape.label && (
           <KText x={padX} y={2} text={shape.label} fontSize={11} fontStyle="bold" fill="#0f172a" />
         )}
@@ -1828,6 +1861,21 @@ function CurveGroupPropertiesPanel({
   );
 }
 
+/**
+ * Zmena počtu radov, stĺpcov alebo veľkosti sedadla musí prepočítať aj rám
+ * bloku. Bez toho sedadlá pretiekli mimo výberu a zákaznícka mapa, ktorá si
+ * podľa `width`/`height` počíta rozsah plánu, ich pri zmestení odrezala.
+ */
+function resizeGrid(
+  shape: Shape,
+  patch: { rows?: number; cols?: number; seatSize?: number },
+): Partial<Shape> {
+  const rows = Math.max(1, patch.rows ?? shape.rows ?? 1);
+  const cols = Math.max(1, patch.cols ?? shape.cols ?? 1);
+  const seatSize = Math.max(8, patch.seatSize ?? shape.seatSize ?? 22);
+  return { rows, cols, seatSize, ...seatGridSize(rows, cols, seatSize) };
+}
+
 function PropertiesPanel({
   shape,
   onChange,
@@ -1953,28 +2001,93 @@ function PropertiesPanel({
           )}
 
           {shape.kind === "seats" && (shape.rows ?? 0) * (shape.cols ?? 0) > 1 && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Radov</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={shape.rows ?? 1}
-                  onChange={(e) => onChange({ rows: Math.max(1, +e.target.value || 1) })}
-                  onBlur={onCommit}
-                />
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Radov</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={shape.rows ?? 1}
+                    onChange={(e) => onChange(resizeGrid(shape, { rows: +e.target.value || 1 }))}
+                    onBlur={onCommit}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Miest v rade</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={shape.cols ?? 1}
+                    onChange={(e) => onChange(resizeGrid(shape, { cols: +e.target.value || 1 }))}
+                    onBlur={onCommit}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Veľkosť sedadla</Label>
+                  <Input
+                    type="number"
+                    min={8}
+                    value={shape.seatSize ?? 22}
+                    onChange={(e) =>
+                      onChange(resizeGrid(shape, { seatSize: Math.max(8, +e.target.value || 22) }))
+                    }
+                    onBlur={onCommit}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Prvý rad</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={shape.startRow ?? 1}
+                    onChange={(e) => onChange({ startRow: Math.max(1, +e.target.value || 1) })}
+                    onBlur={onCommit}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Prvé sedadlo</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={shape.startSeat ?? 1}
+                    onChange={(e) => onChange({ startSeat: Math.max(1, +e.target.value || 1) })}
+                    onBlur={onCommit}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Označenie radov</Label>
+                  <Select
+                    value={shape.rowLabelMode ?? "ABC"}
+                    onValueChange={(v) => {
+                      onChange({ rowLabelMode: v as "ABC" | "123" });
+                      setTimeout(onCommit, 0);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ABC">A, B, C…</SelectItem>
+                      <SelectItem value="123">1, 2, 3…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Miest v rade</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={shape.cols ?? 1}
-                  onChange={(e) => onChange({ cols: Math.max(1, +e.target.value || 1) })}
-                  onBlur={onCommit}
-                />
-              </div>
-            </div>
+              <p className="text-[11px] text-muted-foreground">
+                Rady{" "}
+                <span className="font-medium text-foreground">
+                  {formatRowLabel(0, shape.rowLabelMode ?? "ABC", shape.startRow ?? 1)}–
+                  {formatRowLabel(
+                    (shape.rows ?? 1) - 1,
+                    shape.rowLabelMode ?? "ABC",
+                    shape.startRow ?? 1,
+                  )}
+                </span>
+                , sedadlá {shape.startSeat ?? 1}–{(shape.startSeat ?? 1) + (shape.cols ?? 1) - 1}.
+                Presne toto uvidí zákazník aj kontrola pri vstupe.
+              </p>
+            </>
           )}
         </>
       )}
