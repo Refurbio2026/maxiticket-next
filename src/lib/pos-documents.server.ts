@@ -184,7 +184,7 @@ export async function buildReceiptDocument(
   const { data: o, error } = await supabaseAdmin
     .from("orders")
     .select(
-      "id, receipt_number, created_at, event_id, event_date_id, cashier_id, payment_method, status, total_amount, discount_amount, promo_code, channel",
+      "id, receipt_number, created_at, event_id, event_date_id, cashier_id, payment_method, status, total_amount, discount_amount, promo_code, channel, fiscal_receipt_id",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -214,11 +214,29 @@ export async function buildReceiptDocument(
       : Promise.resolve(null),
     supabaseAdmin
       .from("fiscal_settings")
-      .select("ico, dic, ic_dph, cash_register_code, premises_name, premises_address")
+      .select(
+        "ico, dic, ic_dph, cash_register_code, premises_name, premises_address, mode, enabled",
+      )
       .eq("organizer_id", event.organizer_id)
       .maybeSingle(),
     organizerName(event.organizer_id),
   ]);
+
+  // Doklad je daňový len vtedy, keď k nemu naozaj existuje vystavený fiškálny
+  // doklad s kódom z eKasy a organizátor beží v ostrom režime. Samotné
+  // vyplnené DKP v nastavení nestačí — to je len konfigurácia.
+  const { data: fiscalReceipt } = o.fiscal_receipt_id
+    ? await supabaseAdmin
+        .from("fiscal_receipts")
+        .select("fiscal_code, status")
+        .eq("id", o.fiscal_receipt_id)
+        .maybeSingle()
+    : { data: null };
+  const fiscalized =
+    !!fiscal?.enabled &&
+    fiscal?.mode === "production" &&
+    !!fiscalReceipt?.fiscal_code &&
+    fiscalReceipt.status === "issued";
 
   const list = (items || []).map((i) => ({
     label: i.label,
@@ -244,6 +262,8 @@ export async function buildReceiptDocument(
     promo_code: o.promo_code,
     status: o.status,
     items: list,
+    fiscalized,
+    fiscal_code: fiscalReceipt?.fiscal_code ?? null,
     fiscal: fiscal ?? null,
   };
 

@@ -69,6 +69,13 @@ export type ReceiptPdfData = {
   promo_code?: string | null;
   status: string;
   items: { label: string; quantity: number; unit_price: number }[];
+  /**
+   * Doklad sa smie nazvať pokladničným a niesť DKP až vtedy, keď naozaj prešiel
+   * eKasou. Inak je to len doklad o predaji vstupenky — inak by papier vyzeral
+   * ako daňový doklad, hoci sa do finančnej správy neodoslalo nič.
+   */
+  fiscalized: boolean;
+  fiscal_code: string | null;
   fiscal: {
     ico: string | null;
     dic: string | null;
@@ -300,7 +307,7 @@ export function generateReceiptPdfBase64(d: ReceiptPdfData): string {
     d.items.length * 9 +
     (d.discount > 0 ? 6 : 0) +
     (d.promo_code ? 5 : 0) +
-    (d.fiscal?.cash_register_code ? 10 : 0) +
+    (d.fiscalized ? 10 : 18) +
     (d.status !== "paid" ? 10 : 0) +
     30;
 
@@ -326,7 +333,10 @@ export function generateReceiptPdfBase64(d: ReceiptPdfData): string {
 
   doc.setFontSize(11);
   setText(doc, INK);
-  doc.text("POKLADNIČNÝ DOKLAD", W / 2, y, { align: "center" });
+  doc.text(d.fiscalized ? "POKLADNIČNÝ DOKLAD" : "DOKLAD O PREDAJI VSTUPENIEK", W / 2, y, {
+    align: "center",
+    maxWidth: inner,
+  });
   y += 5;
   doc.setFontSize(9);
   doc.text(d.receipt_number, W / 2, y, { align: "center" });
@@ -413,13 +423,34 @@ export function generateReceiptPdfBase64(d: ReceiptPdfData): string {
     y += 9;
   }
 
-  if (d.fiscal?.cash_register_code) {
-    dashed(doc, y, M, W - M);
-    y += 4;
+  dashed(doc, y, M, W - M);
+  y += 4;
+  if (d.fiscalized) {
     doc.setFontSize(7.5);
     setText(doc, MUTED);
-    doc.text(`DKP: ${d.fiscal.cash_register_code}`, W / 2, y, { align: "center" });
+    if (d.fiscal?.cash_register_code) {
+      doc.text(`DKP: ${d.fiscal.cash_register_code}`, W / 2, y, { align: "center" });
+      y += 4;
+    }
+    if (d.fiscal_code) {
+      doc.text(`Kód eKasa: ${d.fiscal_code}`, W / 2, y, { align: "center", maxWidth: inner });
+      y += 4;
+    }
+    y += 1;
+  } else {
+    // Bez odoslania do eKasy sa doklad nesmie tváriť ako daňový. DKP tu preto
+    // zámerne nie je, aj keď je v nastavení vyplnené.
+    setText(doc, DANGER);
+    doc.setFontSize(8);
+    doc.text("Toto nie je daňový doklad.", W / 2, y, { align: "center" });
+    y += 4;
+    setText(doc, MUTED);
+    doc.setFontSize(7);
+    doc.text("Doklad z registračnej pokladnice (eKasa)", W / 2, y, { align: "center" });
+    y += 3.5;
+    doc.text("vydáva organizátor samostatne.", W / 2, y, { align: "center" });
     y += 5;
+    setText(doc, INK);
   }
 
   y += 2;
