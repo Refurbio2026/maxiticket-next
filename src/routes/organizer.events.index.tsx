@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
@@ -8,9 +9,10 @@ import {
   toEventInput,
   type EventRecord,
 } from "@/hooks/use-events";
+import { EventFormDialog } from "@/components/events/EventFormDialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, Trash2, CheckCircle2, FileText, Calendar, MapPin } from "lucide-react";
+import { Plus, Eye, Trash2, CheckCircle2, FileText, Calendar, MapPin, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/events/")({
@@ -25,6 +27,11 @@ function OrganizerEvents() {
   const { data: events = [] } = useEvents({ scope: "mine" });
   const upsert = useUpsertEvent();
   const del = useDeleteEvent();
+  // Úprava beží v tom istom formulári ako v adminovi; `event: null` = nové podujatie.
+  const [dialog, setDialog] = useState<{ open: boolean; event: EventRecord | null }>({
+    open: false,
+    event: null,
+  });
 
   const togglePublish = async (e: EventRecord) => {
     const next = e.status === "published" ? "draft" : "published";
@@ -108,6 +115,13 @@ function OrganizerEvents() {
                       </Link>
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDialog({ open: true, event: e })}
+                  >
+                    <Pencil className="size-3.5 mr-1.5" /> {t("orgEventsList.edit")}
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => togglePublish(e)}>
                     {e.status === "published" ? (
                       <>
@@ -133,6 +147,13 @@ function OrganizerEvents() {
           ))}
         </div>
       )}
+
+      <EventFormDialog
+        mode="organizer"
+        open={dialog.open}
+        event={dialog.event}
+        onOpenChange={(open) => setDialog((d) => ({ ...d, open }))}
+      />
     </div>
   );
 }
