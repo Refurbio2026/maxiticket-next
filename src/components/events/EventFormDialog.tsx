@@ -83,7 +83,11 @@ const CUSTOM_VENUE = "__custom__";
 /** Hodnota pre „podujatie zakladám sám za seba". */
 const OWN_ACCOUNT = "__me__";
 
-const blankEventForm = (): EventFormState => ({
+// Predvolený stav nového podujatia. Admin zakladá najmä sály so sedením a
+// publikuje rovno; organizátor mal doteraz vlastný formulár bez typu predaja
+// (server ho ukladal ako státie) a s konceptom, aby si podujatie nezverejnil
+// omylom — to mu tu ostáva.
+const blankEventForm = (mode: "admin" | "organizer"): EventFormState => ({
   title: "",
   category: "Koncert",
   group_id: "",
@@ -96,8 +100,8 @@ const blankEventForm = (): EventFormState => ({
   city: "",
   description: "",
   image_url: "",
-  status: "published",
-  sale_type: "seating_map",
+  status: mode === "admin" ? "published" : "draft",
+  sale_type: mode === "admin" ? "seating_map" : "standing",
   venue_layout_id: "",
   base_price: "25",
   vip_price: "55",
@@ -198,7 +202,7 @@ export function EventFormDialog({
     enabled: isAdmin,
   });
 
-  const [form, setForm] = useState<EventFormState>(blankEventForm());
+  const [form, setForm] = useState<EventFormState>(() => blankEventForm(mode));
 
   // Formulár sa napĺňa pri otvorení. Zámerne visí na `event?.id`, nie na celom
   // zázname — inak by refetch zoznamu prepísal rozpísané zmeny.
@@ -206,7 +210,7 @@ export function EventFormDialog({
   useEffect(() => {
     if (!open) return;
     if (!event) {
-      const fresh = blankEventForm();
+      const fresh = blankEventForm(mode);
       if (layouts.length > 0) fresh.venue_layout_id = layouts[0].id;
       setForm(fresh);
       return;

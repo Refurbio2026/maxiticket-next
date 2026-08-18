@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import {
@@ -17,12 +17,19 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/events/")({
   head: () => ({ meta: [{ title: "Moje podujatia · vipky.sk" }] }),
+  // `?new=1` otvorí prázdny formulár. Sem presmerúva /organizer/events/new,
+  // na ktoré vedie bočné menu aj odkazy z dashboardu a pokladne.
+  validateSearch: (s: Record<string, unknown>): { new?: boolean } => ({
+    new: s.new === true || s.new === "1" || s.new === "true" ? true : undefined,
+  }),
   component: OrganizerEvents,
 });
 
 function OrganizerEvents() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const search = Route.useSearch();
   // Vlastné podujatia vrátane konceptov; adminovi server vráti všetky.
   const { data: events = [] } = useEvents({ scope: "mine" });
   const upsert = useUpsertEvent();
@@ -32,6 +39,14 @@ function OrganizerEvents() {
     open: false,
     event: null,
   });
+
+  // Príchod z /organizer/events/new. Parameter zo záznamu histórie hneď
+  // zahodíme, nech sa formulár po zavretí neotvorí znova cez tlačidlo späť.
+  useEffect(() => {
+    if (!search.new) return;
+    setDialog({ open: true, event: null });
+    navigate({ to: "/organizer/events", search: {}, replace: true });
+  }, [search.new, navigate]);
 
   const togglePublish = async (e: EventRecord) => {
     const next = e.status === "published" ? "draft" : "published";
@@ -64,10 +79,11 @@ function OrganizerEvents() {
           </h1>
           <p className="text-muted-foreground mt-1">{t("orgEventsList.subtitle")}</p>
         </div>
-        <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
-          <Link to="/organizer/events/new">
-            <Plus className="size-4 mr-2" /> {t("orgEventsList.addButton")}
-          </Link>
+        <Button
+          onClick={() => setDialog({ open: true, event: null })}
+          className="bg-gradient-flame text-primary-foreground shadow-glow"
+        >
+          <Plus className="size-4 mr-2" /> {t("orgEventsList.addButton")}
         </Button>
       </div>
 
