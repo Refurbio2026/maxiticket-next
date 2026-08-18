@@ -5,12 +5,12 @@
 // nemal kde doplniť. Tento dialóg je ten istý formulár ako v adminovi; režim
 // `organizer` z neho len uberá to, na čo organizátor nemá právo ani stránku:
 // výber vlastníka a odkazy do administrácie.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { ImageIcon, Loader2, Plus, Trash2, Upload } from "lucide-react";
 
 import { type SaleType } from "@/lib/local-db";
 import { useI18n } from "@/hooks/use-i18n";
@@ -20,6 +20,7 @@ import { listVenues } from "@/lib/venues.functions";
 import { listOrganizers } from "@/lib/events.functions";
 import { listEventCategories } from "@/lib/event-categories.functions";
 import { listEventGroups } from "@/lib/event-groups.functions";
+import { uploadEventImage } from "@/lib/event-images.functions";
 import {
   listPriceCategories,
   listEventZonePrices,
@@ -77,6 +78,10 @@ export type EventFormState = {
   /** Koľko termínov podujatie má — riadi, či sa dátum vo formulári vôbec uloží. */
   date_count: number;
 };
+
+/** Musí sedieť s bucketom `event-images` a s `uploadEventImage`. */
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /** Hodnota pre „miesto nie je v číselníku" — Select neznesie prázdny string. */
 const CUSTOM_VENUE = "__custom__";
@@ -203,6 +208,35 @@ export function EventFormDialog({
   });
 
   const [form, setForm] = useState<EventFormState>(() => blankEventForm(mode));
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const uploadImage = useServerFn(uploadEventImage);
+
+  // Súbor posielame ako base64 — server funkcie prenášajú JSON, nie multipart.
+  const onPickImage = async (file: File | undefined) => {
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return toast.error(t("eventForm.imageBadType"));
+    if (file.size > MAX_IMAGE_BYTES) return toast.error(t("eventForm.imageTooLarge"));
+    setUploading(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Súbor sa nepodarilo prečítať."));
+        // readAsDataURL vráti „data:<mime>;base64,<obsah>" — server chce len obsah.
+        reader.onload = () => resolve(String(reader.result).split(",", 2)[1] ?? "");
+        reader.readAsDataURL(file);
+      });
+      const res = await uploadImage({ data: { content_type: file.type, base64 } });
+      setForm((f) => ({ ...f, image_url: res.url }));
+      toast.success(t("eventForm.imageUploaded"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("eventForm.imageFailed"));
+    } finally {
+      setUploading(false);
+      // Nech sa dá ten istý súbor vybrať znova, keď nahrávanie zlyhá.
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   // Formulár sa napĺňa pri otvorení. Zámerne visí na `event?.id`, nie na celom
   // zázname — inak by refetch zoznamu prepísal rozpísané zmeny.
@@ -486,11 +520,66 @@ export function EventFormDialog({
               </Field>
             </>
           )}
-          <Field label={t("eventForm.imageUrl")} className="sm:col-span-2">
-            <Input
-              value={form.image_url}
-              onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-              placeholder="https://…"
+          <Field label={t("eventForm.image")} className="sm:col-span-2">
+            <div className="flex items-start gap-3">
+              {form.image_url ? (
+                // Náhľad zároveň prezradí nefunkčný odkaz — pri chybe sa skryje.
+                <img
+                  src={form.image_url}
+                  alt=""
+                  className="h-20 w-32 shrink-0 rounded-md border border-border/50 object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.visibility = "hidden";
+                  }}
+                />
+              ) : (
+                <div className="grid h-20 w-32 shrink-0 place-items-center rounded-md border border-dashed border-border/60 text-muted-foreground">
+                  <ImageIcon className="size-5" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={uploading}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {uploading ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="size-3.5" />
+                    )}
+                    {uploading ? t("eventForm.imageUploading") : t("eventForm.imageUpload")}
+                  </Button>
+                  {form.image_url && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setForm({ ...form, image_url: "" })}
+                    >
+                      {t("eventForm.imageRemove")}
+                    </Button>
+                  )}
+                </div>
+                <Input
+                  value={form.image_url}
+                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                  placeholder="https://…"
+                />
+                <p className="text-[11px] text-muted-foreground">{t("eventForm.imageHint")}</p>
+              </div>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept={ALLOWED_IMAGE_TYPES.join(",")}
+              className="hidden"
+              onChange={(e) => onPickImage(e.target.files?.[0])}
             />
           </Field>
           <Field label={t("eventForm.description")} className="sm:col-span-2">
