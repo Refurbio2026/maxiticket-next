@@ -6,7 +6,7 @@ import { useEvent, type EventRecord } from "@/hooks/use-events";
 import { getSeatAvailability } from "@/lib/event-dates.functions";
 import { listEventZonePrices } from "@/lib/price-categories.functions";
 import { listEventPerformers } from "@/lib/performers.functions";
-import { useLayouts } from "@/hooks/use-layouts";
+import { useLayout, useLayouts } from "@/hooks/use-layouts";
 import type { HallLayout } from "@/lib/layout-types";
 import {
   getInventory,
@@ -161,7 +161,12 @@ function EventDetail() {
   // zatiaľ ostávajú v localStorage (migrujú sa v neskoršej fáze).
   const { data: eventData, isLoading } = useEvent(id);
   const event = eventData ?? undefined;
-  const { data: layouts = [] } = useLayouts();
+  // Zoznam sál sa ťahá len vtedy, keď podujatie nemá priradenú sálu a treba ju
+  // dohľadať podľa názvu miesta — je to stovky položiek a na detaile podujatia
+  // by to bola zbytočná záťaž. Samotný plán prichádza cez `useLayout` nižšie.
+  const { data: layouts = [] } = useLayouts({
+    enabled: !!eventData && !eventData.venue_layout_id,
+  });
   const [layout, setLayout] = useState<HallLayout | null>(null);
   const [localHolds, setLocalHolds] = useState<SeatInventoryRow[]>([]);
   const [selected, setSelected] = useState<Selected[]>([]);
@@ -214,6 +219,17 @@ function EventDetail() {
     queryFn: () => fetchPerformers({ data: { event_id: id } }),
   });
 
+  // Sála sa vyberá podľa `venue_layout_id`, inak podľa zhody názvu miesta.
+  // Náhradná „prvá sála v zozname" tu bola len dovtedy, kým boli v systéme dve;
+  // s importovanými stovkami by podujatiu priradila cudziu sálu.
+  const layoutId = useMemo(() => {
+    if (!event) return undefined;
+    if (event.venue_layout_id) return event.venue_layout_id;
+    const venue = (event.venue ?? "").toLowerCase();
+    return venue ? layouts.find((l) => l.name.toLowerCase() === venue)?.id : undefined;
+  }, [event, layouts]);
+  const { data: venueLayout } = useLayout(layoutId);
+
   useEffect(() => {
     const load = () => {
       releaseExpired();
@@ -223,13 +239,7 @@ function EventDetail() {
         setLocalHolds([]);
         return;
       }
-      const explicitLayout = e.venue_layout_id
-        ? layouts.find((l) => l.id === e.venue_layout_id)
-        : undefined;
-      const matchedLayout = layouts.find((l) => l.name.toLowerCase() === e.venue.toLowerCase());
-      const fallbackLayout =
-        e.sale_type !== "standing" ? (layouts[0] ?? defaultLayoutForEvent(e)) : undefined;
-      const resolvedLayout = explicitLayout ?? matchedLayout ?? fallbackLayout ?? null;
+      const resolvedLayout = venueLayout ?? null;
       setLayout(
         hasSelectableSeats(resolvedLayout)
           ? resolvedLayout
@@ -248,7 +258,7 @@ function EventDetail() {
       window.removeEventListener(INV_EVENT, load);
       window.removeEventListener("storage", load);
     };
-  }, [id, event, layouts, activeDate]);
+  }, [id, event, venueLayout, activeDate]);
 
   // Mapa vidí obsadené sedadlá z databázy aj tie, ktoré si práve drží tento
   // košík — inak by vlastný výber vyzeral ako voľné miesto.
@@ -273,10 +283,13 @@ function EventDetail() {
 
   // Dostupnosť: pri mape sedadiel je kapacita počet sedadiel v rozložení,
   // inak kapacita termínu (a až keď nie je nastavená, kapacita podujatia).
+  // POZOR na `?? 1`: sála naimportovaná zo starého systému drží každé sedadlo
+  // ako samostatný tvar bez `rows`/`cols`. S nulou by kapacita takej sály vyšla
+  // na nula a stránka by hlásila vypredané.
   const totalCapacity =
     layout?.shapes
       .filter((s) => s.kind === "seats")
-      .reduce((sum, s) => sum + ((s as any).rows ?? 0) * ((s as any).cols ?? 0), 0) ??
+      .reduce((sum, s) => sum + (s.rows ?? 1) * (s.cols ?? 1), 0) ??
     activeDate?.total_tickets ??
     event?.total_tickets ??
     0;

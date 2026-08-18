@@ -9,16 +9,22 @@ import {
   upsertLayout,
   deleteLayout,
   type LayoutInputData,
+  type LayoutSummary,
 } from "@/lib/layouts.functions";
 import type { HallLayout } from "@/lib/layout-types";
 
 const KEY = ["venue-layouts"] as const;
 
-export function useLayouts() {
+/**
+ * Zoznam sál BEZ plánu (bez `shapes`). Na výber v číselníku to stačí a plán
+ * jednej sály má aj megabajty — kto ho potrebuje, načíta si ju `useLayout`.
+ */
+export function useLayouts(opts?: { enabled?: boolean }) {
   const fn = useServerFn(listLayouts);
   return useQuery({
     queryKey: KEY,
-    queryFn: async (): Promise<HallLayout[]> => fn({ data: undefined }),
+    enabled: opts?.enabled ?? true,
+    queryFn: async (): Promise<LayoutSummary[]> => fn({ data: undefined }),
   });
 }
 

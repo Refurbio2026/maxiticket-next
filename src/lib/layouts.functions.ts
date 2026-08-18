@@ -8,6 +8,22 @@ import type { HallLayout, HallType, Shape, CurveGroup } from "./layout-types";
 const COLUMNS =
   "id, owner_id, name, type, city, address, note, capacity, shapes, curve_groups, created_at, updated_at";
 
+// Zoznam sál zámerne BEZ `shapes` a `curve_groups`. Plán sály má aj 30 tisíc
+// sedadiel; po importe zo starého systému majú všetky sály dokopy vyše 45 MB
+// tvarov a `listLayouts` ich ťahá aj na verejný detail podujatia. Kto potrebuje
+// samotný plán, načíta si ho cez `getLayoutById`.
+const SUMMARY_COLUMNS = "id, name, type, city, capacity, updated_at";
+
+/** Sála bez plánu — toľko stačí na výber v číselníkoch a na zoznam v adminovi. */
+export type LayoutSummary = {
+  id: string;
+  name: string;
+  type: HallType;
+  city?: string;
+  capacity?: number;
+  updated_at: string;
+};
+
 type Row = Record<string, unknown>;
 
 function mapLayout(r: Row): HallLayout {
@@ -40,13 +56,20 @@ async function isAdmin(userId: string): Promise<boolean> {
 
 /** Zoznam sál. Verejný — plán sály je súčasť ponuky a musí ho vidieť aj kupujúci. */
 export const listLayouts = createServerFn({ method: "POST" }).handler(
-  async (): Promise<HallLayout[]> => {
+  async (): Promise<LayoutSummary[]> => {
     const { data, error } = await supabaseAdmin
       .from("venue_layouts")
-      .select(COLUMNS)
+      .select(SUMMARY_COLUMNS)
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
-    return ((data as Row[]) || []).map(mapLayout);
+    return ((data as Row[]) || []).map((r) => ({
+      id: r.id as string,
+      name: r.name as string,
+      type: r.type as HallType,
+      city: (r.city as string) ?? undefined,
+      capacity: (r.capacity as number) ?? undefined,
+      updated_at: r.updated_at as string,
+    }));
   },
 );
 

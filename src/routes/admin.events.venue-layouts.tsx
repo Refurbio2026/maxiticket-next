@@ -1,6 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, lazy, Suspense } from "react";
-import { useLayouts, useUpsertLayout, useDeleteLayout, toLayoutInput } from "@/hooks/use-layouts";
+import {
+  useLayouts,
+  useLayout,
+  useUpsertLayout,
+  useDeleteLayout,
+  toLayoutInput,
+} from "@/hooks/use-layouts";
 import { emptyLayout, type HallLayout } from "@/lib/layout-types";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +35,10 @@ function VenueLayoutsPage() {
   const { data: layouts = [], isLoading } = useLayouts();
   const upsert = useUpsertLayout();
   const del = useDeleteLayout();
-  const active: HallLayout | null = layouts.find((l) => l.id === activeId) ?? null;
+  // Zoznam je bez plánu; samotné tvary sa doťahujú až pre otvorenú sálu —
+  // po importe zo starého systému majú všetky sály dokopy vyše 45 MB tvarov.
+  const { data: activeLayout } = useLayout(activeId ?? undefined);
+  const active: HallLayout | null = activeLayout ?? null;
 
   useEffect(() => setMounted(true), []);
 
