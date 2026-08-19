@@ -279,7 +279,23 @@ function EventDetail() {
   const isMap = !!layout && event?.sale_type !== "standing";
   const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0);
   const vipPrice = event?.vip_price ?? basePrice;
-  const priceFrom = Math.min(...[basePrice, vipPrice].filter((p) => p > 0)) || basePrice;
+  // „Cena od" musí rátať aj s cenami zón — sála so zónami (typicky prenesená zo
+  // starého systému) nemusí predať ani jedno sedadlo za základnú cenu.
+  const priceFrom = useMemo(() => {
+    const candidates: number[] = [];
+    if (isMap && layout) {
+      for (const shape of layout.shapes) {
+        if (shape.kind !== "seats" && shape.kind !== "standing" && shape.kind !== "vip") continue;
+        const zone = shape.priceCategory?.toLowerCase();
+        const zonal = zone ? zonePrices[zone] : undefined;
+        if (zonal !== undefined) candidates.push(zonal);
+        else candidates.push(shape.kind === "vip" || zone === "vip" ? vipPrice : basePrice);
+      }
+    }
+    if (candidates.length === 0) candidates.push(basePrice, vipPrice);
+    const positive = candidates.filter((x) => x > 0);
+    return positive.length > 0 ? Math.min(...positive) : basePrice;
+  }, [isMap, layout, zonePrices, basePrice, vipPrice]);
 
   // Dostupnosť: pri mape sedadiel je kapacita počet sedadiel v rozložení,
   // inak kapacita termínu (a až keď nie je nastavená, kapacita podujatia).

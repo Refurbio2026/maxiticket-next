@@ -5,7 +5,7 @@
 // nemal kde doplniť. Tento dialóg je ten istý formulár ako v adminovi; režim
 // `organizer` z neho len uberá to, na čo organizátor nemá právo ani stránku:
 // výber vlastníka a odkazy do administrácie.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -23,6 +23,7 @@ import { listEventGroups } from "@/lib/event-groups.functions";
 import { uploadEventImage } from "@/lib/event-images.functions";
 import {
   listPriceCategories,
+  listLayoutZones,
   listEventZonePrices,
   setEventZonePrices,
 } from "@/lib/price-categories.functions";
@@ -73,7 +74,10 @@ export type EventFormState = {
   vip_price: string;
   total_tickets: string;
   tickets: TicketRow[];
-  /** Cena zóny sály; kľúč je id zóny, prázdny reťazec = zóna sa neúčtuje zvlášť. */
+  /**
+   * Cena zóny sály; kľúč je názov zóny malými písmenami (tak ho nesie
+   * rozloženie), prázdny reťazec = zóna sa neúčtuje zvlášť.
+   */
   zone_prices: Record<string, string>;
   /** Koľko termínov podujatie má — riadi, či sa dátum vo formulári vôbec uloží. */
   date_count: number;
@@ -190,12 +194,17 @@ export function EventFormDialog({
     queryKey: ["event-groups", "active"],
     queryFn: () => fetchGroups({ data: { only_active: true } }),
   });
-  // Cenové zóny sály; cenu dostávajú až tu, v konkrétnom podujatí.
+  // Cenové zóny; cenu dostávajú až tu, v konkrétnom podujatí.
+  //
+  // Prednosť majú zóny vybranej sály — rozloženie si názov zóny nesie v tvaroch
+  // a ocenenie ho podľa názvu aj hľadá. Platformový číselník je len záloha pre
+  // sály, ktoré zóny nemajú rozkreslené.
   const fetchZones = useServerFn(listPriceCategories);
-  const { data: zones = [] } = useQuery({
+  const { data: catalogZones = [] } = useQuery({
     queryKey: ["price-categories", "active"],
     queryFn: () => fetchZones({ data: { only_active: true } }),
   });
+  const fetchLayoutZones = useServerFn(listLayoutZones);
   const fetchZonePrices = useServerFn(listEventZonePrices);
   const saveZonePrices = useServerFn(setEventZonePrices);
   // Zoznam organizátorov smie čítať len admin — organizátorovi by server
@@ -208,6 +217,11 @@ export function EventFormDialog({
   });
 
   const [form, setForm] = useState<EventFormState>(() => blankEventForm(mode));
+  const { data: layoutZones = [] } = useQuery({
+    queryKey: ["layout-zones", form.venue_layout_id],
+    queryFn: () => fetchLayoutZones({ data: { layout_id: form.venue_layout_id } }),
+    enabled: open && form.sale_type === "seating_map" && !!form.venue_layout_id,
+  });
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const uploadImage = useServerFn(uploadEventImage);
@@ -259,7 +273,7 @@ export function EventFormDialog({
             ? {
                 ...f,
                 zone_prices: Object.fromEntries(
-                  prices.map((p) => [p.price_category_id, String(p.price)]),
+                  prices.map((p) => [p.name.trim().toLowerCase(), String(p.price)]),
                 ),
               }
             : f,
@@ -273,6 +287,22 @@ export function EventFormDialog({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, eventId]);
+
+  // Zóny, ktoré má formulár ponúknuť: čo je rozkreslené v sále, plus čo už na
+  // podujatí cenu má (aby sa uložením ticho nezmazalo), plus číselník ako
+  // záloha pre sály bez zón.
+  const zoneOptions = useMemo(() => {
+    const out = new Map<string, { key: string; name: string; color?: string; seats?: number }>();
+    const add = (name: string, color?: string, seats?: number) => {
+      const key = name.trim().toLowerCase();
+      if (!key || out.has(key)) return;
+      out.set(key, { key, name: name.trim(), color, seats });
+    };
+    for (const z of layoutZones) add(z.name, z.color, z.seats);
+    if (out.size === 0) for (const z of catalogZones) add(z.name, z.color);
+    for (const key of Object.keys(form.zone_prices)) add(key);
+    return [...out.values()];
+  }, [layoutZones, catalogZones, form.zone_prices]);
 
   const editing = !!form.id;
 
@@ -330,9 +360,10 @@ export function EventFormDialog({
       });
       // Ceny zón sa ukladajú zvlášť — potrebujú id podujatia, ktoré pri
       // zakladaní vzniká až teraz.
+      const zoneName = new Map(zoneOptions.map((z) => [z.key, z.name]));
       const zonePrices = Object.entries(form.zone_prices)
         .filter(([, v]) => v.trim() !== "")
-        .map(([price_category_id, v]) => ({ price_category_id, price: Number(v) || 0 }));
+        .map(([key, v]) => ({ name: zoneName.get(key) ?? key, price: Number(v) || 0 }));
       if (zonePrices.length > 0 || editing) {
         await saveZonePrices({ data: { event_id: saved.id, prices: zonePrices } });
       }
@@ -681,7 +712,7 @@ export function EventFormDialog({
             />
           </Field>
 
-          {form.sale_type === "seating_map" && zones.length > 0 && (
+          {form.sale_type === "seating_map" && zoneOptions.length > 0 && (
             <div className="sm:col-span-2 space-y-2">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 {t("eventForm.zonesTitle")}
@@ -690,24 +721,29 @@ export function EventFormDialog({
                 {isAdmin ? t("eventForm.zonesHint") : t("eventForm.zonesHintOrganizer")}
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
-                {zones.map((z) => (
-                  <div key={z.id} className="flex items-center gap-2">
+                {zoneOptions.map((z) => (
+                  <div key={z.key} className="flex items-center gap-2">
                     <span
                       className="size-3 shrink-0 rounded-full border border-border/50"
                       style={{ background: z.color ?? "transparent" }}
                     />
-                    <span className="flex-1 text-sm truncate">{z.name}</span>
+                    <span className="flex-1 min-w-0 truncate text-sm">
+                      {z.name}
+                      {z.seats ? (
+                        <span className="ml-1 text-[11px] text-muted-foreground">({z.seats})</span>
+                      ) : null}
+                    </span>
                     <Input
                       type="number"
                       min={0}
                       step={0.5}
                       placeholder="—"
                       className="w-28"
-                      value={form.zone_prices[z.id] ?? ""}
+                      value={form.zone_prices[z.key] ?? ""}
                       onChange={(e) =>
                         setForm({
                           ...form,
-                          zone_prices: { ...form.zone_prices, [z.id]: e.target.value },
+                          zone_prices: { ...form.zone_prices, [z.key]: e.target.value },
                         })
                       }
                     />

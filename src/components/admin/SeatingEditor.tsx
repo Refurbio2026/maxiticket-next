@@ -78,14 +78,27 @@ const FALLBACK_PRICE_CATEGORIES = ["Regular", "VIP", "Premium", "Early Bird", "Z
 /**
  * Názvy cenových zón z číselníka (Dáta → Cenové kategórie). Editor ich len
  * ponúka a ukladá do tvaru; cenu dostávajú až v konkrétnom podujatí.
+ *
+ * `extra` sú zóny, ktoré sála naozaj používa — sály prenesené zo starého systému
+ * majú vlastné názvy („Kategória 1", „Balkón"). Bez nich by Select nemal čo
+ * zobraziť a prvá zmena vlastností tvaru by zónu prepísala na „Regular".
  */
-function usePriceCategoryNames(): string[] {
+function usePriceCategoryNames(extra: (string | undefined)[] = []): string[] {
   const fetchZones = useServerFn(listPriceCategories);
   const { data } = useQuery({
     queryKey: ["price-categories", "active"],
     queryFn: () => fetchZones({ data: { only_active: true } }),
   });
-  return data?.length ? data.map((z) => z.name) : FALLBACK_PRICE_CATEGORIES;
+  const catalog = data?.length ? data.map((z) => z.name) : FALLBACK_PRICE_CATEGORIES;
+  const seen = new Set(catalog.map((n) => n.toLowerCase()));
+  const out = [...catalog];
+  for (const name of extra) {
+    const trimmed = (name ?? "").trim();
+    if (!trimmed || seen.has(trimmed.toLowerCase())) continue;
+    seen.add(trimmed.toLowerCase());
+    out.push(trimmed);
+  }
+  return out;
 }
 
 const CANVAS_BG = "#f8fafc";
@@ -242,11 +255,14 @@ export function SeatingEditor({
   initial: HallLayout;
   onChange?: (l: HallLayout) => void;
 }) {
-  const priceCategories = usePriceCategoryNames();
-
   // ---------- state ----------
   const normalizedInitial = useMemo(() => normalizeLayout(initial), [initial]);
   const [layout, setLayout] = useState<HallLayout>(normalizedInitial);
+  const layoutZoneNames = useMemo(
+    () => [...new Set(layout.shapes.map((sh) => sh.priceCategory).filter(Boolean))] as string[],
+    [layout.shapes],
+  );
+  const priceCategories = usePriceCategoryNames(layoutZoneNames);
   const [tool, setTool] = useState<Tool>("select");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -963,6 +979,7 @@ export function SeatingEditor({
         {selectedShape && (
           <PropertiesPanel
             shape={selectedShape}
+            zoneNames={layoutZoneNames}
             onChange={(patch) => updateSelected(patch)}
             onCommit={commitChange}
           />
@@ -970,6 +987,7 @@ export function SeatingEditor({
         {selectedCurveGroup && (
           <CurveGroupPropertiesPanel
             group={selectedCurveGroup}
+            zoneNames={layoutZoneNames}
             onChange={(patch: Partial<CurveGroup>) =>
               updateCurveGroup(selectedCurveGroup.id, patch)
             }
@@ -1702,14 +1720,16 @@ function ShapeNode({
 
 function CurveGroupPropertiesPanel({
   group,
+  zoneNames,
   onChange,
   onCommit,
 }: {
   group: CurveGroup;
+  zoneNames: string[];
   onChange: (patch: Partial<CurveGroup>) => void;
   onCommit: () => void;
 }) {
-  const priceCategories = usePriceCategoryNames();
+  const priceCategories = usePriceCategoryNames([...zoneNames, group.priceCategoryId]);
   const numberPatch =
     (key: keyof CurveGroup, min?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = +e.target.value;
@@ -1878,14 +1898,16 @@ function resizeGrid(
 
 function PropertiesPanel({
   shape,
+  zoneNames,
   onChange,
   onCommit,
 }: {
   shape: Shape;
+  zoneNames: string[];
   onChange: (patch: Partial<Shape>) => void;
   onCommit: () => void;
 }) {
-  const priceCategories = usePriceCategoryNames();
+  const priceCategories = usePriceCategoryNames([...zoneNames, shape.priceCategory]);
   return (
     <div className="space-y-3">
       <div className="rounded-md bg-muted/40 px-2 py-1.5 text-xs">

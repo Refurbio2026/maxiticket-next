@@ -187,6 +187,10 @@ export const listEventZonePrices = createServerFn({ method: "POST" })
 /**
  * Prepíše ceny zón podujatia. Zoznam je úplný — zóna, ktorá v ňom nie je, sa
  * zmaže a jej sedadlá sa vrátia na základnú (resp. VIP) cenu podujatia.
+ *
+ * Zóny sa posielajú názvom, nie id: rozloženie sály nesie v tvaroch názov a
+ * ocenenie ho podľa názvu aj hľadá. Názov, ktorý číselník ešte nepozná, sa doň
+ * doplní — inak by sa zóna prenesenej sály nedala oceniť vôbec.
  */
 export const setEventZonePrices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -197,11 +201,11 @@ export const setEventZonePrices = createServerFn({ method: "POST" })
         prices: z
           .array(
             z.object({
-              price_category_id: z.string().uuid(),
+              name: z.string().min(1).max(120),
               price: z.number().nonnegative(),
             }),
           )
-          .max(50),
+          .max(60),
       })
       .parse(input),
   )
@@ -216,22 +220,121 @@ export const setEventZonePrices = createServerFn({ method: "POST" })
       throw new Error("Forbidden: podujatie patrí inému organizátorovi");
     }
 
-    const keep = data.prices.map((p) => p.price_category_id);
+    const ids = await resolveZoneIds(data.prices.map((p) => p.name));
+    const rows = data.prices
+      .map((p) => ({ id: ids.get(p.name.trim().toLowerCase()), price: p.price }))
+      .filter((r): r is { id: string; price: number } => !!r.id);
+
+    const keep = [...new Set(rows.map((r) => r.id))];
     let del = supabaseAdmin.from("event_price_categories").delete().eq("event_id", data.event_id);
     if (keep.length > 0) del = del.not("price_category_id", "in", `(${keep.join(",")})`);
     await del;
 
-    if (data.prices.length > 0) {
+    if (rows.length > 0) {
       const { error } = await supabaseAdmin.from("event_price_categories").upsert(
-        data.prices.map((p) => ({
+        rows.map((r) => ({
           event_id: data.event_id,
-          price_category_id: p.price_category_id,
-          price: p.price,
+          price_category_id: r.id,
+          price: r.price,
           updated_at: new Date().toISOString(),
         })),
         { onConflict: "event_id,price_category_id" },
       );
       if (error) throw new Error(error.message);
     }
-    return { ok: true, count: data.prices.length };
+    return { ok: true, count: rows.length };
   });
+
+/** Jedna cenová zóna tak, ako ju naozaj používa rozloženie konkrétnej sály. */
+export type LayoutZone = {
+  name: string;
+  color?: string;
+  /** Koľko miest do zóny spadá — pomáha rozlíšiť hlavnú zónu od pár doplnkov. */
+  seats: number;
+};
+
+type ZoneShape = {
+  kind?: string;
+  priceCategory?: string;
+  color?: string;
+  rows?: number;
+  cols?: number;
+  capacity?: number;
+};
+
+/**
+ * Zóny prítomné v rozložení sály.
+ *
+ * Číselník `price_categories` je platformový, ale sály prenesené zo starého
+ * systému si nesú vlastné názvy zón („Kategória 1", „Balkón", „Tribúny"…).
+ * Formulár podujatia musí ponúkať tie, ktoré má vybraná sála — inak organizátor
+ * nemá kam zadať cenu a sedadlá sa predajú za základnú cenu.
+ */
+export const listLayoutZones = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ layout_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }): Promise<LayoutZone[]> => {
+    const { data: row, error } = await supabaseAdmin
+      .from("venue_layouts")
+      .select("shapes")
+      .eq("id", data.layout_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+
+    const zones = new Map<string, LayoutZone>();
+    for (const shape of (row?.shapes as ZoneShape[] | null) ?? []) {
+      const name = (shape.priceCategory ?? "").trim();
+      if (!name) continue;
+      const seats =
+        shape.kind === "seats" ? (shape.rows ?? 1) * (shape.cols ?? 1) : (shape.capacity ?? 0);
+      const key = name.toLowerCase();
+      const found = zones.get(key);
+      if (found) found.seats += seats;
+      else zones.set(key, { name, color: shape.color || undefined, seats });
+    }
+    return [...zones.values()].sort((a, b) => b.seats - a.seats || a.name.localeCompare(b.name));
+  });
+
+/**
+ * Doplní do číselníka zóny, ktoré sála používa, ale platforma ich ešte nepozná.
+ * Vracia mapu `názov malými písmenami → id`. Zakladá len to, čo naozaj treba —
+ * číselník tak nerastie o stovky názvov zo všetkých prenesených sál.
+ */
+async function resolveZoneIds(names: string[]): Promise<Map<string, string>> {
+  const wanted = new Map<string, string>();
+  for (const raw of names) {
+    const name = raw.trim();
+    if (name && slugify(name)) wanted.set(name.toLowerCase(), name);
+  }
+  const byName = new Map<string, string>();
+  if (wanted.size === 0) return byName;
+
+  const { data: existing } = await supabaseAdmin
+    .from("price_categories")
+    .select("id, name, slug")
+    .in("slug", [...wanted.values()].map(slugify));
+  for (const row of existing || []) {
+    byName.set(row.name.toLowerCase(), row.id);
+    // Zhoda cez slug: „Kategória 1" a „kategoria 1" sú tá istá zóna.
+    for (const [key, name] of wanted) {
+      if (slugify(name) === row.slug) byName.set(key, row.id);
+    }
+  }
+
+  const missing = [...wanted].filter(([key]) => !byName.has(key));
+  if (missing.length > 0) {
+    const { data: created, error } = await supabaseAdmin
+      .from("price_categories")
+      .insert(
+        missing.map(([, name]) => ({
+          name,
+          slug: slugify(name),
+          sort_order: 100,
+          active: true,
+        })),
+      )
+      .select("id, name");
+    if (error) throw new Error(error.message);
+    for (const row of created || []) byName.set(row.name.toLowerCase(), row.id);
+  }
+  return byName;
+}
