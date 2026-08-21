@@ -7,6 +7,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { round2, computeSettlementTotals } from "./settlement-math";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertAdmin(userId: string) {
@@ -27,8 +28,6 @@ async function defaultCommissionRate(): Promise<number> {
     .maybeSingle();
   return Number(data?.default_commission_rate ?? 10);
 }
-
-const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export type OrganizerAccount = {
   id: string;
@@ -380,16 +379,10 @@ async function computePreview(input: z.infer<typeof PeriodInput>): Promise<Settl
   }
 
   const lines = [...byEvent.values()].filter((l) => l.orders > 0 || l.tickets > 0);
-  const base = round2(gross - refunded);
-  const commission = round2((base * rate) / 100);
   return {
     ...empty,
     tickets_sold: lines.reduce((s, l) => s + l.tickets, 0),
-    gross_amount: round2(gross),
-    refunded_amount: round2(refunded),
-    commission_amount: commission,
-    // Náklady idú až po provízii — provízia sa počíta z tržby, nie zo zisku.
-    net_amount: round2(base - commission - costsAmount),
+    ...computeSettlementTotals({ gross, refunded, costsAmount, rate }),
     lines: lines.sort((a, b) => b.gross - a.gross),
   };
 }
