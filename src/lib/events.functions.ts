@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { deleteEventImageIfUnused } from "./event-images.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // BEZPEČNOSŤ: supabaseAdmin obchádza RLS, takže stĺpce vymenúvame ručne.
@@ -288,16 +289,20 @@ export const upsertEvent = createServerFn({ method: "POST" })
     const admin = await isAdmin(context.userId);
 
     let organizerId = admin && data.organizer_id ? data.organizer_id : context.userId;
+    // Obrázok pred úpravou — ak ho organizátor vymení, ten starý po zápise
+    // upraceme, inak by v úložisku ostal navždy.
+    let povodnyObrazok: string | null = null;
     if (data.id) {
       const { data: existing } = await supabaseAdmin
         .from("events")
-        .select("id, organizer_id")
+        .select("id, organizer_id, image_url")
         .eq("id", data.id)
         .maybeSingle();
       if (!existing) throw new Error("Podujatie sa nenašlo");
       if (existing.organizer_id !== context.userId && !admin) {
         throw new Error("Forbidden: podujatie patrí inému organizátorovi");
       }
+      povodnyObrazok = existing.image_url;
       // Pri úprave sa vlastník zachová; prepísať ho môže len admin, a to
       // výslovným poslaním `organizer_id`.
       organizerId = admin && data.organizer_id ? data.organizer_id : existing.organizer_id;
@@ -350,6 +355,9 @@ export const upsertEvent = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("events").update(row).eq("id", data.id);
       if (error) throw new Error(error.message);
       eventId = data.id;
+      if (povodnyObrazok && povodnyObrazok !== row.image_url) {
+        await deleteEventImageIfUnused(povodnyObrazok);
+      }
     } else {
       const { data: created, error } = await supabaseAdmin
         .from("events")
@@ -416,7 +424,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: existing } = await supabaseAdmin
       .from("events")
-      .select("id, organizer_id")
+      .select("id, organizer_id, image_url")
       .eq("id", data.id)
       .maybeSingle();
     if (!existing) throw new Error("Podujatie sa nenašlo");
@@ -425,6 +433,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
     }
     const { error } = await supabaseAdmin.from("events").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await deleteEventImageIfUnused(existing.image_url);
     return { ok: true };
   });
 
