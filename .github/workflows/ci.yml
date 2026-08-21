@@ -1,0 +1,42 @@
+# Kontrola pri každom pushi a pull requeste.
+#
+# Buildu stačia náhradné VITE_* hodnoty — overuje sa, či sa projekt preloží,
+# nie či sa pripojí k Supabase. Skutočné kľúče žijú v `/opt/maxiticket/.env`
+# na serveri a do CI nepatria.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  kontrola:
+    name: Typy, lint, testy, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Závislosti
+        run: bun install --frozen-lockfile
+
+      - name: Typová kontrola
+        run: bunx tsc --noEmit
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Testy
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+        env:
+          NITRO_PRESET: node-server
+          NODE_OPTIONS: --max-old-space-size=3072
+          VITE_SUPABASE_URL: https://priklad.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-nahradna-hodnota
