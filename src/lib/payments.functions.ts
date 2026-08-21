@@ -690,7 +690,12 @@ export const getOrderSummary = createServerFn({ method: "POST" })
     const [{ data: items }, { data: tickets }, { data: event }, { data: eventDate }] =
       await Promise.all([
         supabaseAdmin.from("order_items").select("*").eq("order_id", order.id),
-        supabaseAdmin.from("tickets").select("*").eq("order_id", order.id),
+        // BEZPEČNOSŤ: nie select("*") — vstupenka nesie aj `qr_token` a stopy po
+        // skenovaní. Stránka potrebuje len týchto šesť polí.
+        supabaseAdmin
+          .from("tickets")
+          .select("id, order_id, event_id, seat_label, qr_code, issued_at")
+          .eq("order_id", order.id),
         // BEZPEČNOSŤ: nie select("*") — ten by kupujúcemu poslal aj `scanner_token`,
         // teda tajomstvo, ktorým sa autorizuje označovanie vstupeniek za použité.
         supabaseAdmin
@@ -717,10 +722,14 @@ export const getOrderSummary = createServerFn({ method: "POST" })
       ? order
       : { ...order, customer_name: null, customer_email: null, customer_phone: null };
 
+    // BEZPEČNOSŤ: QR kód je to, čím sa vchádza na podujatie — je teda cennejší
+    // než meno kupujúceho a nesmie visieť len na uhádnutí `order_id`. Bez
+    // podpísaného tokenu vraciame zhrnutie bez vstupeniek. Obe legitímne cesty
+    // token nesú: návrat z GoPay aj odkaz v potvrdzovacom e-maile.
     return {
       order: safeOrder,
       items: items || [],
-      tickets: tickets || [],
+      tickets: authorized ? tickets || [] : [],
       event: eventForOrder || null,
     };
   });
