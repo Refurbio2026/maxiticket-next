@@ -8,7 +8,7 @@ import {
   upsertOrder,
   type Order,
 } from "@/lib/ticketing-db";
-import { submitOrder, createGoPayPaymentForOrder } from "@/lib/payments.functions";
+import { submitOrder, startPaymentForOrder, listPaymentGateways } from "@/lib/payments.functions";
 import { previewCoupon } from "@/lib/coupons.functions";
 import { useEvent } from "@/hooks/use-events";
 import { Navbar } from "@/components/site/Navbar";
@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { errorMessage } from "@/lib/error-message";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout/$orderId")({
   head: () => ({ meta: [{ title: "Checkout · vipky.sk" }] }),
@@ -73,7 +74,29 @@ function CheckoutPage() {
 
   const [paying, setPaying] = useState(false);
   const submit = useServerFn(submitOrder);
-  const createPayment = useServerFn(createGoPayPaymentForOrder);
+  const createPayment = useServerFn(startPaymentForOrder);
+
+  // Zoznam brán chodí zo servera — klient nesmie vedieť, ktoré prístupy sú
+  // vyplnené, len to, čo si môže vybrať.
+  const nacitajBrany = useServerFn(listPaymentGateways);
+  const [brany, setBrany] = useState<Array<{ id: string; label: string; hint: string }>>([]);
+  const [brana, setBrana] = useState<string | null>(null);
+
+  useEffect(() => {
+    let zrusene = false;
+    nacitajBrany({ data: undefined })
+      .then((r) => {
+        if (zrusene) return;
+        setBrany(r.gateways);
+        setBrana(r.default ?? r.gateways[0]?.id ?? null);
+      })
+      .catch(() => {
+        // Zoznam sa nenačítal — necháme server rozhodnúť pri samotnej platbe.
+      });
+    return () => {
+      zrusene = true;
+    };
+  }, [nacitajBrany]);
 
   // Zľavový kupón. Toto je len náhľad — záväzne ho uplatní až server pri
   // zakladaní objednávky, takže s hodnotami v prehliadači sa nedá hýbať.
@@ -109,6 +132,7 @@ function CheckoutPage() {
   };
 
   const payable = order ? Math.max(0, order.total_amount - (coupon?.discount ?? 0)) : 0;
+  const vybrana = brany.find((b) => b.id === brana) ?? null;
 
   const pay = async () => {
     if (!order) return;
@@ -148,7 +172,9 @@ function CheckoutPage() {
           coupon_code: coupon?.code || undefined,
         },
       });
-      const { payment_url } = await createPayment({ data: { order_id: supabaseOrderId } });
+      const { payment_url } = await createPayment({
+        data: { order_id: supabaseOrderId, provider: brana ?? undefined },
+      });
       window.location.href = payment_url;
     } catch (e) {
       console.error(e);
@@ -263,8 +289,38 @@ function CheckoutPage() {
             </h2>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
               <Lock className="size-3.5" />
-              Šifrované SSL pripojenie · Platby spracuje GoPay
+              Šifrované SSL pripojenie{vybrana ? ` · Platbu spracuje ${vybrana.label}` : ""}
             </div>
+
+            {brany.length > 1 && (
+              <div className="mb-4 space-y-2">
+                {brany.map((b) => (
+                  <label
+                    key={b.id}
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors",
+                      brana === b.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border/40 hover:border-border",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="platobna-brana"
+                      value={b.id}
+                      checked={brana === b.id}
+                      onChange={() => setBrana(b.id)}
+                      className="mt-1 accent-primary"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium">{b.label}</span>
+                      <span className="block text-xs text-muted-foreground">{b.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+
             <Button
               onClick={pay}
               disabled={expired || paying}
@@ -273,10 +329,10 @@ function CheckoutPage() {
             >
               <CreditCard className="size-4 mr-2" />
               {paying
-                ? "Pripravujem GoPay…"
+                ? "Pripravujem platbu…"
                 : expired
                   ? "Rezervácia vypršala"
-                  : `Zaplatiť cez GoPay €${payable.toFixed(2)}`}
+                  : `Zaplatiť €${payable.toFixed(2)}`}
             </Button>
 
             <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">

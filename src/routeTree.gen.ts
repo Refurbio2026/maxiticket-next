@@ -84,6 +84,8 @@ import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.cat
 import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
 import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
 import { Route as ApiPublicEventsByTokenRouteImport } from './routes/api.public.events.by-token'
+import { Route as ApiPublicPaymentsTatrapayplusReturnRouteImport } from './routes/api.public.payments.tatrapayplus.return'
+import { Route as ApiPublicPaymentsGpwebpayReturnRouteImport } from './routes/api.public.payments.gpwebpay.return'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
@@ -471,6 +473,18 @@ const ApiPublicEventsByTokenRoute = ApiPublicEventsByTokenRouteImport.update({
   path: '/api/public/events/by-token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsTatrapayplusReturnRoute =
+  ApiPublicPaymentsTatrapayplusReturnRouteImport.update({
+    id: '/api/public/payments/tatrapayplus/return',
+    path: '/api/public/payments/tatrapayplus/return',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsGpwebpayReturnRoute =
+  ApiPublicPaymentsGpwebpayReturnRouteImport.update({
+    id: '/api/public/payments/gpwebpay/return',
+    path: '/api/public/payments/gpwebpay/return',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsGopayWebhookRoute =
   ApiPublicPaymentsGopayWebhookRouteImport.update({
     id: '/api/public/payments/gopay/webhook',
@@ -561,6 +575,8 @@ export interface FileRoutesByFullPath {
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
+  '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
+  '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesByTo {
@@ -636,6 +652,8 @@ export interface FileRoutesByTo {
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
+  '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
+  '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRoutesById {
@@ -716,6 +734,8 @@ export interface FileRoutesById {
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
+  '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
+  '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
 export interface FileRouteTypes {
@@ -797,6 +817,8 @@ export interface FileRouteTypes {
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
+    | '/api/public/payments/gpwebpay/return'
+    | '/api/public/payments/tatrapayplus/return'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -872,6 +894,8 @@ export interface FileRouteTypes {
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
+    | '/api/public/payments/gpwebpay/return'
+    | '/api/public/payments/tatrapayplus/return'
     | '/admin/data/categories/$categoryId/events/new'
   id:
     | '__root__'
@@ -951,6 +975,8 @@ export interface FileRouteTypes {
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
+    | '/api/public/payments/gpwebpay/return'
+    | '/api/public/payments/tatrapayplus/return'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesById: FileRoutesById
 }
@@ -977,6 +1003,8 @@ export interface RootRouteChildren {
   ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
   ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
+  ApiPublicPaymentsGpwebpayReturnRoute: typeof ApiPublicPaymentsGpwebpayReturnRoute
+  ApiPublicPaymentsTatrapayplusReturnRoute: typeof ApiPublicPaymentsTatrapayplusReturnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1506,6 +1534,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEventsByTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/tatrapayplus/return': {
+      id: '/api/public/payments/tatrapayplus/return'
+      path: '/api/public/payments/tatrapayplus/return'
+      fullPath: '/api/public/payments/tatrapayplus/return'
+      preLoaderRoute: typeof ApiPublicPaymentsTatrapayplusReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/gpwebpay/return': {
+      id: '/api/public/payments/gpwebpay/return'
+      path: '/api/public/payments/gpwebpay/return'
+      fullPath: '/api/public/payments/gpwebpay/return'
+      preLoaderRoute: typeof ApiPublicPaymentsGpwebpayReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/gopay/webhook': {
       id: '/api/public/payments/gopay/webhook'
       path: '/api/public/payments/gopay/webhook'
@@ -1712,6 +1754,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
   ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,
+  ApiPublicPaymentsGpwebpayReturnRoute: ApiPublicPaymentsGpwebpayReturnRoute,
+  ApiPublicPaymentsTatrapayplusReturnRoute:
+    ApiPublicPaymentsTatrapayplusReturnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

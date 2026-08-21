@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 Ticketingová platforma **MaxiTicket / vipky.sk** — predaj vstupeniek, rezervácia sedadiel,
-GoPay platby, SuperFaktúra, QR vstupenky, skener na vstupe, POS pokladne, wallet passy.
+online platby (GoPay, GP webpay, tatrapay+), SuperFaktúra, QR vstupenky, skener na vstupe,
+POS pokladne, wallet passy.
 
 ## Príkazy
 
@@ -79,11 +80,13 @@ výnimkou je admin, ktorý smie poslať `organizer_id` a založiť podujatie za 
 Nové perzistentné dáta píš do Supabase, nie do localStorage.
 
 ### Používatelia a role
+
 `users.functions.ts` + `/admin/system/users`. Rolu prideľuje výhradne admin (`setUserRole`),
 `createUserWithRole` založí účet aj s rolou a potvrdeným e-mailom. Vlastnú `admin` rolu si
 odobrať nedá — inak by sa dalo zamknúť sa z konzoly. Zápis do `user_roles` nerob nikde inde.
 
 ### Miesta konania
+
 `venues.functions.ts` + `/admin/events/venues`. `events.venue_id` je väzba na číselník, ale
 textové `events.venue` / `city` / `address` **zostávajú vyplnené** — číta ich verejný katalóg,
 PDF aj e-maily a podujatie musí prežiť zmazanie miesta. `upsertEvent` ich pri uložení kopíruje
@@ -121,9 +124,10 @@ sa možno predalo s jeho menom na plagáte.
 
 ### Storno a refundácie
 
-`orders.refunded_at` / `refunded_amount` / `refund_reason` / `refunded_by` + `cancellations.functions.ts`
-+ `/admin/sales/cancellations`. Píše do nich webový refund (`refundOrder`) aj storno z pokladne
-(`voidPosSale`) — pokladňa navyše ponecháva `void_reason` kvôli vlastnému prehľadu.
+`orders.refunded_at` / `refunded_amount` / `refund_reason` / `refunded_by`,
+`cancellations.functions.ts` a `/admin/sales/cancellations`. Píše do nich webový refund
+(`refundOrder`) aj storno z pokladne (`voidPosSale`) — pokladňa navyše ponecháva
+`void_reason` kvôli vlastnému prehľadu.
 
 **`refunded_amount` je kumulatívne.** Čiastočný refund necháva objednávku v stave `paid`, takže
 bez súčtu už vrátenej sumy sa dala vrátiť aj viackrát dokola; server teraz počíta zostatok
@@ -353,6 +357,7 @@ Tri veci s podobným názvom, ktoré si netreba pliesť:
   na to slúži `alreadyPaid: false`), alebo ručným zápisom čísla, keď sa fakturuje z iného systému.
 
 ### Vyúčtovanie organizátorom
+
 `settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)
 a `/admin/maxiticket/protocols` (protokoly). Provízia je **percento na organizátora**
 (`profiles.commission_rate`); `NULL` znamená predvolenú sadzbu platformy z `platform_settings`.
@@ -401,7 +406,9 @@ Zóny: verejný web (`index`, `events*`, `checkout*`, `scanner`, `support`, `acc
   requestu, inak by hocikto mohol označovať lístky ako použité.
 - **Order PII** — `getOrderSummary` vracia meno/email/telefón len s platným HMAC access tokenom
   (`order-access.server.ts`); bez neho sa PII strippuje.
-- **GoPay webhook** — telu notifikácie sa never; stav sa vždy doťahuje z GoPay API server-side.
+- **Notifikácie z brán** — telu notifikácie sa never. GoPay a tatrapay+ sa vždy dopýtajú
+  server-side; GP webpay stav dopytovať nevie, preto sa musí overiť `DIGEST` **aj** `DIGEST1`
+  verejným kľúčom brány. Neoverenej odpovedi sa objednávka nesmie prispôsobiť ani o kúsok.
 - **Ceny** — `submitOrder` neprijíma od klienta cenu, len `ticket_type_id` / `seat_id` a počet.
   Sumu odvodí server z `ticket_types.price`, prípadne z `events.base_price` / `vip_price`.
   Či je sedadlo VIP, si server zisťuje z `venue_layouts.shapes` (`seat_id` má tvar
@@ -431,13 +438,13 @@ Zóny: verejný web (`index`, `events*`, `checkout*`, `scanner`, `support`, `acc
 ## E-mail so vstupenkami
 
 Po prechode objednávky do stavu `paid` sa zákazníkovi pošlú vstupenky s PDF v prílohe.
-Volá sa to z oboch ciest vysporiadania — GoPay webhook aj overenie pri návrate z brány.
+Volá sa to z jedného miesta — `order-settlement.server.ts` — nech je to rovnaké pre všetky brány.
 
 - `mailer.server.ts` — Resend cez HTTP, bez `RESEND_API_KEY` nečinný (ako support bot).
 - `ticket-mail.server.ts` — zloží e-mail, priloží PDF, zapíše do `email_logs`.
 - `ticket-pdf.server.ts` — PDF v Node. **Pozor:** `import { jsPDF } from "jspdf"` musí byť
   pomenovaný, default export v Node ESM nie je konštruktor.
-- Idempotencia cez `orders.tickets_emailed_at` — opakovaná notifikácia z GoPay nepošle
+- Idempotencia cez `orders.tickets_emailed_at` — opakovaná notifikácia z brány nepošle
   vstupenky druhýkrát. Admin má `resendTicketsEmail` s `force`.
 - Zlyhanie odoslania **nikdy** nezhodí vysporiadanie platby ani webhook.
 
@@ -474,18 +481,52 @@ V komponentoch cez `useI18n()`.
 V `.env` sú len `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID` (+ `VITE_` varianty).
 Server kód navyše potrebuje (inak hodí runtime error):
 
-| Premenná                                                 | Načo                                                                         |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `SUPABASE_SERVICE_ROLE_KEY`                              | **povinné** — `supabaseAdmin`, celý serverový tok                            |
-| `TICKET_QR_SECRET`                                       | podpis QR vstupeniek a order access tokenov (fallback: service role key)     |
-| `GOPAY_CLIENT_ID` / `GOPAY_CLIENT_SECRET` / `GOPAY_GOID` | platby (`GOPAY_API_URL` default sandbox)                                     |
-| `SUPERFAKTURA_EMAIL` / `_API_KEY` / `_COMPANY_ID`        | fakturácia                                                                   |
-| `PUBLIC_SITE_URL`                                        | return/notification URL pre GoPay (inak hardcoded lovable doména)            |
-| `GOOGLE_WALLET_*`                                        | wallet passy, viď `WALLET_SETUP.md`                                          |
-| `OPENAI_API_KEY`                                         | AI support chat (bez neho vracia „nie je aktivovaná")                        |
-| `RESEND_API_KEY`                                         | odosielanie vstupeniek e-mailom (bez neho sa ticho preskočí)                 |
-| `MAIL_FROM` / `MAIL_REPLY_TO`                            | odosielateľ, default `vipky.sk <listky@vipky.sk>` (doména overená v Resende) |
-| `SEED_SECRET`                                            | odomkne `/api/public/seed-demo`                                              |
+| Premenná                                                                  | Načo                                                                          |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY`                                               | **povinné** — `supabaseAdmin`, celý serverový tok                             |
+| `TICKET_QR_SECRET`                                                        | podpis QR vstupeniek a order access tokenov (fallback: service role key)      |
+| `GOPAY_CLIENT_ID` / `GOPAY_CLIENT_SECRET` / `GOPAY_GOID`                  | platby cez GoPay (`GOPAY_API_URL` default sandbox)                            |
+| `GPWEBPAY_MERCHANT_NUMBER` / `_PRIVATE_KEY(_FILE)` / `_PUBLIC_KEY(_FILE)` | platby cez GP webpay (ČSOB); `GPWEBPAY_URL` default testovacia brána          |
+| `TATRAPAYPLUS_CLIENT_ID` / `_CLIENT_SECRET`                               | platby cez tatrapay+; `TATRAPAYPLUS_API_URL` default sandbox                  |
+| `PAYMENT_PROVIDER`                                                        | predvolená brána; bez nej sa použije prvá nakonfigurovaná                     |
+| `SUPERFAKTURA_EMAIL` / `_API_KEY` / `_COMPANY_ID`                         | fakturácia                                                                    |
+| `PUBLIC_SITE_URL`                                                         | **povinné** — návratové a notifikačné adresy všetkých brán; bez nej to spadne |
+| `GOOGLE_WALLET_*`                                                         | wallet passy, viď `WALLET_SETUP.md`                                           |
+| `OPENAI_API_KEY`                                                          | AI support chat (bez neho vracia „nie je aktivovaná")                         |
+| `RESEND_API_KEY`                                                          | odosielanie vstupeniek e-mailom (bez neho sa ticho preskočí)                  |
+| `MAIL_FROM` / `MAIL_REPLY_TO`                                             | odosielateľ, default `vipky.sk <listky@vipky.sk>` (doména overená v Resende)  |
+| `SEED_SECRET`                                                             | odomkne `/api/public/seed-demo`                                               |
+
+## Platobné brány
+
+Aplikácia vie tri brány a vyberá spomedzi tých, ktoré majú vyplnené prístupy
+(`src/lib/payment-gateways/`). Zvyšok kódu pracuje len s rozhraním `PaymentGateway`,
+nikdy priamo s konkrétnou bránou.
+
+| Brána          | Čo rieši                          | Notifikácia | Refund cez API |
+| -------------- | --------------------------------- | ----------- | -------------- |
+| `gopay`        | karta, prevod, Apple/Google Pay   | webhook     | áno            |
+| `gpwebpay`     | karta cez ČSOB / Global Payments  | **žiadna**  | **nie**        |
+| `tatrapayplus` | prevod z účtu, karta, QR, splátky | **žiadna**  | len karta      |
+
+**Kľúčový dôsledok:** GP webpay ani tatrapay+ webhook nemajú. Výsledok príde len návratom
+zákazníka do prehliadača. Kto po zaplatení zavrie okno, ostal by bez vstupeniek — preto
+existuje `reconcilePendingPayments` a **patrí do cronu**. Pri prevode z účtu to nie je
+okrajový prípad: v čase návratu býva platba ešte nezúčtovaná (`ACCP`, `PDNG`) a za zaplatenú
+sa smie vyhlásiť až pri `ACSC`/`ACCC`.
+
+- `orders.payment_provider` / `payment_ref` / `payment_url` / `payment_vs` — generické stĺpce.
+  Staré `gopay_*` stĺpce zostávajú kvôli histórii; nové platby píšu do generických (GoPay vetva
+  do oboch).
+- `payment_vs` prideľuje sekvencia cez RPC `next_payment_ref()`. GP webpay vyžaduje **číselné**
+  a **neopakujúce sa** ORDERNUMBER, tatrapay+ číselný VS do 10 číslic — UUID objednávky ani
+  jedno nespĺňa. Ten istý VS ide aj na faktúru, nech sa platba dá spárovať s výpisom.
+- GP webpay blokuje návratové adresy s parametrami, preto ide id objednávky v poli `MD`
+  a vracia sa nezmenené (brána si zaň môže pripísať vlastné `#ID=…`).
+- Podpis GP webpay: hodnoty polí v presnom poradí spojené `|`, RSA nad SHA-1, výsledok base64.
+  Vynechané voliteľné pole sa preskočí, prázdne odoslané pole v reťazci zostáva (`||`).
+  `DIGEST1` = ten istý reťazec + `|` + `MERCHANTNUMBER`.
+- tatrapay+ návratovú adresu treba zaregistrovať v developer portáli banky.
 
 ## Pripojenie k databáze (správa schémy)
 

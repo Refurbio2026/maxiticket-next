@@ -1,151 +1,14 @@
-// GoPay sends a notification (GET or POST) when payment state changes.
-// We don't trust the notification body — we always re-fetch the payment
-// status from GoPay API server-side. The orderId is provided as a query
-// param we set on creation; we also fall back to the GoPay payment id.
+// GoPay pošle notifikáciu (GET alebo POST), keď sa zmení stav platby.
+// Telu notifikácie neveríme — stav si vždy vypýtame priamo z GoPay API.
+// `orderId` si dávame do adresy pri zakladaní platby; keď chýba, objednávku
+// dohľadáme podľa identifikátora platby.
+//
+// Samotné doúčtovanie žije v order-settlement.server.ts spoločne pre všetky
+// brány, nech sa tá istá logika neudržiava na štyroch miestach.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getGoPayPaymentStatus, mapGoPayStateToOrder } from "@/lib/gopay.server";
-import { createPaidInvoice } from "@/lib/superfaktura.server";
-import { sendTicketsEmail } from "@/lib/ticket-mail.server";
-import { signTicket } from "@/lib/qr-token.server";
-import crypto from "crypto";
+import { settleOrder } from "@/lib/order-settlement.server";
 import { errorMessage } from "@/lib/error-message";
-import { releaseCouponForOrder } from "@/lib/coupons.server";
-
-async function settle(orderId: string) {
-  const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
-  if (!order || !order.gopay_payment_id) return;
-
-  const status = await getGoPayPaymentStatus(order.gopay_payment_id);
-  const mapped = mapGoPayStateToOrder(status.state);
-
-  await supabaseAdmin.from("payment_logs").insert({
-    order_id: order.id,
-    provider: "gopay",
-    endpoint: `webhook:${order.gopay_payment_id}`,
-    response_payload: status.raw,
-    status: "ok",
-  });
-
-  if (order.status === "paid" && mapped === "paid") return;
-
-  if (mapped === "paid") {
-    await supabaseAdmin
-      .from("orders")
-      .update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", order.id);
-    await supabaseAdmin
-      .from("seat_inventory")
-      .update({ status: "sold", reserved_until: null })
-      .eq("order_id", order.id);
-    await supabaseAdmin
-      .from("payments")
-      .update({ status: "paid", raw_response: status.raw })
-      .eq("order_id", order.id);
-
-    const { data: existing } = await supabaseAdmin
-      .from("tickets")
-      .select("id")
-      .eq("order_id", order.id)
-      .limit(1);
-    if (!existing || existing.length === 0) {
-      const { data: items } = await supabaseAdmin
-        .from("order_items")
-        .select("*")
-        .eq("order_id", order.id);
-      const tickets = (items || []).flatMap((it) =>
-        Array.from({ length: it.quantity || 1 }).map((_, i) => {
-          const id = crypto.randomUUID();
-          const token = signTicket(id);
-          return {
-            id,
-            order_id: order.id,
-            event_id: order.event_id,
-            event_date_id: order.event_date_id,
-            seat_id: it.seat_id,
-            seat_label: it.label + (it.quantity > 1 ? ` #${i + 1}` : ""),
-            qr_code: token,
-            qr_token: token,
-          };
-        }),
-      );
-      if (tickets.length > 0) await supabaseAdmin.from("tickets").insert(tickets);
-    }
-
-    if (!order.superfaktura_invoice_id) {
-      try {
-        const { data: items } = await supabaseAdmin
-          .from("order_items")
-          .select("*")
-          .eq("order_id", order.id);
-        const orderShort = order.id.slice(0, 8).toUpperCase();
-        const result = await createPaidInvoice({
-          orderId: order.id,
-          variableSymbol: orderShort,
-          customer: {
-            name: order.customer_name || "Zákazník",
-            email: order.customer_email || "",
-            phone: order.customer_phone || undefined,
-          },
-          items: (items || []).map((it) => ({
-            name: it.label,
-            unit_price: Number(it.unit_price),
-            quantity: it.quantity || 1,
-            tax: 20,
-          })),
-          paymentType: "card",
-        });
-        await supabaseAdmin
-          .from("orders")
-          .update({
-            superfaktura_invoice_id: result.invoice_id,
-            superfaktura_invoice_number: result.invoice_number,
-            superfaktura_invoice_pdf_url: result.pdf_url,
-          })
-          .eq("id", order.id);
-        await supabaseAdmin.from("superfaktura_logs").insert({
-          order_id: order.id,
-          invoice_id: result.invoice_id,
-          endpoint: "/invoices/create",
-          response_payload: result.raw,
-          status: "ok",
-        });
-      } catch (e) {
-        await supabaseAdmin.from("superfaktura_logs").insert({
-          order_id: order.id,
-          endpoint: "/invoices/create",
-          status: "error",
-          error_message: errorMessage(e),
-        });
-        console.error("SF invoice failed", e);
-      }
-    }
-
-    // Vstupenky e-mailom. GoPay môže notifikáciu poslať viackrát — druhýkrát
-    // to `tickets_emailed_at` zastaví. Zlyhanie nesmie zhodiť webhook, inak by
-    // ho GoPay opakovalo donekonečna.
-    try {
-      await sendTicketsEmail(order.id);
-    } catch (e) {
-      console.error("Odoslanie vstupeniek zlyhalo pre objednávku", order.id, e);
-    }
-  } else if (mapped === "cancelled" || mapped === "failed") {
-    await supabaseAdmin.from("orders").update({ status: mapped }).eq("id", order.id);
-    await supabaseAdmin
-      .from("seat_inventory")
-      .update({ status: "available", reserved_until: null, order_id: null })
-      .eq("order_id", order.id);
-    // Za nezaplatenú objednávku kupón neprepadá.
-    await releaseCouponForOrder(order.id);
-    await supabaseAdmin
-      .from("payments")
-      .update({
-        status: mapped === "cancelled" ? "cancelled" : "failed",
-        raw_response: status.raw,
-      })
-      .eq("order_id", order.id);
-  }
-}
 
 async function handler({ request }: { request: Request }) {
   try {
@@ -154,18 +17,26 @@ async function handler({ request }: { request: Request }) {
     if (!orderId && request.method === "POST") {
       try {
         const body = await request.json();
-        // GoPay payload contains the payment id; we look up the order by it
         const gopayId = body?.id || body?.parent_id;
         if (gopayId) {
           const { data: ord } = await supabaseAdmin
             .from("orders")
             .select("id")
-            .eq("gopay_payment_id", String(gopayId))
+            .eq("payment_ref", String(gopayId))
             .maybeSingle();
           orderId = ord?.id || null;
+          if (!orderId) {
+            // Objednávky spred zavedenia generických stĺpcov.
+            const { data: stara } = await supabaseAdmin
+              .from("orders")
+              .select("id")
+              .eq("gopay_payment_id", String(gopayId))
+              .maybeSingle();
+            orderId = stara?.id || null;
+          }
         }
       } catch {
-        /* GoPay may send empty body */
+        /* GoPay môže poslať prázdne telo */
       }
     }
     if (!orderId) {
@@ -174,7 +45,7 @@ async function handler({ request }: { request: Request }) {
         headers: { "content-type": "application/json" },
       });
     }
-    await settle(orderId);
+    await settleOrder(orderId);
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { "content-type": "application/json" },
@@ -182,7 +53,8 @@ async function handler({ request }: { request: Request }) {
   } catch (e) {
     console.error("GoPay webhook error", e);
     return new Response(JSON.stringify({ ok: false, error: errorMessage(e) }), {
-      status: 200, // 200 aby GoPay neretryoval do nekonečna pri našej chybe
+      // 200 aby GoPay pri našej chybe neretryoval donekonečna.
+      status: 200,
       headers: { "content-type": "application/json" },
     });
   }

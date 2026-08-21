@@ -1,25 +1,19 @@
-// Server functions for the GoPay + SuperFaktúra checkout flow.
+// Server functions pre checkout: platobné brány + SuperFaktúra.
 // Keep this file thin: only createServerFn declarations and their imports.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { siteUrl } from "./site-url.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createGoPayPayment, getGoPayPaymentStatus, mapGoPayStateToOrder } from "./gopay.server";
 import { createPaidInvoice } from "./superfaktura.server";
 import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
-import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
-import {
-  checkCoupon,
-  couponErrorMessage,
-  releaseCoupon,
-  releaseCouponForOrder,
-  recordRedemption,
-} from "./coupons.server";
+import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
 import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
+import { branaPodlaId, dostupneBrany, predvolenaBrana } from "./payment-gateways/index.server";
+import { settleOrder } from "./order-settlement.server";
 
 /**
  * IP klienta spoza nginxu.
@@ -441,9 +435,16 @@ export const submitOrder = createServerFn({ method: "POST" })
     return { order_id: order.id, total_amount: total, discount_amount: discount };
   });
 
-// 2) Create GoPay payment for an existing pending order.
-export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ order_id: z.string().uuid() }).parse(input))
+// 2) Založenie platby pre existujúcu objednávku — cez ktorúkoľvek bránu.
+export const startPaymentForOrder = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        order_id: z.string().uuid(),
+        provider: z.enum(["gopay", "gpwebpay", "tatrapayplus"]).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -454,24 +455,53 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
     if (order.status !== "pending" && order.status !== "awaiting_payment") {
       throw new Error(`Objednávka má stav ${order.status}, nedá sa znovu zaplatiť`);
     }
-    if (order.gopay_payment_url && order.status === "awaiting_payment") {
-      return { payment_url: order.gopay_payment_url, payment_id: order.gopay_payment_id };
+
+    const brana = data.provider ? branaPodlaId(data.provider) : predvolenaBrana();
+    if (!brana) {
+      throw new Error(
+        "Nie je nastavená ani jedna platobná brána. Doplň prístupy do secrets " +
+          "(GoPay, GP webpay alebo tatrapay+).",
+      );
     }
+    if (!brana.isConfigured()) {
+      throw new Error(`Brána ${brana.label} nemá vyplnené prístupy.`);
+    }
+
+    // Rozrobenú platbu tej istej brány netreba zakladať znovu. Pri zmene brány
+    // áno — každá si drží vlastný identifikátor.
+    if (
+      order.payment_url &&
+      order.status === "awaiting_payment" &&
+      order.payment_provider === brana.id
+    ) {
+      return {
+        payment_url: order.payment_url,
+        payment_id: order.payment_ref,
+        provider: brana.id,
+      };
+    }
+
     const { data: items } = await supabaseAdmin
       .from("order_items")
       .select("*")
       .eq("order_id", order.id);
 
     const origin = siteUrl();
-    const orderShort = order.id.slice(0, 8).toUpperCase();
+    // GP webpay chce číselné ORDERNUMBER, ktoré sa nesmie opakovať, tatrapay+
+    // číselný variabilný symbol. UUID objednávky ani jedno nespĺňa, preto
+    // sekvencia v databáze.
+    const { data: cislo, error: cisloErr } = await supabaseAdmin.rpc("next_payment_ref");
+    if (cisloErr || !cislo) throw new Error("Nepodarilo sa prideliť číslo platby");
+    const reference = String(cislo);
 
     let result;
     try {
-      result = await createGoPayPayment({
-        orderNumber: orderShort,
-        orderDescription: `Vstupenky vipky.sk ${orderShort}`,
-        amountCents: Math.round(Number(order.total_amount) * 100),
+      result = await brana.start({
+        orderId: order.id,
+        reference,
+        amount: Number(order.total_amount),
         currency: order.currency || "EUR",
+        description: `Vstupenky ${reference}`,
         customer: {
           firstName: (order.customer_name || "").split(" ")[0] || "",
           lastName: (order.customer_name || "").split(" ").slice(1).join(" ") || "",
@@ -480,19 +510,20 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
         },
         items: (items || []).map((it) => ({
           name: it.label,
-          amountCents: Math.round(Number(it.unit_price) * 100),
-          count: it.quantity || 1,
+          unitPrice: Number(it.unit_price),
+          quantity: it.quantity || 1,
         })),
-        returnUrl: `${origin}/checkout/return?orderId=${order.id}&t=${signOrderAccess(order.id)}`,
-        notificationUrl: `${origin}/api/public/payments/gopay/webhook?orderId=${order.id}`,
-        lang: "SK",
+        returnUrl: navratovaAdresa(brana.id, origin, order.id),
+        notifyUrl: `${origin}/api/public/payments/${brana.id}/webhook?orderId=${order.id}`,
+        clientIp: clientIp(),
+        lang: "sk",
       });
     } catch (e) {
       await supabaseAdmin.from("payment_logs").insert({
         order_id: order.id,
-        provider: "gopay",
-        endpoint: "/payments/payment",
-        request_payload: { order_id: order.id },
+        provider: brana.id,
+        endpoint: "start",
+        request_payload: { order_id: order.id, reference },
         status: "error",
         error_message: errorMessage(e),
       });
@@ -501,9 +532,9 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("payment_logs").insert({
       order_id: order.id,
-      provider: "gopay",
-      endpoint: "/payments/payment",
-      request_payload: { order_id: order.id, total: order.total_amount },
+      provider: brana.id,
+      endpoint: "start",
+      request_payload: { order_id: order.id, reference, total: order.total_amount },
       response_payload: result.raw,
       status: "ok",
     });
@@ -511,195 +542,100 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
     await supabaseAdmin
       .from("orders")
       .update({
-        gopay_payment_id: String(result.id),
-        gopay_payment_url: result.gw_url,
+        payment_provider: brana.id,
+        payment_ref: result.providerRef,
+        payment_url: result.redirectUrl,
+        payment_vs: Number(reference),
+        // GoPay vetva zapisuje aj staré stĺpce, nech admin prehľad a refundy
+        // fungujú na rozrobených objednávkach rovnako ako doteraz.
+        ...(brana.id === "gopay"
+          ? { gopay_payment_id: result.providerRef, gopay_payment_url: result.redirectUrl }
+          : {}),
         status: "awaiting_payment",
       })
       .eq("id", order.id);
 
     await supabaseAdmin.from("payments").insert({
       order_id: order.id,
-      provider: "gopay",
-      provider_payment_id: String(result.id),
+      provider: brana.id,
+      provider_payment_id: result.providerRef,
       amount: order.total_amount,
       currency: order.currency || "EUR",
       status: "pending",
       raw_response: result.raw,
     });
 
-    return { payment_url: result.gw_url, payment_id: String(result.id) };
+    return {
+      payment_url: result.redirectUrl,
+      payment_id: result.providerRef,
+      provider: brana.id,
+    };
   });
 
-// Internal helper used by the webhook + verify endpoint.
+/**
+ * Kam sa má zákazník vrátiť. GP webpay adresy s parametrami blokuje, preto
+ * dostane holú cestu a objednávku si nesie v poli MD.
+ */
+function navratovaAdresa(brana: string, origin: string, orderId: string): string {
+  if (brana === "gpwebpay") return `${origin}/api/public/payments/gpwebpay/return`;
+  if (brana === "tatrapayplus") {
+    return `${origin}/api/public/payments/tatrapayplus/return?orderId=${orderId}`;
+  }
+  return `${origin}/checkout/return?orderId=${orderId}&t=${signOrderAccess(orderId)}`;
+}
+
+/** Brány, ktoré sa dajú zákazníkovi ponúknuť. Bez tajomstiev — ide na klienta. */
+export const listPaymentGateways = createServerFn({ method: "POST" }).handler(async () => {
+  const predvolena = predvolenaBrana();
+  return {
+    gateways: dostupneBrany().map((b) => ({ id: b.id, label: b.label, hint: b.hint })),
+    default: predvolena?.id ?? null,
+  };
+});
+
+// Vnútorný pomocník — doúčtovanie žije v order-settlement.server.ts, aby ho
+// vedeli použiť aj návratové routy jednotlivých brán.
 async function settleOrderIfPaid(orderId: string) {
-  const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
-  if (!order) throw new Error("Objednávka sa nenašla");
-  if (!order.gopay_payment_id) {
-    return { changed: false, status: order.status, reason: "no_payment_id" };
-  }
-
-  const status = await getGoPayPaymentStatus(order.gopay_payment_id);
-  const mapped = mapGoPayStateToOrder(status.state);
-
-  await supabaseAdmin.from("payment_logs").insert({
-    order_id: order.id,
-    provider: "gopay",
-    endpoint: `/payments/payment/${order.gopay_payment_id}`,
-    request_payload: null,
-    response_payload: status.raw,
-    status: "ok",
-  });
-
-  await supabaseAdmin
-    .from("payments")
-    .update({
-      status:
-        mapped === "paid"
-          ? "paid"
-          : mapped === "cancelled"
-            ? "cancelled"
-            : mapped === "failed"
-              ? "failed"
-              : mapped === "refunded"
-                ? "refunded"
-                : "pending",
-      raw_response: status.raw,
-    })
-    .eq("order_id", order.id)
-    .eq("provider_payment_id", String(order.gopay_payment_id));
-
-  // Idempotency: if already paid in DB, just return.
-  if (order.status === "paid" && mapped === "paid") {
-    return { changed: false, status: "paid" };
-  }
-
-  if (mapped === "paid") {
-    // 1) order paid
-    await supabaseAdmin
-      .from("orders")
-      .update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", order.id);
-
-    // 2) seats sold
-    await supabaseAdmin
-      .from("seat_inventory")
-      .update({ status: "sold", reserved_until: null })
-      .eq("order_id", order.id);
-
-    // 3) issue tickets if none exist yet
-    const { data: existingTickets } = await supabaseAdmin
-      .from("tickets")
-      .select("id")
-      .eq("order_id", order.id)
-      .limit(1);
-    if (!existingTickets || existingTickets.length === 0) {
-      const { data: items } = await supabaseAdmin
-        .from("order_items")
-        .select("*")
-        .eq("order_id", order.id);
-      const tickets = (items || []).flatMap((it) =>
-        Array.from({ length: it.quantity || 1 }).map((_, i) => {
-          // Signed, verifiable token — identical scheme to the webhook path.
-          const { id, token } = newSignedTicket();
-          return {
-            id,
-            order_id: order.id,
-            event_id: order.event_id,
-            event_date_id: order.event_date_id,
-            seat_id: it.seat_id,
-            seat_label: it.label + ((it.quantity || 1) > 1 ? ` #${i + 1}` : ""),
-            qr_code: token,
-            qr_token: token,
-          };
-        }),
-      );
-      if (tickets.length > 0) {
-        await supabaseAdmin.from("tickets").insert(tickets);
-      }
-    }
-
-    // 4) SuperFaktúra — vystaviť faktúru, ak ešte nie je
-    if (!order.superfaktura_invoice_id) {
-      try {
-        const { data: items } = await supabaseAdmin
-          .from("order_items")
-          .select("*")
-          .eq("order_id", order.id);
-        const orderShort = order.id.slice(0, 8).toUpperCase();
-        const result = await createPaidInvoice({
-          orderId: order.id,
-          variableSymbol: orderShort,
-          customer: {
-            name: order.customer_name || "Zákazník",
-            email: order.customer_email || "",
-            phone: order.customer_phone || undefined,
-          },
-          items: (items || []).map((it) => ({
-            name: it.label,
-            unit_price: Number(it.unit_price),
-            quantity: it.quantity || 1,
-            tax: 20,
-          })),
-          paymentType: "card",
-        });
-        await supabaseAdmin
-          .from("orders")
-          .update({
-            superfaktura_invoice_id: result.invoice_id,
-            superfaktura_invoice_number: result.invoice_number,
-            superfaktura_invoice_pdf_url: result.pdf_url,
-          })
-          .eq("id", order.id);
-        await supabaseAdmin.from("superfaktura_logs").insert({
-          order_id: order.id,
-          invoice_id: result.invoice_id,
-          endpoint: "/invoices/create",
-          response_payload: result.raw,
-          status: "ok",
-        });
-      } catch (e) {
-        await supabaseAdmin.from("superfaktura_logs").insert({
-          order_id: order.id,
-          endpoint: "/invoices/create",
-          status: "error",
-          error_message: errorMessage(e),
-        });
-        console.error("SuperFaktúra failed for order", order.id, e);
-        // nepadáme — platba je úspešná, faktúru môže admin vystaviť znovu
-      }
-    }
-
-    // 5) Vstupenky e-mailom. Idempotentné cez `orders.tickets_emailed_at`,
-    // takže opakovaná notifikácia z GoPay ich nepošle druhýkrát. Zlyhanie
-    // nesmie zhodiť vysporiadanie — peniaze sú prijaté, vstupenky vydané.
-    try {
-      await sendTicketsEmail(order.id);
-    } catch (e) {
-      console.error("Odoslanie vstupeniek zlyhalo pre objednávku", order.id, e);
-    }
-
-    return { changed: true, status: "paid" };
-  }
-
-  if (mapped === "cancelled" || mapped === "failed") {
-    await supabaseAdmin.from("orders").update({ status: mapped }).eq("id", order.id);
-    await supabaseAdmin
-      .from("seat_inventory")
-      .update({ status: "available", reserved_until: null, order_id: null })
-      .eq("order_id", order.id);
-    // Za nezaplatenú objednávku kupón neprepadá — inak by si ho zákazník po
-    // zrušení platby už druhýkrát neuplatnil.
-    await releaseCouponForOrder(order.id);
-    return { changed: true, status: mapped };
-  }
-
-  return { changed: false, status: order.status };
+  return settleOrder(orderId);
 }
 
 export const settleGoPayOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ order_id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     return settleOrderIfPaid(data.order_id);
+  });
+
+/**
+ * Dopýta sa brány na objednávky, ktoré zostali visieť v `awaiting_payment`.
+ *
+ * Ani GP webpay, ani tatrapay+ nemajú webhook — výsledok chodí len návratom
+ * zákazníka. Kto po zaplatení zavrie prehliadač, ostal by bez vstupeniek.
+ * Toto je záchranná sieť; patrí do cronu.
+ */
+export const reconcilePendingPayments = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ max_age_hours: z.number().min(1).max(168).default(48) }).parse(input ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const od = new Date(Date.now() - data.max_age_hours * 3600_000).toISOString();
+    const { data: orders } = await supabaseAdmin
+      .from("orders")
+      .select("id, payment_provider")
+      .eq("status", "awaiting_payment")
+      .not("payment_ref", "is", null)
+      .gte("created_at", od)
+      .limit(200);
+
+    const vysledky: Array<{ order_id: string; status: string; changed: boolean }> = [];
+    for (const o of orders || []) {
+      try {
+        const r = await settleOrder(o.id);
+        vysledky.push({ order_id: o.id, status: r.status, changed: r.changed });
+      } catch (e) {
+        console.error("Dopyt stavu zlyhal pre objednávku", o.id, errorMessage(e));
+      }
+    }
+    return { checked: orders?.length ?? 0, results: vysledky };
   });
 
 // Read shape for /checkout/return and /checkout/success.

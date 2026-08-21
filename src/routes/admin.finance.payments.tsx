@@ -15,6 +15,12 @@ export const Route = createFileRoute("/admin/finance/payments")({
   component: Page,
 });
 
+const NAZVY_BRAN: Record<string, string> = {
+  gopay: "GoPay",
+  gpwebpay: "GP webpay (ČSOB)",
+  tatrapayplus: "tatrapay+",
+};
+
 type Row = {
   id: string;
   customer_name: string | null;
@@ -22,7 +28,9 @@ type Row = {
   total_amount: number;
   currency: string;
   status: string;
-  gopay_payment_id: string | null;
+  payment_provider: string | null;
+  payment_ref: string | null;
+  payment_vs: number | null;
   superfaktura_invoice_number: string | null;
   superfaktura_invoice_pdf_url: string | null;
   paid_at: string | null;
@@ -41,9 +49,9 @@ function Page() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, customer_name, customer_email, total_amount, currency, status, gopay_payment_id, superfaktura_invoice_number, superfaktura_invoice_pdf_url, paid_at, created_at",
+        "id, customer_name, customer_email, total_amount, currency, status, payment_provider, payment_ref, payment_vs, superfaktura_invoice_number, superfaktura_invoice_pdf_url, paid_at, created_at",
       )
-      .not("gopay_payment_id", "is", null)
+      .not("payment_ref", "is", null)
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) toast.error(error.message);
@@ -86,10 +94,10 @@ function Page() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
-            Platby (GoPay)
+            Online platby
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Online platby cez GoPay a vystavené doklady v SuperFaktúre.
+            Platby zo všetkých brán a vystavené doklady v SuperFaktúre.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={load} className="gap-1.5">
@@ -105,7 +113,8 @@ function Page() {
                 <th className="text-left p-3 font-medium">Objednávka</th>
                 <th className="text-left p-3 font-medium">Zákazník</th>
                 <th className="text-right p-3 font-medium">Suma</th>
-                <th className="text-left p-3 font-medium">GoPay stav</th>
+                <th className="text-left p-3 font-medium">Brána</th>
+                <th className="text-left p-3 font-medium">Stav</th>
                 <th className="text-left p-3 font-medium">Faktúra</th>
                 <th className="text-left p-3 font-medium">Dátum</th>
                 <th className="text-right p-3 font-medium">Akcie</th>
@@ -114,14 +123,14 @@ function Page() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-muted-foreground">
+                  <td colSpan={8} className="p-10 text-center text-muted-foreground">
                     <Loader2 className="size-5 inline animate-spin mr-2" /> Načítavam…
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-muted-foreground">
-                    Zatiaľ žiadne GoPay platby.
+                  <td colSpan={8} className="p-10 text-center text-muted-foreground">
+                    Zatiaľ žiadne online platby.
                   </td>
                 </tr>
               ) : (
@@ -134,6 +143,12 @@ function Page() {
                     </td>
                     <td className="p-3 text-right font-semibold">
                       €{Number(r.total_amount).toFixed(2)}
+                    </td>
+                    <td className="p-3">
+                      <div>{NAZVY_BRAN[r.payment_provider ?? ""] ?? r.payment_provider ?? "—"}</div>
+                      {r.payment_vs ? (
+                        <div className="text-xs text-muted-foreground">VS {r.payment_vs}</div>
+                      ) : null}
                     </td>
                     <td className="p-3">
                       <StatusBadge status={r.status} />

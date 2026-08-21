@@ -1,6 +1,10 @@
-// Admin refund flow for orders. Handles GoPay refund call (full or partial),
-// updates order/payment/seat/ticket state, logs to payment_logs and queues a
-// customer notification entry.
+// Refund objednávky z administrácie (plný aj čiastočný). Zavolá príslušnú
+// platobnú bránu, upraví stav objednávky, platby, sedadiel a vstupeniek,
+// zapíše do payment_logs a zaradí oznam zákazníkovi.
+//
+// Brána, ktorá refund cez API nevie (GP webpay má na to len samostatné WS
+// rozhranie), refund zapíše, ale vráti `manual_action_required` — peniaze
+// treba poslať ručne z portálu brány.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -26,6 +30,8 @@ export type RefundOrderResult = {
   full: boolean;
   email_queued: boolean;
   email_skipped_reason?: string;
+  /** Vyplnené, keď brána refund cez API nevie a peniaze treba vrátiť ručne. */
+  manual_action_required?: string;
 };
 
 export const refundOrder = createServerFn({ method: "POST" })
@@ -43,7 +49,7 @@ export const refundOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<RefundOrderResult> => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { refundGoPayPayment } = await import("./gopay.server");
+    const { branaPodlaId } = await import("./payment-gateways/index.server");
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -72,18 +78,23 @@ export const refundOrder = createServerFn({ method: "POST" })
     // sa k tomu prišlo dvoma čiastočnými.
     const full = Math.abs(alreadyRefunded + amount - total) < 0.01;
 
-    // 1) Call GoPay if we have a payment id; otherwise treat as manual refund.
-    let providerOk = false;
+    // 1) Vrátenie peňazí cez bránu, ktorou sa platilo. Keď brána chýba alebo
+    //    refund cez API nevie, zostáva len ručné vrátenie.
+    const providerId = order.payment_provider || (order.gopay_payment_id ? "gopay" : null);
+    const providerRef = order.payment_ref || order.gopay_payment_id;
+    const brana = providerId ? branaPodlaId(providerId) : null;
+
     let providerRaw: Json = null;
-    if (order.gopay_payment_id) {
+    let manualAction: string | undefined;
+
+    if (brana && providerRef && brana.supportsRefund) {
       try {
-        const res = await refundGoPayPayment(order.gopay_payment_id, Math.round(amount * 100));
-        providerOk = true;
+        const res = await brana.refund(providerRef, amount);
         providerRaw = res.raw;
         await supabaseAdmin.from("payment_logs").insert({
           order_id: order.id,
-          provider: "gopay",
-          endpoint: `/payments/payment/${order.gopay_payment_id}/refund`,
+          provider: brana.id,
+          endpoint: `refund:${providerRef}`,
           request_payload: { amount, full, reason: data.reason || null, by: context.userId },
           response_payload: providerRaw,
           status: "ok",
@@ -91,8 +102,8 @@ export const refundOrder = createServerFn({ method: "POST" })
       } catch (e) {
         await supabaseAdmin.from("payment_logs").insert({
           order_id: order.id,
-          provider: "gopay",
-          endpoint: `/payments/payment/${order.gopay_payment_id}/refund`,
+          provider: brana.id,
+          endpoint: `refund:${providerRef}`,
           request_payload: { amount, full, reason: data.reason || null, by: context.userId },
           status: "error",
           error_message: errorMessage(e),
@@ -100,11 +111,20 @@ export const refundOrder = createServerFn({ method: "POST" })
         throw e;
       }
     } else {
+      manualAction = brana
+        ? `Brána ${brana.label} vrátenie cez API nepodporuje — peniaze pošli z jej portálu.`
+        : "Objednávka nemá online platbu — refund je zapísaný ako ručný.";
       await supabaseAdmin.from("payment_logs").insert({
         order_id: order.id,
-        provider: "gopay",
+        provider: providerId || "gopay",
         endpoint: "manual_refund",
-        request_payload: { amount, full, reason: data.reason || null, by: context.userId },
+        request_payload: {
+          amount,
+          full,
+          reason: data.reason || null,
+          by: context.userId,
+          note: manualAction,
+        },
         status: "ok",
       });
     }
@@ -112,8 +132,8 @@ export const refundOrder = createServerFn({ method: "POST" })
     // 2) Insert a payment row marking the refund.
     await supabaseAdmin.from("payments").insert({
       order_id: order.id,
-      provider: "gopay",
-      provider_payment_id: order.gopay_payment_id || null,
+      provider: providerId || "gopay",
+      provider_payment_id: providerRef || null,
       amount: -Math.abs(amount),
       currency: order.currency || "EUR",
       status: "refunded",
@@ -211,5 +231,6 @@ export const refundOrder = createServerFn({ method: "POST" })
       full,
       email_queued,
       email_skipped_reason,
+      manual_action_required: manualAction,
     };
   });

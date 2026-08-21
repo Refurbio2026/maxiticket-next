@@ -134,6 +134,10 @@ function Page() {
               : ` Email preskočený: ${res.email_skipped_reason || "—"}`
             : ""),
       );
+      if (res.manual_action_required) {
+        // Peniaze zatiaľ neodišli — toto sa nesmie stratiť medzi hláškami.
+        toast.warning(res.manual_action_required, { duration: 10000 });
+      }
       setRefundFor(null);
       q.refetch();
     } catch (e) {

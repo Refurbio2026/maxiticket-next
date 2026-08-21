@@ -201,6 +201,10 @@ export type Database = {
           expires_at: string | null;
           gopay_payment_id: string | null;
           gopay_payment_url: string | null;
+          payment_provider: Database["public"]["Enums"]["payment_provider"] | null;
+          payment_ref: string | null;
+          payment_url: string | null;
+          payment_vs: number | null;
           id: string;
           paid_at: string | null;
           status: Database["public"]["Enums"]["order_status"];
@@ -237,6 +241,10 @@ export type Database = {
           expires_at?: string | null;
           gopay_payment_id?: string | null;
           gopay_payment_url?: string | null;
+          payment_provider?: Database["public"]["Enums"]["payment_provider"] | null;
+          payment_ref?: string | null;
+          payment_url?: string | null;
+          payment_vs?: number | null;
           id?: string;
           paid_at?: string | null;
           status?: Database["public"]["Enums"]["order_status"];
@@ -273,6 +281,10 @@ export type Database = {
           expires_at?: string | null;
           gopay_payment_id?: string | null;
           gopay_payment_url?: string | null;
+          payment_provider?: Database["public"]["Enums"]["payment_provider"] | null;
+          payment_ref?: string | null;
+          payment_url?: string | null;
+          payment_vs?: number | null;
           id?: string;
           paid_at?: string | null;
           status?: Database["public"]["Enums"]["order_status"];
@@ -2153,6 +2165,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      next_payment_ref: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
       release_order_coupon: {
         Args: {
           p_order_id: string;
@@ -2196,7 +2212,7 @@ export type Database = {
         | "cancelled"
         | "refunded"
         | "expired";
-      payment_provider: "gopay";
+      payment_provider: "gopay" | "gpwebpay" | "tatrapayplus";
       payment_status: "pending" | "authorized" | "paid" | "failed" | "cancelled" | "refunded";
       sale_type: "standing" | "seating" | "seating_map";
       seat_status: "available" | "reserved" | "sold";
@@ -2338,7 +2354,7 @@ export const Constants = {
         "refunded",
         "expired",
       ],
-      payment_provider: ["gopay"],
+      payment_provider: ["gopay", "gpwebpay", "tatrapayplus"],
       payment_status: ["pending", "authorized", "paid", "failed", "cancelled", "refunded"],
       sale_type: ["standing", "seating", "seating_map"],
       seat_status: ["available", "reserved", "sold"],
