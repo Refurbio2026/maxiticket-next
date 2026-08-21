@@ -65,6 +65,18 @@ export async function releaseCoupon(couponId: string): Promise<void> {
   if (error) console.error("release_coupon zlyhalo", couponId, error.message);
 }
 
+/**
+ * Vráti kupón po zrušenej alebo neúspešnej platbe.
+ *
+ * Na rozdiel od `releaseCoupon()` zmaže aj riadok uplatnenia — bez toho by
+ * zákazníkovi ostal minutý `max_uses_per_email`, hoci nič nezaplatil. Je
+ * idempotentná, takže opakovaná notifikácia z GoPay nič nepokazí.
+ */
+export async function releaseCouponForOrder(orderId: string): Promise<void> {
+  const { error } = await supabaseAdmin.rpc("release_order_coupon", { p_order_id: orderId });
+  if (error) console.error("release_order_coupon zlyhalo", orderId, error.message);
+}
+
 /** Zápis uplatnenia. Bez neho by nefungoval limit na e-mail ani prehľad využitia. */
 export async function recordRedemption(opts: {
   couponId: string;

@@ -2153,6 +2153,12 @@ export type Database = {
         };
         Returns: undefined;
       };
+      release_order_coupon: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: number;
+      };
       touch_scanner_device: {
         Args: {
           p_device_id: string;

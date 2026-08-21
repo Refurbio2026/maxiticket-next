@@ -10,6 +10,7 @@ import { sendTicketsEmail } from "@/lib/ticket-mail.server";
 import { signTicket } from "@/lib/qr-token.server";
 import crypto from "crypto";
 import { errorMessage } from "@/lib/error-message";
+import { releaseCouponForOrder } from "@/lib/coupons.server";
 
 async function settle(orderId: string) {
   const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
@@ -134,6 +135,8 @@ async function settle(orderId: string) {
       .from("seat_inventory")
       .update({ status: "available", reserved_until: null, order_id: null })
       .eq("order_id", order.id);
+    // Za nezaplatenú objednávku kupón neprepadá.
+    await releaseCouponForOrder(order.id);
     await supabaseAdmin
       .from("payments")
       .update({

@@ -9,7 +9,13 @@ import { createPaidInvoice } from "./superfaktura.server";
 import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
 import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
-import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
+import {
+  checkCoupon,
+  couponErrorMessage,
+  releaseCoupon,
+  releaseCouponForOrder,
+  recordRedemption,
+} from "./coupons.server";
 import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
@@ -660,6 +666,9 @@ async function settleOrderIfPaid(orderId: string) {
       .from("seat_inventory")
       .update({ status: "available", reserved_until: null, order_id: null })
       .eq("order_id", order.id);
+    // Za nezaplatenú objednávku kupón neprepadá — inak by si ho zákazník po
+    // zrušení platby už druhýkrát neuplatnil.
+    await releaseCouponForOrder(order.id);
     return { changed: true, status: mapped };
   }
 
