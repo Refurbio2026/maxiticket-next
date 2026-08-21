@@ -1357,6 +1357,36 @@ export type Database = {
           },
         ];
       };
+      payment_settings: {
+        Row: {
+          default_provider: Database["public"]["Enums"]["payment_provider"] | null;
+          gopay_enabled: boolean;
+          gpwebpay_enabled: boolean;
+          id: boolean;
+          tatrapayplus_enabled: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          default_provider?: Database["public"]["Enums"]["payment_provider"] | null;
+          gopay_enabled?: boolean;
+          gpwebpay_enabled?: boolean;
+          id?: boolean;
+          tatrapayplus_enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          default_provider?: Database["public"]["Enums"]["payment_provider"] | null;
+          gopay_enabled?: boolean;
+          gpwebpay_enabled?: boolean;
+          id?: boolean;
+          tatrapayplus_enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       wallet_settings: {
         Row: {
           apple_enabled: boolean;

@@ -528,6 +528,21 @@ sa smie vyhlásiť až pri `ACSC`/`ACCC`.
   `DIGEST1` = ten istý reťazec + `|` + `MERCHANTNUMBER`.
 - tatrapay+ návratovú adresu treba zaregistrovať v developer portáli banky.
 
+Nastavuje sa to na dvoch miestach a je dôležité ich nepliesť:
+
+- **Prístupy (kľúče, client secret) sú výhradne v secrets.** Do databázy ani do admina
+  nepatria a `payment-settings.functions.ts` ich **nikdy** nevracia — ani adminovi. Stránka
+  ukazuje len to, či je premenná vyplnená.
+- **`/admin/system/payments`** (tabuľka `payment_settings`) je na to, čo sa smie prepínať:
+  či sa brána zákazníkovi ponúka a ktorá je predvolená. Nastavenie v admine prebíja
+  `PAYMENT_PROVIDER`.
+
+Ponuku pre zákazníka skladá `branyPreZakaznika()` — prienik „má prístupy" a „je zapnutá".
+`startPaymentForOrder` vyberá **len z nej**, takže podstrčené id vypnutej brány neprejde.
+Stránka vie aj otestovať spojenie: GoPay a tatrapay+ si vypýtajú token (overí prístupy
+naozaj), GP webpay vie skontrolovať len načítanie kľúčov — endpoint na overenie naprázdno
+nemá.
+
 ## Pripojenie k databáze (správa schémy)
 
 Projekt `aasraovckzekicoobadx`. Priame spojenie `db.<ref>.supabase.co` beží len cez IPv6, ktoré

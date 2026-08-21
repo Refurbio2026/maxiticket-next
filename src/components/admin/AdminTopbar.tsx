@@ -69,6 +69,14 @@ const labels: Record<string, string> = {
   avf: "AVF Reporty",
 };
 
+// Ten istý posledný segment znamená v rôznych sekciách niečo iné. Bez tohto
+// hlásili „Platby organizátorom" aj /admin/finance/payments
+// a /admin/system/payments.
+const labelsPodlaCesty: Record<string, string> = {
+  "/admin/finance/payments": "Online platby",
+  "/admin/system/payments": "Platobné brány",
+};
+
 export function AdminTopbar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const segments = path.split("/").filter(Boolean);
@@ -97,7 +105,7 @@ export function AdminTopbar() {
           {segments.map((seg, i) => {
             const isLast = i === segments.length - 1;
             const url = "/" + segments.slice(0, i + 1).join("/");
-            const label = labels[seg] ?? seg;
+            const label = labelsPodlaCesty[url] ?? labels[seg] ?? seg;
             return (
               <BreadcrumbItem key={url}>
                 {i > 0 && (

@@ -61,6 +61,40 @@ export interface PaymentGateway {
   /** `false` znamená, že refund sa robí ručne v portáli brány. */
   supportsRefund: boolean;
   refund(providerRef: string, amount: number): Promise<{ raw: Json }>;
+
+  /**
+   * Čo brána potrebuje a či to má. Vracia **len** názvy premenných a či sú
+   * vyplnené — hodnoty nikdy, aj keď ich číta admin.
+   */
+  konfiguracia(): PolozkaKonfiguracie[];
+  /** Adresa, s ktorou sa bude komunikovať. Podľa nej sa pozná testovacia prevádzka. */
+  endpoint(): string;
+  /** Skúsi sa spojiť s bránou. Nezakladá platbu. */
+  test(): Promise<TestBrany>;
+}
+
+export type PolozkaKonfiguracie = {
+  premenna: string;
+  vyplnena: boolean;
+  povinna: boolean;
+  /** Načo to je — zobrazí sa adminovi vedľa názvu. */
+  popis: string;
+};
+
+export type TestBrany = { ok: boolean; detail: string };
+
+/** Testovacia prevádzka sa pozná z adresy — inak sa dá ľahko predávať do piesku. */
+export function rezimZAdresy(endpoint: string): "test" | "ostrá" | "neznáma" {
+  const a = endpoint.toLowerCase();
+  if (a.includes("sandbox") || a.includes("test.") || a.includes("/test")) return "test";
+  if (
+    a.includes("production") ||
+    a.includes("3dsecure.gpwebpay.com") ||
+    a.includes("gw.gopay.com")
+  ) {
+    return "ostrá";
+  }
+  return "neznáma";
 }
 
 export function nemaRefund(id: GatewayId): never {

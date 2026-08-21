@@ -16,8 +16,10 @@ import type {
   GatewayStatus,
   PaymentGateway,
   PaymentState,
+  PolozkaKonfiguracie,
   StartPaymentInput,
   StartPaymentResult,
+  TestBrany,
 } from "./types";
 import { nemaRefund } from "./types";
 
@@ -276,5 +278,82 @@ export const gpWebpayGateway: PaymentGateway = {
   supportsRefund: false,
   async refund() {
     return nemaRefund("gpwebpay");
+  },
+
+  konfiguracia(): PolozkaKonfiguracie[] {
+    const maKluc = (inline?: string, subor?: string) => {
+      if (inline) return true;
+      if (!subor) return false;
+      try {
+        return fs.statSync(subor).isFile();
+      } catch {
+        // Cesta je zadaná, ale súbor tam nie je — pre admina to je „nevyplnené",
+        // nech nehľadá chybu inde.
+        return false;
+      }
+    };
+    return [
+      {
+        premenna: "GPWEBPAY_MERCHANT_NUMBER",
+        vyplnena: !!process.env.GPWEBPAY_MERCHANT_NUMBER,
+        povinna: true,
+        popis: "Obchodné číslo pridelené bankou",
+      },
+      {
+        premenna: "GPWEBPAY_PRIVATE_KEY_FILE",
+        vyplnena: maKluc(process.env.GPWEBPAY_PRIVATE_KEY, process.env.GPWEBPAY_PRIVATE_KEY_FILE),
+        povinna: true,
+        popis: "Súkromný kľúč obchodníka z portálu GP webpay (alebo GPWEBPAY_PRIVATE_KEY)",
+      },
+      {
+        premenna: "GPWEBPAY_PUBLIC_KEY_FILE",
+        vyplnena: maKluc(process.env.GPWEBPAY_PUBLIC_KEY, process.env.GPWEBPAY_PUBLIC_KEY_FILE),
+        povinna: true,
+        popis: "Verejný kľúč brány — bez neho sa nedá overiť odpoveď (alebo GPWEBPAY_PUBLIC_KEY)",
+      },
+      {
+        premenna: "GPWEBPAY_PRIVATE_KEY_PASSPHRASE",
+        vyplnena: !!process.env.GPWEBPAY_PRIVATE_KEY_PASSPHRASE,
+        povinna: false,
+        popis: "Len ak je súkromný kľúč zašifrovaný",
+      },
+      {
+        premenna: "GPWEBPAY_URL",
+        vyplnena: !!process.env.GPWEBPAY_URL,
+        povinna: false,
+        popis: "Bez neho sa použije testovacia brána",
+      },
+    ];
+  },
+
+  endpoint(): string {
+    return process.env.GPWEBPAY_URL || SKUSOBNA_BRANA;
+  },
+
+  async test(): Promise<TestBrany> {
+    // GP webpay nemá endpoint na overenie prístupov — jediné, čo sa dá
+    // skontrolovať bez zakladania platby, sú kľúče. Tak to aj napíšeme,
+    // nech to nevyzerá ako záruka, že brána platbu prijme.
+    const cfg = nastavenie();
+    const vzorka = podpisovanyRetazec(PORADIE_POZIADAVKY, {
+      MERCHANTNUMBER: cfg.merchantNumber,
+      OPERATION: "CREATE_ORDER",
+      ORDERNUMBER: "1",
+      AMOUNT: "100",
+      CURRENCY: "978",
+      DEPOSITFLAG: "1",
+      URL: "https://example.test/",
+    });
+    const podpis = podpisat(vzorka, cfg.privatnyKluc);
+    if (!podpis) return { ok: false, detail: "Súkromným kľúčom sa nepodarilo podpísať." };
+    if (cfg.verejnyKluc.asymmetricKeyType !== "rsa") {
+      return { ok: false, detail: "Verejný kľúč brány nie je RSA." };
+    }
+    return {
+      ok: true,
+      detail:
+        "Kľúče sa načítali a podpis sa vytvoril. Či ho brána prijme, ukáže až " +
+        "prvá skúšobná platba — GP webpay overenie prístupov naprázdno nepozná.",
+    };
   },
 };

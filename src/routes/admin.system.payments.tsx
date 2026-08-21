@@ -1,0 +1,405 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  getPaymentGatewayOverview,
+  testPaymentGateway,
+  updatePaymentGatewaySettings,
+  type PrehladBrany,
+} from "@/lib/payment-settings.functions";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Copy,
+  CreditCard,
+  Loader2,
+  Plug,
+  Star,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { errorMessage } from "@/lib/error-message";
+
+export const Route = createFileRoute("/admin/system/payments")({
+  head: () => ({ meta: [{ title: "Platobné brány · Admin · vipky.sk" }] }),
+  component: PaymentGatewaysPage,
+});
+
+type Form = {
+  gopay_enabled: boolean;
+  gpwebpay_enabled: boolean;
+  tatrapayplus_enabled: boolean;
+  default_provider: "gopay" | "gpwebpay" | "tatrapayplus" | null;
+};
+
+function PaymentGatewaysPage() {
+  const qc = useQueryClient();
+  const fetchOverview = useServerFn(getPaymentGatewayOverview);
+  const save = useServerFn(updatePaymentGatewaySettings);
+  const test = useServerFn(testPaymentGateway);
+
+  const [form, setForm] = useState<Form | null>(null);
+  const [testy, setTesty] = useState<Record<string, { ok: boolean; detail: string }>>({});
+  const [testuje, setTestuje] = useState<string | null>(null);
+
+  const prehlad = useQuery({
+    queryKey: ["payment-gateways"],
+    queryFn: () => fetchOverview({ data: undefined as never }),
+  });
+
+  useEffect(() => {
+    if (!prehlad.data || form) return;
+    const najdi = (id: string) => prehlad.data.brany.find((b) => b.id === id)?.zapnuta ?? true;
+    setForm({
+      gopay_enabled: najdi("gopay"),
+      gpwebpay_enabled: najdi("gpwebpay"),
+      tatrapayplus_enabled: najdi("tatrapayplus"),
+      default_provider: (prehlad.data.predvolena as Form["default_provider"]) ?? null,
+    });
+  }, [prehlad.data, form]);
+
+  const ulozit = useMutation({
+    mutationFn: (f: Form) => save({ data: f }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["payment-gateways"] });
+      toast.success("Nastavenia uložené");
+    },
+    onError: (e) => toast.error(errorMessage(e) || "Uloženie zlyhalo"),
+  });
+
+  const otestovat = async (id: string) => {
+    setTestuje(id);
+    try {
+      const r = await test({ data: { provider: id as NonNullable<Form["default_provider"]> } });
+      setTesty((s) => ({ ...s, [id]: r }));
+      if (r.ok) toast.success(r.detail);
+      else toast.error(r.detail);
+    } catch (e) {
+      toast.error(errorMessage(e) || "Test zlyhal");
+    } finally {
+      setTestuje(null);
+    }
+  };
+
+  if (prehlad.isLoading || !form || !prehlad.data) {
+    return (
+      <div className="p-10 text-center">
+        <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const data = prehlad.data;
+  const kluc = (id: string) => `${id}_enabled` as keyof Form;
+  const jeZapnuta = (id: string) => form[kluc(id)] as boolean;
+  const vPonukePoUlozeni = data.brany.filter((b) => b.nakonfigurovana && jeZapnuta(b.id));
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
+          Platobné brány
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Zákazníkovi sa v checkoute ponúknu len brány, ktoré majú vyplnené prístupy a sú tu
+          zapnuté. Samotné kľúče sa nastavujú v secrets na serveri a táto stránka ich nikdy
+          nezobrazuje — vidíš len, či sú vyplnené.
+        </p>
+      </div>
+
+      {data.adresaWebuChyba && (
+        <Card className="border-destructive/50 bg-destructive/5 p-4">
+          <div className="flex gap-3">
+            <AlertTriangle className="size-5 shrink-0 text-destructive" />
+            <div className="text-sm">
+              <div className="font-medium">Nie je nastavená adresa webu</div>
+              <p className="text-muted-foreground mt-1">{data.adresaWebuChyba}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {vPonukePoUlozeni.length === 0 && (
+        <Card className="border-amber-500/50 bg-amber-500/5 p-4">
+          <div className="flex gap-3">
+            <AlertTriangle className="size-5 shrink-0 text-amber-500" />
+            <div className="text-sm">
+              <div className="font-medium">Zákazník nemá čím zaplatiť</div>
+              <p className="text-muted-foreground mt-1">
+                Žiadna brána nie je zároveň nastavená aj zapnutá, takže tlačidlo Zaplatiť v
+                checkoute skončí chybou.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card className="bg-card/60 border-border/50 p-4">
+        <div className="flex gap-3 text-sm">
+          <Plug className="size-5 shrink-0 text-primary" />
+          <div>
+            <div className="font-medium">GP webpay ani tatrapay+ neposielajú notifikáciu</div>
+            <p className="text-muted-foreground mt-1">
+              Výsledok platby príde len návratom zákazníka do prehliadača. Kto po zaplatení zavrie
+              okno, ostal by bez vstupeniek — dotiahne ho až dopytovací sken (
+              <code className="text-xs">reconcilePendingPayments</code>), ktorý patrí do cronu. Pri
+              prevode z účtu to nie je okrajový prípad: v čase návratu býva platba ešte nezúčtovaná.
+            </p>
+            <p className="mt-2">
+              Momentálne čaká na doplatenie{" "}
+              <span className="font-semibold">{data.cakajuceObjednavky}</span>{" "}
+              {data.cakajuceObjednavky === 1 ? "objednávka" : "objednávok"}.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      <div className="space-y-4">
+        {data.brany.map((b) => (
+          <BranaKarta
+            key={b.id}
+            brana={b}
+            zapnuta={jeZapnuta(b.id)}
+            predvolena={form.default_provider === b.id}
+            test={testy[b.id]}
+            testuje={testuje === b.id}
+            onZapnut={(v) =>
+              setForm((f) =>
+                f
+                  ? {
+                      ...f,
+                      [kluc(b.id)]: v,
+                      // Vypnutá brána nemôže zostať predvolená.
+                      default_provider:
+                        !v && f.default_provider === b.id ? null : f.default_provider,
+                    }
+                  : f,
+              )
+            }
+            onPredvolena={() =>
+              setForm((f) => (f ? { ...f, default_provider: b.id as Form["default_provider"] } : f))
+            }
+            onTest={() => otestovat(b.id)}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs text-muted-foreground">
+          {data.predvolenaZPremennej
+            ? `Premenná PAYMENT_PROVIDER je nastavená na „${data.predvolenaZPremennej}"; voľba tu ju prebije.`
+            : "Predvolená brána sa použije, keď si zákazník nevyberie."}
+          {data.updated_at &&
+            ` · Naposledy uložené ${new Date(data.updated_at).toLocaleString("sk")}`}
+        </p>
+        <Button onClick={() => ulozit.mutate(form)} disabled={ulozit.isPending}>
+          {ulozit.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+          Uložiť
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function BranaKarta({
+  brana,
+  zapnuta,
+  predvolena,
+  test,
+  testuje,
+  onZapnut,
+  onPredvolena,
+  onTest,
+}: {
+  brana: PrehladBrany;
+  zapnuta: boolean;
+  predvolena: boolean;
+  test?: { ok: boolean; detail: string };
+  testuje: boolean;
+  onZapnut: (v: boolean) => void;
+  onPredvolena: () => void;
+  onTest: () => void;
+}) {
+  return (
+    <Card className="bg-card/60 border-border/50 p-5 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex gap-3">
+          <CreditCard className="size-5 mt-0.5 text-primary shrink-0" />
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display font-semibold">{brana.label}</h2>
+              {brana.nakonfigurovana && zapnuta ? (
+                <Badge className="bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15">
+                  V ponuke
+                </Badge>
+              ) : !brana.nakonfigurovana ? (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Chýbajú prístupy
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Vypnutá
+                </Badge>
+              )}
+              {brana.rezim === "test" && (
+                <Badge className="bg-amber-500/15 text-amber-500 hover:bg-amber-500/15">
+                  Testovacia prevádzka
+                </Badge>
+              )}
+              {predvolena && (
+                <Badge variant="secondary" className="gap-1">
+                  <Star className="size-3" /> Predvolená
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">{brana.hint}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {!predvolena && brana.nakonfigurovana && zapnuta && (
+            <Button variant="ghost" size="sm" onClick={onPredvolena} className="gap-1.5">
+              <Star className="size-3.5" /> Nastaviť ako predvolenú
+            </Button>
+          )}
+          <Switch checked={zapnuta} onCheckedChange={onZapnut} />
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            Prístupy v secrets
+          </h3>
+          <ul className="space-y-1.5">
+            {brana.konfiguracia.map((k) => (
+              <li key={k.premenna} className="flex items-start gap-2 text-sm">
+                {k.vyplnena ? (
+                  <Check className="size-4 mt-0.5 shrink-0 text-emerald-500" />
+                ) : (
+                  <X
+                    className={cn(
+                      "size-4 mt-0.5 shrink-0",
+                      k.povinna ? "text-destructive" : "text-muted-foreground",
+                    )}
+                  />
+                )}
+                <span>
+                  <code className="text-xs">{k.premenna}</code>
+                  {!k.povinna && (
+                    <span className="text-muted-foreground text-xs"> · voliteľné</span>
+                  )}
+                  <span className="block text-xs text-muted-foreground">{k.popis}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Adresy</h3>
+            <Adresa
+              nazov={
+                brana.id === "tatrapayplus"
+                  ? "Návratová adresa (zaregistruj v portáli banky)"
+                  : "Návratová adresa"
+              }
+              hodnota={brana.navratovaAdresa}
+            />
+            {brana.notifikacnaAdresa ? (
+              <Adresa nazov="Notifikačná adresa" hodnota={brana.notifikacnaAdresa} />
+            ) : (
+              <p className="text-xs text-muted-foreground mt-2">
+                Notifikáciu na server táto brána neposiela — stav sa dopytuje.
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">
+              Komunikuje s <code className="text-xs">{brana.endpoint}</code>
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span>Refund cez API: {brana.vieRefundovat ? "áno" : "nie, len ručne"}</span>
+            <span>Dopyt na stav: {brana.vieDopytStavu ? "áno" : "nie"}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onTest}
+          disabled={testuje || !brana.nakonfigurovana}
+        >
+          {testuje ? (
+            <Loader2 className="size-4 mr-2 animate-spin" />
+          ) : (
+            <Plug className="size-4 mr-2" />
+          )}
+          Otestovať spojenie
+        </Button>
+        {brana.chybaju.length > 0 && (
+          <span className="text-xs text-destructive">Chýba: {brana.chybaju.join(", ")}</span>
+        )}
+        {test && (
+          <span
+            className={cn(
+              "flex items-start gap-1.5 text-xs",
+              test.ok ? "text-emerald-500" : "text-destructive",
+            )}
+          >
+            {test.ok ? (
+              <CheckCircle2 className="size-3.5 mt-0.5 shrink-0" />
+            ) : (
+              <AlertTriangle className="size-3.5 mt-0.5 shrink-0" />
+            )}
+            {test.detail}
+          </span>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function Adresa({ nazov, hodnota }: { nazov: string; hodnota: string }) {
+  if (!hodnota) {
+    return (
+      <div className="mt-2 text-xs text-muted-foreground">
+        {nazov}: nedá sa poskladať, kým nie je nastavená adresa webu.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2">
+      <div className="text-xs text-muted-foreground">{nazov}</div>
+      <div className="flex items-center gap-2">
+        <code className="text-xs break-all">{hodnota}</code>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-6 shrink-0"
+          onClick={() => {
+            navigator.clipboard
+              .writeText(hodnota)
+              .then(() => toast.success("Skopírované"))
+              .catch(() => toast.error("Kopírovanie zlyhalo"));
+          }}
+        >
+          <Copy className="size-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}

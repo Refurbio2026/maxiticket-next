@@ -12,7 +12,7 @@ import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from
 import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
-import { branaPodlaId, dostupneBrany, predvolenaBrana } from "./payment-gateways/index.server";
+import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
 import { settleOrder } from "./order-settlement.server";
 
 /**
@@ -456,17 +456,17 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
       throw new Error(`Objednávka má stav ${order.status}, nedá sa znovu zaplatiť`);
     }
 
-    const brana = data.provider ? branaPodlaId(data.provider) : predvolenaBrana();
+    const { brany, predvolena } = await branyPreZakaznika();
+    // Zákazník si môže vybrať len z brán, ktoré sú naozaj v ponuke — inak by
+    // sa dalo podstrčiť id vypnutej brány.
+    const brana = data.provider ? brany.find((b) => b.id === data.provider) || null : predvolena;
     if (!brana) {
       throw new Error(
-        "Nie je nastavená ani jedna platobná brána. Doplň prístupy do secrets " +
-          "(GoPay, GP webpay alebo tatrapay+).",
+        data.provider
+          ? `Brána ${data.provider} nie je v ponuke — buď nemá prístupy, alebo je v admine vypnutá.`
+          : "Nie je zapnutá ani jedna platobná brána. Pozri Systém → Platobné brány.",
       );
     }
-    if (!brana.isConfigured()) {
-      throw new Error(`Brána ${brana.label} nemá vyplnené prístupy.`);
-    }
-
     // Rozrobenú platbu tej istej brány netreba zakladať znovu. Pri zmene brány
     // áno — každá si drží vlastný identifikátor.
     if (
@@ -586,9 +586,9 @@ function navratovaAdresa(brana: string, origin: string, orderId: string): string
 
 /** Brány, ktoré sa dajú zákazníkovi ponúknuť. Bez tajomstiev — ide na klienta. */
 export const listPaymentGateways = createServerFn({ method: "POST" }).handler(async () => {
-  const predvolena = predvolenaBrana();
+  const { brany, predvolena } = await branyPreZakaznika();
   return {
-    gateways: dostupneBrany().map((b) => ({ id: b.id, label: b.label, hint: b.hint })),
+    gateways: brany.map((b) => ({ id: b.id, label: b.label, hint: b.hint })),
     default: predvolena?.id ?? null,
   };
 });

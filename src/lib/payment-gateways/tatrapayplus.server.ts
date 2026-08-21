@@ -15,8 +15,10 @@ import type {
   GatewayStatus,
   PaymentGateway,
   PaymentState,
+  PolozkaKonfiguracie,
   StartPaymentInput,
   StartPaymentResult,
+  TestBrany,
 } from "./types";
 
 const SANDBOX = "https://api.tatrabanka.sk/tatrapayplus/sandbox";
@@ -263,5 +265,45 @@ export const tatraPayPlusGateway: PaymentGateway = {
       );
     }
     return { raw: (data ?? { status }) as Json };
+  },
+
+  konfiguracia(): PolozkaKonfiguracie[] {
+    return [
+      {
+        premenna: "TATRAPAYPLUS_CLIENT_ID",
+        vyplnena: !!process.env.TATRAPAYPLUS_CLIENT_ID,
+        povinna: true,
+        popis: "Client ID z developer.tatrabanka.sk",
+      },
+      {
+        premenna: "TATRAPAYPLUS_CLIENT_SECRET",
+        vyplnena: !!process.env.TATRAPAYPLUS_CLIENT_SECRET,
+        povinna: true,
+        popis: "Client Secret z developer.tatrabanka.sk",
+      },
+      {
+        premenna: "TATRAPAYPLUS_API_URL",
+        vyplnena: !!process.env.TATRAPAYPLUS_API_URL,
+        povinna: false,
+        popis: "Bez neho sa použije sandbox",
+      },
+    ];
+  },
+
+  endpoint(): string {
+    return (process.env.TATRAPAYPLUS_API_URL || SANDBOX).replace(/\/+$/, "");
+  },
+
+  async test(): Promise<TestBrany> {
+    // Token je jediné, čo sa dá vyskúšať bez zakladania platby — a prístupy
+    // overí naozaj.
+    zabudniToken();
+    try {
+      await ziskajToken();
+      zabudniToken();
+      return { ok: true, detail: "Prístupy platia, token sa podarilo získať." };
+    } catch (e) {
+      return { ok: false, detail: e instanceof Error ? e.message : "Spojenie zlyhalo" };
+    }
   },
 };

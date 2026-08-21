@@ -164,7 +164,7 @@ const groups: Group[] = [
   {
     label: "Financie",
     items: [
-      { title: "Platby (GoPay)", url: "/admin/finance/payments", icon: CreditCard },
+      { title: "Online platby", url: "/admin/finance/payments", icon: CreditCard },
       { title: "Štatistiky", url: "/admin/finance/stats", icon: BarChart3 },
     ],
   },
@@ -175,6 +175,7 @@ const groups: Group[] = [
   {
     label: "Systém",
     items: [
+      { title: "Platobné brány", url: "/admin/system/payments", icon: CreditCard },
       { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet },
       { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail },
       { title: "Používatelia", url: "/admin/system/users", icon: UserCog },
