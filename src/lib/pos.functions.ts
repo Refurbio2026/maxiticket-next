@@ -613,6 +613,9 @@ export const createPosSale = createServerFn({ method: "POST" })
 
     // Kapacita v rámci termínu — pokladňa nesmie prepredať sálu, ktorú
     // súbežne predáva web.
+    //
+    // POZOR: toto je len rýchla kontrola vopred, nech pokladník vidí zrozumiteľnú
+    // hlášku hneď. Záväzné slovo má `assert_order_capacity` po zápise položiek.
     const seatless = priced.filter((p) => !p.seat_id);
     const byType = new Map<string | null, number>();
     for (const p of seatless) {
@@ -627,7 +630,9 @@ export const createPosSale = createServerFn({ method: "POST" })
         .from("order_items")
         .select("quantity, orders!inner(event_date_id, status)")
         .eq("orders.event_date_id", eventDate.id)
-        .in("orders.status", ["pending", "awaiting_payment", "paid"]);
+        .in("orders.status", ["pending", "awaiting_payment", "paid"])
+        // Sedadlové položky si kapacitu strážia samy cez `seat_inventory`.
+        .is("seat_id", null);
       q = typeId ? q.eq("ticket_type_id", typeId) : q.is("ticket_type_id", null);
       const { data: taken } = await q;
       const used = (taken || []).reduce((s, r: { quantity: number }) => s + (r.quantity || 0), 0);
@@ -712,6 +717,21 @@ export const createPosSale = createServerFn({ method: "POST" })
     if (itemsErr) {
       if (couponId) await releaseCoupon(couponId);
       throw new Error(itemsErr.message);
+    }
+
+    // Záväzná kontrola kapacity — tá istá funkcia ako na webe. Pokladník
+    // a zákazník na webe tak nemôžu prepredať posledné miesta naraz.
+    const { error: capErr } = await supabaseAdmin.rpc("assert_order_capacity", {
+      p_order_id: order.id,
+    });
+    if (capErr) {
+      await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
+      if (couponId) await releaseCoupon(couponId);
+      const zostava = capErr.message?.match(/CAPACITY_EXCEEDED:(\d+)/)?.[1];
+      throw new Error(
+        zostava && Number(zostava) > 0 ? `K dispozícii je už len ${zostava} ks.` : "Vypredané.",
+      );
     }
 
     // Sedadlá cez tú istú atómickú funkciu ako web — dvaja kupujúci (jeden pri

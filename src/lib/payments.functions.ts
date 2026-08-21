@@ -124,7 +124,11 @@ async function committedQuantity(
     .from("order_items")
     .select("quantity, orders!inner(event_date_id, status)")
     .eq("orders.event_date_id", eventDateId)
-    .in("orders.status", ["pending", "awaiting_payment", "paid"]);
+    .in("orders.status", ["pending", "awaiting_payment", "paid"])
+    // Sedadlové položky sem nepatria — tie si kapacitu strážia samy cez
+    // `seat_inventory`. Bez tohto by pri zmiešanej objednávke ukrojili
+    // z kapacity na státie.
+    .is("seat_id", null);
   q = ticketTypeId ? q.eq("ticket_type_id", ticketTypeId) : q.is("ticket_type_id", null);
   const { data } = await q;
   return (data || []).reduce((s, r: { quantity: number }) => s + (r.quantity || 0), 0);
@@ -288,8 +292,11 @@ export const submitOrder = createServerFn({ method: "POST" })
       throw new Error("Podujatie nemá nastavenú cenu vstupenky");
     }
 
-    // --- Kontrola kapacity pre položky bez sedadla ---
+    // --- Rýchla kontrola kapacity pre položky bez sedadla ---
     // Sedadlové položky si kapacitu strážia samy (jedno sedadlo = jeden riadok).
+    // POZOR: toto je len zdvorilá kontrola vopred, aby zákazník dostal zrozumiteľnú
+    // hlášku skôr, než mu vznikne objednávka. Záväzné slovo má `assert_order_capacity`
+    // nižšie — tá kontrola je atómická a rozhodne aj dvoch súbežných kupujúcich.
     const seatless = priced.filter((p) => !p.seat_id);
     const byType = new Map<string | null, number>();
     for (const p of seatless) {
@@ -374,6 +381,25 @@ export const submitOrder = createServerFn({ method: "POST" })
     if (itemsErr) {
       if (couponId) await releaseCoupon(couponId);
       throw new Error(itemsErr.message);
+    }
+
+    // --- Záväzná kontrola kapacity ---
+    // Až tu, keď sú položky zapísané, vie databáza pod zámkom termínu povedať,
+    // či sa objednávka ešte zmestí. Pri dvoch súbežných kupujúcich prejde tá
+    // staršia a druhá sa dozvie, koľko naozaj zostalo.
+    const { error: capErr } = await supabaseAdmin.rpc("assert_order_capacity", {
+      p_order_id: order.id,
+    });
+    if (capErr) {
+      await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
+      if (couponId) await releaseCoupon(couponId);
+      const zostava = capErr.message?.match(/CAPACITY_EXCEEDED:(\d+)/)?.[1];
+      throw new Error(
+        zostava && Number(zostava) > 0
+          ? `K dispozícii je už len ${zostava} ks. Uprav prosím počet.`
+          : "Vstupenky sú vypredané.",
+      );
     }
 
     // Rezervácia sedadiel je jeden atómický príkaz v databáze (reserve_seats).

@@ -2159,6 +2159,12 @@ export type Database = {
         };
         Returns: number;
       };
+      assert_order_capacity: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: undefined;
+      };
       touch_scanner_device: {
         Args: {
           p_device_id: string;
