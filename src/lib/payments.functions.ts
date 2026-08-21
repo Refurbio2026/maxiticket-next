@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { siteUrl } from "./site-url.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createGoPayPayment, getGoPayPaymentStatus, mapGoPayStateToOrder } from "./gopay.server";
 import { createPaidInvoice } from "./superfaktura.server";
@@ -63,12 +64,6 @@ async function enforceRateLimit(
     return;
   }
   if (allowed === false) throw new Error(message);
-}
-
-function getOrigin(): string {
-  const fromEnv = process.env.PUBLIC_SITE_URL || process.env.SITE_URL;
-  if (fromEnv) return fromEnv.replace(/\/+$/, "");
-  return "https://project--dff07d0a-f011-4a35-b195-c8c7bc1b200f-dev.lovable.app";
 }
 
 // Server-side admin check for privileged operations.
@@ -441,7 +436,7 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
       .select("*")
       .eq("order_id", order.id);
 
-    const origin = getOrigin();
+    const origin = siteUrl();
     const orderShort = order.id.slice(0, 8).toUpperCase();
 
     let result;

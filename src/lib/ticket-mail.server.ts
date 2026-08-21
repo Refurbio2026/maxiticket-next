@@ -13,12 +13,7 @@ import { generateTicketsPdfBase64 } from "./ticket-pdf.server";
 import { signOrderAccess } from "./order-access.server";
 import { loadEventInfo } from "./event-info.server";
 import { renderEmail } from "./email-templates.server";
-
-function getOrigin(): string {
-  const fromEnv = process.env.PUBLIC_SITE_URL || process.env.SITE_URL;
-  if (fromEnv) return fromEnv.replace(/\/+$/, "");
-  return "https://vipky.sk";
-}
+import { siteUrl } from "./site-url.server";
 
 type MailEvent = {
   title: string;
@@ -62,7 +57,7 @@ export async function sendTicketsEmail(
   if (!tickets || tickets.length === 0) return { sent: false, reason: "no_tickets" };
 
   const orderShort = order.id.slice(0, 8).toUpperCase();
-  const ticketsUrl = `${getOrigin()}/checkout/success/${order.id}?t=${signOrderAccess(order.id)}`;
+  const ticketsUrl = `${siteUrl()}/checkout/success/${order.id}?t=${signOrderAccess(order.id)}`;
 
   let attachments;
   try {
