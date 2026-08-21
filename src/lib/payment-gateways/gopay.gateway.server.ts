@@ -15,6 +15,7 @@ import type {
   StartPaymentResult,
   TestBrany,
 } from "./types";
+import { hodnota, polozka } from "./pristupy.server";
 
 export const goPayGateway: PaymentGateway = {
   id: "gopay",
@@ -23,9 +24,9 @@ export const goPayGateway: PaymentGateway = {
 
   isConfigured(): boolean {
     return !!(
-      process.env.GOPAY_CLIENT_ID &&
-      process.env.GOPAY_CLIENT_SECRET &&
-      process.env.GOPAY_GOID
+      hodnota("gopay", "GOPAY_CLIENT_ID") &&
+      hodnota("gopay", "GOPAY_CLIENT_SECRET") &&
+      hodnota("gopay", "GOPAY_GOID")
     );
   },
 
@@ -71,43 +72,47 @@ export const goPayGateway: PaymentGateway = {
 
   konfiguracia(): PolozkaKonfiguracie[] {
     return [
-      {
+      polozka("gopay", {
         premenna: "GOPAY_CLIENT_ID",
-        vyplnena: !!process.env.GOPAY_CLIENT_ID,
-        povinna: true,
+        nazov: "Client ID",
         popis: "Identifikátor obchodníka z GoPay",
-      },
-      {
+        povinna: true,
+      }),
+      polozka("gopay", {
         premenna: "GOPAY_CLIENT_SECRET",
-        vyplnena: !!process.env.GOPAY_CLIENT_SECRET,
-        povinna: true,
+        nazov: "Client Secret",
         popis: "Heslo k API",
-      },
-      {
-        premenna: "GOPAY_GOID",
-        vyplnena: !!process.env.GOPAY_GOID,
         povinna: true,
+        tajna: true,
+      }),
+      polozka("gopay", {
+        premenna: "GOPAY_GOID",
+        nazov: "GoID",
         popis: "Číslo účtu GoPay, na ktorý chodia peniaze",
-      },
-      {
+        povinna: true,
+      }),
+      polozka("gopay", {
         premenna: "GOPAY_API_URL",
-        vyplnena: !!process.env.GOPAY_API_URL,
+        nazov: "Adresa API",
+        popis: "Ostrá je https://gw.gopay.com/api; bez vyplnenia sa použije testovacia",
         povinna: false,
-        popis: "Bez neho sa použije testovacia brána",
-      },
+      }),
     ];
   },
 
   endpoint(): string {
-    return (process.env.GOPAY_API_URL || "https://gw.sandbox.gopay.com/api").replace(/\/+$/, "");
+    return (hodnota("gopay", "GOPAY_API_URL") || "https://gw.sandbox.gopay.com/api").replace(
+      /\/+$/,
+      "",
+    );
   },
 
   async test(): Promise<TestBrany> {
     // Vypýtame si token. Nič nezakladáme, ale prístupy sa overia naozaj.
     const { apiUrl, clientId, clientSecret } = {
       apiUrl: this.endpoint(),
-      clientId: process.env.GOPAY_CLIENT_ID || "",
-      clientSecret: process.env.GOPAY_CLIENT_SECRET || "",
+      clientId: hodnota("gopay", "GOPAY_CLIENT_ID") || "",
+      clientSecret: hodnota("gopay", "GOPAY_CLIENT_SECRET") || "",
     };
     const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
     const res = await fetch(`${apiUrl}/oauth2/token`, {

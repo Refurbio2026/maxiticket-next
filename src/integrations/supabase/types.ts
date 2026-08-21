@@ -1357,6 +1357,30 @@ export type Database = {
           },
         ];
       };
+      payment_credentials: {
+        Row: {
+          hodnota_sifrovana: string;
+          kluc: string;
+          provider: Database["public"]["Enums"]["payment_provider"];
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          hodnota_sifrovana: string;
+          kluc: string;
+          provider: Database["public"]["Enums"]["payment_provider"];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          hodnota_sifrovana?: string;
+          kluc?: string;
+          provider?: Database["public"]["Enums"]["payment_provider"];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       payment_settings: {
         Row: {
           default_provider: Database["public"]["Enums"]["payment_provider"] | null;

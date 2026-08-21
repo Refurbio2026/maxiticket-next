@@ -528,14 +528,26 @@ sa smie vyhlásiť až pri `ACSC`/`ACCC`.
   `DIGEST1` = ten istý reťazec + `|` + `MERCHANTNUMBER`.
 - tatrapay+ návratovú adresu treba zaregistrovať v developer portáli banky.
 
-Nastavuje sa to na dvoch miestach a je dôležité ich nepliesť:
+Celé sa to nastavuje na `/admin/system/payments`, terminál na to netreba:
 
-- **Prístupy (kľúče, client secret) sú výhradne v secrets.** Do databázy ani do admina
-  nepatria a `payment-settings.functions.ts` ich **nikdy** nevracia — ani adminovi. Stránka
-  ukazuje len to, či je premenná vyplnená.
-- **`/admin/system/payments`** (tabuľka `payment_settings`) je na to, čo sa smie prepínať:
-  či sa brána zákazníkovi ponúka a ktorá je predvolená. Nastavenie v admine prebíja
+- **Prístupy** (`payment_credentials`) sa dajú zadať v admine. Ukladajú sa **zašifrované**
+  (AES-256-GCM, `secrets.server.ts`) kľúčom odvodeným zo serverového tajomstva — odpis
+  databázy teda sám o sebe nestačí. Do prehliadača sa hodnota **nikdy** nevracia; tajné polia
+  idú von len ako náhľad typu `••••1234`.
+- **Prepínače** (`payment_settings`): či sa brána ponúka a ktorá je predvolená. Prebíja
   `PAYMENT_PROVIDER`.
+- **Poradie zdrojov** je admin → `.env`. Pôvodné nastavenie v `.env` teda zostáva funkčné
+  a slúži ako záloha; hodnota zadaná v admine ho prebije. `zdroj` v odpovedi hovorí, odkiaľ
+  sa práve berie.
+
+Brány čítajú prístupy **synchrónne** (`isConfigured`, `endpoint`), takže dešifrované hodnoty
+sedia v pamäti procesu (`pristupy.server.ts`, platnosť 30 s). Každý vstupný bod, ktorý sa
+brány dotkne, musí najprv zavolať `pripravPristupy()` — dnes to robia `branyPreZakaznika()`,
+`settleOrder()`, `refundOrder` a serverové funkcie administrácie. Kto pridá nový vstupný bod
+a zabudne na to, dostane bránu, ktorá sa tvári ako nenakonfigurovaná.
+
+`payment_credentials` je zámerne **bez RLS politiky** — nedostane sa k nej ani prihlásený
+admin priamo cez API, len service role cez serverové funkcie.
 
 Ponuku pre zákazníka skladá `branyPreZakaznika()` — prienik „má prístupy" a „je zapnutá".
 `startPaymentForOrder` vyberá **len z nej**, takže podstrčené id vypnutej brány neprejde.

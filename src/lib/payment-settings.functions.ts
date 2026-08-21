@@ -8,7 +8,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { branaPodlaId, nacitajNastaveniaBran, vsetkyBrany } from "./payment-gateways/index.server";
+import {
+  branaPodlaId,
+  nacitajNastaveniaBran,
+  pripravPristupy,
+  vsetkyBrany,
+} from "./payment-gateways/index.server";
+import { ulozPristupy } from "./payment-gateways/pristupy.server";
 import { rezimZAdresy, type PolozkaKonfiguracie } from "./payment-gateways/types";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
@@ -86,6 +92,7 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PrehladPlatobnychBran> => {
     await assertAdmin(context.userId);
+    await pripravPristupy();
 
     let adresaWebu: string | null = null;
     let adresaWebuChyba: string | null = null;
@@ -157,6 +164,7 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    await pripravPristupy();
 
     // Predvolená brána, ktorá je vypnutá alebo bez prístupov, by znamenala
     // checkout bez možnosti zaplatiť. Radšej to odmietneme hneď.
@@ -192,6 +200,7 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ provider: ID_BRANY }).parse(input))
   .handler(async ({ data, context }): Promise<{ ok: boolean; detail: string }> => {
     await assertAdmin(context.userId);
+    await pripravPristupy();
     const brana = branaPodlaId(data.provider);
     if (!brana.isConfigured()) {
       return { ok: false, detail: "Brána nemá vyplnené všetky povinné prístupy." };
@@ -201,4 +210,43 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
     } catch (e) {
       return { ok: false, detail: errorMessage(e) };
     }
+  });
+
+/**
+ * Uloží prístupy k jednej bráne.
+ *
+ * Hodnota `null` znamená zmazať — brána sa vtedy vráti k tomu, čo je
+ * prípadne v prostredí. Kľúč, ktorý v požiadavke nie je, sa nemení; vďaka
+ * tomu sa dá formulár odoslať bez toho, aby doň bolo treba znovu opisovať
+ * heslá, ktoré sa v ňom aj tak nezobrazujú.
+ *
+ * Odpoveď zámerne neobsahuje uložené hodnoty.
+ */
+export const savePaymentCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        provider: ID_BRANY,
+        // Hodnoty môžu byť dlhé — PEM kľúč má aj pár tisíc znakov.
+        values: z.record(z.string(), z.string().max(20000).nullable()),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true; ulozene: string[] }> => {
+    await assertAdmin(context.userId);
+    await pripravPristupy();
+
+    const brana = branaPodlaId(data.provider);
+    // Prijmeme len kľúče, o ktorých brána naozaj vie. Inak by sa do tabuľky
+    // dalo napchať čokoľvek.
+    const povolene = new Set(brana.konfiguracia().map((k) => k.premenna));
+    const zmeny: Record<string, string | null> = {};
+    for (const [kluc, v] of Object.entries(data.values)) {
+      if (!povolene.has(kluc)) throw new Error(`Brána ${brana.label} nepozná pole '${kluc}'.`);
+      zmeny[kluc] = v;
+    }
+
+    await ulozPristupy(data.provider, zmeny, context.userId);
+    return { ok: true, ulozene: Object.keys(zmeny) };
   });

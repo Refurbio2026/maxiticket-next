@@ -22,6 +22,7 @@ import type {
   TestBrany,
 } from "./types";
 import { nemaRefund } from "./types";
+import { hodnota, polozka } from "./pristupy.server";
 
 const SKUSOBNA_BRANA = "https://test.3dsecure.gpwebpay.com/pgw/order.do";
 
@@ -141,14 +142,22 @@ type Nastavenie = {
 };
 
 function nastavenie(): Nastavenie {
-  const url = process.env.GPWEBPAY_URL || SKUSOBNA_BRANA;
-  const merchantNumber = process.env.GPWEBPAY_MERCHANT_NUMBER;
-  const priv = nacitajKluc(process.env.GPWEBPAY_PRIVATE_KEY, process.env.GPWEBPAY_PRIVATE_KEY_FILE);
-  const pub = nacitajKluc(process.env.GPWEBPAY_PUBLIC_KEY, process.env.GPWEBPAY_PUBLIC_KEY_FILE);
+  const url = hodnota("gpwebpay", "GPWEBPAY_URL") || SKUSOBNA_BRANA;
+  const merchantNumber = hodnota("gpwebpay", "GPWEBPAY_MERCHANT_NUMBER");
+  // Kľúč sa dá vložiť v administrácii, alebo nechať ako cestu k súboru
+  // v prostredí. Prvé má prednosť.
+  const priv = nacitajKluc(
+    hodnota("gpwebpay", "GPWEBPAY_PRIVATE_KEY"),
+    process.env.GPWEBPAY_PRIVATE_KEY_FILE,
+  );
+  const pub = nacitajKluc(
+    hodnota("gpwebpay", "GPWEBPAY_PUBLIC_KEY"),
+    process.env.GPWEBPAY_PUBLIC_KEY_FILE,
+  );
   if (!merchantNumber || !priv || !pub) {
     throw new Error(
-      "GP webpay nie je nakonfigurovaný. Treba GPWEBPAY_MERCHANT_NUMBER, " +
-        "GPWEBPAY_PRIVATE_KEY(_FILE) a GPWEBPAY_PUBLIC_KEY(_FILE).",
+      "GP webpay nie je nakonfigurovaný — doplň obchodné číslo a oba kľúče " +
+        "v Systém → Platobné brány.",
     );
   }
   return {
@@ -156,7 +165,7 @@ function nastavenie(): Nastavenie {
     merchantNumber,
     privatnyKluc: crypto.createPrivateKey({
       key: priv,
-      passphrase: process.env.GPWEBPAY_PRIVATE_KEY_PASSPHRASE || undefined,
+      passphrase: hodnota("gpwebpay", "GPWEBPAY_PRIVATE_KEY_PASSPHRASE") || undefined,
     }),
     // Verejný kľúč brány chodí ako certifikát X.509; createPublicKey ho zvládne.
     verejnyKluc: crypto.createPublicKey(pub),
@@ -281,53 +290,61 @@ export const gpWebpayGateway: PaymentGateway = {
   },
 
   konfiguracia(): PolozkaKonfiguracie[] {
-    const maKluc = (inline?: string, subor?: string) => {
-      if (inline) return true;
-      if (!subor) return false;
+    // Kľúč môže prísť aj ako cesta k súboru v prostredí — vtedy sa v admine
+    // tvári ako vyplnený zo servera, aj keď v tabuľke nie je.
+    const zoSuboru = (cesta?: string) => {
+      if (!cesta) return false;
       try {
-        return fs.statSync(subor).isFile();
+        return fs.statSync(cesta).isFile();
       } catch {
-        // Cesta je zadaná, ale súbor tam nie je — pre admina to je „nevyplnené",
-        // nech nehľadá chybu inde.
+        // Cesta je zadaná, ale súbor tam nie je — pre admina je to
+        // „nevyplnené", nech nehľadá chybu inde.
         return false;
       }
     };
     return [
-      {
+      polozka("gpwebpay", {
         premenna: "GPWEBPAY_MERCHANT_NUMBER",
-        vyplnena: !!process.env.GPWEBPAY_MERCHANT_NUMBER,
+        nazov: "Obchodné číslo",
+        popis: "Číslo obchodníka pridelené bankou",
         povinna: true,
-        popis: "Obchodné číslo pridelené bankou",
-      },
-      {
-        premenna: "GPWEBPAY_PRIVATE_KEY_FILE",
-        vyplnena: maKluc(process.env.GPWEBPAY_PRIVATE_KEY, process.env.GPWEBPAY_PRIVATE_KEY_FILE),
+      }),
+      polozka("gpwebpay", {
+        premenna: "GPWEBPAY_PRIVATE_KEY",
+        nazov: "Súkromný kľúč obchodníka",
+        popis: "Celý PEM z portálu GP webpay, aj s riadkami BEGIN a END",
         povinna: true,
-        popis: "Súkromný kľúč obchodníka z portálu GP webpay (alebo GPWEBPAY_PRIVATE_KEY)",
-      },
-      {
-        premenna: "GPWEBPAY_PUBLIC_KEY_FILE",
-        vyplnena: maKluc(process.env.GPWEBPAY_PUBLIC_KEY, process.env.GPWEBPAY_PUBLIC_KEY_FILE),
-        povinna: true,
-        popis: "Verejný kľúč brány — bez neho sa nedá overiť odpoveď (alebo GPWEBPAY_PUBLIC_KEY)",
-      },
-      {
+        tajna: true,
+        viacriadkova: true,
+        inyZdroj: () => zoSuboru(process.env.GPWEBPAY_PRIVATE_KEY_FILE),
+      }),
+      polozka("gpwebpay", {
         premenna: "GPWEBPAY_PRIVATE_KEY_PASSPHRASE",
-        vyplnena: !!process.env.GPWEBPAY_PRIVATE_KEY_PASSPHRASE,
+        nazov: "Heslo k súkromnému kľúču",
+        popis: "Len ak je kľúč zašifrovaný",
         povinna: false,
-        popis: "Len ak je súkromný kľúč zašifrovaný",
-      },
-      {
+        tajna: true,
+      }),
+      polozka("gpwebpay", {
+        premenna: "GPWEBPAY_PUBLIC_KEY",
+        nazov: "Verejný kľúč brány",
+        popis: "Certifikát banky — bez neho sa nedá overiť odpoveď o zaplatení",
+        povinna: true,
+        viacriadkova: true,
+        inyZdroj: () => zoSuboru(process.env.GPWEBPAY_PUBLIC_KEY_FILE),
+      }),
+      polozka("gpwebpay", {
         premenna: "GPWEBPAY_URL",
-        vyplnena: !!process.env.GPWEBPAY_URL,
+        nazov: "Adresa brány",
+        popis:
+          "Ostrá je https://3dsecure.gpwebpay.com/pgw/order.do; bez vyplnenia sa použije testovacia",
         povinna: false,
-        popis: "Bez neho sa použije testovacia brána",
-      },
+      }),
     ];
   },
 
   endpoint(): string {
-    return process.env.GPWEBPAY_URL || SKUSOBNA_BRANA;
+    return hodnota("gpwebpay", "GPWEBPAY_URL") || SKUSOBNA_BRANA;
   },
 
   async test(): Promise<TestBrany> {

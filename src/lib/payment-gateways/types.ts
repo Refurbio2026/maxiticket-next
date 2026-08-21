@@ -74,11 +74,27 @@ export interface PaymentGateway {
 }
 
 export type PolozkaKonfiguracie = {
+  /** Názov premennej prostredia; zároveň kľúč, pod ktorým sa ukladá v admine. */
   premenna: string;
-  vyplnena: boolean;
-  povinna: boolean;
+  /** Zrozumiteľný názov pre administráciu. */
+  nazov: string;
   /** Načo to je — zobrazí sa adminovi vedľa názvu. */
   popis: string;
+  povinna: boolean;
+  vyplnena: boolean;
+  /** Odkiaľ pochádza hodnota, ktorá sa práve používa. */
+  zdroj: "admin" | "server" | null;
+  /**
+   * Tajná hodnota sa do prehliadača **nikdy** nevracia — ani adminovi.
+   * Netajná (číslo obchodníka, adresa API) sa vrátiť smie, nech ju vidí.
+   */
+  tajna: boolean;
+  /** Vyžaduje viacriadkové pole — napríklad PEM kľúč. */
+  viacriadkova: boolean;
+  /** Vyplnené len pri netajných položkách. */
+  hodnota?: string;
+  /** Pri tajných: „••••1234" alebo popis kľúča. Nikdy nie celá hodnota. */
+  nahlad?: string;
 };
 
 export type TestBrany = { ok: boolean; detail: string };

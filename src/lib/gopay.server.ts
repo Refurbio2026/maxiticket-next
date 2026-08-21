@@ -2,21 +2,25 @@
 // Docs: https://doc.gopay.com/en/
 
 import type { Json } from "@/integrations/supabase/types";
+import { hodnota } from "./payment-gateways/pristupy.server";
 
 type TokenCache = { token: string; expiresAt: number } | null;
 let tokenCache: TokenCache = null;
 
 function env() {
-  const apiUrl = (process.env.GOPAY_API_URL || "https://gw.sandbox.gopay.com/api").replace(
+  // Prístupy môžu byť z administrácie alebo z prostredia — poradie rieši
+  // `hodnota()`, tento súbor o tom nemusí vedieť.
+  const apiUrl = (hodnota("gopay", "GOPAY_API_URL") || "https://gw.sandbox.gopay.com/api").replace(
     /\/+$/,
     "",
   );
-  const clientId = process.env.GOPAY_CLIENT_ID;
-  const clientSecret = process.env.GOPAY_CLIENT_SECRET;
-  const goid = process.env.GOPAY_GOID;
+  const clientId = hodnota("gopay", "GOPAY_CLIENT_ID");
+  const clientSecret = hodnota("gopay", "GOPAY_CLIENT_SECRET");
+  const goid = hodnota("gopay", "GOPAY_GOID");
   if (!clientId || !clientSecret || !goid) {
     throw new Error(
-      "GoPay nie je nakonfigurovaný. Doplň GOPAY_CLIENT_ID, GOPAY_CLIENT_SECRET a GOPAY_GOID do secrets.",
+      "GoPay nie je nakonfigurovaný — doplň Client ID, Client Secret a GoID " +
+        "v Systém → Platobné brány.",
     );
   }
   return { apiUrl, clientId, clientSecret, goid };

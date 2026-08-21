@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   getPaymentGatewayOverview,
+  savePaymentCredentials,
   testPaymentGateway,
   updatePaymentGatewaySettings,
   type PrehladBrany,
@@ -12,7 +13,10 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertTriangle,
@@ -20,9 +24,11 @@ import {
   CheckCircle2,
   Copy,
   CreditCard,
+  KeyRound,
   Loader2,
   Plug,
   Star,
+  Trash2,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,11 +39,13 @@ export const Route = createFileRoute("/admin/system/payments")({
   component: PaymentGatewaysPage,
 });
 
+type IdBrany = "gopay" | "gpwebpay" | "tatrapayplus";
+
 type Form = {
   gopay_enabled: boolean;
   gpwebpay_enabled: boolean;
   tatrapayplus_enabled: boolean;
-  default_provider: "gopay" | "gpwebpay" | "tatrapayplus" | null;
+  default_provider: IdBrany | null;
 };
 
 function PaymentGatewaysPage() {
@@ -45,6 +53,7 @@ function PaymentGatewaysPage() {
   const fetchOverview = useServerFn(getPaymentGatewayOverview);
   const save = useServerFn(updatePaymentGatewaySettings);
   const test = useServerFn(testPaymentGateway);
+  const saveCreds = useServerFn(savePaymentCredentials);
 
   const [form, setForm] = useState<Form | null>(null);
   const [testy, setTesty] = useState<Record<string, { ok: boolean; detail: string }>>({});
@@ -62,7 +71,7 @@ function PaymentGatewaysPage() {
       gopay_enabled: najdi("gopay"),
       gpwebpay_enabled: najdi("gpwebpay"),
       tatrapayplus_enabled: najdi("tatrapayplus"),
-      default_provider: (prehlad.data.predvolena as Form["default_provider"]) ?? null,
+      default_provider: (prehlad.data.predvolena as IdBrany | null) ?? null,
     });
   }, [prehlad.data, form]);
 
@@ -78,7 +87,7 @@ function PaymentGatewaysPage() {
   const otestovat = async (id: string) => {
     setTestuje(id);
     try {
-      const r = await test({ data: { provider: id as NonNullable<Form["default_provider"]> } });
+      const r = await test({ data: { provider: id as IdBrany } });
       setTesty((s) => ({ ...s, [id]: r }));
       if (r.ok) toast.success(r.detail);
       else toast.error(r.detail);
@@ -87,6 +96,14 @@ function PaymentGatewaysPage() {
     } finally {
       setTestuje(null);
     }
+  };
+
+  const ulozPristupy = async (id: IdBrany, values: Record<string, string | null>) => {
+    await saveCreds({ data: { provider: id, values } });
+    // Zoznam si vypýtame znova — hodnoty sa nevracajú, ale zmení sa to, čo
+    // je vyplnené a odkiaľ to pochádza.
+    await qc.invalidateQueries({ queryKey: ["payment-gateways"] });
+    setTesty((s) => ({ ...s, [id]: undefined as never }));
   };
 
   if (prehlad.isLoading || !form || !prehlad.data) {
@@ -109,9 +126,9 @@ function PaymentGatewaysPage() {
           Platobné brány
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Zákazníkovi sa v checkoute ponúknu len brány, ktoré majú vyplnené prístupy a sú tu
-          zapnuté. Samotné kľúče sa nastavujú v secrets na serveri a táto stránka ich nikdy
-          nezobrazuje — vidíš len, či sú vyplnené.
+          Prístupy sa dajú zadať rovno tu — do databázy sa ukladajú zašifrované a späť do
+          prehliadača sa už nikdy nepošlú. Zákazníkovi sa v checkoute ponúknu len brány, ktoré majú
+          vyplnené prístupy a sú zapnuté.
         </p>
       </div>
 
@@ -185,9 +202,10 @@ function PaymentGatewaysPage() {
               )
             }
             onPredvolena={() =>
-              setForm((f) => (f ? { ...f, default_provider: b.id as Form["default_provider"] } : f))
+              setForm((f) => (f ? { ...f, default_provider: b.id as IdBrany } : f))
             }
             onTest={() => otestovat(b.id)}
+            onUlozPristupy={(values) => ulozPristupy(b.id as IdBrany, values)}
           />
         ))}
       </div>
@@ -202,7 +220,7 @@ function PaymentGatewaysPage() {
         </p>
         <Button onClick={() => ulozit.mutate(form)} disabled={ulozit.isPending}>
           {ulozit.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-          Uložiť
+          Uložiť zapnutie a predvoľbu
         </Button>
       </div>
     </div>
@@ -218,6 +236,7 @@ function BranaKarta({
   onZapnut,
   onPredvolena,
   onTest,
+  onUlozPristupy,
 }: {
   brana: PrehladBrany;
   zapnuta: boolean;
@@ -227,7 +246,34 @@ function BranaKarta({
   onZapnut: (v: boolean) => void;
   onPredvolena: () => void;
   onTest: () => void;
+  onUlozPristupy: (values: Record<string, string | null>) => Promise<void>;
 }) {
+  // Rozpísané hodnoty. Kľúč, ktorý tu nie je, sa neposiela a teda sa nemení —
+  // vďaka tomu netreba heslá opisovať znova pri každom uložení.
+  const [zmeny, setZmeny] = useState<Record<string, string | null>>({});
+  const [uklada, setUklada] = useState(false);
+
+  // Po načítaní nových údajov zo servera zahodíme rozpísané zmeny, nech sa
+  // formulár nerozíde so skutočným stavom.
+  useEffect(() => {
+    setZmeny({});
+  }, [brana]);
+
+  const zmenene = Object.keys(zmeny).length > 0;
+
+  const uloz = async () => {
+    setUklada(true);
+    try {
+      await onUlozPristupy(zmeny);
+      setZmeny({});
+      toast.success(`Prístupy k ${brana.label} uložené`);
+    } catch (e) {
+      toast.error(errorMessage(e) || "Uloženie prístupov zlyhalo");
+    } finally {
+      setUklada(false);
+    }
+  };
+
   return (
     <Card className="bg-card/60 border-border/50 p-5 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -276,34 +322,38 @@ function BranaKarta({
 
       <Separator />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-            Prístupy v secrets
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="space-y-4">
+          <h3 className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+            <KeyRound className="size-3.5" /> Prístupy
           </h3>
-          <ul className="space-y-1.5">
-            {brana.konfiguracia.map((k) => (
-              <li key={k.premenna} className="flex items-start gap-2 text-sm">
-                {k.vyplnena ? (
-                  <Check className="size-4 mt-0.5 shrink-0 text-emerald-500" />
-                ) : (
-                  <X
-                    className={cn(
-                      "size-4 mt-0.5 shrink-0",
-                      k.povinna ? "text-destructive" : "text-muted-foreground",
-                    )}
-                  />
-                )}
-                <span>
-                  <code className="text-xs">{k.premenna}</code>
-                  {!k.povinna && (
-                    <span className="text-muted-foreground text-xs"> · voliteľné</span>
-                  )}
-                  <span className="block text-xs text-muted-foreground">{k.popis}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+
+          {brana.konfiguracia.map((k) => (
+            <PolePristupu
+              key={k.premenna}
+              polozka={k}
+              hodnota={zmeny[k.premenna]}
+              onZmena={(v) => setZmeny((z) => ({ ...z, [k.premenna]: v }))}
+              onVratit={() =>
+                setZmeny((z) => {
+                  const { [k.premenna]: _, ...zvysok } = z;
+                  return zvysok;
+                })
+              }
+            />
+          ))}
+
+          <div className="flex items-center gap-3">
+            <Button size="sm" onClick={uloz} disabled={!zmenene || uklada}>
+              {uklada && <Loader2 className="size-4 mr-2 animate-spin" />}
+              Uložiť prístupy
+            </Button>
+            {zmenene && (
+              <span className="text-xs text-muted-foreground">
+                {Object.keys(zmeny).length} neuložených zmien
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -333,43 +383,154 @@ function BranaKarta({
             <span>Refund cez API: {brana.vieRefundovat ? "áno" : "nie, len ručne"}</span>
             <span>Dopyt na stav: {brana.vieDopytStavu ? "áno" : "nie"}</span>
           </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onTest}
+              disabled={testuje || !brana.nakonfigurovana}
+            >
+              {testuje ? (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              ) : (
+                <Plug className="size-4 mr-2" />
+              )}
+              Otestovať spojenie
+            </Button>
+            {brana.chybaju.length > 0 && (
+              <span className="text-xs text-destructive">Chýba: {brana.chybaju.join(", ")}</span>
+            )}
+          </div>
+
+          {test && (
+            <span
+              className={cn(
+                "flex items-start gap-1.5 text-xs",
+                test.ok ? "text-emerald-500" : "text-destructive",
+              )}
+            >
+              {test.ok ? (
+                <CheckCircle2 className="size-3.5 mt-0.5 shrink-0" />
+              ) : (
+                <AlertTriangle className="size-3.5 mt-0.5 shrink-0" />
+              )}
+              {test.detail}
+            </span>
+          )}
         </div>
       </div>
+    </Card>
+  );
+}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onTest}
-          disabled={testuje || !brana.nakonfigurovana}
-        >
-          {testuje ? (
-            <Loader2 className="size-4 mr-2 animate-spin" />
-          ) : (
-            <Plug className="size-4 mr-2" />
-          )}
-          Otestovať spojenie
-        </Button>
-        {brana.chybaju.length > 0 && (
-          <span className="text-xs text-destructive">Chýba: {brana.chybaju.join(", ")}</span>
-        )}
-        {test && (
-          <span
+function PolePristupu({
+  polozka,
+  hodnota,
+  onZmena,
+  onVratit,
+}: {
+  polozka: PrehladBrany["konfiguracia"][number];
+  /** `undefined` = nedotknuté, `null` = označené na zmazanie. */
+  hodnota: string | null | undefined;
+  onZmena: (v: string | null) => void;
+  onVratit: () => void;
+}) {
+  const naZmazanie = hodnota === null;
+  const upravene = hodnota !== undefined;
+
+  const zdrojText =
+    polozka.zdroj === "admin"
+      ? "uložené tu"
+      : polozka.zdroj === "server"
+        ? "zo servera (.env)"
+        : null;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Label className="text-sm">
+          {polozka.nazov}
+          {polozka.povinna && <span className="text-destructive"> *</span>}
+        </Label>
+        {polozka.vyplnena ? (
+          <Check className="size-3.5 text-emerald-500" />
+        ) : (
+          <X
             className={cn(
-              "flex items-start gap-1.5 text-xs",
-              test.ok ? "text-emerald-500" : "text-destructive",
+              "size-3.5",
+              polozka.povinna ? "text-destructive" : "text-muted-foreground",
             )}
-          >
-            {test.ok ? (
-              <CheckCircle2 className="size-3.5 mt-0.5 shrink-0" />
-            ) : (
-              <AlertTriangle className="size-3.5 mt-0.5 shrink-0" />
-            )}
-            {test.detail}
-          </span>
+          />
+        )}
+        {zdrojText && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+            {zdrojText}
+          </Badge>
+        )}
+        {!polozka.povinna && !zdrojText && (
+          <span className="text-[10px] text-muted-foreground">voliteľné</span>
         )}
       </div>
-    </Card>
+
+      {polozka.viacriadkova ? (
+        <Textarea
+          rows={3}
+          className="font-mono text-xs"
+          value={naZmazanie ? "" : (hodnota ?? (polozka.tajna ? "" : (polozka.hodnota ?? "")))}
+          placeholder={
+            naZmazanie
+              ? "Po uložení sa zmaže"
+              : polozka.nahlad
+                ? `Uložené: ${polozka.nahlad} — nechaj prázdne, ak sa nemá meniť`
+                : "-----BEGIN …-----"
+          }
+          onChange={(e) => onZmena(e.target.value)}
+        />
+      ) : (
+        <Input
+          type={polozka.tajna ? "password" : "text"}
+          className={polozka.tajna ? undefined : "font-mono text-xs"}
+          value={naZmazanie ? "" : (hodnota ?? (polozka.tajna ? "" : (polozka.hodnota ?? "")))}
+          placeholder={
+            naZmazanie
+              ? "Po uložení sa zmaže"
+              : polozka.nahlad
+                ? `Uložené: ${polozka.nahlad} — nechaj prázdne, ak sa nemá meniť`
+                : polozka.vyplnena
+                  ? "Vyplnené"
+                  : "Nevyplnené"
+          }
+          onChange={(e) => onZmena(e.target.value)}
+        />
+      )}
+
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] text-muted-foreground">
+          {polozka.popis} · v <code>.env</code> je to <code>{polozka.premenna}</code>
+        </span>
+        {polozka.zdroj === "admin" && !naZmazanie && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[10px] gap-1 text-muted-foreground"
+            onClick={() => onZmena(null)}
+          >
+            <Trash2 className="size-3" /> Zmazať
+          </Button>
+        )}
+        {upravene && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[10px] text-muted-foreground"
+            onClick={onVratit}
+          >
+            Vrátiť späť
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
 

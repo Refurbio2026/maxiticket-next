@@ -49,7 +49,8 @@ export const refundOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<RefundOrderResult> => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { branaPodlaId } = await import("./payment-gateways/index.server");
+    const { branaPodlaId, pripravPristupy } = await import("./payment-gateways/index.server");
+    await pripravPristupy();
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")

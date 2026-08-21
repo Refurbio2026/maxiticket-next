@@ -20,26 +20,30 @@ import type {
   StartPaymentResult,
   TestBrany,
 } from "./types";
+import { hodnota, polozka } from "./pristupy.server";
 
 const SANDBOX = "https://api.tatrabanka.sk/tatrapayplus/sandbox";
 
 type Nastavenie = { apiUrl: string; clientId: string; clientSecret: string };
 
 function nastavenie(): Nastavenie {
-  const apiUrl = (process.env.TATRAPAYPLUS_API_URL || SANDBOX).replace(/\/+$/, "");
-  const clientId = process.env.TATRAPAYPLUS_CLIENT_ID;
-  const clientSecret = process.env.TATRAPAYPLUS_CLIENT_SECRET;
+  const apiUrl = (hodnota("tatrapayplus", "TATRAPAYPLUS_API_URL") || SANDBOX).replace(/\/+$/, "");
+  const clientId = hodnota("tatrapayplus", "TATRAPAYPLUS_CLIENT_ID");
+  const clientSecret = hodnota("tatrapayplus", "TATRAPAYPLUS_CLIENT_SECRET");
   if (!clientId || !clientSecret) {
     throw new Error(
-      "tatrapay+ nie je nakonfigurovaný. Treba TATRAPAYPLUS_CLIENT_ID a " +
-        "TATRAPAYPLUS_CLIENT_SECRET (z developer.tatrabanka.sk).",
+      "tatrapay+ nie je nakonfigurovaný — doplň Client ID a Client Secret " +
+        "(z developer.tatrabanka.sk) v Systém → Platobné brány.",
     );
   }
   return { apiUrl, clientId, clientSecret };
 }
 
 export function jeNakonfigurovany(): boolean {
-  return !!(process.env.TATRAPAYPLUS_CLIENT_ID && process.env.TATRAPAYPLUS_CLIENT_SECRET);
+  return !!(
+    hodnota("tatrapayplus", "TATRAPAYPLUS_CLIENT_ID") &&
+    hodnota("tatrapayplus", "TATRAPAYPLUS_CLIENT_SECRET")
+  );
 }
 
 let tokenCache: { token: string; expiresAt: number } | null = null;
@@ -269,29 +273,31 @@ export const tatraPayPlusGateway: PaymentGateway = {
 
   konfiguracia(): PolozkaKonfiguracie[] {
     return [
-      {
+      polozka("tatrapayplus", {
         premenna: "TATRAPAYPLUS_CLIENT_ID",
-        vyplnena: !!process.env.TATRAPAYPLUS_CLIENT_ID,
+        nazov: "Client ID",
+        popis: "Z aplikácie na developer.tatrabanka.sk",
         povinna: true,
-        popis: "Client ID z developer.tatrabanka.sk",
-      },
-      {
+      }),
+      polozka("tatrapayplus", {
         premenna: "TATRAPAYPLUS_CLIENT_SECRET",
-        vyplnena: !!process.env.TATRAPAYPLUS_CLIENT_SECRET,
+        nazov: "Client Secret",
+        popis: "Z tej istej aplikácie, záložka autentifikácia",
         povinna: true,
-        popis: "Client Secret z developer.tatrabanka.sk",
-      },
-      {
+        tajna: true,
+      }),
+      polozka("tatrapayplus", {
         premenna: "TATRAPAYPLUS_API_URL",
-        vyplnena: !!process.env.TATRAPAYPLUS_API_URL,
+        nazov: "Adresa API",
+        popis:
+          "Ostrá je https://api.tatrabanka.sk/tatrapayplus/production; bez vyplnenia sa použije sandbox",
         povinna: false,
-        popis: "Bez neho sa použije sandbox",
-      },
+      }),
     ];
   },
 
   endpoint(): string {
-    return (process.env.TATRAPAYPLUS_API_URL || SANDBOX).replace(/\/+$/, "");
+    return (hodnota("tatrapayplus", "TATRAPAYPLUS_API_URL") || SANDBOX).replace(/\/+$/, "");
   },
 
   async test(): Promise<TestBrany> {

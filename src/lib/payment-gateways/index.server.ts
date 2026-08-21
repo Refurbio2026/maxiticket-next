@@ -9,6 +9,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { goPayGateway } from "./gopay.gateway.server";
 import { gpWebpayGateway } from "./gpwebpay.server";
 import { tatraPayPlusGateway } from "./tatrapayplus.server";
+import { pripravPristupy } from "./pristupy.server";
 import type { GatewayId, PaymentGateway } from "./types";
 
 const BRANY: Record<GatewayId, PaymentGateway> = {
@@ -75,6 +76,8 @@ export async function branyPreZakaznika(): Promise<{
   brany: PaymentGateway[];
   predvolena: PaymentGateway | null;
 }> {
+  // Brány čítajú prístupy synchrónne z pamäte — najprv ich tam treba dostať.
+  await pripravPristupy();
   const nastavenia = await nacitajNastaveniaBran();
   const brany = dostupneBrany().filter((b) => nastavenia.zapnute[b.id]);
 
@@ -85,6 +88,8 @@ export async function branyPreZakaznika(): Promise<{
   const predvolena = (zvolena && brany.find((b) => b.id === zvolena)) || brany[0] || null;
   return { brany, predvolena };
 }
+
+export { pripravPristupy } from "./pristupy.server";
 
 export type {
   GatewayId,

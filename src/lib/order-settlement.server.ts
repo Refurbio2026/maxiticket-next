@@ -7,7 +7,7 @@
 // zákazník vie stránku návratu obnoviť a dopytovací sken beží dokola.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
-import { branaPodlaId } from "./payment-gateways/index.server";
+import { branaPodlaId, pripravPristupy } from "./payment-gateways/index.server";
 import type { GatewayId, PaymentState } from "./payment-gateways/types";
 import { createPaidInvoice } from "./superfaktura.server";
 import { newSignedTicket } from "./qr-token.server";
@@ -31,6 +31,7 @@ export type OverenyStav = { state: PaymentState; raw: Json };
  *   ale iba taký, ktorého podpis už bol overený. Nepodpísaný vstup sem nesmie.
  */
 export async function settleOrder(orderId: string, overeny?: OverenyStav): Promise<SettleResult> {
+  await pripravPristupy();
   const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
   if (!order) throw new Error("Objednávka sa nenašla");
 
