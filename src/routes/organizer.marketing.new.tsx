@@ -11,6 +11,7 @@ import {
   generateCreative,
   defaultAudience,
   type Campaign,
+  type CampaignAudience,
   type CampaignGoal,
   type Platform,
 } from "@/lib/marketing-db";
@@ -343,7 +344,9 @@ function WizardPage() {
                 <Label className="text-xs">{t("orgMktNew.labelGender")}</Label>
                 <Select
                   value={audience.gender}
-                  onValueChange={(v: any) => setAudience({ ...audience, gender: v })}
+                  onValueChange={(v) =>
+                    setAudience({ ...audience, gender: v as CampaignAudience["gender"] })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />

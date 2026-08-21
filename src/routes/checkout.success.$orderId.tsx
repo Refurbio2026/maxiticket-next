@@ -71,7 +71,7 @@ function SuccessPage() {
         const s = await fetchSummary({ data: { order_id: orderId, access_token: t } });
         if (cancelled) return;
         if (s.order) {
-          const sb = s.order as any;
+          const sb = s.order;
           setOrder({
             id: sb.id,
             event_id: sb.event_id,
@@ -79,7 +79,7 @@ function SuccessPage() {
             customer_name: sb.customer_name || undefined,
             customer_email: sb.customer_email || undefined,
             customer_phone: sb.customer_phone || undefined,
-            items: (s.items || []).map((it: any) => ({
+            items: (s.items || []).map((it) => ({
               seat_id: it.seat_id || undefined,
               label: it.label,
               price: Number(it.unit_price),
@@ -91,7 +91,7 @@ function SuccessPage() {
             paid_at: sb.paid_at || undefined,
           });
           setTickets(
-            (s.tickets || []).map((t: any) => ({
+            (s.tickets || []).map((t) => ({
               id: t.id,
               order_id: t.order_id,
               event_id: t.event_id,

@@ -24,13 +24,51 @@ import { useServerFn } from "@tanstack/react-start";
 import { listScannerDevicesForEvent, type ScannerDeviceOption } from "@/lib/devices.functions";
 
 type ScanResult = "valid" | "duplicate" | "invalid" | "reentry" | "refunded";
+/**
+ * Vstupenka tak, ako ju vracia `/api/public/tickets/scan`. Polia sú voliteľné,
+ * lebo offline sken si zostaví len útržok — čítačka musí niečo ukázať aj bez
+ * odpovede servera.
+ */
+type ScannedTicket = {
+  id?: string;
+  seat_label?: string | null;
+  issued_at?: string | null;
+  used_at?: string | null;
+  scan_count?: number | null;
+  last_scan_at?: string | null;
+};
+
+/** Z objednávky čítačka ukazuje len meno kupujúceho a skrátené číslo. */
+type ScannedOrder = { id?: string; customer_name?: string | null } | null;
+
+type ScannedEvent = { id: string; title?: string } | null;
+
 type ScanResponse = {
   ok: boolean;
   result: ScanResult;
   message?: string;
-  ticket?: any;
-  order?: any;
-  event?: any;
+  ticket?: ScannedTicket;
+  order?: ScannedOrder;
+  event?: ScannedEvent;
+};
+
+/** Posledné skeny z `/api/public/tickets/stats`. */
+type RecentScan = {
+  id: string;
+  created_at: string;
+  result: ScanResult;
+  scanner_name: string | null;
+  ticket_id: string | null;
+};
+
+/** Sken odložený, kým je čítačka bez signálu. */
+type QueuedScan = {
+  token: string;
+  event_token: string;
+  event_id: string;
+  device_id?: string;
+  scanner_name: string;
+  allow_reentry: boolean;
 };
 type EventInfo = {
   id: string;
@@ -84,7 +122,7 @@ function ScannerPage() {
     sold: number;
     used: number;
     remaining: number;
-    recent: any[];
+    recent: RecentScan[];
   }>({
     sold: 0,
     used: 0,
@@ -177,9 +215,9 @@ function ScannerPage() {
   useEffect(() => {
     const replay = async () => {
       if (!navigator.onLine) return;
-      const stored = JSON.parse(localStorage.getItem("mt_scan_queue") || "[]");
+      const stored: QueuedScan[] = JSON.parse(localStorage.getItem("mt_scan_queue") || "[]");
       if (!stored.length) return;
-      const remaining: any[] = [];
+      const remaining: QueuedScan[] = [];
       for (const it of stored) {
         try {
           await fetch("/api/public/tickets/scan", {
@@ -213,7 +251,7 @@ function ScannerPage() {
     };
     try {
       if (!navigator.onLine) {
-        const q = JSON.parse(localStorage.getItem("mt_scan_queue") || "[]");
+        const q: QueuedScan[] = JSON.parse(localStorage.getItem("mt_scan_queue") || "[]");
         q.push(payload);
         localStorage.setItem("mt_scan_queue", JSON.stringify(q));
         setLast({
@@ -221,7 +259,7 @@ function ScannerPage() {
           result: "valid",
           message: "Offline — bude synchronizované",
           ticket: { seat_label: "Offline" },
-        } as any);
+        });
       } else {
         const r = await fetch("/api/public/tickets/scan", {
           method: "POST",

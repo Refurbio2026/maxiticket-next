@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, RefreshCw, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/finance/payments")({
   head: () => ({ meta: [{ title: "Platby (GoPay) · vipky.sk Admin" }] }),
@@ -60,8 +61,8 @@ function Page() {
       const r = await settle({ data: { order_id: id } });
       toast.success(`Stav: ${r.status}`);
       await load();
-    } catch (e: any) {
-      toast.error(e?.message || "Overenie zlyhalo");
+    } catch (e) {
+      toast.error(errorMessage(e) || "Overenie zlyhalo");
     } finally {
       setBusy(null);
     }
@@ -73,8 +74,8 @@ function Page() {
       const r = await reissue({ data: { order_id: id } });
       toast.success(`Faktúra ${r.invoice_number} vystavená`);
       await load();
-    } catch (e: any) {
-      toast.error(e?.message || "Vystavenie faktúry zlyhalo");
+    } catch (e) {
+      toast.error(errorMessage(e) || "Vystavenie faktúry zlyhalo");
     } finally {
       setBusy(null);
     }

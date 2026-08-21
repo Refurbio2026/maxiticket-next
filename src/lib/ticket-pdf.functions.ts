@@ -112,7 +112,7 @@ export const renderEventTicketsPdf = createServerFn({ method: "POST" })
     const info = (await loadEventInfo(event.id, data.event_date_id)) as PdfEventInfo;
     const base64 = await generateEventTicketsPdfBase64({
       event: info,
-      tickets: tickets.map((t: any) => ({
+      tickets: tickets.map((t) => ({
         seat_label: t.seat_label ?? "Vstupenka",
         qr_code: t.qr_code ?? "",
         order_id: t.order_id,

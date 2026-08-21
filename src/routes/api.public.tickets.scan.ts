@@ -19,7 +19,7 @@ async function logScan(payload: {
   user_agent?: string | null;
 }) {
   try {
-    await supabaseAdmin.from("ticket_scans").insert(payload as any);
+    await supabaseAdmin.from("ticket_scans").insert(payload);
   } catch (e) {
     console.error("scan log fail", e);
   }
@@ -30,7 +30,9 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
     handlers: {
       POST: async ({ request }) => {
         const ua = request.headers.get("user-agent") || "";
-        let body: any = {};
+        // Telo prichádza zvonku — čítame ho ako neznáme a každé pole si
+        // prevedieme sami.
+        let body: Record<string, unknown> = {};
         try {
           body = await request.json();
         } catch {
@@ -68,7 +70,7 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
           .select("id")
           .eq("scanner_token", eventToken)
           .maybeSingle();
-        const eventId: string | null = (ev as any)?.id || null;
+        const eventId: string | null = ev?.id || null;
         if (!eventId) {
           return Response.json(
             { ok: false, result: "invalid" as const, message: "Neplatný kód podujatia" },

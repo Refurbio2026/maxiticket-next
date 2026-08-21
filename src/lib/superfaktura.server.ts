@@ -2,6 +2,8 @@
 // Cash register document (pokladničný doklad) endpoint.
 // Docs: https://github.com/superfaktura/docs
 
+import type { Json } from "@/integrations/supabase/types";
+
 function env() {
   const apiUrl = (process.env.SUPERFAKTURA_API_URL || "https://moja.superfaktura.sk").replace(
     /\/+$/,
@@ -57,7 +59,26 @@ export type SfInvoiceResult = {
   invoice_id: string;
   invoice_number: string;
   pdf_url: string;
-  raw: unknown;
+  raw: Json;
+};
+
+/** Faktúra v odpovedi SuperFaktúry — čítame z nej len číslo a token na PDF. */
+type SfInvoice = {
+  id: string | number;
+  invoice_no_formatted?: string;
+  invoice_no?: string;
+  token?: string;
+};
+
+/**
+ * Odpoveď SuperFaktúry. Faktúru vracia raz zabalenú v `data`, inokedy priamo —
+ * preto sú obe vetvy voliteľné. `error === 0` znamená úspech.
+ */
+type SfResponse = {
+  error?: number | string;
+  error_message?: string;
+  data?: { Invoice?: SfInvoice };
+  Invoice?: SfInvoice;
 };
 
 /**
@@ -104,7 +125,7 @@ export async function createPaidInvoice(input: SfInvoiceInput): Promise<SfInvoic
   if (!res.ok) {
     throw new Error(`SuperFaktúra create zlyhalo (${res.status}): ${text}`);
   }
-  let data: any;
+  let data: SfResponse;
   try {
     data = JSON.parse(text);
   } catch {

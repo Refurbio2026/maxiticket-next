@@ -17,7 +17,19 @@ export type SeatInventoryRow = {
   label?: string; // e.g. "Rad A · 5"
 };
 
-export type OrderStatus = "pending" | "paid" | "cancelled" | "expired";
+/**
+ * Stavy objednávky. Musia pokrývať aj enum `order_status` z databázy — stránka
+ * po nákupe do tohto tvaru nalieva skutočnú objednávku zo servera, nielen
+ * demo/POS objednávku z localStorage.
+ */
+export type OrderStatus =
+  | "pending"
+  | "awaiting_payment"
+  | "paid"
+  | "failed"
+  | "cancelled"
+  | "refunded"
+  | "expired";
 
 export type OrderItem = {
   seat_id?: string; // empty for standing/general

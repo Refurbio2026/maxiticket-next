@@ -9,6 +9,7 @@ import { createPaidInvoice } from "@/lib/superfaktura.server";
 import { sendTicketsEmail } from "@/lib/ticket-mail.server";
 import { signTicket } from "@/lib/qr-token.server";
 import crypto from "crypto";
+import { errorMessage } from "@/lib/error-message";
 
 async function settle(orderId: string) {
   const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
@@ -21,7 +22,7 @@ async function settle(orderId: string) {
     order_id: order.id,
     provider: "gopay",
     endpoint: `webhook:${order.gopay_payment_id}`,
-    response_payload: status.raw as any,
+    response_payload: status.raw,
     status: "ok",
   });
 
@@ -38,7 +39,7 @@ async function settle(orderId: string) {
       .eq("order_id", order.id);
     await supabaseAdmin
       .from("payments")
-      .update({ status: "paid", raw_response: status.raw as any })
+      .update({ status: "paid", raw_response: status.raw })
       .eq("order_id", order.id);
 
     const { data: existing } = await supabaseAdmin
@@ -105,15 +106,15 @@ async function settle(orderId: string) {
           order_id: order.id,
           invoice_id: result.invoice_id,
           endpoint: "/invoices/create",
-          response_payload: result.raw as any,
+          response_payload: result.raw,
           status: "ok",
         });
-      } catch (e: any) {
+      } catch (e) {
         await supabaseAdmin.from("superfaktura_logs").insert({
           order_id: order.id,
           endpoint: "/invoices/create",
           status: "error",
-          error_message: String(e?.message || e),
+          error_message: errorMessage(e),
         });
         console.error("SF invoice failed", e);
       }
@@ -137,7 +138,7 @@ async function settle(orderId: string) {
       .from("payments")
       .update({
         status: mapped === "cancelled" ? "cancelled" : "failed",
-        raw_response: status.raw as any,
+        raw_response: status.raw,
       })
       .eq("order_id", order.id);
   }
@@ -175,9 +176,9 @@ async function handler({ request }: { request: Request }) {
       status: 200,
       headers: { "content-type": "application/json" },
     });
-  } catch (e: any) {
+  } catch (e) {
     console.error("GoPay webhook error", e);
-    return new Response(JSON.stringify({ ok: false, error: String(e?.message || e) }), {
+    return new Response(JSON.stringify({ ok: false, error: errorMessage(e) }), {
       status: 200, // 200 aby GoPay neretryoval do nekonečna pri našej chybe
       headers: { "content-type": "application/json" },
     });

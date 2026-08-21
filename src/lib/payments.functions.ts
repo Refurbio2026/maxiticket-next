@@ -12,6 +12,7 @@ import { sendTicketsEmail } from "./ticket-mail.server";
 import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
 import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
+import { errorMessage } from "./error-message";
 
 /**
  * IP klienta spoza nginxu.
@@ -459,14 +460,14 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
         notificationUrl: `${origin}/api/public/payments/gopay/webhook?orderId=${order.id}`,
         lang: "SK",
       });
-    } catch (e: any) {
+    } catch (e) {
       await supabaseAdmin.from("payment_logs").insert({
         order_id: order.id,
         provider: "gopay",
         endpoint: "/payments/payment",
         request_payload: { order_id: order.id },
         status: "error",
-        error_message: String(e?.message || e),
+        error_message: errorMessage(e),
       });
       throw e;
     }
@@ -476,7 +477,7 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
       provider: "gopay",
       endpoint: "/payments/payment",
       request_payload: { order_id: order.id, total: order.total_amount },
-      response_payload: result.raw as any,
+      response_payload: result.raw,
       status: "ok",
     });
 
@@ -496,7 +497,7 @@ export const createGoPayPaymentForOrder = createServerFn({ method: "POST" })
       amount: order.total_amount,
       currency: order.currency || "EUR",
       status: "pending",
-      raw_response: result.raw as any,
+      raw_response: result.raw,
     });
 
     return { payment_url: result.gw_url, payment_id: String(result.id) };
@@ -518,7 +519,7 @@ async function settleOrderIfPaid(orderId: string) {
     provider: "gopay",
     endpoint: `/payments/payment/${order.gopay_payment_id}`,
     request_payload: null,
-    response_payload: status.raw as any,
+    response_payload: status.raw,
     status: "ok",
   });
 
@@ -535,7 +536,7 @@ async function settleOrderIfPaid(orderId: string) {
               : mapped === "refunded"
                 ? "refunded"
                 : "pending",
-      raw_response: status.raw as any,
+      raw_response: status.raw,
     })
     .eq("order_id", order.id)
     .eq("provider_payment_id", String(order.gopay_payment_id));
@@ -626,15 +627,15 @@ async function settleOrderIfPaid(orderId: string) {
           order_id: order.id,
           invoice_id: result.invoice_id,
           endpoint: "/invoices/create",
-          response_payload: result.raw as any,
+          response_payload: result.raw,
           status: "ok",
         });
-      } catch (e: any) {
+      } catch (e) {
         await supabaseAdmin.from("superfaktura_logs").insert({
           order_id: order.id,
           endpoint: "/invoices/create",
           status: "error",
-          error_message: String(e?.message || e),
+          error_message: errorMessage(e),
         });
         console.error("SuperFaktúra failed for order", order.id, e);
         // nepadáme — platba je úspešná, faktúru môže admin vystaviť znovu
@@ -779,7 +780,7 @@ export const reissueInvoice = createServerFn({ method: "POST" })
       order_id: order.id,
       invoice_id: result.invoice_id,
       endpoint: "/invoices/create",
-      response_payload: result.raw as any,
+      response_payload: result.raw,
       status: "ok",
     });
     return { invoice_number: result.invoice_number, pdf_url: result.pdf_url };

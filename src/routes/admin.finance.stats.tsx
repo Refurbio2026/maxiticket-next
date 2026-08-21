@@ -27,7 +27,7 @@ function Page() {
   const fetchStats = useServerFn(getFinanceStats);
   const q = useQuery({
     queryKey: ["finance-stats"],
-    queryFn: () => fetchStats({ data: {} as any }),
+    queryFn: () => fetchStats({ data: undefined as never }),
     refetchInterval: 60_000,
   });
 
@@ -84,7 +84,7 @@ function Page() {
 
       {q.isError && (
         <Card className="border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-          {(q.error as any)?.message}
+          {q.error?.message}
         </Card>
       )}
 

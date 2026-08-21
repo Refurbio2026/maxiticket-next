@@ -3,6 +3,25 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
+
+/**
+ * Stavy objednávky tak, ako ich pozná databáza. Filter z formulára je obyčajný
+ * reťazec, takže ho pred vložením do dotazu zúžime — neznámu hodnotu radšej
+ * ignorujeme, než by mala spadnúť na pretypovaní enumu v Postgrese.
+ */
+type OrderStatus = Database["public"]["Enums"]["order_status"];
+const ORDER_STATUSES: readonly OrderStatus[] = [
+  "pending",
+  "awaiting_payment",
+  "paid",
+  "failed",
+  "cancelled",
+  "refunded",
+  "expired",
+];
+const asOrderStatus = (v: string): OrderStatus | null =>
+  (ORDER_STATUSES as readonly string[]).includes(v) ? (v as OrderStatus) : null;
 
 async function assertAdmin(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -111,11 +130,11 @@ export const getAdminOverview = createServerFn({ method: "POST" })
       .gte("issued_at", startToday);
 
     const today_revenue = (todayOrdersRes.data || []).reduce(
-      (s, r: any) => s + Number(r.total_amount || 0),
+      (s, r) => s + Number(r.total_amount || 0),
       0,
     );
     const paid_orders_total = (paidTotalRes.data || []).reduce(
-      (s, r: any) => s + Number(r.total_amount || 0),
+      (s, r) => s + Number(r.total_amount || 0),
       0,
     );
 
@@ -127,9 +146,9 @@ export const getAdminOverview = createServerFn({ method: "POST" })
       buckets.set(key, { revenue: 0, tickets: 0 });
     }
     for (const r of weekOrdersRes.data || []) {
-      const key = (r as any).paid_at?.slice(0, 10);
+      const key = r.paid_at?.slice(0, 10);
       const b = key && buckets.get(key);
-      if (b) b.revenue += Number((r as any).total_amount || 0);
+      if (b) b.revenue += Number(r.total_amount || 0);
     }
     // tickets per day
     const { data: weekTickets } = await supabaseAdmin
@@ -138,7 +157,7 @@ export const getAdminOverview = createServerFn({ method: "POST" })
       .is("refunded_at", null)
       .gte("issued_at", start7.toISOString());
     for (const t of weekTickets || []) {
-      const key = (t as any).issued_at?.slice(0, 10);
+      const key = t.issued_at?.slice(0, 10);
       const b = key && buckets.get(key);
       if (b) b.tickets += 1;
     }
@@ -151,7 +170,7 @@ export const getAdminOverview = createServerFn({ method: "POST" })
     // Top events (aggregate from tickets sample)
     const evMap = new Map<string, { name: string; sold: number }>();
     for (const t of topRes.data || []) {
-      const ev = (t as any).events;
+      const ev = t.events;
       if (!ev?.id) continue;
       const cur = evMap.get(ev.id) || { name: ev.title, sold: 0 };
       cur.sold += 1;
@@ -162,14 +181,14 @@ export const getAdminOverview = createServerFn({ method: "POST" })
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 6);
 
-    const recent_orders: RecentOrder[] = (recentRes.data || []).map((r: any) => ({
+    const recent_orders: RecentOrder[] = (recentRes.data || []).map((r) => ({
       id: r.id,
       event_title: r.events?.title ?? null,
       customer_email: r.customer_email,
       total_amount: Number(r.total_amount || 0),
       status: r.status,
       created_at: r.created_at,
-      qty: (r.order_items || []).reduce((s: number, it: any) => s + Number(it.quantity || 0), 0),
+      qty: (r.order_items || []).reduce((s: number, it) => s + Number(it.quantity || 0), 0),
     }));
 
     return {
@@ -227,14 +246,15 @@ export const listAdminOrders = createServerFn({ method: "POST" })
       )
       .order("created_at", { ascending: false })
       .limit(data.limit);
-    if (data.status && data.status !== "all") q = q.eq("status", data.status as any);
+    const status = data.status && data.status !== "all" ? asOrderStatus(data.status) : null;
+    if (status) q = q.eq("status", status);
     if (data.search) {
       const s = data.search.trim();
       q = q.or(`customer_email.ilike.%${s}%,customer_name.ilike.%${s}%,id.eq.${s}`);
     }
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows || []).map((r: any) => ({
+    return (rows || []).map((r) => ({
       id: r.id,
       created_at: r.created_at,
       paid_at: r.paid_at,
@@ -245,7 +265,7 @@ export const listAdminOrders = createServerFn({ method: "POST" })
       customer_name: r.customer_name,
       customer_email: r.customer_email,
       event_title: r.events?.title ?? null,
-      qty: (r.order_items || []).reduce((s: number, it: any) => s + Number(it.quantity || 0), 0),
+      qty: (r.order_items || []).reduce((s: number, it) => s + Number(it.quantity || 0), 0),
       invoice_number: r.superfaktura_invoice_number,
       invoice_pdf_url: r.superfaktura_invoice_pdf_url,
     }));
@@ -297,20 +317,20 @@ export const getFinanceStats = createServerFn({ method: "POST" })
     }
 
     for (const o of ordersRes.data || []) {
-      const amt = Number((o as any).total_amount || 0);
-      if ((o as any).status === "paid") {
+      const amt = Number(o.total_amount || 0);
+      if (o.status === "paid") {
         total_paid_amount += amt;
         total_paid_orders += 1;
-        const key = ((o as any).paid_at || (o as any).created_at || "").slice(0, 7);
+        const key = (o.paid_at || o.created_at || "").slice(0, 7);
         const b = monthly.get(key);
         if (b) {
           b.revenue += amt;
           b.orders += 1;
         }
-      } else if ((o as any).status === "pending" || (o as any).status === "awaiting_payment") {
+      } else if (o.status === "pending" || o.status === "awaiting_payment") {
         total_pending_amount += amt;
         total_pending_orders += 1;
-      } else if ((o as any).status === "refunded") {
+      } else if (o.status === "refunded") {
         total_refunded_amount += amt;
         total_refunded_orders += 1;
       }
@@ -318,16 +338,16 @@ export const getFinanceStats = createServerFn({ method: "POST" })
 
     const providerMap = new Map<string, { amount: number; count: number }>();
     for (const p of paymentsRes.data || []) {
-      if ((p as any).status !== "paid") continue;
-      const key = (p as any).provider || "unknown";
+      if (p.status !== "paid") continue;
+      const key = p.provider || "unknown";
       const cur = providerMap.get(key) || { amount: 0, count: 0 };
-      cur.amount += Number((p as any).amount || 0);
+      cur.amount += Number(p.amount || 0);
       cur.count += 1;
       providerMap.set(key, cur);
     }
 
-    const invoices_issued = (sfRes.data || []).filter((r: any) => r.status === "ok").length;
-    const invoices_failed = (sfRes.data || []).filter((r: any) => r.status === "error").length;
+    const invoices_issued = (sfRes.data || []).filter((r) => r.status === "ok").length;
+    const invoices_failed = (sfRes.data || []).filter((r) => r.status === "error").length;
 
     return {
       total_paid_amount,
@@ -374,12 +394,12 @@ export const getScanStatsAll = createServerFn({ method: "POST" })
         supabaseAdmin
           .from("tickets")
           .select("id", { count: "exact", head: true })
-          .eq("event_id", (e as any).id)
+          .eq("event_id", e.id)
           .is("refunded_at", null),
         supabaseAdmin
           .from("tickets")
           .select("id", { count: "exact", head: true })
-          .eq("event_id", (e as any).id)
+          .eq("event_id", e.id)
           .is("refunded_at", null)
           .not("used_at", "is", null),
       ]);
@@ -387,9 +407,9 @@ export const getScanStatsAll = createServerFn({ method: "POST" })
       const u = used || 0;
       if (s === 0) continue;
       rows.push({
-        event_id: (e as any).id,
-        event_title: (e as any).title,
-        event_date: (e as any).event_date,
+        event_id: e.id,
+        event_title: e.title,
+        event_date: e.event_date,
         sold: s,
         used: u,
         remaining: Math.max(0, s - u),

@@ -31,6 +31,7 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/checkout/$orderId")({
   head: () => ({ meta: [{ title: "Checkout · vipky.sk" }] }),
@@ -149,9 +150,9 @@ function CheckoutPage() {
       });
       const { payment_url } = await createPayment({ data: { order_id: supabaseOrderId } });
       window.location.href = payment_url;
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      toast.error(e?.message || "Vytvorenie platby zlyhalo");
+      toast.error(errorMessage(e) || "Vytvorenie platby zlyhalo");
       setPaying(false);
     }
   };

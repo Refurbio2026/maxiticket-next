@@ -53,6 +53,7 @@ import {
   ChromeIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/organizer/marketing/")({
   head: () => ({ meta: [{ title: "Marketing Center · vipky.sk" }] }),
@@ -299,7 +300,7 @@ function MarketingCenter() {
                     key={e.id}
                     event={e}
                     onPromote={(id) =>
-                      navigate({ to: "/organizer/marketing/new", search: { eventId: id } as any })
+                      navigate({ to: "/organizer/marketing/new", search: { eventId: id } })
                     }
                   />
                 ))}
@@ -510,7 +511,7 @@ function KPI({
   sub,
   accent,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   value: string;
   sub?: string;
@@ -737,7 +738,7 @@ function Metric({
   value,
   accent,
 }: {
-  icon?: any;
+  icon?: LucideIcon;
   label: string;
   value: string;
   accent?: boolean;

@@ -1,6 +1,8 @@
 // Server-only GoPay REST client. Never import from client code.
 // Docs: https://doc.gopay.com/en/
 
+import type { Json } from "@/integrations/supabase/types";
+
 type TokenCache = { token: string; expiresAt: number } | null;
 let tokenCache: TokenCache = null;
 
@@ -70,7 +72,7 @@ export type CreatePaymentResult = {
   id: number;
   gw_url: string;
   state: string;
-  raw: unknown;
+  raw: Json;
 };
 
 export async function createGoPayPayment(input: CreatePaymentInput): Promise<CreatePaymentResult> {
@@ -134,7 +136,7 @@ export type GoPayStatus = {
   amount: number;
   currency: string;
   order_number: string;
-  raw: unknown;
+  raw: Json;
 };
 
 export async function getGoPayPaymentStatus(paymentId: string | number): Promise<GoPayStatus> {
@@ -162,7 +164,7 @@ export async function getGoPayPaymentStatus(paymentId: string | number): Promise
 export type RefundResult = {
   id?: number;
   result: string;
-  raw: unknown;
+  raw: Json;
 };
 
 export async function refundGoPayPayment(

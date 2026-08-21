@@ -4,6 +4,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { errorMessage } from "./error-message";
+import type { Json } from "@/integrations/supabase/types";
 
 async function assertAdmin(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -72,7 +74,7 @@ export const refundOrder = createServerFn({ method: "POST" })
 
     // 1) Call GoPay if we have a payment id; otherwise treat as manual refund.
     let providerOk = false;
-    let providerRaw: any = null;
+    let providerRaw: Json = null;
     if (order.gopay_payment_id) {
       try {
         const res = await refundGoPayPayment(order.gopay_payment_id, Math.round(amount * 100));
@@ -86,14 +88,14 @@ export const refundOrder = createServerFn({ method: "POST" })
           response_payload: providerRaw,
           status: "ok",
         });
-      } catch (e: any) {
+      } catch (e) {
         await supabaseAdmin.from("payment_logs").insert({
           order_id: order.id,
           provider: "gopay",
           endpoint: `/payments/payment/${order.gopay_payment_id}/refund`,
           request_payload: { amount, full, reason: data.reason || null, by: context.userId },
           status: "error",
-          error_message: String(e?.message || e),
+          error_message: errorMessage(e),
         });
         throw e;
       }
@@ -195,8 +197,8 @@ export const refundOrder = createServerFn({ method: "POST" })
         } else {
           email_skipped_reason = sent.message;
         }
-      } catch (e: any) {
-        email_skipped_reason = String(e?.message || e);
+      } catch (e) {
+        email_skipped_reason = errorMessage(e);
       }
     } else if (!order.customer_email) {
       email_skipped_reason = "Objednávka nemá email zákazníka.";

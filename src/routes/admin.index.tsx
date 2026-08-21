@@ -64,13 +64,13 @@ function AdminDashboard() {
 
   const overview = useQuery({
     queryKey: ["admin-overview"],
-    queryFn: () => fetchOverview({ data: {} as any }),
+    queryFn: () => fetchOverview({ data: undefined as never }),
     refetchInterval: 60_000,
   });
 
   const scans = useQuery({
     queryKey: ["admin-scans-all"],
-    queryFn: () => fetchScans({ data: {} as any }),
+    queryFn: () => fetchScans({ data: undefined as never }),
     refetchInterval: 10_000,
   });
 
@@ -148,7 +148,7 @@ function AdminDashboard() {
 
       {overview.isError && (
         <Card className="border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-          Nepodarilo sa načítať prehľad: {(overview.error as any)?.message || "neznáma chyba"}
+          Nepodarilo sa načítať prehľad: {overview.error?.message || "neznáma chyba"}
         </Card>
       )}
 

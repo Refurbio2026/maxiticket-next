@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/public/tickets/stats")({
             .select("id")
             .eq("scanner_token", token)
             .maybeSingle();
-          eventId = (data as any)?.id || null;
+          eventId = data?.id || null;
         }
         if (!eventId)
           return Response.json({ error: "event_id or event_token required" }, { status: 400 });

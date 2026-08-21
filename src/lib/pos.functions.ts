@@ -12,6 +12,7 @@ import { newSignedTicket } from "./qr-token.server";
 import { loadSeatPricing } from "./seat-pricing.server";
 import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
 import { buildClosingDocument } from "./pos-documents.server";
+import type { Database } from "@/integrations/supabase/types";
 
 export const CASHIER_PERMISSIONS = [
   "sale",
@@ -302,13 +303,18 @@ export const deleteCashier = createServerFn({ method: "POST" })
 
 // --- Smeny ------------------------------------------------------------
 
-function mapSession(row: Record<string, any>, cashierName: string): PosSessionRecord {
+/** Riadok smeny tak, ako ho vracia databáza. */
+type PosSessionRow = Database["public"]["Tables"]["pos_sessions"]["Row"];
+
+function mapSession(row: PosSessionRow, cashierName: string): PosSessionRecord {
   return {
     id: row.id,
     cashier_id: row.cashier_id,
     cashier_name: cashierName,
     organizer_id: row.organizer_id,
-    status: row.status,
+    // `status` je v databáze obyčajný text; smena je buď zatvorená, alebo
+    // otvorená — čokoľvek iné berieme ako otvorenú, nech sa nestratí.
+    status: row.status === "closed" ? "closed" : "open",
     opened_at: row.opened_at,
     closed_at: row.closed_at ?? undefined,
     opening_cash: Number(row.opening_cash || 0),

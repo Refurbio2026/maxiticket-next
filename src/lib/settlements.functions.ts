@@ -463,6 +463,13 @@ export type SettlementRow = {
   invoice_source: "superfaktura" | "manual" | null;
 };
 
+/**
+ * `invoice_source` je v databáze obyčajný text. Zúžime ho, nech sa do UI
+ * nedostane hodnota, s ktorou nevie nič robiť.
+ */
+const asInvoiceSource = (v: string | null): "superfaktura" | "manual" | null =>
+  v === "superfaktura" || v === "manual" ? v : null;
+
 export const listSettlements = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -485,7 +492,7 @@ export const listSettlements = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    const ids = [...new Set((rows || []).map((r: any) => r.organizer_id as string))];
+    const ids = [...new Set((rows || []).map((r) => r.organizer_id as string))];
     const names = new Map<string, string>();
     if (ids.length > 0) {
       const { data: profiles } = await supabaseAdmin
@@ -497,7 +504,7 @@ export const listSettlements = createServerFn({ method: "POST" })
       }
     }
 
-    return (rows || []).map((r: any) => ({
+    return (rows || []).map((r) => ({
       id: r.id,
       organizer_id: r.organizer_id,
       organizer_name: names.get(r.organizer_id) || "—",
@@ -519,7 +526,7 @@ export const listSettlements = createServerFn({ method: "POST" })
       invoice_number: r.invoice_number ?? null,
       invoice_pdf_url: r.invoice_pdf_url ?? null,
       invoiced_at: r.invoiced_at ?? null,
-      invoice_source: r.invoice_source ?? null,
+      invoice_source: asInvoiceSource(r.invoice_source ?? null),
     }));
   });
 

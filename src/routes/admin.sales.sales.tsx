@@ -31,6 +31,7 @@ import { refundOrder } from "@/lib/refunds.functions";
 import { listRefundReasons } from "@/lib/refund-reasons.functions";
 import { countOrderNotes } from "@/lib/order-notes.functions";
 import { OrderNotesDialog, type OrderNotesTarget } from "@/components/admin/OrderNotesDialog";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/sales/sales")({
   head: () => ({ meta: [{ title: "Predaj · vipky.sk Admin" }] }),
@@ -135,8 +136,8 @@ function Page() {
       );
       setRefundFor(null);
       q.refetch();
-    } catch (e: any) {
-      toast.error(e?.message || "Refund zlyhal");
+    } catch (e) {
+      toast.error(errorMessage(e) || "Refund zlyhal");
     } finally {
       setRefunding(false);
     }
@@ -221,7 +222,7 @@ function Page() {
               ) : q.isError ? (
                 <tr>
                   <td colSpan={9} className="p-10 text-center text-destructive">
-                    {(q.error as any)?.message || "Chyba"}
+                    {q.error?.message || "Chyba"}
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
