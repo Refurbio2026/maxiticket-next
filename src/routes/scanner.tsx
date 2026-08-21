@@ -41,7 +41,16 @@ type ScannedTicket = {
 /** Z objednávky čítačka ukazuje len meno kupujúceho a skrátené číslo. */
 type ScannedOrder = { id?: string; customer_name?: string | null } | null;
 
-type ScannedEvent = { id: string; title?: string } | null;
+/**
+ * Podujatie z odpovede skenu. `event_date` je termín TEJ vstupenky, nie
+ * najbližší termín podujatia — pri reprízach sa to líši.
+ */
+type ScannedEvent = {
+  id: string;
+  title?: string;
+  event_date?: string;
+  event_time?: string;
+} | null;
 
 type ScanResponse = {
   ok: boolean;
@@ -588,6 +597,21 @@ function ScannerPage() {
                                 </dd>
                               </>
                             )}
+                            {last.event?.event_date && (
+                              <>
+                                <dt className="text-muted-foreground">Termín</dt>
+                                <dd
+                                  className={cn(
+                                    "font-medium",
+                                    last.event.event_date !== dnesLokalne() && "text-amber-500",
+                                  )}
+                                >
+                                  {new Date(last.event.event_date).toLocaleDateString("sk")}
+                                  {last.event.event_time ? ` · ${last.event.event_time}` : ""}
+                                  {last.event.event_date !== dnesLokalne() && " — INÝ DEŇ!"}
+                                </dd>
+                              </>
+                            )}
                             {last.ticket.last_scan_at && (
                               <>
                                 <dt className="text-muted-foreground">Posl. sken</dt>
@@ -689,6 +713,14 @@ function ScannerPage() {
       </div>
     </div>
   );
+}
+
+/** Dnešok ako `YYYY-MM-DD` v miestnom čase — `toISOString()` by posunul deň. */
+function dnesLokalne(): string {
+  const d = new Date();
+  const m = `${d.getMonth() + 1}`.padStart(2, "0");
+  const den = `${d.getDate()}`.padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${den}`;
 }
 
 function buildEventScannerUrl(token: string) {
