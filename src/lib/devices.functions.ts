@@ -76,9 +76,7 @@ export const listDevices = createServerFn({ method: "POST" })
     ]);
 
     const eventTitle = new Map((events || []).map((e) => [e.id, e.title]));
-    const organizerName = new Map(
-      (profiles || []).map((p) => [p.id, p.full_name || "—"]),
-    );
+    const organizerName = new Map((profiles || []).map((p) => [p.id, p.full_name || "—"]));
     const scanCount = new Map<string, number>();
     for (const s of scans || []) {
       const key = (s.scanner_name as string) || "";

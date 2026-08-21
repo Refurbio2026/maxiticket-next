@@ -115,7 +115,10 @@ function Page() {
   const [editing, setEditing] = useState<Form | null>(null);
   const [detail, setDetail] = useState<CouponRecord | null>(null);
 
-  const coupons = useQuery({ queryKey: ["coupons"], queryFn: () => fetchCoupons({ data: undefined as never }) });
+  const coupons = useQuery({
+    queryKey: ["coupons"],
+    queryFn: () => fetchCoupons({ data: undefined as never }),
+  });
 
   const redemptions = useQuery({
     queryKey: ["coupon-redemptions", detail?.id],

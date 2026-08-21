@@ -28,7 +28,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       const v = localStorage.getItem(STORAGE_KEY);
       if (v === "light" || v === "dark") setThemeState(v);
-    } catch {}
+    } catch {
+      /* localStorage môže byť zakázané (súkromné okno) — ostane predvolená téma. */
+    }
     setMounted(true);
   }, []);
 
@@ -37,7 +39,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyClass(theme);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
-    } catch {}
+    } catch {
+      /* Zápis do localStorage smie zlyhať; téma platí aspoň pre túto reláciu. */
+    }
   }, [theme, mounted]);
 
   const setTheme = useCallback((t: Theme) => setThemeState(t), []);

@@ -111,7 +111,10 @@ function Page() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Form | null>(null);
 
-  const devices = useQuery({ queryKey: ["devices"], queryFn: () => fetchDevices({ data: undefined as never }) });
+  const devices = useQuery({
+    queryKey: ["devices"],
+    queryFn: () => fetchDevices({ data: undefined as never }),
+  });
 
   const saveMutation = useMutation({
     mutationFn: (form: Form) =>

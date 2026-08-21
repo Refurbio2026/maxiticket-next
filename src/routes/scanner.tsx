@@ -161,7 +161,9 @@ function ScannerPage() {
           `/api/public/tickets/stats?event_token=${encodeURIComponent(eventToken)}`,
         );
         if (r.ok && !stop) setStats(await r.json());
-      } catch {}
+      } catch {
+        /* Štatistiky sa ťahajú každé 4 s — vypadnutý dotaz dobehne ten ďalší. */
+      }
     };
     load();
     const t = setInterval(load, 4000);

@@ -80,8 +80,8 @@ export const listCoupons = createServerFn({ method: "POST" })
         ? supabaseAdmin.from("events").select("id, title").in("id", eventIds)
         : Promise.resolve({ data: [] as { id: string; title: string }[] }),
       organizerIds.length
-        // `profiles` nemá e-mail — ten žije v `auth.users`. Meno stačí.
-        ? supabaseAdmin.from("profiles").select("id, full_name").in("id", organizerIds)
+        ? // `profiles` nemá e-mail — ten žije v `auth.users`. Meno stačí.
+          supabaseAdmin.from("profiles").select("id, full_name").in("id", organizerIds)
         : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
       supabaseAdmin
         .from("coupon_redemptions")
@@ -93,9 +93,7 @@ export const listCoupons = createServerFn({ method: "POST" })
     ]);
 
     const eventTitle = new Map((events || []).map((e) => [e.id, e.title]));
-    const organizerName = new Map(
-      (profiles || []).map((p) => [p.id, p.full_name || "—"]),
-    );
+    const organizerName = new Map((profiles || []).map((p) => [p.id, p.full_name || "—"]));
     const discountTotal = new Map<string, number>();
     for (const r of redemptions || []) {
       const key = r.coupon_id as string;

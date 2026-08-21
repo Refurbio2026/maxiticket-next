@@ -33,7 +33,10 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
         let body: any = {};
         try {
           body = await request.json();
-        } catch {}
+        } catch {
+          /* Pokazené JSON telo necháme prejsť ako prázdne — o pár riadkov nižšie ho
+           odmietne kontrola tokenu s poriadnou hláškou. */
+        }
         const token = String(body?.token || "").trim();
         const eventToken = body?.event_token ? String(body.event_token).trim() : null;
         const scannedBy = body?.scanner_user_id ? String(body.scanner_user_id) : null;

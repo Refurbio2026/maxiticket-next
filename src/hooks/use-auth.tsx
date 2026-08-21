@@ -95,8 +95,7 @@ function translateAuthError(message: string): string {
     return "Účet s týmto emailom už existuje";
   if (m.includes("email address") && m.includes("invalid"))
     return "Táto emailová adresa nie je platná.";
-  if (m.includes("rate limit"))
-    return "Príliš veľa pokusov. Skús to prosím o pár minút.";
+  if (m.includes("rate limit")) return "Príliš veľa pokusov. Skús to prosím o pár minút.";
   if (m.includes("password should be at least"))
     return "Heslo je príliš krátke — použi aspoň 6 znakov.";
   if (m.includes("signups not allowed") || m.includes("signup is disabled"))

@@ -22,7 +22,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     try {
       const v = localStorage.getItem(STORAGE_KEY);
       if (v && (LANGS as readonly string[]).includes(v)) setLangState(v as Lang);
-    } catch {}
+    } catch {
+      /* localStorage môže byť zakázané (súkromné okno) — ostane predvolený jazyk. */
+    }
     setMounted(true);
   }, []);
 
@@ -30,7 +32,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (!mounted) return;
     try {
       localStorage.setItem(STORAGE_KEY, lang);
-    } catch {}
+    } catch {
+      /* Zápis do localStorage smie zlyhať; jazyk platí aspoň pre túto reláciu. */
+    }
     if (typeof document !== "undefined") document.documentElement.lang = lang;
   }, [lang, mounted]);
 
