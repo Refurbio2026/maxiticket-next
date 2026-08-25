@@ -1402,6 +1402,24 @@ export type Database = {
           },
         ];
       };
+      system_heartbeats: {
+        Row: {
+          detail: Json | null;
+          last_at: string;
+          name: string;
+        };
+        Insert: {
+          detail?: Json | null;
+          last_at?: string;
+          name: string;
+        };
+        Update: {
+          detail?: Json | null;
+          last_at?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
       integration_credentials: {
         Row: {
           hodnota_sifrovana: string;
@@ -2285,6 +2303,13 @@ export type Database = {
           p_tickets: Json;
         };
         Returns: number;
+      };
+      stamp_heartbeat: {
+        Args: {
+          p_name: string;
+          p_detail?: Json;
+        };
+        Returns: undefined;
       };
       next_payment_ref: {
         Args: Record<PropertyKey, never>;

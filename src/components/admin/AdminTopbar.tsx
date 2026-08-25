@@ -75,6 +75,7 @@ const labels: Record<string, string> = {
 const labelsPodlaCesty: Record<string, string> = {
   "/admin/finance/payments": "Online platby",
   "/admin/system/payments": "Platobné brány",
+  "/admin/system/health": "Prevádzka",
 };
 
 export function AdminTopbar() {

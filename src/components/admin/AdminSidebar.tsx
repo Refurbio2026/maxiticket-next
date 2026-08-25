@@ -5,6 +5,7 @@ import {
   FileText,
   Wallet,
   Users,
+  Activity,
   CreditCard,
   Ticket,
   ShieldCheck,
@@ -175,6 +176,7 @@ const groups: Group[] = [
   {
     label: "Systém",
     items: [
+      { title: "Prevádzka", url: "/admin/system/health", icon: Activity },
       { title: "Platobné brány", url: "/admin/system/payments", icon: CreditCard },
       { title: "Wallet nastavenia", url: "/admin/system/wallet", icon: Wallet },
       { title: "Emailové šablóny", url: "/admin/system/email-templates", icon: Mail },

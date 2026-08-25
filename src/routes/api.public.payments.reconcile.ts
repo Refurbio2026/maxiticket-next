@@ -8,6 +8,8 @@
 // nesmie dať spustiť zvonku. Bez nastaveného `RECONCILE_SECRET` je routa
 // úplne mŕtva a tvári sa, že neexistuje.
 import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 import { dopytajCakajuce } from "@/lib/order-settlement.server";
 import { errorMessage } from "@/lib/error-message";
 
@@ -29,6 +31,11 @@ async function handler({ request }: { request: Request }) {
     const vysledok = await dopytajCakajuce(
       Number.isFinite(hodiny) ? Math.min(Math.max(hodiny, 1), 168) : 48,
     );
+    // Odtlačok behu — podľa neho prehľad prevádzky pozná, či cron vôbec beží.
+    await supabaseAdmin.rpc("stamp_heartbeat", {
+      p_name: "reconcile",
+      p_detail: vysledok as unknown as Json,
+    });
     return new Response(JSON.stringify(vysledok), {
       status: 200,
       headers: { "content-type": "application/json" },
