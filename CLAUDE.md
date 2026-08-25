@@ -511,7 +511,11 @@ nikdy priamo s konkrétnou bránou.
 
 **Kľúčový dôsledok:** GP webpay ani tatrapay+ webhook nemajú. Výsledok príde len návratom
 zákazníka do prehliadača. Kto po zaplatení zavrie okno, ostal by bez vstupeniek — preto
-existuje `reconcilePendingPayments` a **patrí do cronu**. Pri prevode z účtu to nie je
+existuje dopytovací sken a **patrí do cronu**: `GET /api/public/payments/reconcile`
+s hlavičkou `x-reconcile-secret` (alebo `?key=`). Bez `RECONCILE_SECRET` je routa mŕtva
+a vracia 404. Tá istá logika je aj ako serverová funkcia `reconcilePendingPayments`, ale tá
+vyžaduje rolu admin — sken púšťa dopyty do banky pre desiatky objednávok a nesmie ho vedieť
+spustiť ktokoľvek. Pri prevode z účtu to nie je
 okrajový prípad: v čase návratu býva platba ešte nezúčtovaná (`ACCP`, `PDNG`) a za zaplatenú
 sa smie vyhlásiť až pri `ACSC`/`ACCC`.
 
@@ -527,6 +531,22 @@ sa smie vyhlásiť až pri `ACSC`/`ACCC`.
   Vynechané voliteľné pole sa preskočí, prázdne odoslané pole v reťazci zostáva (`||`).
   `DIGEST1` = ten istý reťazec + `|` + `MERCHANTNUMBER`.
 - tatrapay+ návratovú adresu treba zaregistrovať v developer portáli banky.
+
+**Doúčtovanie musí zniesť, že príde viackrát a v akomkoľvek poradí.** Toto sú pravidlá,
+ktoré vznikli z reprodukovaných chýb — neruš ich bez náhrady:
+
+- Na `paid` objednávku preklápa **výhradne** RPC `claim_order_paid`, ktorá vráti `true` len
+  jednému volajúcemu. Vstupenky, faktúru a e-mail robí iba ten. Bez toho štyri súbežné
+  návraty z brány vydali za 3 kúpené vstupenky dvanásť platných.
+- Doúčtováva sa **konkrétna platba**, nie „to, na čo ukazuje `orders.payment_ref`".
+  Návratové routy posielajú `ZdrojStavu { provider, ref }`. Inak sa po prepnutí brány
+  pripíšu peniaze nesprávnemu zámeru.
+- Zaplatenú objednávku ani prijatú platbu **nesmie nič zhodiť**. Prechod na
+  `cancelled`/`failed` je podmienený (`.in("status", ["pending","awaiting_payment"])`)
+  a riadok v `payments` sa z `paid` smie posunúť len na `refunded`.
+- Prepnutie brány najprv **zruší predošlý zámer** (`zrus()`, vie to tatrapay+). Keď to brána
+  nevie, starý odkaz zostane platný — druhú prijatú platbu preto doúčtovanie zapíše do
+  `payment_logs` ako `duplicitna_platba` so `status = "error"`.
 
 Celé sa to nastavuje na `/admin/system/payments`, terminál na to netreba:
 
