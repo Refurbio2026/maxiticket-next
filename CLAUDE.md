@@ -496,6 +496,8 @@ Server kód navyše potrebuje (inak hodí runtime error):
 | `RESEND_API_KEY`                                                          | odosielanie vstupeniek e-mailom (bez neho sa ticho preskočí)                  |
 | `MAIL_FROM` / `MAIL_REPLY_TO`                                             | odosielateľ, default `vipky.sk <listky@vipky.sk>` (doména overená v Resende)  |
 | `SEED_SECRET`                                                             | odomkne `/api/public/seed-demo`                                               |
+| `SECRETS_ENCRYPTION_KEY`                                                  | šifrovanie prístupov zadaných v admine (fallback `TICKET_QR_SECRET`)          |
+| `RECONCILE_SECRET`                                                        | odomkne cron routu `/api/public/payments/reconcile` (bez neho 404)            |
 
 ## Platobné brány
 
