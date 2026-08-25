@@ -585,6 +585,35 @@ Stránka vie aj otestovať spojenie: GoPay a tatrapay+ si vypýtajú token (over
 naozaj), GP webpay vie skontrolovať len načítanie kľúčov — endpoint na overenie naprázdno
 nemá.
 
+## Zrušenie podujatia
+
+`event-cancellation.functions.ts` + tlačidlo v Admin → Podujatia. Zruší celé podujatie alebo
+jeden termín: vráti peniaze, zneplatní vstupenky, uvoľní sedadlá a pošle e-mail.
+
+- **Najprv sa zavrie predaj, až potom sa vracajú peniaze.** Opačné poradie by dovolilo kúpiť
+  lístok na podujatie, ktoré sa práve ruší. Stav sa zapisuje na podujatie aj na termíny, lebo
+  `submitOrder` kontroluje `events.status = 'published'` aj `event_dates.status = 'on_sale'`.
+- Zlyhanie jedného refundu **nezastaví zvyšok**; vypíše sa zoznam, čo treba dobiť ručne.
+- Opakované spustenie je neškodné — hľadajú sa len objednávky v stave `paid`, takže už
+  vrátené sa preskočia.
+- Samotné vrátenie peňazí je v `refunds.server.ts`, aby ho nemusel kopírovať ani admin
+  refund, ani hromadné zrušenie.
+
+## Limity nákupu
+
+Proti skupovaniu a skriptom je v `submitOrder` niekoľko vrstiev; nerušte ich bez náhrady:
+
+- `hit_rate_limit` cez tabuľku `rate_limits` — 20 pokusov za hodinu na IP, 10 na e-mail.
+  Limituje sa **oboje**: samotný e-mail by útočník menil, samotná IP by potrestala celú
+  firemnú sieť za NAT-om.
+- `MAX_TICKETS_PER_ORDER` = 20 na jednu objednávku, `MAX_OPEN_ORDERS_PER_EMAIL` = 2
+  nedoplatené naraz (inak by sa dali sedadlá držať donekonečna).
+- `events.max_tickets_per_person` — strop za **celé podujatie**, nie za objednávku. Bez neho
+  si niekto kúpi dvadsať, zaplatí a hneď ďalších dvadsať. `NULL` = bez vlastného stropu.
+
+Kontrola stropu na osobu zámerne **nepoužíva vnorený filter cez PostgREST** — prvá verzia ho
+použila, prešla typmi aj buildom a limit ticho nefungoval.
+
 ## Fakturácia
 
 Faktúry k objednávkam aj k provízii organizátorom vystavuje **jeden** systém, ktorý sa
