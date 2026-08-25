@@ -585,6 +585,36 @@ Stránka vie aj otestovať spojenie: GoPay a tatrapay+ si vypýtajú token (over
 naozaj), GP webpay vie skontrolovať len načítanie kľúčov — endpoint na overenie naprázdno
 nemá.
 
+## Pravidelné úlohy (cron)
+
+Všetko beží z jednej routy `GET /api/public/payments/reconcile` chránenej
+`RECONCILE_SECRET`; bez tej premennej vracia 404. Odporúčaný interval je desať minút.
+
+1. **Dopytovací sken** — dotiahne platby cez brány bez webhooku a opraví zaplatené
+   objednávky bez vstupeniek.
+2. **Pripomienky** — e-mail deň pred termínom (`orders.reminder_sent_at`, značka sa zapíše
+   až po úspešnom odoslaní, aby sa nedoručená skúsila znovu).
+3. **Čakačka** — porovná voľnú kapacitu so zoznamom čakajúcich a napíše im.
+
+Zlyhanie pripomienok ani čakačky **nesmie zhodiť dopytovací sken** — ten rieši peniaze.
+Každý beh si necháva odtlačok v `system_heartbeats`, z ktorého Prevádzka pozná, či cron
+vôbec beží.
+
+## Prehľad prevádzky
+
+`/admin/system/health` zhrnie zlyhania z `payment_logs`, `superfaktura_logs` a `email_logs`
+za posledné tri dni, plus veci, ktoré samy nekričia: prijaté dve platby za jednu objednávku,
+zaplatené objednávky bez vstupeniek, platby visiace viac než šesť hodín a či beží cron.
+Keď pribudne nový druh zlyhania, pridaj ho sem — inak si ho nikto nevšimne.
+
+## Čakačka
+
+`waitlist` + `waitlist.server.ts`. Upovedomenie **nevisí na miestach, kde sa kapacita
+vracia** (storno, refund, vypršaná rezervácia, zrušený termín) — tých je veľa a jedno
+zabudnuté by znamenalo čakačku, ktorá ticho nefunguje. Voľná kapacita sa počíta raz za beh
+cronu a porovná so zoznamom. Píše sa **všetkým naraz**, nie prvému v poradí; držať miesto
+bokom by blokovalo predaj.
+
 ## Zrušenie podujatia
 
 `event-cancellation.functions.ts` + tlačidlo v Admin → Podujatia. Zruší celé podujatie alebo
