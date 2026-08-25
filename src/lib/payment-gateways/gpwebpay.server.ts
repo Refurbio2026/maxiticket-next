@@ -22,7 +22,7 @@ import type {
   TestBrany,
 } from "./types";
 import { nemaRefund } from "./types";
-import { hodnota, polozka } from "./pristupy.server";
+import { hodnota, polozka } from "../pristupy.server";
 
 const SKUSOBNA_BRANA = "https://test.3dsecure.gpwebpay.com/pgw/order.do";
 

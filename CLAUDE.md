@@ -489,7 +489,9 @@ Server kód navyše potrebuje (inak hodí runtime error):
 | `GPWEBPAY_MERCHANT_NUMBER` / `_PRIVATE_KEY(_FILE)` / `_PUBLIC_KEY(_FILE)` | platby cez GP webpay (ČSOB); `GPWEBPAY_URL` default testovacia brána          |
 | `TATRAPAYPLUS_CLIENT_ID` / `_CLIENT_SECRET`                               | platby cez tatrapay+; `TATRAPAYPLUS_API_URL` default sandbox                  |
 | `PAYMENT_PROVIDER`                                                        | predvolená brána; bez nej sa použije prvá nakonfigurovaná                     |
-| `SUPERFAKTURA_EMAIL` / `_API_KEY` / `_COMPANY_ID`                         | fakturácia                                                                    |
+| `SUPERFAKTURA_EMAIL` / `_API_KEY` / `_COMPANY_ID`                         | fakturácia cez SuperFaktúru (dajú sa zadať aj v admine)                       |
+| `FAKTERO_API_KEY`                                                         | fakturácia cez Faktero (`FAKTERO_API_URL` default https://faktero.sk/api/v1)  |
+| `INVOICE_PROVIDER`                                                        | fakturačný systém; nastavenie v admine ho prebíja                             |
 | `PUBLIC_SITE_URL`                                                         | **povinné** — návratové a notifikačné adresy všetkých brán; bez nej to spadne |
 | `GOOGLE_WALLET_*`                                                         | wallet passy, viď `WALLET_SETUP.md`                                           |
 | `OPENAI_API_KEY`                                                          | AI support chat (bez neho vracia „nie je aktivovaná")                         |
@@ -576,6 +578,38 @@ Ponuku pre zákazníka skladá `branyPreZakaznika()` — prienik „má prístup
 Stránka vie aj otestovať spojenie: GoPay a tatrapay+ si vypýtajú token (overí prístupy
 naozaj), GP webpay vie skontrolovať len načítanie kľúčov — endpoint na overenie naprázdno
 nemá.
+
+## Fakturácia
+
+Faktúry k objednávkam aj k provízii organizátorom vystavuje **jeden** systém, ktorý sa
+vyberá v Systém → Platobné brány, sekcia Fakturácia (`payment_settings.invoice_provider`,
+záloha `INVOICE_PROVIDER`). Kód volajúceho nevie, ktorý to je — pracuje s rozhraním
+`FakturacnySystem` (`src/lib/invoicing/`).
+
+| Systém         | Prístupy                                      | PDF                        |
+| -------------- | --------------------------------------------- | -------------------------- |
+| `superfaktura` | e-mail, API kľúč, id firmy                    | trvalá adresa s tokenom    |
+| `faktero`      | jeden Bearer kľúč (`fk_test_…` / `fk_live_…`) | **podpísaná, platí 5 min** |
+
+**Faktero vydáva na PDF len adresu platnú päť minút**, takže sa nedá uložiť ani poslať
+e-mailom. Preto sa do `orders.superfaktura_invoice_pdf_url` ukladá odkaz na nás
+(`/api/public/invoices/<id>/pdf?t=…`, chránený tým istým tokenom ako prístup k objednávke)
+a čerstvá adresa sa vypýta až pri kliknutí. Tá istá routa obsluhuje aj vyúčtovacie protokoly.
+
+Ďalšie veci, ktoré treba vedieť:
+
+- Faktero potrebuje na faktúre `customer_id`, takže sa ku každej faktúre zakladá odberateľ;
+  väzbu drží `external_id` s id objednávky.
+- Zdokumentované sú len polia `customer_id`, `issue_date`, `due_date`, `currency` a `items`.
+  Variabilný symbol, číslo objednávky a poznámku posielame navyše — databáza Faktera ich má.
+  Keby ich API odmietlo (400/422), klient požiadavku **zopakuje len so zdokumentovanými
+  poľami** a rozdiel zapíše do logu; fakturácia kvôli nepovinnému údaju nespadne.
+- Zaplatené vopred sa po vystavení označí cez `POST /invoices/{id}/mark-paid`. Zlyhanie
+  tohto kroku fakturáciu nezhodí — faktúra existuje.
+- Stĺpce `orders.superfaktura_*` sú **historický názov** a nesú údaje z ktoréhokoľvek
+  systému; ktorý to bol, hovorí `orders.invoice_provider`.
+- Sadzba DPH sa posiela z volajúceho (`tax`), dnes natvrdo `20`. Pri zmene sadzby to treba
+  opraviť na oboch miestach, kde sa faktúra skladá.
 
 ## Pripojenie k databáze (správa schémy)
 

@@ -9,7 +9,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
   },
 }));
 
-import { zabudniKluc, zasifruj } from "../secrets.server";
+import { zabudniKluc, zasifruj } from "./secrets.server";
 import { hodnota, polozka, pripravPristupy, zabudniPristupy, zdroj } from "./pristupy.server";
 
 const PREMENNE = ["GOPAY_CLIENT_ID", "GOPAY_CLIENT_SECRET", "GOPAY_API_URL"];

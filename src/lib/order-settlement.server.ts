@@ -9,11 +9,13 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { branaPodlaId, pripravPristupy } from "./payment-gateways/index.server";
 import type { GatewayId, PaymentState } from "./payment-gateways/types";
-import { createPaidInvoice } from "./superfaktura.server";
+import { fakturacnySystem } from "./invoicing/index.server";
 import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { releaseCouponForOrder } from "./coupons.server";
 import { errorMessage } from "./error-message";
+import { siteUrl } from "./site-url.server";
+import { signOrderAccess } from "./order-access.server";
 
 export type SettleResult = {
   changed: boolean;
@@ -222,12 +224,29 @@ async function vydajVstupenky(order: Objednavka): Promise<void> {
 
 async function vystavFakturu(order: Objednavka): Promise<void> {
   if (order.superfaktura_invoice_id) return;
+
+  const system = await fakturacnySystem();
+  if (!system) {
+    // Bez nastaveného fakturačného systému sa nefakturuje. Nie je to dôvod
+    // zhodiť doúčtovanie — peniaze sú prijaté a vstupenky vydané. Zapíšeme to
+    // však, nech to nezmizne potichu.
+    await supabaseAdmin.from("superfaktura_logs").insert({
+      order_id: order.id,
+      endpoint: "fakturacia",
+      status: "error",
+      error_message:
+        "Nie je nastavený fakturačný systém — faktúra nebola vystavená. " +
+        "Doplň prístupy v Systém → Platobné brány, sekcia Fakturácia.",
+    });
+    return;
+  }
+
   try {
     const { data: items } = await supabaseAdmin
       .from("order_items")
       .select("*")
       .eq("order_id", order.id);
-    const result = await createPaidInvoice({
+    const result = await system.vystav({
       orderId: order.id,
       // Variabilný symbol je ten istý, aký šiel do banky — inak by sa platba
       // na výpise nedala spárovať s faktúrou.
@@ -247,31 +266,45 @@ async function vystavFakturu(order: Objednavka): Promise<void> {
       })),
       paymentType: "card",
     });
+
     await supabaseAdmin
       .from("orders")
       .update({
+        invoice_provider: system.id,
         superfaktura_invoice_id: result.invoice_id,
         superfaktura_invoice_number: result.invoice_number,
-        superfaktura_invoice_pdf_url: result.pdf_url,
+        // Systém, ktorý vydáva len krátkodobo platné odkazy, vráti prázdnu
+        // adresu — vtedy ukladáme odkaz na seba a čerstvú si vypýtame až pri
+        // kliknutí.
+        superfaktura_invoice_pdf_url: result.pdf_url || adresaNasehoPdf(order.id),
       })
       .eq("id", order.id);
     await supabaseAdmin.from("superfaktura_logs").insert({
       order_id: order.id,
       invoice_id: result.invoice_id,
-      endpoint: "/invoices/create",
+      endpoint: `${system.id}:vystav`,
       response_payload: result.raw,
       status: "ok",
     });
   } catch (e) {
     await supabaseAdmin.from("superfaktura_logs").insert({
       order_id: order.id,
-      endpoint: "/invoices/create",
+      endpoint: `${system.id}:vystav`,
       status: "error",
       error_message: errorMessage(e),
     });
     // Nepadáme — platba je úspešná, faktúru vie admin vystaviť znovu.
-    console.error("SuperFaktúra zlyhala pre objednávku", order.id, e);
+    console.error("Fakturácia zlyhala pre objednávku", order.id, e);
   }
+}
+
+/**
+ * Trvalý odkaz na PDF cez nás. Podpísané adresy z Faktera platia päť minút,
+ * takže sa nedajú uložiť ani poslať e-mailom — čerstvú si vypýtame až pri
+ * kliknutí. Token je ten istý, ktorým sa chráni prístup k objednávke.
+ */
+export function adresaNasehoPdf(orderId: string): string {
+  return `${siteUrl()}/api/public/invoices/${orderId}/pdf?t=${signOrderAccess(orderId)}`;
 }
 
 /**

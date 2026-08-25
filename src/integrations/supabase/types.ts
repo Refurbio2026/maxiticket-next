@@ -201,6 +201,7 @@ export type Database = {
           expires_at: string | null;
           gopay_payment_id: string | null;
           gopay_payment_url: string | null;
+          invoice_provider: string | null;
           payment_provider: Database["public"]["Enums"]["payment_provider"] | null;
           payment_ref: string | null;
           payment_url: string | null;
@@ -241,6 +242,7 @@ export type Database = {
           expires_at?: string | null;
           gopay_payment_id?: string | null;
           gopay_payment_url?: string | null;
+          invoice_provider?: string | null;
           payment_provider?: Database["public"]["Enums"]["payment_provider"] | null;
           payment_ref?: string | null;
           payment_url?: string | null;
@@ -281,6 +283,7 @@ export type Database = {
           expires_at?: string | null;
           gopay_payment_id?: string | null;
           gopay_payment_url?: string | null;
+          invoice_provider?: string | null;
           payment_provider?: Database["public"]["Enums"]["payment_provider"] | null;
           payment_ref?: string | null;
           payment_url?: string | null;
@@ -1357,25 +1360,25 @@ export type Database = {
           },
         ];
       };
-      payment_credentials: {
+      integration_credentials: {
         Row: {
           hodnota_sifrovana: string;
           kluc: string;
-          provider: Database["public"]["Enums"]["payment_provider"];
+          provider: string;
           updated_at: string;
           updated_by: string | null;
         };
         Insert: {
           hodnota_sifrovana: string;
           kluc: string;
-          provider: Database["public"]["Enums"]["payment_provider"];
+          provider: string;
           updated_at?: string;
           updated_by?: string | null;
         };
         Update: {
           hodnota_sifrovana?: string;
           kluc?: string;
-          provider?: Database["public"]["Enums"]["payment_provider"];
+          provider?: string;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -1385,6 +1388,7 @@ export type Database = {
         Row: {
           default_provider: Database["public"]["Enums"]["payment_provider"] | null;
           gopay_enabled: boolean;
+          invoice_provider: string | null;
           gpwebpay_enabled: boolean;
           id: boolean;
           tatrapayplus_enabled: boolean;
@@ -1394,6 +1398,7 @@ export type Database = {
         Insert: {
           default_provider?: Database["public"]["Enums"]["payment_provider"] | null;
           gopay_enabled?: boolean;
+          invoice_provider?: string | null;
           gpwebpay_enabled?: boolean;
           id?: boolean;
           tatrapayplus_enabled?: boolean;
@@ -1403,6 +1408,7 @@ export type Database = {
         Update: {
           default_provider?: Database["public"]["Enums"]["payment_provider"] | null;
           gopay_enabled?: boolean;
+          invoice_provider?: string | null;
           gpwebpay_enabled?: boolean;
           id?: boolean;
           tatrapayplus_enabled?: boolean;

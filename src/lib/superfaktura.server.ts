@@ -3,21 +3,25 @@
 // Docs: https://github.com/superfaktura/docs
 
 import type { Json } from "@/integrations/supabase/types";
+import { hodnota } from "./pristupy.server";
 
 function env() {
-  const apiUrl = (process.env.SUPERFAKTURA_API_URL || "https://moja.superfaktura.sk").replace(
-    /\/+$/,
-    "",
-  );
-  const email = process.env.SUPERFAKTURA_EMAIL;
-  const apiKey = process.env.SUPERFAKTURA_API_KEY;
-  const companyId = process.env.SUPERFAKTURA_COMPANY_ID;
+  // Prístupy môžu byť z administrácie alebo z prostredia — poradie rieši
+  // `hodnota()`, tento súbor o tom nemusí vedieť.
+  const apiUrl = (
+    hodnota("superfaktura", "SUPERFAKTURA_API_URL") || "https://moja.superfaktura.sk"
+  ).replace(/\/+$/, "");
+  const email = hodnota("superfaktura", "SUPERFAKTURA_EMAIL");
+  const apiKey = hodnota("superfaktura", "SUPERFAKTURA_API_KEY");
+  const companyId = hodnota("superfaktura", "SUPERFAKTURA_COMPANY_ID");
   if (!email || !apiKey || !companyId) {
     throw new Error(
-      "SuperFaktúra nie je nakonfigurovaná. Doplň SUPERFAKTURA_EMAIL, SUPERFAKTURA_API_KEY a SUPERFAKTURA_COMPANY_ID do secrets.",
+      "SuperFaktúra nie je nakonfigurovaná — doplň e-mail, API kľúč a id firmy " +
+        "v Systém → Platobné brány, sekcia Fakturácia.",
     );
   }
-  const sandbox = (process.env.SUPERFAKTURA_SANDBOX || "true").toLowerCase() === "true";
+  const sandbox =
+    (hodnota("superfaktura", "SUPERFAKTURA_SANDBOX") || "true").toLowerCase() === "true";
   return { apiUrl, email, apiKey, companyId, sandbox };
 }
 

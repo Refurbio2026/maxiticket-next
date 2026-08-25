@@ -769,9 +769,16 @@ export const issueCommissionInvoice = createServerFn({ method: "POST" })
     const amount = Number(settlement.commission_amount);
     if (amount <= 0) throw new Error("Provízia je nulová, nie je čo fakturovať.");
 
-    const { createPaidInvoice } = await import("./superfaktura.server");
+    const { fakturacnySystem } = await import("./invoicing/index.server");
+    const { adresaNasehoPdf } = await import("./order-settlement.server");
+    const system = await fakturacnySystem();
+    if (!system) {
+      throw new Error(
+        "Nie je nastavený fakturačný systém. Doplň prístupy v Systém → Platobné brány, sekcia Fakturácia.",
+      );
+    }
     const variable = settlement.id.slice(0, 8).toUpperCase();
-    const result = await createPaidInvoice({
+    const result = await system.vystav({
       orderId: settlement.id,
       variableSymbol: variable,
       name: invoiceItemName(settlement.period_from, settlement.period_to),
@@ -796,20 +803,25 @@ export const issueCommissionInvoice = createServerFn({ method: "POST" })
       .update({
         invoice_id: result.invoice_id,
         invoice_number: result.invoice_number,
-        invoice_pdf_url: result.pdf_url,
+        // Systém, ktorý vydáva len krátkodobo platné odkazy, vráti prázdnu
+        // adresu — vtedy ukladáme odkaz na seba.
+        invoice_pdf_url: result.pdf_url || adresaNasehoPdf(settlement.id),
         invoiced_at: new Date().toISOString(),
-        invoice_source: "superfaktura",
+        invoice_source: system.id,
       })
       .eq("id", settlement.id);
 
     await supabaseAdmin.from("superfaktura_logs").insert({
       invoice_id: result.invoice_id,
-      endpoint: "/invoices/create",
+      endpoint: `${system.id}:vystav`,
       response_payload: result.raw as never,
       status: "ok",
     });
 
-    return { invoice_number: result.invoice_number, pdf_url: result.pdf_url };
+    return {
+      invoice_number: result.invoice_number,
+      pdf_url: result.pdf_url || adresaNasehoPdf(settlement.id),
+    };
   });
 
 /** Zapíše číslo faktúry vystavenej mimo systému. Prázdne číslo väzbu zruší. */

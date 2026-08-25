@@ -1,4 +1,5 @@
-// Prístupy k platobným bránam: čítanie, ukladanie a cache.
+// Prístupy k externým systémom (platobné brány, fakturácia): čítanie,
+// ukladanie a cache.
 //
 // Hodnota môže prísť z dvoch miest a poradie je dôležité:
 //   1. administrácia (tabuľka `payment_credentials`, šifrovane),
@@ -10,8 +11,11 @@
 // dešifrované prístupy držia v pamäti procesu. Každý vstupný bod, ktorý sa
 // brány dotýka, musí najprv zavolať `pripravPristupy()`.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { desifruj, nahlad, zasifruj } from "../secrets.server";
-import type { GatewayId, PolozkaKonfiguracie } from "./types";
+import { desifruj, nahlad, zasifruj } from "./secrets.server";
+import type { PolozkaKonfiguracie } from "./payment-gateways/types";
+
+/** Id externého systému — brána alebo fakturačný systém. */
+export type SystemId = string;
 
 type Cache = { hodnoty: Map<string, string>; nacitane: number };
 
@@ -28,7 +32,7 @@ export async function pripravPristupy(): Promise<void> {
   const hodnoty = new Map<string, string>();
   try {
     const { data, error } = await supabaseAdmin
-      .from("payment_credentials")
+      .from("integration_credentials")
       .select("provider, kluc, hodnota_sifrovana");
     if (error) throw new Error(error.message);
     for (const r of data || []) {
@@ -57,14 +61,14 @@ export function zabudniPristupy(): void {
 export type Zdroj = "admin" | "server" | null;
 
 /** Hodnota podľa poradia admin → prostredie. */
-export function hodnota(provider: GatewayId, nazov: string): string | undefined {
+export function hodnota(provider: SystemId, nazov: string): string | undefined {
   const zAdmina = cache?.hodnoty.get(kluc(provider, nazov));
   if (zAdmina && zAdmina.trim()) return zAdmina;
   const zProstredia = process.env[nazov];
   return zProstredia && zProstredia.trim() ? zProstredia : undefined;
 }
 
-export function zdroj(provider: GatewayId, nazov: string): Zdroj {
+export function zdroj(provider: SystemId, nazov: string): Zdroj {
   const zAdmina = cache?.hodnoty.get(kluc(provider, nazov));
   if (zAdmina && zAdmina.trim()) return "admin";
   const zProstredia = process.env[nazov];
@@ -72,7 +76,7 @@ export function zdroj(provider: GatewayId, nazov: string): Zdroj {
 }
 
 /** Hodnota uložená v admine — pre náhľad. Prostredie sem nezasahuje. */
-export function hodnotaZAdmina(provider: GatewayId, nazov: string): string | undefined {
+export function hodnotaZAdmina(provider: SystemId, nazov: string): string | undefined {
   return cache?.hodnoty.get(kluc(provider, nazov));
 }
 
@@ -81,12 +85,12 @@ export function hodnotaZAdmina(provider: GatewayId, nazov: string): string | und
  * z prostredia, ak nejakú má); kľúč, ktorý v objekte nie je, sa nemení.
  */
 export async function ulozPristupy(
-  provider: GatewayId,
+  provider: SystemId,
   zmeny: Record<string, string | null>,
   userId: string,
 ): Promise<void> {
   const naZapis: Array<{
-    provider: GatewayId;
+    provider: SystemId;
     kluc: string;
     hodnota_sifrovana: string;
     updated_by: string;
@@ -110,13 +114,13 @@ export async function ulozPristupy(
 
   if (naZapis.length) {
     const { error } = await supabaseAdmin
-      .from("payment_credentials")
+      .from("integration_credentials")
       .upsert(naZapis, { onConflict: "provider,kluc" });
     if (error) throw new Error(error.message);
   }
   if (naZmazanie.length) {
     const { error } = await supabaseAdmin
-      .from("payment_credentials")
+      .from("integration_credentials")
       .delete()
       .eq("provider", provider)
       .in("kluc", naZmazanie);
@@ -133,7 +137,7 @@ export async function ulozPristupy(
  * nevracia celú — len náhľad, podľa ktorého sa dá rozoznať, že tam je tá pravá.
  */
 export function polozka(
-  provider: GatewayId,
+  provider: SystemId,
   opts: {
     premenna: string;
     nazov: string;

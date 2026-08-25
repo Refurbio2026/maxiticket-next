@@ -86,6 +86,7 @@ import { Route as ApiPublicEventsByTokenRouteImport } from './routes/api.public.
 import { Route as ApiPublicPaymentsReconcileRouteImport } from './routes/api.public.payments.reconcile'
 import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
 import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
+import { Route as ApiPublicInvoicesOrderIdPdfRouteImport } from './routes/api.public.invoices.$orderId.pdf'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as ApiPublicPaymentsGpwebpayReturnRouteImport } from './routes/api.public.payments.gpwebpay.return'
 import { Route as ApiPublicPaymentsTatrapayplusReturnRouteImport } from './routes/api.public.payments.tatrapayplus.return'
@@ -486,6 +487,12 @@ const ApiPublicTicketsStatsRoute = ApiPublicTicketsStatsRouteImport.update({
   path: '/api/public/tickets/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicInvoicesOrderIdPdfRoute =
+  ApiPublicInvoicesOrderIdPdfRouteImport.update({
+    id: '/api/public/invoices/$orderId/pdf',
+    path: '/api/public/invoices/$orderId/pdf',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsGopayWebhookRoute =
   ApiPublicPaymentsGopayWebhookRouteImport.update({
     id: '/api/public/payments/gopay/webhook',
@@ -589,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
+  '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
   '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
@@ -668,6 +676,7 @@ export interface FileRoutesByTo {
   '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
+  '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
   '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
@@ -752,6 +761,7 @@ export interface FileRoutesById {
   '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
+  '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
   '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
@@ -837,6 +847,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/reconcile'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
+    | '/api/public/invoices/$orderId/pdf'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
     | '/api/public/payments/tatrapayplus/return'
@@ -916,6 +927,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/reconcile'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
+    | '/api/public/invoices/$orderId/pdf'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
     | '/api/public/payments/tatrapayplus/return'
@@ -999,6 +1011,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/reconcile'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
+    | '/api/public/invoices/$orderId/pdf'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
     | '/api/public/payments/tatrapayplus/return'
@@ -1028,6 +1041,7 @@ export interface RootRouteChildren {
   ApiPublicPaymentsReconcileRoute: typeof ApiPublicPaymentsReconcileRoute
   ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
   ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
+  ApiPublicInvoicesOrderIdPdfRoute: typeof ApiPublicInvoicesOrderIdPdfRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
   ApiPublicPaymentsGpwebpayReturnRoute: typeof ApiPublicPaymentsGpwebpayReturnRoute
   ApiPublicPaymentsTatrapayplusReturnRoute: typeof ApiPublicPaymentsTatrapayplusReturnRoute
@@ -1574,6 +1588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTicketsStatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/invoices/$orderId/pdf': {
+      id: '/api/public/invoices/$orderId/pdf'
+      path: '/api/public/invoices/$orderId/pdf'
+      fullPath: '/api/public/invoices/$orderId/pdf'
+      preLoaderRoute: typeof ApiPublicInvoicesOrderIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/gopay/webhook': {
       id: '/api/public/payments/gopay/webhook'
       path: '/api/public/payments/gopay/webhook'
@@ -1796,6 +1817,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPaymentsReconcileRoute: ApiPublicPaymentsReconcileRoute,
   ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
   ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,
+  ApiPublicInvoicesOrderIdPdfRoute: ApiPublicInvoicesOrderIdPdfRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,
   ApiPublicPaymentsGpwebpayReturnRoute: ApiPublicPaymentsGpwebpayReturnRoute,
   ApiPublicPaymentsTatrapayplusReturnRoute:

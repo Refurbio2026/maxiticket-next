@@ -15,7 +15,7 @@ import type {
   StartPaymentResult,
   TestBrany,
 } from "./types";
-import { hodnota, polozka } from "./pristupy.server";
+import { hodnota, polozka } from "../pristupy.server";
 
 export const goPayGateway: PaymentGateway = {
   id: "gopay",

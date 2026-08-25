@@ -9,6 +9,7 @@ import {
   testPaymentGateway,
   updatePaymentGatewaySettings,
   type PrehladBrany,
+  type PrehladFakturacie,
 } from "@/lib/payment-settings.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   CheckCircle2,
   Copy,
   CreditCard,
+  FileText,
   KeyRound,
   Loader2,
   Plug,
@@ -41,11 +43,14 @@ export const Route = createFileRoute("/admin/system/payments")({
 
 type IdBrany = "gopay" | "gpwebpay" | "tatrapayplus";
 
+type IdFakturacie = "superfaktura" | "faktero";
+
 type Form = {
   gopay_enabled: boolean;
   gpwebpay_enabled: boolean;
   tatrapayplus_enabled: boolean;
   default_provider: IdBrany | null;
+  invoice_provider: IdFakturacie | null;
 };
 
 function PaymentGatewaysPage() {
@@ -72,6 +77,7 @@ function PaymentGatewaysPage() {
       gpwebpay_enabled: najdi("gpwebpay"),
       tatrapayplus_enabled: najdi("tatrapayplus"),
       default_provider: (prehlad.data.predvolena as IdBrany | null) ?? null,
+      invoice_provider: (prehlad.data.fakturacnySystem as IdFakturacie | null) ?? null,
     });
   }, [prehlad.data, form]);
 
@@ -98,8 +104,8 @@ function PaymentGatewaysPage() {
     }
   };
 
-  const ulozPristupy = async (id: IdBrany, values: Record<string, string | null>) => {
-    await saveCreds({ data: { provider: id, values } });
+  const ulozPristupy = async (id: string, values: Record<string, string | null>) => {
+    await saveCreds({ data: { provider: id as IdBrany, values } });
     // Zoznam si vypýtame znova — hodnoty sa nevracajú, ale zmení sa to, čo
     // je vyplnené a odkiaľ to pochádza.
     await qc.invalidateQueries({ queryKey: ["payment-gateways"] });
@@ -205,7 +211,32 @@ function PaymentGatewaysPage() {
               setForm((f) => (f ? { ...f, default_provider: b.id as IdBrany } : f))
             }
             onTest={() => otestovat(b.id)}
-            onUlozPristupy={(values) => ulozPristupy(b.id as IdBrany, values)}
+            onUlozPristupy={(values) => ulozPristupy(b.id, values)}
+          />
+        ))}
+      </div>
+
+      <div>
+        <h2 className="font-display text-xl font-bold tracking-tight mt-6">Fakturácia</h2>
+        <p className="text-muted-foreground text-sm mt-1">
+          Ktorý systém vystavuje faktúry k objednávkam a k provízii organizátorom. Faktúru vystavuje
+          vždy len jeden — ten, ktorý je označený ako používaný.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {data.fakturacia.map((f) => (
+          <FakturacnaKarta
+            key={f.id}
+            system={f}
+            pouziva={form.invoice_provider ? form.invoice_provider === f.id : f.pouziva}
+            test={testy[f.id]}
+            testuje={testuje === f.id}
+            onPouzivat={() =>
+              setForm((x) => (x ? { ...x, invoice_provider: f.id as IdFakturacie } : x))
+            }
+            onTest={() => otestovat(f.id)}
+            onUlozPristupy={(values) => ulozPristupy(f.id, values)}
           />
         ))}
       </div>
@@ -531,6 +562,150 @@ function PolePristupu({
         )}
       </div>
     </div>
+  );
+}
+
+function FakturacnaKarta({
+  system,
+  pouziva,
+  test,
+  testuje,
+  onPouzivat,
+  onTest,
+  onUlozPristupy,
+}: {
+  system: PrehladFakturacie;
+  pouziva: boolean;
+  test?: { ok: boolean; detail: string };
+  testuje: boolean;
+  onPouzivat: () => void;
+  onTest: () => void;
+  onUlozPristupy: (values: Record<string, string | null>) => Promise<void>;
+}) {
+  const [zmeny, setZmeny] = useState<Record<string, string | null>>({});
+  const [uklada, setUklada] = useState(false);
+
+  useEffect(() => {
+    setZmeny({});
+  }, [system]);
+
+  const uloz = async () => {
+    setUklada(true);
+    try {
+      await onUlozPristupy(zmeny);
+      setZmeny({});
+      toast.success(`Prístupy k ${system.label} uložené`);
+    } catch (e) {
+      toast.error(errorMessage(e) || "Uloženie prístupov zlyhalo");
+    } finally {
+      setUklada(false);
+    }
+  };
+
+  return (
+    <Card className="bg-card/60 border-border/50 p-5 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex gap-3">
+          <FileText className="size-5 mt-0.5 text-primary shrink-0" />
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-display font-semibold">{system.label}</h3>
+              {pouziva && system.nakonfigurovana ? (
+                <Badge className="bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15">
+                  Vystavuje faktúry
+                </Badge>
+              ) : !system.nakonfigurovana ? (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Chýbajú prístupy
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Nepoužíva sa
+                </Badge>
+              )}
+              {system.rezim === "test" && (
+                <Badge className="bg-amber-500/15 text-amber-500 hover:bg-amber-500/15">
+                  Testovacia prevádzka
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">{system.hint}</p>
+          </div>
+        </div>
+        {!pouziva && system.nakonfigurovana && (
+          <Button variant="ghost" size="sm" onClick={onPouzivat} className="gap-1.5">
+            <Star className="size-3.5" /> Používať tento
+          </Button>
+        )}
+      </div>
+
+      <Separator />
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="space-y-4">
+          <h4 className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+            <KeyRound className="size-3.5" /> Prístupy
+          </h4>
+          {system.konfiguracia.map((k) => (
+            <PolePristupu
+              key={k.premenna}
+              polozka={k}
+              hodnota={zmeny[k.premenna]}
+              onZmena={(v) => setZmeny((z) => ({ ...z, [k.premenna]: v }))}
+              onVratit={() =>
+                setZmeny((z) => {
+                  const { [k.premenna]: _, ...zvysok } = z;
+                  return zvysok;
+                })
+              }
+            />
+          ))}
+          <Button size="sm" onClick={uloz} disabled={Object.keys(zmeny).length === 0 || uklada}>
+            {uklada && <Loader2 className="size-4 mr-2 animate-spin" />}
+            Uložiť prístupy
+          </Button>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Komunikuje s <code className="text-xs">{system.endpoint}</code>
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onTest}
+              disabled={testuje || !system.nakonfigurovana}
+            >
+              {testuje ? (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              ) : (
+                <Plug className="size-4 mr-2" />
+              )}
+              Otestovať spojenie
+            </Button>
+            {system.chybaju.length > 0 && (
+              <span className="text-xs text-destructive">Chýba: {system.chybaju.join(", ")}</span>
+            )}
+          </div>
+          {test && (
+            <span
+              className={cn(
+                "flex items-start gap-1.5 text-xs",
+                test.ok ? "text-emerald-500" : "text-destructive",
+              )}
+            >
+              {test.ok ? (
+                <CheckCircle2 className="size-3.5 mt-0.5 shrink-0" />
+              ) : (
+                <AlertTriangle className="size-3.5 mt-0.5 shrink-0" />
+              )}
+              {test.detail}
+            </span>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 

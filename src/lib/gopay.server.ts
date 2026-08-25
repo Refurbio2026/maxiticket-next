@@ -2,7 +2,7 @@
 // Docs: https://doc.gopay.com/en/
 
 import type { Json } from "@/integrations/supabase/types";
-import { hodnota } from "./payment-gateways/pristupy.server";
+import { hodnota } from "./pristupy.server";
 
 type TokenCache = { token: string; expiresAt: number } | null;
 let tokenCache: TokenCache = null;

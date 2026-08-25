@@ -14,12 +14,15 @@ import {
   pripravPristupy,
   vsetkyBrany,
 } from "./payment-gateways/index.server";
-import { ulozPristupy } from "./payment-gateways/pristupy.server";
+import { ulozPristupy } from "./pristupy.server";
 import { rezimZAdresy, type PolozkaKonfiguracie } from "./payment-gateways/types";
+import { systemPodlaId, vsetkyFakturacneSystemy } from "./invoicing/index.server";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
 
 const ID_BRANY = z.enum(["gopay", "gpwebpay", "tatrapayplus"]);
+const ID_FAKTURACIE = z.enum(["superfaktura", "faktero"]);
+const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE]);
 
 export type PrehladBrany = {
   id: string;
@@ -44,8 +47,23 @@ export type PrehladBrany = {
   vieDopytStavu: boolean;
 };
 
+export type PrehladFakturacie = {
+  id: string;
+  label: string;
+  hint: string;
+  nakonfigurovana: boolean;
+  pouziva: boolean;
+  endpoint: string;
+  rezim: "test" | "ostrá" | "neznáma";
+  konfiguracia: PolozkaKonfiguracie[];
+  chybaju: string[];
+};
+
 export type PrehladPlatobnychBran = {
   brany: PrehladBrany[];
+  fakturacia: PrehladFakturacie[];
+  /** Systém, ktorý práve vystavuje faktúry. */
+  fakturacnySystem: string | null;
   /** Základ všetkých návratových adries — bez neho nefunguje žiadna brána. */
   adresaWebu: string | null;
   adresaWebuChyba: string | null;
@@ -56,6 +74,10 @@ export type PrehladPlatobnychBran = {
   /** Koľko objednávok čaká na doplatenie — dôvod, prečo treba cron. */
   cakajuceObjednavky: number;
 };
+
+function jeFakturacia(id: string): boolean {
+  return id === "superfaktura" || id === "faktero";
+}
 
 async function assertAdmin(userId: string) {
   const { data } = await supabaseAdmin
@@ -134,6 +156,36 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
       };
     });
 
+    const { data: nastavenieFakturacie } = await supabaseAdmin
+      .from("payment_settings")
+      .select("invoice_provider")
+      .eq("id", true)
+      .maybeSingle();
+    const zvolenaFakturacia =
+      nastavenieFakturacie?.invoice_provider || process.env.INVOICE_PROVIDER?.trim() || null;
+
+    const fakturacia = vsetkyFakturacneSystemy().map((f): PrehladFakturacie => {
+      const konfiguracia = f.konfiguracia();
+      const endpoint = f.endpoint();
+      return {
+        id: f.id,
+        label: f.label,
+        hint: f.hint,
+        nakonfigurovana: f.isConfigured(),
+        pouziva: false,
+        endpoint,
+        // Faktero rozlišuje režim prefixom kľúča, nie adresou.
+        rezim: f.rezim(),
+        konfiguracia,
+        chybaju: konfiguracia.filter((k) => k.povinna && !k.vyplnena).map((k) => k.premenna),
+      };
+    });
+    const pouzivaSa =
+      fakturacia.find((f) => f.id === zvolenaFakturacia && f.nakonfigurovana)?.id ??
+      fakturacia.find((f) => f.nakonfigurovana)?.id ??
+      null;
+    for (const f of fakturacia) f.pouziva = f.id === pouzivaSa;
+
     const vPonuke = brany.filter((b) => b.vPonuke);
     const zvolena = nastavenia.predvolena || process.env.PAYMENT_PROVIDER?.trim() || null;
     const predvolena = vPonuke.find((b) => b.id === zvolena)?.id ?? vPonuke[0]?.id ?? null;
@@ -141,6 +193,8 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
 
     return {
       brany,
+      fakturacia,
+      fakturacnySystem: pouzivaSa,
       adresaWebu,
       adresaWebuChyba,
       predvolena,
@@ -159,6 +213,7 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
         gpwebpay_enabled: z.boolean(),
         tatrapayplus_enabled: z.boolean(),
         default_provider: ID_BRANY.nullable(),
+        invoice_provider: ID_FAKTURACIE.nullable(),
       })
       .parse(input),
   )
@@ -188,6 +243,7 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
         gpwebpay_enabled: data.gpwebpay_enabled,
         tatrapayplus_enabled: data.tatrapayplus_enabled,
         default_provider: data.default_provider,
+        invoice_provider: data.invoice_provider,
         updated_by: context.userId,
       })
       .eq("id", true);
@@ -197,11 +253,13 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
 
 export const testPaymentGateway = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ provider: ID_BRANY }).parse(input))
+  .inputValidator((input) => z.object({ provider: ID_SYSTEMU }).parse(input))
   .handler(async ({ data, context }): Promise<{ ok: boolean; detail: string }> => {
     await assertAdmin(context.userId);
     await pripravPristupy();
-    const brana = branaPodlaId(data.provider);
+    const brana = jeFakturacia(data.provider)
+      ? systemPodlaId(data.provider)
+      : branaPodlaId(data.provider);
     if (!brana.isConfigured()) {
       return { ok: false, detail: "Brána nemá vyplnené všetky povinné prístupy." };
     }
@@ -227,7 +285,7 @@ export const savePaymentCredentials = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
-        provider: ID_BRANY,
+        provider: ID_SYSTEMU,
         // Hodnoty môžu byť dlhé — PEM kľúč má aj pár tisíc znakov.
         values: z.record(z.string(), z.string().max(20000).nullable()),
       })
@@ -237,7 +295,9 @@ export const savePaymentCredentials = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     await pripravPristupy();
 
-    const brana = branaPodlaId(data.provider);
+    const brana = jeFakturacia(data.provider)
+      ? systemPodlaId(data.provider)
+      : branaPodlaId(data.provider);
     // Prijmeme len kľúče, o ktorých brána naozaj vie. Inak by sa do tabuľky
     // dalo napchať čokoľvek.
     const povolene = new Set(brana.konfiguracia().map((k) => k.premenna));
