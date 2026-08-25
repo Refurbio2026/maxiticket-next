@@ -193,14 +193,7 @@ export async function settleOrder(orderId: string, zdroj?: ZdrojStavu): Promise<
 
 type Objednavka = { id: string; event_id: string; event_date_id: string } & Record<string, unknown>;
 
-async function vydajVstupenky(order: Objednavka): Promise<void> {
-  const { data: existing } = await supabaseAdmin
-    .from("tickets")
-    .select("id")
-    .eq("order_id", order.id)
-    .limit(1);
-  if (existing && existing.length > 0) return;
-
+async function vydajVstupenky(order: Objednavka): Promise<number> {
   const { data: items } = await supabaseAdmin
     .from("order_items")
     .select("*")
@@ -210,17 +203,25 @@ async function vydajVstupenky(order: Objednavka): Promise<void> {
       const { id, token } = newSignedTicket();
       return {
         id,
-        order_id: order.id,
         event_id: order.event_id,
         event_date_id: order.event_date_id,
-        seat_id: it.seat_id,
+        seat_id: it.seat_id ?? "",
         seat_label: it.label + ((it.quantity || 1) > 1 ? ` #${i + 1}` : ""),
         qr_code: token,
         qr_token: token,
       };
     }),
   );
-  if (tickets.length > 0) await supabaseAdmin.from("tickets").insert(tickets);
+  if (tickets.length === 0) return 0;
+
+  // Kontrola aj zápis v jednej transakcii so zámkom na objednávke. Dva
+  // súbežné volania tak nevydajú dvojnásobok — druhé dostane nulu.
+  const { data: vydane, error } = await supabaseAdmin.rpc("issue_tickets", {
+    p_order_id: order.id,
+    p_tickets: tickets as unknown as Json,
+  });
+  if (error) throw new Error(error.message);
+  return vydane ?? 0;
 }
 
 async function vystavFakturu(order: Objednavka): Promise<void> {
@@ -321,6 +322,7 @@ export function adresaNasehoPdf(orderId: string): string {
 export async function dopytajCakajuce(maxAgeHours: number): Promise<{
   checked: number;
   results: Array<{ order_id: string; status: string; changed: boolean }>;
+  opravene: { bezVstupeniek: number; vydanych: number };
 }> {
   const od = new Date(Date.now() - maxAgeHours * 3600_000).toISOString();
   const { data: orders } = await supabaseAdmin
@@ -340,5 +342,71 @@ export async function dopytajCakajuce(maxAgeHours: number): Promise<{
       console.error("Dopyt stavu zlyhal pre objednávku", o.id, errorMessage(e));
     }
   }
-  return { checked: orders?.length ?? 0, results };
+  const opravene = await dopravZaplatene(maxAgeHours);
+  return { checked: orders?.length ?? 0, results, opravene };
+}
+
+/**
+ * Dorobí, čo zostalo nedokončené na už zaplatených objednávkach.
+ *
+ * Vstupenky, faktúru a e-mail vybavuje ten, kto objednávku preklopil na
+ * zaplatenú. Keby proces medzi preklopením a vydaním spadol (reštart,
+ * výpadok siete), objednávka by zostala zaplatená a bez vstupeniek — a nič
+ * by ju už nezachránilo, lebo dopyt na stav sa pozerá len na `awaiting_payment`.
+ *
+ * Každý krok je idempotentný, takže opakovaný beh nič nezduplikuje.
+ */
+async function dopravZaplatene(maxAgeHours: number): Promise<{
+  bezVstupeniek: number;
+  vydanych: number;
+}> {
+  const od = new Date(Date.now() - maxAgeHours * 3600_000).toISOString();
+  const { data: zaplatene } = await supabaseAdmin
+    .from("orders")
+    .select("*")
+    .eq("status", "paid")
+    .gte("created_at", od)
+    .limit(200);
+
+  let bezVstupeniek = 0;
+  let vydanych = 0;
+
+  for (const order of zaplatene || []) {
+    try {
+      const { count } = await supabaseAdmin
+        .from("tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", order.id);
+      if ((count ?? 0) > 0) continue;
+
+      bezVstupeniek++;
+      const pocet = await vydajVstupenky(order);
+      vydanych += pocet;
+      if (pocet === 0) continue;
+
+      console.error(
+        "Zaplatená objednávka bola bez vstupeniek, dorobené skenom:",
+        order.id,
+        `${pocet} ks`,
+      );
+      await supabaseAdmin.from("payment_logs").insert({
+        order_id: order.id,
+        provider: (order.payment_provider ?? "gopay") as GatewayId,
+        endpoint: "dorobene_vstupenky",
+        status: "ok",
+        error_message: `Objednávka bola zaplatená bez vstupeniek; sken vydal ${pocet} ks.`,
+      });
+
+      await vystavFakturu(order);
+      try {
+        await sendTicketsEmail(order.id);
+      } catch (e) {
+        console.error("Odoslanie dorobených vstupeniek zlyhalo", order.id, e);
+      }
+    } catch (e) {
+      console.error("Doprava zaplatenej objednávky zlyhala", order.id, errorMessage(e));
+    }
+  }
+
+  return { bezVstupeniek, vydanych };
 }

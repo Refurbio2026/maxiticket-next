@@ -542,6 +542,12 @@ ktoré vznikli z reprodukovaných chýb — neruš ich bez náhrady:
 - Na `paid` objednávku preklápa **výhradne** RPC `claim_order_paid`, ktorá vráti `true` len
   jednému volajúcemu. Vstupenky, faktúru a e-mail robí iba ten. Bez toho štyri súbežné
   návraty z brány vydali za 3 kúpené vstupenky dvanásť platných.
+- Vstupenky sa zapisujú **výhradne** cez RPC `issue_tickets`, ktorá drží zámok na objednávke
+  počas kontroly aj zápisu. Nikdy nerob „pozri, či existujú → vlož" na dva dotazy — medzi ne
+  sa zmestí druhé doúčtovanie. Overené šiestimi súbežnými volaniami: jedno vydá, päť vráti nulu.
+- Dopytovací sken okrem `awaiting_payment` **opravuje aj zaplatené objednávky bez vstupeniek**.
+  Keby proces spadol medzi preklopením a vydaním, objednávka by inak zostala zaplatená a bez
+  vstupeniek navždy — dopyt na stav sa na `paid` nepozerá.
 - Doúčtováva sa **konkrétna platba**, nie „to, na čo ukazuje `orders.payment_ref`".
   Návratové routy posielajú `ZdrojStavu { provider, ref }`. Inak sa po prepnutí brány
   pripíšu peniaze nesprávnemu zámeru.

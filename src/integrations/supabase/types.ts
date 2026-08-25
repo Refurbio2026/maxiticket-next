@@ -2237,6 +2237,13 @@ export type Database = {
         };
         Returns: boolean;
       };
+      issue_tickets: {
+        Args: {
+          p_order_id: string;
+          p_tickets: Json;
+        };
+        Returns: number;
+      };
       next_payment_ref: {
         Args: Record<PropertyKey, never>;
         Returns: number;
