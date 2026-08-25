@@ -9,8 +9,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type CouponCheck =
-  | { ok: true; coupon_id: string; discount: number }
-  | { ok: false; error: string };
+  { ok: true; coupon_id: string; discount: number } | { ok: false; error: string };
 
 const MESSAGES: Record<string, string> = {
   not_found: "Takýto zľavový kód neexistuje.",

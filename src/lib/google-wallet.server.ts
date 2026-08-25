@@ -34,8 +34,7 @@ export type GoogleWalletTicketInput = {
 };
 
 export type WalletLinkResult =
-  | { ok: true; url: string }
-  | { ok: false; reason: "not_configured" | "error"; message: string };
+  { ok: true; url: string } | { ok: false; reason: "not_configured" | "error"; message: string };
 
 type GoogleConfig = {
   issuerId: string;

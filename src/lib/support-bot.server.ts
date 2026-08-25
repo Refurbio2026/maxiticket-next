@@ -15,8 +15,7 @@ import { SUPPORT_KB } from "./support-kb";
 export type ChatMsg = { role: "user" | "assistant"; content: string };
 
 export type BotResult =
-  | { ok: true; reply: string }
-  | { ok: false; reason: "not_configured" | "error"; message: string };
+  { ok: true; reply: string } | { ok: false; reason: "not_configured" | "error"; message: string };
 
 function readConfig() {
   const apiKey = process.env.OPENAI_API_KEY || process.env.SUPPORT_AI_API_KEY;

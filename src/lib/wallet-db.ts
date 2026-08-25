@@ -84,8 +84,7 @@ export function isGoogleConfigured(s = getWalletSettings()) {
 // "not configured" result so UI flows are wired correctly end-to-end.
 
 export type WalletPassResult =
-  | { ok: true; url: string }
-  | { ok: false; reason: "not_configured" | "error"; message: string };
+  { ok: true; url: string } | { ok: false; reason: "not_configured" | "error"; message: string };
 
 export async function generateApplePass(_ticket: IssuedTicket): Promise<WalletPassResult> {
   if (!isAppleConfigured()) {

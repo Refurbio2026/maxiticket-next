@@ -6,16 +6,7 @@
 // Layout = kolekcia tvarov na plátne.
 
 export type ShapeKind =
-  | "sector"
-  | "seats"
-  | "standing"
-  | "vip"
-  | "stage"
-  | "entrance"
-  | "bar"
-  | "wc"
-  | "tech"
-  | "label";
+  "sector" | "seats" | "standing" | "vip" | "stage" | "entrance" | "bar" | "wc" | "tech" | "label";
 
 export type Shape = {
   id: string;

@@ -23,13 +23,7 @@ export type SeatInventoryRow = {
  * demo/POS objednávku z localStorage.
  */
 export type OrderStatus =
-  | "pending"
-  | "awaiting_payment"
-  | "paid"
-  | "failed"
-  | "cancelled"
-  | "refunded"
-  | "expired";
+  "pending" | "awaiting_payment" | "paid" | "failed" | "cancelled" | "refunded" | "expired";
 
 export type OrderItem = {
   seat_id?: string; // empty for standing/general

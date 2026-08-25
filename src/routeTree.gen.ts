@@ -9,141 +9,91 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as ScannerRouteImport } from './routes/scanner'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as PartnersRouteImport } from './routes/partners'
-import { Route as OrganizerRouteImport } from './routes/organizer'
-import { Route as MarketingRouteImport } from './routes/marketing'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as EventsRouteImport } from './routes/events'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as ArtistsRouteImport } from './routes/artists'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ArtistsRouteImport } from './routes/artists'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as EventsRouteImport } from './routes/events'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MarketingRouteImport } from './routes/marketing'
+import { Route as OrganizerRouteImport } from './routes/organizer'
+import { Route as PartnersRouteImport } from './routes/partners'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ScannerRouteImport } from './routes/scanner'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as PSlugRouteImport } from './routes/p.$slug'
-import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
-import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
-import { Route as EventsIdRouteImport } from './routes/events.$id'
-import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
-import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
-import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
-import { Route as OrganizerMarketingIndexRouteImport } from './routes/organizer.marketing.index'
-import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
-import { Route as OrganizerPosSalesRouteImport } from './routes/organizer.pos.sales'
-import { Route as OrganizerPosFiscalRouteImport } from './routes/organizer.pos.fiscal'
-import { Route as OrganizerPosDevicesRouteImport } from './routes/organizer.pos.devices'
-import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
-import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
-import { Route as OrganizerPosCashierSalesRouteImport } from './routes/organizer.pos.cashier-sales'
-import { Route as OrganizerMarketingNewRouteImport } from './routes/organizer.marketing.new'
-import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
-import { Route as CheckoutSuccessOrderIdRouteImport } from './routes/checkout.success.$orderId'
-import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
-import { Route as AdminSystemWalletRouteImport } from './routes/admin.system.wallet'
-import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
-import { Route as AdminSystemPaymentsRouteImport } from './routes/admin.system.payments'
-import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
-import { Route as AdminSalesSalesRouteImport } from './routes/admin.sales.sales'
-import { Route as AdminSalesNotesRouteImport } from './routes/admin.sales.notes'
-import { Route as AdminSalesCancellationsRouteImport } from './routes/admin.sales.cancellations'
-import { Route as AdminReportsSalesRouteImport } from './routes/admin.reports.sales'
-import { Route as AdminPosTerminalsRouteImport } from './routes/admin.pos.terminals'
-import { Route as AdminPosSalesRouteImport } from './routes/admin.pos.sales'
-import { Route as AdminPosFiscalRouteImport } from './routes/admin.pos.fiscal'
-import { Route as AdminPosClosingsRouteImport } from './routes/admin.pos.closings'
-import { Route as AdminPosCashiersRouteImport } from './routes/admin.pos.cashiers'
-import { Route as AdminMaxiticketTicketsRouteImport } from './routes/admin.maxiticket.tickets'
-import { Route as AdminMaxiticketRefundTypesRouteImport } from './routes/admin.maxiticket.refund-types'
-import { Route as AdminMaxiticketProtocolsRouteImport } from './routes/admin.maxiticket.protocols'
-import { Route as AdminMaxiticketPaymentsRouteImport } from './routes/admin.maxiticket.payments'
-import { Route as AdminMaxiticketOrganizersRouteImport } from './routes/admin.maxiticket.organizers'
-import { Route as AdminMaxiticketDevicesRouteImport } from './routes/admin.maxiticket.devices'
-import { Route as AdminMaxiticketCostsRouteImport } from './routes/admin.maxiticket.costs'
-import { Route as AdminMaxiticketControlRouteImport } from './routes/admin.maxiticket.control'
-import { Route as AdminMaxiticketBillingRouteImport } from './routes/admin.maxiticket.billing'
-import { Route as AdminMaxiticketBalancesRouteImport } from './routes/admin.maxiticket.balances'
-import { Route as AdminMaxiticketAccountingReportRouteImport } from './routes/admin.maxiticket.accounting-report'
-import { Route as AdminMaxiticketAccountingChecksRouteImport } from './routes/admin.maxiticket.accounting-checks'
-import { Route as AdminMaxiticketAccountingBankRouteImport } from './routes/admin.maxiticket.accounting-bank'
-import { Route as AdminFinanceStatsRouteImport } from './routes/admin.finance.stats'
-import { Route as AdminFinancePaymentsRouteImport } from './routes/admin.finance.payments'
-import { Route as AdminEventsVenuesRouteImport } from './routes/admin.events.venues'
-import { Route as AdminEventsVenueLayoutsRouteImport } from './routes/admin.events.venue-layouts'
-import { Route as AdminEventsEventsRouteImport } from './routes/admin.events.events'
-import { Route as AdminEventsDatesRouteImport } from './routes/admin.events.dates'
-import { Route as AdminEventsCouponsRouteImport } from './routes/admin.events.coupons'
-import { Route as AdminDataPriceCategoriesRouteImport } from './routes/admin.data.price-categories'
-import { Route as AdminDataPerformersRouteImport } from './routes/admin.data.performers'
-import { Route as AdminDataGroupsRouteImport } from './routes/admin.data.groups'
-import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
+import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
+import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
+import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
+import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
-import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
-import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
-import { Route as ApiPublicPaymentsReconcileRouteImport } from './routes/api.public.payments.reconcile'
+import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
+import { Route as AdminDataGroupsRouteImport } from './routes/admin.data.groups'
+import { Route as AdminDataPerformersRouteImport } from './routes/admin.data.performers'
+import { Route as AdminDataPriceCategoriesRouteImport } from './routes/admin.data.price-categories'
+import { Route as AdminEventsCouponsRouteImport } from './routes/admin.events.coupons'
+import { Route as AdminEventsDatesRouteImport } from './routes/admin.events.dates'
+import { Route as AdminEventsEventsRouteImport } from './routes/admin.events.events'
+import { Route as AdminEventsVenueLayoutsRouteImport } from './routes/admin.events.venue-layouts'
+import { Route as AdminEventsVenuesRouteImport } from './routes/admin.events.venues'
+import { Route as AdminFinancePaymentsRouteImport } from './routes/admin.finance.payments'
+import { Route as AdminFinanceStatsRouteImport } from './routes/admin.finance.stats'
+import { Route as AdminMaxiticketAccountingBankRouteImport } from './routes/admin.maxiticket.accounting-bank'
+import { Route as AdminMaxiticketAccountingChecksRouteImport } from './routes/admin.maxiticket.accounting-checks'
+import { Route as AdminMaxiticketAccountingReportRouteImport } from './routes/admin.maxiticket.accounting-report'
+import { Route as AdminMaxiticketBalancesRouteImport } from './routes/admin.maxiticket.balances'
+import { Route as AdminMaxiticketBillingRouteImport } from './routes/admin.maxiticket.billing'
+import { Route as AdminMaxiticketControlRouteImport } from './routes/admin.maxiticket.control'
+import { Route as AdminMaxiticketCostsRouteImport } from './routes/admin.maxiticket.costs'
+import { Route as AdminMaxiticketDevicesRouteImport } from './routes/admin.maxiticket.devices'
+import { Route as AdminMaxiticketOrganizersRouteImport } from './routes/admin.maxiticket.organizers'
+import { Route as AdminMaxiticketPaymentsRouteImport } from './routes/admin.maxiticket.payments'
+import { Route as AdminMaxiticketProtocolsRouteImport } from './routes/admin.maxiticket.protocols'
+import { Route as AdminMaxiticketRefundTypesRouteImport } from './routes/admin.maxiticket.refund-types'
+import { Route as AdminMaxiticketTicketsRouteImport } from './routes/admin.maxiticket.tickets'
+import { Route as AdminPosCashiersRouteImport } from './routes/admin.pos.cashiers'
+import { Route as AdminPosClosingsRouteImport } from './routes/admin.pos.closings'
+import { Route as AdminPosFiscalRouteImport } from './routes/admin.pos.fiscal'
+import { Route as AdminPosSalesRouteImport } from './routes/admin.pos.sales'
+import { Route as AdminPosTerminalsRouteImport } from './routes/admin.pos.terminals'
+import { Route as AdminReportsSalesRouteImport } from './routes/admin.reports.sales'
+import { Route as AdminSalesCancellationsRouteImport } from './routes/admin.sales.cancellations'
+import { Route as AdminSalesNotesRouteImport } from './routes/admin.sales.notes'
+import { Route as AdminSalesSalesRouteImport } from './routes/admin.sales.sales'
+import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
+import { Route as AdminSystemPaymentsRouteImport } from './routes/admin.system.payments'
+import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
+import { Route as AdminSystemWalletRouteImport } from './routes/admin.system.wallet'
+import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
+import { Route as CheckoutSuccessOrderIdRouteImport } from './routes/checkout.success.$orderId'
+import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
+import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
+import { Route as OrganizerMarketingIndexRouteImport } from './routes/organizer.marketing.index'
+import { Route as OrganizerMarketingNewRouteImport } from './routes/organizer.marketing.new'
+import { Route as OrganizerPosIndexRouteImport } from './routes/organizer.pos.index'
+import { Route as OrganizerPosCashierSalesRouteImport } from './routes/organizer.pos.cashier-sales'
+import { Route as OrganizerPosCashiersRouteImport } from './routes/organizer.pos.cashiers'
+import { Route as OrganizerPosClosingRouteImport } from './routes/organizer.pos.closing'
+import { Route as OrganizerPosDevicesRouteImport } from './routes/organizer.pos.devices'
+import { Route as OrganizerPosFiscalRouteImport } from './routes/organizer.pos.fiscal'
+import { Route as OrganizerPosSalesRouteImport } from './routes/organizer.pos.sales'
 import { Route as ApiPublicEventsByTokenRouteImport } from './routes/api.public.events.by-token'
-import { Route as ApiPublicPaymentsTatrapayplusReturnRouteImport } from './routes/api.public.payments.tatrapayplus.return'
-import { Route as ApiPublicPaymentsGpwebpayReturnRouteImport } from './routes/api.public.payments.gpwebpay.return'
+import { Route as ApiPublicPaymentsReconcileRouteImport } from './routes/api.public.payments.reconcile'
+import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
+import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
+import { Route as ApiPublicPaymentsGpwebpayReturnRouteImport } from './routes/api.public.payments.gpwebpay.return'
+import { Route as ApiPublicPaymentsTatrapayplusReturnRouteImport } from './routes/api.public.payments.tatrapayplus.return'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScannerRoute = ScannerRouteImport.update({
-  id: '/scanner',
-  path: '/scanner',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartnersRoute = PartnersRouteImport.update({
-  id: '/partners',
-  path: '/partners',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrganizerRoute = OrganizerRouteImport.update({
-  id: '/organizer',
-  path: '/organizer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MarketingRoute = MarketingRouteImport.update({
-  id: '/marketing',
-  path: '/marketing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EventsRoute = EventsRouteImport.update({
-  id: '/events',
-  path: '/events',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArtistsRoute = ArtistsRouteImport.update({
-  id: '/artists',
-  path: '/artists',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -151,29 +101,89 @@ const AccountRoute = AccountRouteImport.update({
   path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => OrganizerRoute,
+const ArtistsRoute = ArtistsRouteImport.update({
+  id: '/artists',
+  path: '/artists',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingRoute = MarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerRoute = OrganizerRouteImport.update({
+  id: '/organizer',
+  path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScannerRoute = ScannerRouteImport.update({
+  id: '/scanner',
+  path: '/scanner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const PSlugRoute = PSlugRouteImport.update({
-  id: '/p/$slug',
-  path: '/p/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
+const AdminMarketingRoute = AdminMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const CheckoutOrderIdRoute = CheckoutOrderIdRouteImport.update({
+  id: '/checkout/$orderId',
+  path: '/checkout/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsIdRoute = EventsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EventsRoute,
+} as any)
+const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerEventsRoute = OrganizerEventsRouteImport.update({
@@ -181,262 +191,34 @@ const OrganizerEventsRoute = OrganizerEventsRouteImport.update({
   path: '/events',
   getParentRoute: () => OrganizerRoute,
 } as any)
-const EventsIdRoute = EventsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => EventsRoute,
-} as any)
-const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
-  id: '/checkout/return',
-  path: '/checkout/return',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutOrderIdRoute = CheckoutOrderIdRouteImport.update({
-  id: '/checkout/$orderId',
-  path: '/checkout/$orderId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminMarketingRoute = AdminMarketingRouteImport.update({
+const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
-  getParentRoute: () => AdminRoute,
-} as any)
-const OrganizerPosIndexRoute = OrganizerPosIndexRouteImport.update({
-  id: '/pos/',
-  path: '/pos/',
   getParentRoute: () => OrganizerRoute,
 } as any)
-const OrganizerMarketingIndexRoute = OrganizerMarketingIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => OrganizerMarketingRoute,
-} as any)
-const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => OrganizerEventsRoute,
-} as any)
-const OrganizerPosSalesRoute = OrganizerPosSalesRouteImport.update({
-  id: '/pos/sales',
-  path: '/pos/sales',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerPosFiscalRoute = OrganizerPosFiscalRouteImport.update({
-  id: '/pos/fiscal',
-  path: '/pos/fiscal',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerPosDevicesRoute = OrganizerPosDevicesRouteImport.update({
-  id: '/pos/devices',
-  path: '/pos/devices',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerPosClosingRoute = OrganizerPosClosingRouteImport.update({
-  id: '/pos/closing',
-  path: '/pos/closing',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerPosCashiersRoute = OrganizerPosCashiersRouteImport.update({
-  id: '/pos/cashiers',
-  path: '/pos/cashiers',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerPosCashierSalesRoute =
-  OrganizerPosCashierSalesRouteImport.update({
-    id: '/pos/cashier-sales',
-    path: '/pos/cashier-sales',
-    getParentRoute: () => OrganizerRoute,
-  } as any)
-const OrganizerMarketingNewRoute = OrganizerMarketingNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => OrganizerMarketingRoute,
-} as any)
-const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => OrganizerEventsRoute,
-} as any)
-const CheckoutSuccessOrderIdRoute = CheckoutSuccessOrderIdRouteImport.update({
-  id: '/checkout/success/$orderId',
-  path: '/checkout/success/$orderId',
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
-  id: '/api/public/seed-demo',
-  path: '/api/public/seed-demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSystemWalletRoute = AdminSystemWalletRouteImport.update({
-  id: '/system/wallet',
-  path: '/system/wallet',
+const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
+  id: '/data/categories',
+  path: '/data/categories',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSystemUsersRoute = AdminSystemUsersRouteImport.update({
-  id: '/system/users',
-  path: '/system/users',
+const AdminDataContentRoute = AdminDataContentRouteImport.update({
+  id: '/data/content',
+  path: '/data/content',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSystemPaymentsRoute = AdminSystemPaymentsRouteImport.update({
-  id: '/system/payments',
-  path: '/system/payments',
+const AdminDataGroupsRoute = AdminDataGroupsRouteImport.update({
+  id: '/data/groups',
+  path: '/data/groups',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSystemEmailTemplatesRoute =
-  AdminSystemEmailTemplatesRouteImport.update({
-    id: '/system/email-templates',
-    path: '/system/email-templates',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminSalesSalesRoute = AdminSalesSalesRouteImport.update({
-  id: '/sales/sales',
-  path: '/sales/sales',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSalesNotesRoute = AdminSalesNotesRouteImport.update({
-  id: '/sales/notes',
-  path: '/sales/notes',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSalesCancellationsRoute = AdminSalesCancellationsRouteImport.update({
-  id: '/sales/cancellations',
-  path: '/sales/cancellations',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminReportsSalesRoute = AdminReportsSalesRouteImport.update({
-  id: '/reports/sales',
-  path: '/reports/sales',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPosTerminalsRoute = AdminPosTerminalsRouteImport.update({
-  id: '/pos/terminals',
-  path: '/pos/terminals',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPosSalesRoute = AdminPosSalesRouteImport.update({
-  id: '/pos/sales',
-  path: '/pos/sales',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPosFiscalRoute = AdminPosFiscalRouteImport.update({
-  id: '/pos/fiscal',
-  path: '/pos/fiscal',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPosClosingsRoute = AdminPosClosingsRouteImport.update({
-  id: '/pos/closings',
-  path: '/pos/closings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPosCashiersRoute = AdminPosCashiersRouteImport.update({
-  id: '/pos/cashiers',
-  path: '/pos/cashiers',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketTicketsRoute = AdminMaxiticketTicketsRouteImport.update({
-  id: '/maxiticket/tickets',
-  path: '/maxiticket/tickets',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketRefundTypesRoute =
-  AdminMaxiticketRefundTypesRouteImport.update({
-    id: '/maxiticket/refund-types',
-    path: '/maxiticket/refund-types',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketProtocolsRoute =
-  AdminMaxiticketProtocolsRouteImport.update({
-    id: '/maxiticket/protocols',
-    path: '/maxiticket/protocols',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketPaymentsRoute = AdminMaxiticketPaymentsRouteImport.update({
-  id: '/maxiticket/payments',
-  path: '/maxiticket/payments',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketOrganizersRoute =
-  AdminMaxiticketOrganizersRouteImport.update({
-    id: '/maxiticket/organizers',
-    path: '/maxiticket/organizers',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketDevicesRoute = AdminMaxiticketDevicesRouteImport.update({
-  id: '/maxiticket/devices',
-  path: '/maxiticket/devices',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketCostsRoute = AdminMaxiticketCostsRouteImport.update({
-  id: '/maxiticket/costs',
-  path: '/maxiticket/costs',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketControlRoute = AdminMaxiticketControlRouteImport.update({
-  id: '/maxiticket/control',
-  path: '/maxiticket/control',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketBillingRoute = AdminMaxiticketBillingRouteImport.update({
-  id: '/maxiticket/billing',
-  path: '/maxiticket/billing',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketBalancesRoute = AdminMaxiticketBalancesRouteImport.update({
-  id: '/maxiticket/balances',
-  path: '/maxiticket/balances',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketAccountingReportRoute =
-  AdminMaxiticketAccountingReportRouteImport.update({
-    id: '/maxiticket/accounting-report',
-    path: '/maxiticket/accounting-report',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketAccountingChecksRoute =
-  AdminMaxiticketAccountingChecksRouteImport.update({
-    id: '/maxiticket/accounting-checks',
-    path: '/maxiticket/accounting-checks',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketAccountingBankRoute =
-  AdminMaxiticketAccountingBankRouteImport.update({
-    id: '/maxiticket/accounting-bank',
-    path: '/maxiticket/accounting-bank',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminFinanceStatsRoute = AdminFinanceStatsRouteImport.update({
-  id: '/finance/stats',
-  path: '/finance/stats',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminFinancePaymentsRoute = AdminFinancePaymentsRouteImport.update({
-  id: '/finance/payments',
-  path: '/finance/payments',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminEventsVenuesRoute = AdminEventsVenuesRouteImport.update({
-  id: '/events/venues',
-  path: '/events/venues',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminEventsVenueLayoutsRoute = AdminEventsVenueLayoutsRouteImport.update({
-  id: '/events/venue-layouts',
-  path: '/events/venue-layouts',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminEventsEventsRoute = AdminEventsEventsRouteImport.update({
-  id: '/events/events',
-  path: '/events/events',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminEventsDatesRoute = AdminEventsDatesRouteImport.update({
-  id: '/events/dates',
-  path: '/events/dates',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminEventsCouponsRoute = AdminEventsCouponsRouteImport.update({
-  id: '/events/coupons',
-  path: '/events/coupons',
+const AdminDataPerformersRoute = AdminDataPerformersRouteImport.update({
+  id: '/data/performers',
+  path: '/data/performers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDataPriceCategoriesRoute =
@@ -445,34 +227,247 @@ const AdminDataPriceCategoriesRoute =
     path: '/data/price-categories',
     getParentRoute: () => AdminRoute,
   } as any)
-const AdminDataPerformersRoute = AdminDataPerformersRouteImport.update({
-  id: '/data/performers',
-  path: '/data/performers',
+const AdminEventsCouponsRoute = AdminEventsCouponsRouteImport.update({
+  id: '/events/coupons',
+  path: '/events/coupons',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDataGroupsRoute = AdminDataGroupsRouteImport.update({
-  id: '/data/groups',
-  path: '/data/groups',
+const AdminEventsDatesRoute = AdminEventsDatesRouteImport.update({
+  id: '/events/dates',
+  path: '/events/dates',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDataContentRoute = AdminDataContentRouteImport.update({
-  id: '/data/content',
-  path: '/data/content',
+const AdminEventsEventsRoute = AdminEventsEventsRouteImport.update({
+  id: '/events/events',
+  path: '/events/events',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
-  id: '/data/categories',
-  path: '/data/categories',
+const AdminEventsVenueLayoutsRoute = AdminEventsVenueLayoutsRouteImport.update({
+  id: '/events/venue-layouts',
+  path: '/events/venue-layouts',
   getParentRoute: () => AdminRoute,
 } as any)
-const ApiPublicTicketsStatsRoute = ApiPublicTicketsStatsRouteImport.update({
-  id: '/api/public/tickets/stats',
-  path: '/api/public/tickets/stats',
+const AdminEventsVenuesRoute = AdminEventsVenuesRouteImport.update({
+  id: '/events/venues',
+  path: '/events/venues',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFinancePaymentsRoute = AdminFinancePaymentsRouteImport.update({
+  id: '/finance/payments',
+  path: '/finance/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFinanceStatsRoute = AdminFinanceStatsRouteImport.update({
+  id: '/finance/stats',
+  path: '/finance/stats',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaxiticketAccountingBankRoute =
+  AdminMaxiticketAccountingBankRouteImport.update({
+    id: '/maxiticket/accounting-bank',
+    path: '/maxiticket/accounting-bank',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMaxiticketAccountingChecksRoute =
+  AdminMaxiticketAccountingChecksRouteImport.update({
+    id: '/maxiticket/accounting-checks',
+    path: '/maxiticket/accounting-checks',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMaxiticketAccountingReportRoute =
+  AdminMaxiticketAccountingReportRouteImport.update({
+    id: '/maxiticket/accounting-report',
+    path: '/maxiticket/accounting-report',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMaxiticketBalancesRoute = AdminMaxiticketBalancesRouteImport.update({
+  id: '/maxiticket/balances',
+  path: '/maxiticket/balances',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaxiticketBillingRoute = AdminMaxiticketBillingRouteImport.update({
+  id: '/maxiticket/billing',
+  path: '/maxiticket/billing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaxiticketControlRoute = AdminMaxiticketControlRouteImport.update({
+  id: '/maxiticket/control',
+  path: '/maxiticket/control',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaxiticketCostsRoute = AdminMaxiticketCostsRouteImport.update({
+  id: '/maxiticket/costs',
+  path: '/maxiticket/costs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaxiticketDevicesRoute = AdminMaxiticketDevicesRouteImport.update({
+  id: '/maxiticket/devices',
+  path: '/maxiticket/devices',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaxiticketOrganizersRoute =
+  AdminMaxiticketOrganizersRouteImport.update({
+    id: '/maxiticket/organizers',
+    path: '/maxiticket/organizers',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMaxiticketPaymentsRoute = AdminMaxiticketPaymentsRouteImport.update({
+  id: '/maxiticket/payments',
+  path: '/maxiticket/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaxiticketProtocolsRoute =
+  AdminMaxiticketProtocolsRouteImport.update({
+    id: '/maxiticket/protocols',
+    path: '/maxiticket/protocols',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMaxiticketRefundTypesRoute =
+  AdminMaxiticketRefundTypesRouteImport.update({
+    id: '/maxiticket/refund-types',
+    path: '/maxiticket/refund-types',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminMaxiticketTicketsRoute = AdminMaxiticketTicketsRouteImport.update({
+  id: '/maxiticket/tickets',
+  path: '/maxiticket/tickets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosCashiersRoute = AdminPosCashiersRouteImport.update({
+  id: '/pos/cashiers',
+  path: '/pos/cashiers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosClosingsRoute = AdminPosClosingsRouteImport.update({
+  id: '/pos/closings',
+  path: '/pos/closings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosFiscalRoute = AdminPosFiscalRouteImport.update({
+  id: '/pos/fiscal',
+  path: '/pos/fiscal',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosSalesRoute = AdminPosSalesRouteImport.update({
+  id: '/pos/sales',
+  path: '/pos/sales',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosTerminalsRoute = AdminPosTerminalsRouteImport.update({
+  id: '/pos/terminals',
+  path: '/pos/terminals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsSalesRoute = AdminReportsSalesRouteImport.update({
+  id: '/reports/sales',
+  path: '/reports/sales',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSalesCancellationsRoute = AdminSalesCancellationsRouteImport.update({
+  id: '/sales/cancellations',
+  path: '/sales/cancellations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSalesNotesRoute = AdminSalesNotesRouteImport.update({
+  id: '/sales/notes',
+  path: '/sales/notes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSalesSalesRoute = AdminSalesSalesRouteImport.update({
+  id: '/sales/sales',
+  path: '/sales/sales',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSystemEmailTemplatesRoute =
+  AdminSystemEmailTemplatesRouteImport.update({
+    id: '/system/email-templates',
+    path: '/system/email-templates',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminSystemPaymentsRoute = AdminSystemPaymentsRouteImport.update({
+  id: '/system/payments',
+  path: '/system/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSystemUsersRoute = AdminSystemUsersRouteImport.update({
+  id: '/system/users',
+  path: '/system/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSystemWalletRoute = AdminSystemWalletRouteImport.update({
+  id: '/system/wallet',
+  path: '/system/wallet',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
+  id: '/api/public/seed-demo',
+  path: '/api/public/seed-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicTicketsScanRoute = ApiPublicTicketsScanRouteImport.update({
-  id: '/api/public/tickets/scan',
-  path: '/api/public/tickets/scan',
+const CheckoutSuccessOrderIdRoute = CheckoutSuccessOrderIdRouteImport.update({
+  id: '/checkout/success/$orderId',
+  path: '/checkout/success/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerEventsRoute,
+} as any)
+const OrganizerEventsNewRoute = OrganizerEventsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizerEventsRoute,
+} as any)
+const OrganizerMarketingIndexRoute = OrganizerMarketingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerMarketingRoute,
+} as any)
+const OrganizerMarketingNewRoute = OrganizerMarketingNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizerMarketingRoute,
+} as any)
+const OrganizerPosIndexRoute = OrganizerPosIndexRouteImport.update({
+  id: '/pos/',
+  path: '/pos/',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosCashierSalesRoute =
+  OrganizerPosCashierSalesRouteImport.update({
+    id: '/pos/cashier-sales',
+    path: '/pos/cashier-sales',
+    getParentRoute: () => OrganizerRoute,
+  } as any)
+const OrganizerPosCashiersRoute = OrganizerPosCashiersRouteImport.update({
+  id: '/pos/cashiers',
+  path: '/pos/cashiers',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosClosingRoute = OrganizerPosClosingRouteImport.update({
+  id: '/pos/closing',
+  path: '/pos/closing',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosDevicesRoute = OrganizerPosDevicesRouteImport.update({
+  id: '/pos/devices',
+  path: '/pos/devices',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosFiscalRoute = OrganizerPosFiscalRouteImport.update({
+  id: '/pos/fiscal',
+  path: '/pos/fiscal',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPosSalesRoute = OrganizerPosSalesRouteImport.update({
+  id: '/pos/sales',
+  path: '/pos/sales',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const ApiPublicEventsByTokenRoute = ApiPublicEventsByTokenRouteImport.update({
+  id: '/api/public/events/by-token',
+  path: '/api/public/events/by-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPaymentsReconcileRoute =
@@ -481,15 +476,20 @@ const ApiPublicPaymentsReconcileRoute =
     path: '/api/public/payments/reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicEventsByTokenRoute = ApiPublicEventsByTokenRouteImport.update({
-  id: '/api/public/events/by-token',
-  path: '/api/public/events/by-token',
+const ApiPublicTicketsScanRoute = ApiPublicTicketsScanRouteImport.update({
+  id: '/api/public/tickets/scan',
+  path: '/api/public/tickets/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPaymentsTatrapayplusReturnRoute =
-  ApiPublicPaymentsTatrapayplusReturnRouteImport.update({
-    id: '/api/public/payments/tatrapayplus/return',
-    path: '/api/public/payments/tatrapayplus/return',
+const ApiPublicTicketsStatsRoute = ApiPublicTicketsStatsRouteImport.update({
+  id: '/api/public/tickets/stats',
+  path: '/api/public/tickets/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPaymentsGopayWebhookRoute =
+  ApiPublicPaymentsGopayWebhookRouteImport.update({
+    id: '/api/public/payments/gopay/webhook',
+    path: '/api/public/payments/gopay/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicPaymentsGpwebpayReturnRoute =
@@ -498,10 +498,10 @@ const ApiPublicPaymentsGpwebpayReturnRoute =
     path: '/api/public/payments/gpwebpay/return',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicPaymentsGopayWebhookRoute =
-  ApiPublicPaymentsGopayWebhookRouteImport.update({
-    id: '/api/public/payments/gopay/webhook',
-    path: '/api/public/payments/gopay/webhook',
+const ApiPublicPaymentsTatrapayplusReturnRoute =
+  ApiPublicPaymentsTatrapayplusReturnRouteImport.update({
+    id: '/api/public/payments/tatrapayplus/return',
+    path: '/api/public/payments/tatrapayplus/return',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AdminDataCategoriesCategoryIdEventsNewRoute =
@@ -1035,81 +1035,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scanner': {
-      id: '/scanner'
-      path: '/scanner'
-      fullPath: '/scanner'
-      preLoaderRoute: typeof ScannerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/partners': {
-      id: '/partners'
-      path: '/partners'
-      fullPath: '/partners'
-      preLoaderRoute: typeof PartnersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organizer': {
-      id: '/organizer'
-      path: '/organizer'
-      fullPath: '/organizer'
-      preLoaderRoute: typeof OrganizerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/marketing': {
-      id: '/marketing'
-      path: '/marketing'
-      fullPath: '/marketing'
-      preLoaderRoute: typeof MarketingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/events': {
-      id: '/events'
-      path: '/events'
-      fullPath: '/events'
-      preLoaderRoute: typeof EventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/artists': {
-      id: '/artists'
-      path: '/artists'
-      fullPath: '/artists'
-      preLoaderRoute: typeof ArtistsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -1119,19 +1049,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/organizer/': {
-      id: '/organizer/'
-      path: '/'
-      fullPath: '/organizer/'
-      preLoaderRoute: typeof OrganizerIndexRouteImport
-      parentRoute: typeof OrganizerRoute
+    '/artists': {
+      id: '/artists'
+      path: '/artists'
+      fullPath: '/artists'
+      preLoaderRoute: typeof ArtistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketing': {
+      id: '/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof MarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer': {
+      id: '/organizer'
+      path: '/organizer'
+      fullPath: '/organizer'
+      preLoaderRoute: typeof OrganizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scanner': {
+      id: '/scanner'
+      path: '/scanner'
+      fullPath: '/scanner'
+      preLoaderRoute: typeof ScannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -1140,18 +1133,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/p/$slug': {
-      id: '/p/$slug'
-      path: '/p/$slug'
-      fullPath: '/p/$slug'
-      preLoaderRoute: typeof PSlugRouteImport
+    '/admin/marketing': {
+      id: '/admin/marketing'
+      path: '/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AdminMarketingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/checkout/$orderId': {
+      id: '/checkout/$orderId'
+      path: '/checkout/$orderId'
+      fullPath: '/checkout/$orderId'
+      preLoaderRoute: typeof CheckoutOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/organizer/marketing': {
-      id: '/organizer/marketing'
-      path: '/marketing'
-      fullPath: '/organizer/marketing'
-      preLoaderRoute: typeof OrganizerMarketingRouteImport
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events/$id': {
+      id: '/events/$id'
+      path: '/$id'
+      fullPath: '/events/$id'
+      preLoaderRoute: typeof EventsIdRouteImport
+      parentRoute: typeof EventsRoute
+    }
+    '/organizer/': {
+      id: '/organizer/'
+      path: '/'
+      fullPath: '/organizer/'
+      preLoaderRoute: typeof OrganizerIndexRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/events': {
@@ -1161,375 +1175,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerEventsRouteImport
       parentRoute: typeof OrganizerRoute
     }
-    '/events/$id': {
-      id: '/events/$id'
-      path: '/$id'
-      fullPath: '/events/$id'
-      preLoaderRoute: typeof EventsIdRouteImport
-      parentRoute: typeof EventsRoute
-    }
-    '/checkout/return': {
-      id: '/checkout/return'
-      path: '/checkout/return'
-      fullPath: '/checkout/return'
-      preLoaderRoute: typeof CheckoutReturnRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout/$orderId': {
-      id: '/checkout/$orderId'
-      path: '/checkout/$orderId'
-      fullPath: '/checkout/$orderId'
-      preLoaderRoute: typeof CheckoutOrderIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/marketing': {
-      id: '/admin/marketing'
+    '/organizer/marketing': {
+      id: '/organizer/marketing'
       path: '/marketing'
-      fullPath: '/admin/marketing'
-      preLoaderRoute: typeof AdminMarketingRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/organizer/pos/': {
-      id: '/organizer/pos/'
-      path: '/pos'
-      fullPath: '/organizer/pos/'
-      preLoaderRoute: typeof OrganizerPosIndexRouteImport
+      fullPath: '/organizer/marketing'
+      preLoaderRoute: typeof OrganizerMarketingRouteImport
       parentRoute: typeof OrganizerRoute
     }
-    '/organizer/marketing/': {
-      id: '/organizer/marketing/'
-      path: '/'
-      fullPath: '/organizer/marketing/'
-      preLoaderRoute: typeof OrganizerMarketingIndexRouteImport
-      parentRoute: typeof OrganizerMarketingRoute
-    }
-    '/organizer/events/': {
-      id: '/organizer/events/'
-      path: '/'
-      fullPath: '/organizer/events/'
-      preLoaderRoute: typeof OrganizerEventsIndexRouteImport
-      parentRoute: typeof OrganizerEventsRoute
-    }
-    '/organizer/pos/sales': {
-      id: '/organizer/pos/sales'
-      path: '/pos/sales'
-      fullPath: '/organizer/pos/sales'
-      preLoaderRoute: typeof OrganizerPosSalesRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/pos/fiscal': {
-      id: '/organizer/pos/fiscal'
-      path: '/pos/fiscal'
-      fullPath: '/organizer/pos/fiscal'
-      preLoaderRoute: typeof OrganizerPosFiscalRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/pos/devices': {
-      id: '/organizer/pos/devices'
-      path: '/pos/devices'
-      fullPath: '/organizer/pos/devices'
-      preLoaderRoute: typeof OrganizerPosDevicesRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/pos/closing': {
-      id: '/organizer/pos/closing'
-      path: '/pos/closing'
-      fullPath: '/organizer/pos/closing'
-      preLoaderRoute: typeof OrganizerPosClosingRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/pos/cashiers': {
-      id: '/organizer/pos/cashiers'
-      path: '/pos/cashiers'
-      fullPath: '/organizer/pos/cashiers'
-      preLoaderRoute: typeof OrganizerPosCashiersRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/pos/cashier-sales': {
-      id: '/organizer/pos/cashier-sales'
-      path: '/pos/cashier-sales'
-      fullPath: '/organizer/pos/cashier-sales'
-      preLoaderRoute: typeof OrganizerPosCashierSalesRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/marketing/new': {
-      id: '/organizer/marketing/new'
-      path: '/new'
-      fullPath: '/organizer/marketing/new'
-      preLoaderRoute: typeof OrganizerMarketingNewRouteImport
-      parentRoute: typeof OrganizerMarketingRoute
-    }
-    '/organizer/events/new': {
-      id: '/organizer/events/new'
-      path: '/new'
-      fullPath: '/organizer/events/new'
-      preLoaderRoute: typeof OrganizerEventsNewRouteImport
-      parentRoute: typeof OrganizerEventsRoute
-    }
-    '/checkout/success/$orderId': {
-      id: '/checkout/success/$orderId'
-      path: '/checkout/success/$orderId'
-      fullPath: '/checkout/success/$orderId'
-      preLoaderRoute: typeof CheckoutSuccessOrderIdRouteImport
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/seed-demo': {
-      id: '/api/public/seed-demo'
-      path: '/api/public/seed-demo'
-      fullPath: '/api/public/seed-demo'
-      preLoaderRoute: typeof ApiPublicSeedDemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/system/wallet': {
-      id: '/admin/system/wallet'
-      path: '/system/wallet'
-      fullPath: '/admin/system/wallet'
-      preLoaderRoute: typeof AdminSystemWalletRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/system/users': {
-      id: '/admin/system/users'
-      path: '/system/users'
-      fullPath: '/admin/system/users'
-      preLoaderRoute: typeof AdminSystemUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/system/payments': {
-      id: '/admin/system/payments'
-      path: '/system/payments'
-      fullPath: '/admin/system/payments'
-      preLoaderRoute: typeof AdminSystemPaymentsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/system/email-templates': {
-      id: '/admin/system/email-templates'
-      path: '/system/email-templates'
-      fullPath: '/admin/system/email-templates'
-      preLoaderRoute: typeof AdminSystemEmailTemplatesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/sales/sales': {
-      id: '/admin/sales/sales'
-      path: '/sales/sales'
-      fullPath: '/admin/sales/sales'
-      preLoaderRoute: typeof AdminSalesSalesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/sales/notes': {
-      id: '/admin/sales/notes'
-      path: '/sales/notes'
-      fullPath: '/admin/sales/notes'
-      preLoaderRoute: typeof AdminSalesNotesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/sales/cancellations': {
-      id: '/admin/sales/cancellations'
-      path: '/sales/cancellations'
-      fullPath: '/admin/sales/cancellations'
-      preLoaderRoute: typeof AdminSalesCancellationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reports/sales': {
-      id: '/admin/reports/sales'
-      path: '/reports/sales'
-      fullPath: '/admin/reports/sales'
-      preLoaderRoute: typeof AdminReportsSalesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pos/terminals': {
-      id: '/admin/pos/terminals'
-      path: '/pos/terminals'
-      fullPath: '/admin/pos/terminals'
-      preLoaderRoute: typeof AdminPosTerminalsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pos/sales': {
-      id: '/admin/pos/sales'
-      path: '/pos/sales'
-      fullPath: '/admin/pos/sales'
-      preLoaderRoute: typeof AdminPosSalesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pos/fiscal': {
-      id: '/admin/pos/fiscal'
-      path: '/pos/fiscal'
-      fullPath: '/admin/pos/fiscal'
-      preLoaderRoute: typeof AdminPosFiscalRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pos/closings': {
-      id: '/admin/pos/closings'
-      path: '/pos/closings'
-      fullPath: '/admin/pos/closings'
-      preLoaderRoute: typeof AdminPosClosingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pos/cashiers': {
-      id: '/admin/pos/cashiers'
-      path: '/pos/cashiers'
-      fullPath: '/admin/pos/cashiers'
-      preLoaderRoute: typeof AdminPosCashiersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/tickets': {
-      id: '/admin/maxiticket/tickets'
-      path: '/maxiticket/tickets'
-      fullPath: '/admin/maxiticket/tickets'
-      preLoaderRoute: typeof AdminMaxiticketTicketsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/refund-types': {
-      id: '/admin/maxiticket/refund-types'
-      path: '/maxiticket/refund-types'
-      fullPath: '/admin/maxiticket/refund-types'
-      preLoaderRoute: typeof AdminMaxiticketRefundTypesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/protocols': {
-      id: '/admin/maxiticket/protocols'
-      path: '/maxiticket/protocols'
-      fullPath: '/admin/maxiticket/protocols'
-      preLoaderRoute: typeof AdminMaxiticketProtocolsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/payments': {
-      id: '/admin/maxiticket/payments'
-      path: '/maxiticket/payments'
-      fullPath: '/admin/maxiticket/payments'
-      preLoaderRoute: typeof AdminMaxiticketPaymentsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/organizers': {
-      id: '/admin/maxiticket/organizers'
-      path: '/maxiticket/organizers'
-      fullPath: '/admin/maxiticket/organizers'
-      preLoaderRoute: typeof AdminMaxiticketOrganizersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/devices': {
-      id: '/admin/maxiticket/devices'
-      path: '/maxiticket/devices'
-      fullPath: '/admin/maxiticket/devices'
-      preLoaderRoute: typeof AdminMaxiticketDevicesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/costs': {
-      id: '/admin/maxiticket/costs'
-      path: '/maxiticket/costs'
-      fullPath: '/admin/maxiticket/costs'
-      preLoaderRoute: typeof AdminMaxiticketCostsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/control': {
-      id: '/admin/maxiticket/control'
-      path: '/maxiticket/control'
-      fullPath: '/admin/maxiticket/control'
-      preLoaderRoute: typeof AdminMaxiticketControlRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/billing': {
-      id: '/admin/maxiticket/billing'
-      path: '/maxiticket/billing'
-      fullPath: '/admin/maxiticket/billing'
-      preLoaderRoute: typeof AdminMaxiticketBillingRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/balances': {
-      id: '/admin/maxiticket/balances'
-      path: '/maxiticket/balances'
-      fullPath: '/admin/maxiticket/balances'
-      preLoaderRoute: typeof AdminMaxiticketBalancesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/accounting-report': {
-      id: '/admin/maxiticket/accounting-report'
-      path: '/maxiticket/accounting-report'
-      fullPath: '/admin/maxiticket/accounting-report'
-      preLoaderRoute: typeof AdminMaxiticketAccountingReportRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/accounting-checks': {
-      id: '/admin/maxiticket/accounting-checks'
-      path: '/maxiticket/accounting-checks'
-      fullPath: '/admin/maxiticket/accounting-checks'
-      preLoaderRoute: typeof AdminMaxiticketAccountingChecksRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/accounting-bank': {
-      id: '/admin/maxiticket/accounting-bank'
-      path: '/maxiticket/accounting-bank'
-      fullPath: '/admin/maxiticket/accounting-bank'
-      preLoaderRoute: typeof AdminMaxiticketAccountingBankRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/finance/stats': {
-      id: '/admin/finance/stats'
-      path: '/finance/stats'
-      fullPath: '/admin/finance/stats'
-      preLoaderRoute: typeof AdminFinanceStatsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/finance/payments': {
-      id: '/admin/finance/payments'
-      path: '/finance/payments'
-      fullPath: '/admin/finance/payments'
-      preLoaderRoute: typeof AdminFinancePaymentsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/events/venues': {
-      id: '/admin/events/venues'
-      path: '/events/venues'
-      fullPath: '/admin/events/venues'
-      preLoaderRoute: typeof AdminEventsVenuesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/events/venue-layouts': {
-      id: '/admin/events/venue-layouts'
-      path: '/events/venue-layouts'
-      fullPath: '/admin/events/venue-layouts'
-      preLoaderRoute: typeof AdminEventsVenueLayoutsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/events/events': {
-      id: '/admin/events/events'
-      path: '/events/events'
-      fullPath: '/admin/events/events'
-      preLoaderRoute: typeof AdminEventsEventsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/events/dates': {
-      id: '/admin/events/dates'
-      path: '/events/dates'
-      fullPath: '/admin/events/dates'
-      preLoaderRoute: typeof AdminEventsDatesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/events/coupons': {
-      id: '/admin/events/coupons'
-      path: '/events/coupons'
-      fullPath: '/admin/events/coupons'
-      preLoaderRoute: typeof AdminEventsCouponsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/data/price-categories': {
-      id: '/admin/data/price-categories'
-      path: '/data/price-categories'
-      fullPath: '/admin/data/price-categories'
-      preLoaderRoute: typeof AdminDataPriceCategoriesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/data/performers': {
-      id: '/admin/data/performers'
-      path: '/data/performers'
-      fullPath: '/admin/data/performers'
-      preLoaderRoute: typeof AdminDataPerformersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/data/groups': {
-      id: '/admin/data/groups'
-      path: '/data/groups'
-      fullPath: '/admin/data/groups'
-      preLoaderRoute: typeof AdminDataGroupsRouteImport
+    '/admin/data/categories': {
+      id: '/admin/data/categories'
+      path: '/data/categories'
+      fullPath: '/admin/data/categories'
+      preLoaderRoute: typeof AdminDataCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/data/content': {
@@ -1539,25 +1203,354 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataContentRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/data/categories': {
-      id: '/admin/data/categories'
-      path: '/data/categories'
-      fullPath: '/admin/data/categories'
-      preLoaderRoute: typeof AdminDataCategoriesRouteImport
+    '/admin/data/groups': {
+      id: '/admin/data/groups'
+      path: '/data/groups'
+      fullPath: '/admin/data/groups'
+      preLoaderRoute: typeof AdminDataGroupsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/api/public/tickets/stats': {
-      id: '/api/public/tickets/stats'
-      path: '/api/public/tickets/stats'
-      fullPath: '/api/public/tickets/stats'
-      preLoaderRoute: typeof ApiPublicTicketsStatsRouteImport
+    '/admin/data/performers': {
+      id: '/admin/data/performers'
+      path: '/data/performers'
+      fullPath: '/admin/data/performers'
+      preLoaderRoute: typeof AdminDataPerformersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/data/price-categories': {
+      id: '/admin/data/price-categories'
+      path: '/data/price-categories'
+      fullPath: '/admin/data/price-categories'
+      preLoaderRoute: typeof AdminDataPriceCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events/coupons': {
+      id: '/admin/events/coupons'
+      path: '/events/coupons'
+      fullPath: '/admin/events/coupons'
+      preLoaderRoute: typeof AdminEventsCouponsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events/dates': {
+      id: '/admin/events/dates'
+      path: '/events/dates'
+      fullPath: '/admin/events/dates'
+      preLoaderRoute: typeof AdminEventsDatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events/events': {
+      id: '/admin/events/events'
+      path: '/events/events'
+      fullPath: '/admin/events/events'
+      preLoaderRoute: typeof AdminEventsEventsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events/venue-layouts': {
+      id: '/admin/events/venue-layouts'
+      path: '/events/venue-layouts'
+      fullPath: '/admin/events/venue-layouts'
+      preLoaderRoute: typeof AdminEventsVenueLayoutsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events/venues': {
+      id: '/admin/events/venues'
+      path: '/events/venues'
+      fullPath: '/admin/events/venues'
+      preLoaderRoute: typeof AdminEventsVenuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/finance/payments': {
+      id: '/admin/finance/payments'
+      path: '/finance/payments'
+      fullPath: '/admin/finance/payments'
+      preLoaderRoute: typeof AdminFinancePaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/finance/stats': {
+      id: '/admin/finance/stats'
+      path: '/finance/stats'
+      fullPath: '/admin/finance/stats'
+      preLoaderRoute: typeof AdminFinanceStatsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/accounting-bank': {
+      id: '/admin/maxiticket/accounting-bank'
+      path: '/maxiticket/accounting-bank'
+      fullPath: '/admin/maxiticket/accounting-bank'
+      preLoaderRoute: typeof AdminMaxiticketAccountingBankRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/accounting-checks': {
+      id: '/admin/maxiticket/accounting-checks'
+      path: '/maxiticket/accounting-checks'
+      fullPath: '/admin/maxiticket/accounting-checks'
+      preLoaderRoute: typeof AdminMaxiticketAccountingChecksRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/accounting-report': {
+      id: '/admin/maxiticket/accounting-report'
+      path: '/maxiticket/accounting-report'
+      fullPath: '/admin/maxiticket/accounting-report'
+      preLoaderRoute: typeof AdminMaxiticketAccountingReportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/balances': {
+      id: '/admin/maxiticket/balances'
+      path: '/maxiticket/balances'
+      fullPath: '/admin/maxiticket/balances'
+      preLoaderRoute: typeof AdminMaxiticketBalancesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/billing': {
+      id: '/admin/maxiticket/billing'
+      path: '/maxiticket/billing'
+      fullPath: '/admin/maxiticket/billing'
+      preLoaderRoute: typeof AdminMaxiticketBillingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/control': {
+      id: '/admin/maxiticket/control'
+      path: '/maxiticket/control'
+      fullPath: '/admin/maxiticket/control'
+      preLoaderRoute: typeof AdminMaxiticketControlRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/costs': {
+      id: '/admin/maxiticket/costs'
+      path: '/maxiticket/costs'
+      fullPath: '/admin/maxiticket/costs'
+      preLoaderRoute: typeof AdminMaxiticketCostsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/devices': {
+      id: '/admin/maxiticket/devices'
+      path: '/maxiticket/devices'
+      fullPath: '/admin/maxiticket/devices'
+      preLoaderRoute: typeof AdminMaxiticketDevicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/organizers': {
+      id: '/admin/maxiticket/organizers'
+      path: '/maxiticket/organizers'
+      fullPath: '/admin/maxiticket/organizers'
+      preLoaderRoute: typeof AdminMaxiticketOrganizersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/payments': {
+      id: '/admin/maxiticket/payments'
+      path: '/maxiticket/payments'
+      fullPath: '/admin/maxiticket/payments'
+      preLoaderRoute: typeof AdminMaxiticketPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/protocols': {
+      id: '/admin/maxiticket/protocols'
+      path: '/maxiticket/protocols'
+      fullPath: '/admin/maxiticket/protocols'
+      preLoaderRoute: typeof AdminMaxiticketProtocolsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/refund-types': {
+      id: '/admin/maxiticket/refund-types'
+      path: '/maxiticket/refund-types'
+      fullPath: '/admin/maxiticket/refund-types'
+      preLoaderRoute: typeof AdminMaxiticketRefundTypesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maxiticket/tickets': {
+      id: '/admin/maxiticket/tickets'
+      path: '/maxiticket/tickets'
+      fullPath: '/admin/maxiticket/tickets'
+      preLoaderRoute: typeof AdminMaxiticketTicketsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/cashiers': {
+      id: '/admin/pos/cashiers'
+      path: '/pos/cashiers'
+      fullPath: '/admin/pos/cashiers'
+      preLoaderRoute: typeof AdminPosCashiersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/closings': {
+      id: '/admin/pos/closings'
+      path: '/pos/closings'
+      fullPath: '/admin/pos/closings'
+      preLoaderRoute: typeof AdminPosClosingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/fiscal': {
+      id: '/admin/pos/fiscal'
+      path: '/pos/fiscal'
+      fullPath: '/admin/pos/fiscal'
+      preLoaderRoute: typeof AdminPosFiscalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/sales': {
+      id: '/admin/pos/sales'
+      path: '/pos/sales'
+      fullPath: '/admin/pos/sales'
+      preLoaderRoute: typeof AdminPosSalesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pos/terminals': {
+      id: '/admin/pos/terminals'
+      path: '/pos/terminals'
+      fullPath: '/admin/pos/terminals'
+      preLoaderRoute: typeof AdminPosTerminalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports/sales': {
+      id: '/admin/reports/sales'
+      path: '/reports/sales'
+      fullPath: '/admin/reports/sales'
+      preLoaderRoute: typeof AdminReportsSalesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sales/cancellations': {
+      id: '/admin/sales/cancellations'
+      path: '/sales/cancellations'
+      fullPath: '/admin/sales/cancellations'
+      preLoaderRoute: typeof AdminSalesCancellationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sales/notes': {
+      id: '/admin/sales/notes'
+      path: '/sales/notes'
+      fullPath: '/admin/sales/notes'
+      preLoaderRoute: typeof AdminSalesNotesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sales/sales': {
+      id: '/admin/sales/sales'
+      path: '/sales/sales'
+      fullPath: '/admin/sales/sales'
+      preLoaderRoute: typeof AdminSalesSalesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/system/email-templates': {
+      id: '/admin/system/email-templates'
+      path: '/system/email-templates'
+      fullPath: '/admin/system/email-templates'
+      preLoaderRoute: typeof AdminSystemEmailTemplatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/system/payments': {
+      id: '/admin/system/payments'
+      path: '/system/payments'
+      fullPath: '/admin/system/payments'
+      preLoaderRoute: typeof AdminSystemPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/system/users': {
+      id: '/admin/system/users'
+      path: '/system/users'
+      fullPath: '/admin/system/users'
+      preLoaderRoute: typeof AdminSystemUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/system/wallet': {
+      id: '/admin/system/wallet'
+      path: '/system/wallet'
+      fullPath: '/admin/system/wallet'
+      preLoaderRoute: typeof AdminSystemWalletRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/api/public/seed-demo': {
+      id: '/api/public/seed-demo'
+      path: '/api/public/seed-demo'
+      fullPath: '/api/public/seed-demo'
+      preLoaderRoute: typeof ApiPublicSeedDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/tickets/scan': {
-      id: '/api/public/tickets/scan'
-      path: '/api/public/tickets/scan'
-      fullPath: '/api/public/tickets/scan'
-      preLoaderRoute: typeof ApiPublicTicketsScanRouteImport
+    '/checkout/success/$orderId': {
+      id: '/checkout/success/$orderId'
+      path: '/checkout/success/$orderId'
+      fullPath: '/checkout/success/$orderId'
+      preLoaderRoute: typeof CheckoutSuccessOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/events/': {
+      id: '/organizer/events/'
+      path: '/'
+      fullPath: '/organizer/events/'
+      preLoaderRoute: typeof OrganizerEventsIndexRouteImport
+      parentRoute: typeof OrganizerEventsRoute
+    }
+    '/organizer/events/new': {
+      id: '/organizer/events/new'
+      path: '/new'
+      fullPath: '/organizer/events/new'
+      preLoaderRoute: typeof OrganizerEventsNewRouteImport
+      parentRoute: typeof OrganizerEventsRoute
+    }
+    '/organizer/marketing/': {
+      id: '/organizer/marketing/'
+      path: '/'
+      fullPath: '/organizer/marketing/'
+      preLoaderRoute: typeof OrganizerMarketingIndexRouteImport
+      parentRoute: typeof OrganizerMarketingRoute
+    }
+    '/organizer/marketing/new': {
+      id: '/organizer/marketing/new'
+      path: '/new'
+      fullPath: '/organizer/marketing/new'
+      preLoaderRoute: typeof OrganizerMarketingNewRouteImport
+      parentRoute: typeof OrganizerMarketingRoute
+    }
+    '/organizer/pos/': {
+      id: '/organizer/pos/'
+      path: '/pos'
+      fullPath: '/organizer/pos/'
+      preLoaderRoute: typeof OrganizerPosIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/cashier-sales': {
+      id: '/organizer/pos/cashier-sales'
+      path: '/pos/cashier-sales'
+      fullPath: '/organizer/pos/cashier-sales'
+      preLoaderRoute: typeof OrganizerPosCashierSalesRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/cashiers': {
+      id: '/organizer/pos/cashiers'
+      path: '/pos/cashiers'
+      fullPath: '/organizer/pos/cashiers'
+      preLoaderRoute: typeof OrganizerPosCashiersRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/closing': {
+      id: '/organizer/pos/closing'
+      path: '/pos/closing'
+      fullPath: '/organizer/pos/closing'
+      preLoaderRoute: typeof OrganizerPosClosingRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/devices': {
+      id: '/organizer/pos/devices'
+      path: '/pos/devices'
+      fullPath: '/organizer/pos/devices'
+      preLoaderRoute: typeof OrganizerPosDevicesRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/fiscal': {
+      id: '/organizer/pos/fiscal'
+      path: '/pos/fiscal'
+      fullPath: '/organizer/pos/fiscal'
+      preLoaderRoute: typeof OrganizerPosFiscalRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/pos/sales': {
+      id: '/organizer/pos/sales'
+      path: '/pos/sales'
+      fullPath: '/organizer/pos/sales'
+      preLoaderRoute: typeof OrganizerPosSalesRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/api/public/events/by-token': {
+      id: '/api/public/events/by-token'
+      path: '/api/public/events/by-token'
+      fullPath: '/api/public/events/by-token'
+      preLoaderRoute: typeof ApiPublicEventsByTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/reconcile': {
@@ -1567,18 +1560,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/events/by-token': {
-      id: '/api/public/events/by-token'
-      path: '/api/public/events/by-token'
-      fullPath: '/api/public/events/by-token'
-      preLoaderRoute: typeof ApiPublicEventsByTokenRouteImport
+    '/api/public/tickets/scan': {
+      id: '/api/public/tickets/scan'
+      path: '/api/public/tickets/scan'
+      fullPath: '/api/public/tickets/scan'
+      preLoaderRoute: typeof ApiPublicTicketsScanRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/payments/tatrapayplus/return': {
-      id: '/api/public/payments/tatrapayplus/return'
-      path: '/api/public/payments/tatrapayplus/return'
-      fullPath: '/api/public/payments/tatrapayplus/return'
-      preLoaderRoute: typeof ApiPublicPaymentsTatrapayplusReturnRouteImport
+    '/api/public/tickets/stats': {
+      id: '/api/public/tickets/stats'
+      path: '/api/public/tickets/stats'
+      fullPath: '/api/public/tickets/stats'
+      preLoaderRoute: typeof ApiPublicTicketsStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/gopay/webhook': {
+      id: '/api/public/payments/gopay/webhook'
+      path: '/api/public/payments/gopay/webhook'
+      fullPath: '/api/public/payments/gopay/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsGopayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/gpwebpay/return': {
@@ -1588,11 +1588,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsGpwebpayReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/payments/gopay/webhook': {
-      id: '/api/public/payments/gopay/webhook'
-      path: '/api/public/payments/gopay/webhook'
-      fullPath: '/api/public/payments/gopay/webhook'
-      preLoaderRoute: typeof ApiPublicPaymentsGopayWebhookRouteImport
+    '/api/public/payments/tatrapayplus/return': {
+      id: '/api/public/payments/tatrapayplus/return'
+      path: '/api/public/payments/tatrapayplus/return'
+      fullPath: '/api/public/payments/tatrapayplus/return'
+      preLoaderRoute: typeof ApiPublicPaymentsTatrapayplusReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/data/categories/$categoryId/events/new': {
