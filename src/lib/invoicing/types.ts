@@ -10,6 +10,20 @@ export type FakturaZakaznik = {
   name: string;
   email: string;
   phone?: string;
+  /**
+   * Firemné údaje. Keď je vyplnené `company`, faktúra ide na firmu — meno
+   * fyzickej osoby zostáva len ako kontakt.
+   */
+  company?: {
+    name: string;
+    ico?: string | null;
+    dic?: string | null;
+    ic_dph?: string | null;
+    street?: string | null;
+    city?: string | null;
+    zip?: string | null;
+    country?: string | null;
+  } | null;
 };
 
 export type FakturaPolozka = {
@@ -68,4 +82,24 @@ export interface FakturacnySystem {
    */
   rezim(): "test" | "ostrá" | "neznáma";
   test(): Promise<TestBrany>;
+}
+
+/**
+ * Firemné údaje z objednávky. Bez názvu firmy vráti `null` — faktúra vtedy
+ * ide na fyzickú osobu.
+ */
+export function firemneUdaje(order: Record<string, unknown>): FakturaZakaznik["company"] {
+  const t = (k: string) => (typeof order[k] === "string" ? (order[k] as string) : null);
+  const nazov = t("customer_company");
+  if (!nazov) return null;
+  return {
+    name: nazov,
+    ico: t("customer_ico"),
+    dic: t("customer_dic"),
+    ic_dph: t("customer_ic_dph"),
+    street: t("customer_street"),
+    city: t("customer_city"),
+    zip: t("customer_zip"),
+    country: t("customer_country"),
+  };
 }

@@ -15,6 +15,7 @@ import { pocetVstupeniek } from "./plural";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
 import { adresaNasehoPdf, dopytajCakajuce, settleOrder } from "./order-settlement.server";
 import { fakturacnySystem } from "./invoicing/index.server";
+import { firemneUdaje } from "./invoicing/types";
 import { sadzbaPodujatia } from "./dph.server";
 
 /**
@@ -86,6 +87,21 @@ const CustomerSchema = z.object({
   phone: z.string().max(40).optional().nullable(),
 });
 
+/**
+ * Firemné údaje na faktúru. Všetko nepovinné — kto nekupuje na firmu, nič
+ * z toho nevypĺňa a faktúra ide na fyzickú osobu ako doteraz.
+ */
+const CompanySchema = z.object({
+  name: z.string().max(200),
+  ico: z.string().max(20).optional().nullable(),
+  dic: z.string().max(20).optional().nullable(),
+  ic_dph: z.string().max(20).optional().nullable(),
+  street: z.string().max(200).optional().nullable(),
+  city: z.string().max(120).optional().nullable(),
+  zip: z.string().max(20).optional().nullable(),
+  country: z.string().max(2).optional().nullable(),
+});
+
 // BEZPEČNOSŤ: klient posiela LEN to, ČO kupuje — nikdy za koľko. Cenu aj názov
 // položky odvodí server z databázy. Predtým sem chodilo `unit_price` z
 // prehliadača a total sa počítal z neho, takže stačilo poslať `unit_price: 0`
@@ -140,6 +156,7 @@ export const submitOrder = createServerFn({ method: "POST" })
         // staršie odkazy a jednodňové podujatia fungovali ako doteraz.
         event_date_id: z.string().uuid().optional(),
         customer: CustomerSchema,
+        company: CompanySchema.optional().nullable(),
         items: z.array(ItemSchema).min(1).max(100),
         // Kód zľavového kupónu. Zľavu počíta server — klient posiela len kód.
         coupon_code: z.string().max(40).optional().nullable(),
@@ -383,6 +400,14 @@ export const submitOrder = createServerFn({ method: "POST" })
         customer_name: `${data.customer.first_name} ${data.customer.last_name}`.trim(),
         customer_email: data.customer.email,
         customer_phone: data.customer.phone || null,
+        customer_company: data.company?.name?.trim() || null,
+        customer_ico: data.company?.ico?.trim() || null,
+        customer_dic: data.company?.dic?.trim() || null,
+        customer_ic_dph: data.company?.ic_dph?.trim() || null,
+        customer_street: data.company?.street?.trim() || null,
+        customer_city: data.company?.city?.trim() || null,
+        customer_zip: data.company?.zip?.trim() || null,
+        customer_country: data.company?.country?.trim()?.toUpperCase() || null,
         total_amount: total,
         discount_amount: discount,
         coupon_id: couponId,
@@ -807,6 +832,8 @@ export const reissueInvoice = createServerFn({ method: "POST" })
         name: order.customer_name || "Zákazník",
         email: order.customer_email || "",
         phone: order.customer_phone || undefined,
+
+        company: firemneUdaje(order),
       },
       items: (items || []).map((it) => ({
         name: it.label,

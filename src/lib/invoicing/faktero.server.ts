@@ -109,11 +109,24 @@ export const fakteroSystem: FakturacnySystem = {
   async vystav(input: FakturaVstup): Promise<FakturaVysledok> {
     // 1) Odberateľ. Faktero chce na faktúre `customer_id`, takže ho treba
     //    založiť; `external_id` drží väzbu na našu objednávku.
+    const firma = input.customer.company;
     const odberatel = await posliSNadstavbou(
       "/customers",
-      { name: input.customer.name || "Zákazník", email: input.customer.email || "" },
+      {
+        // Na faktúre je odberateľom firma, ak ju kupujúci uviedol.
+        name: firma?.name || input.customer.name || "Zákazník",
+        email: input.customer.email || "",
+        ...(firma?.ico ? { ico: firma.ico } : {}),
+        ...(firma?.ic_dph ? { ic_dph: firma.ic_dph } : {}),
+        ...(firma?.street ? { street: firma.street } : {}),
+        ...(firma?.city ? { city: firma.city } : {}),
+        ...(firma?.zip ? { zip: firma.zip } : {}),
+        ...(firma?.country ? { country: firma.country } : {}),
+      },
       {
         ...(input.customer.phone ? { phone: input.customer.phone } : {}),
+        ...(firma?.dic ? { dic: firma.dic } : {}),
+        ...(firma ? { contact_person: input.customer.name } : {}),
         external_id: input.orderId,
       },
     );

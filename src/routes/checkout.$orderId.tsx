@@ -58,6 +58,18 @@ function CheckoutPage() {
     consent: false,
   });
 
+  // Firemné údaje na faktúru. Kto nekupuje na firmu, nič z toho nevidí.
+  const [naFirmu, setNaFirmu] = useState(false);
+  const [firma, setFirma] = useState({
+    name: "",
+    ico: "",
+    dic: "",
+    ic_dph: "",
+    street: "",
+    city: "",
+    zip: "",
+  });
+
   useEffect(() => {
     releaseExpired();
     const o = getOrder(orderId);
@@ -162,6 +174,19 @@ function CheckoutPage() {
             email: form.email,
             phone: form.phone || undefined,
           },
+          company:
+            naFirmu && firma.name.trim()
+              ? {
+                  name: firma.name.trim(),
+                  ico: firma.ico.trim() || undefined,
+                  dic: firma.dic.trim() || undefined,
+                  ic_dph: firma.ic_dph.trim() || undefined,
+                  street: firma.street.trim() || undefined,
+                  city: firma.city.trim() || undefined,
+                  zip: firma.zip.trim() || undefined,
+                  country: "SK",
+                }
+              : undefined,
           // Ceny sa neposielajú — server si ich odvodí z databázy.
           items: order.items.map((it) => ({
             seat_id: it.seat_id || undefined,
@@ -269,6 +294,58 @@ function CheckoutPage() {
                 />
               </Field>
             </div>
+            <label className="flex items-start gap-3 mt-5 text-sm cursor-pointer">
+              <Checkbox checked={naFirmu} onCheckedChange={(v) => setNaFirmu(!!v)} />
+              <span className="text-muted-foreground">Kupujem na firmu — chcem faktúru s IČO</span>
+            </label>
+
+            {naFirmu && (
+              <div className="grid sm:grid-cols-2 gap-4 mt-4">
+                <Field label="Názov firmy" className="sm:col-span-2">
+                  <Input
+                    value={firma.name}
+                    onChange={(e) => setFirma({ ...firma, name: e.target.value })}
+                  />
+                </Field>
+                <Field label="IČO">
+                  <Input
+                    value={firma.ico}
+                    onChange={(e) => setFirma({ ...firma, ico: e.target.value })}
+                  />
+                </Field>
+                <Field label="IČ DPH (voliteľné)">
+                  <Input
+                    value={firma.ic_dph}
+                    onChange={(e) => setFirma({ ...firma, ic_dph: e.target.value })}
+                  />
+                </Field>
+                <Field label="DIČ (voliteľné)">
+                  <Input
+                    value={firma.dic}
+                    onChange={(e) => setFirma({ ...firma, dic: e.target.value })}
+                  />
+                </Field>
+                <Field label="Ulica a číslo">
+                  <Input
+                    value={firma.street}
+                    onChange={(e) => setFirma({ ...firma, street: e.target.value })}
+                  />
+                </Field>
+                <Field label="Mesto">
+                  <Input
+                    value={firma.city}
+                    onChange={(e) => setFirma({ ...firma, city: e.target.value })}
+                  />
+                </Field>
+                <Field label="PSČ">
+                  <Input
+                    value={firma.zip}
+                    onChange={(e) => setFirma({ ...firma, zip: e.target.value })}
+                  />
+                </Field>
+              </div>
+            )}
+
             <label className="flex items-start gap-3 mt-5 text-sm cursor-pointer">
               <Checkbox
                 checked={form.consent}

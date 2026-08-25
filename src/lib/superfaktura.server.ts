@@ -4,6 +4,7 @@
 
 import type { Json } from "@/integrations/supabase/types";
 import { hodnota } from "./pristupy.server";
+import type { FakturaZakaznik } from "./invoicing/types";
 
 function env() {
   // Prístupy môžu byť z administrácie alebo z prostredia — poradie rieši
@@ -30,11 +31,7 @@ function authHeader() {
   return `SFAPI email=${email}&apikey=${apiKey}&company_id=${companyId}&module=Lovable+vipky.sk`;
 }
 
-export type SfCustomer = {
-  name: string;
-  email: string;
-  phone?: string;
-};
+export type SfCustomer = FakturaZakaznik;
 
 export type SfItem = {
   name: string;
@@ -101,9 +98,23 @@ export async function createPaidInvoice(input: SfInvoiceInput): Promise<SfInvoic
       already_paid: input.alreadyPaid !== false,
     },
     Client: {
-      name: input.customer.name,
+      // Firemný odberateľ má na faktúre názov firmy; meno kupujúceho
+      // zostáva ako kontaktná osoba.
+      name: input.customer.company?.name || input.customer.name,
       email: input.customer.email,
       phone: input.customer.phone || "",
+      ...(input.customer.company
+        ? {
+            ico: input.customer.company.ico || "",
+            dic: input.customer.company.dic || "",
+            ic_dph: input.customer.company.ic_dph || "",
+            address: input.customer.company.street || "",
+            city: input.customer.company.city || "",
+            zip: input.customer.company.zip || "",
+            country_iso_id: input.customer.company.country || "SK",
+            delivery_name: input.customer.name,
+          }
+        : {}),
     },
     InvoiceItem: input.items.map((it) => ({
       name: it.name,

@@ -10,6 +10,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { branaPodlaId, pripravPristupy } from "./payment-gateways/index.server";
 import type { GatewayId, PaymentState } from "./payment-gateways/types";
 import { fakturacnySystem } from "./invoicing/index.server";
+import { firemneUdaje } from "./invoicing/types";
 import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { releaseCouponForOrder } from "./coupons.server";
@@ -262,6 +263,8 @@ async function vystavFakturu(order: Objednavka): Promise<void> {
         name: (order.customer_name as string) || "Zákazník",
         email: (order.customer_email as string) || "",
         phone: (order.customer_phone as string) || undefined,
+
+        company: firemneUdaje(order as Record<string, string | null>),
       },
       items: (items || []).map((it) => ({
         name: it.label,

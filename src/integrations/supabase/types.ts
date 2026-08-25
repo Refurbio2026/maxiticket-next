@@ -194,6 +194,14 @@ export type Database = {
         Row: {
           created_at: string;
           currency: string;
+          customer_company: string | null;
+          customer_ico: string | null;
+          customer_dic: string | null;
+          customer_ic_dph: string | null;
+          customer_street: string | null;
+          customer_city: string | null;
+          customer_zip: string | null;
+          customer_country: string | null;
           customer_email: string | null;
           customer_name: string | null;
           customer_phone: string | null;
@@ -235,6 +243,14 @@ export type Database = {
         Insert: {
           created_at?: string;
           currency?: string;
+          customer_company?: string | null;
+          customer_ico?: string | null;
+          customer_dic?: string | null;
+          customer_ic_dph?: string | null;
+          customer_street?: string | null;
+          customer_city?: string | null;
+          customer_zip?: string | null;
+          customer_country?: string | null;
           customer_email?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
@@ -276,6 +292,14 @@ export type Database = {
         Update: {
           created_at?: string;
           currency?: string;
+          customer_company?: string | null;
+          customer_ico?: string | null;
+          customer_dic?: string | null;
+          customer_ic_dph?: string | null;
+          customer_street?: string | null;
+          customer_city?: string | null;
+          customer_zip?: string | null;
+          customer_country?: string | null;
           customer_email?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
