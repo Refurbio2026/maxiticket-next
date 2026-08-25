@@ -10,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // `scanner_token` je zdieľané tajomstvo, ktoré autorizuje skenovanie vstupeniek —
 // nesmie sa dostať do odpovede pre verejnosť. Nikdy tu nepoužívaj select("*").
 const EVENT_COLUMNS =
-  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_id, venue_layout_id, group_id, base_price, total_tickets, vip_price, vat_rate, created_at, updated_at";
+  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_id, venue_layout_id, group_id, base_price, total_tickets, vip_price, vat_rate, max_tickets_per_person, created_at, updated_at";
 
 export type EventTicketType = {
   id: string;
@@ -38,6 +38,8 @@ export type EventRecord = {
   category: string;
   /** Sadzba DPH pre vstupné v percentách; `null` = predvolená sadzba platformy. */
   vat_rate: number | null;
+  /** Strop vstupeniek na osobu; `null` = bez vlastného stropu. */
+  max_tickets_per_person: number | null;
   event_date: string;
   event_time: string;
   venue: string;
@@ -79,6 +81,10 @@ function mapEvent(
     title: row.title as string,
     category: row.category as string,
     vat_rate: row.vat_rate === null || row.vat_rate === undefined ? null : Number(row.vat_rate),
+    max_tickets_per_person:
+      row.max_tickets_per_person === null || row.max_tickets_per_person === undefined
+        ? null
+        : Number(row.max_tickets_per_person),
     event_date: row.event_date as string,
     event_time: row.event_time as string,
     venue: row.venue as string,
@@ -276,6 +282,8 @@ const EventInput = z.object({
   vip_price: z.number().nonnegative().optional().nullable(),
   /** Sadzba DPH pre vstupné; NULL = predvolená sadzba platformy. */
   vat_rate: z.number().nonnegative().max(100).optional().nullable(),
+  /** Strop vstupeniek na jednu e-mailovú adresu; NULL = bez vlastného stropu. */
+  max_tickets_per_person: z.number().int().positive().max(1000).optional().nullable(),
   tickets: z.array(TicketTypeInput).max(50).default([]),
 });
 
@@ -339,6 +347,7 @@ export const upsertEvent = createServerFn({ method: "POST" })
       title: data.title,
       category: data.category,
       vat_rate: data.vat_rate ?? null,
+      max_tickets_per_person: data.max_tickets_per_person ?? null,
       venue,
       city,
       address,

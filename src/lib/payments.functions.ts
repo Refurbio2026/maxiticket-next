@@ -11,6 +11,7 @@ import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from
 import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
+import { pocetVstupeniek } from "./plural";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
 import { adresaNasehoPdf, dopytajCakajuce, settleOrder } from "./order-settlement.server";
 import { fakturacnySystem } from "./invoicing/index.server";
@@ -171,7 +172,7 @@ export const submitOrder = createServerFn({ method: "POST" })
     // Koľko vstupeniek je vôbec rozumné kúpiť naraz.
     const totalQuantity = data.items.reduce((s, it) => s + it.quantity, 0);
     if (totalQuantity > MAX_TICKETS_PER_ORDER) {
-      throw new Error(`Naraz sa dá kúpiť najviac ${MAX_TICKETS_PER_ORDER} vstupeniek.`);
+      throw new Error(`Naraz sa dá kúpiť najviac ${pocetVstupeniek(MAX_TICKETS_PER_ORDER)}.`);
     }
 
     // Koľko nedoplatených objednávok smie jeden kupujúci držať súčasne. Bez
@@ -190,11 +191,45 @@ export const submitOrder = createServerFn({ method: "POST" })
 
     const { data: event } = await supabaseAdmin
       .from("events")
-      .select("id, status, base_price, vip_price, total_tickets, venue_layout_id")
+      .select(
+        "id, status, base_price, vip_price, total_tickets, venue_layout_id, max_tickets_per_person",
+      )
       .eq("id", data.event_id)
       .maybeSingle();
     if (!event) throw new Error("Podujatie sa nenašlo");
     if (event.status !== "published") throw new Error("Podujatie nie je v predaji");
+
+    // Strop na osobu za celé podujatie. Globálny limit na objednávku sám
+    // nebráni tomu, aby si niekto kúpil dvadsať, zaplatil a hneď ďalších
+    // dvadsať — pri vypredanom koncerte je to cesta k prekupníkom.
+    if (event.max_tickets_per_person) {
+      // Zámerne dva dotazy namiesto vnoreného filtra — ten sa v PostgREST
+      // správa inak, než sa na prvý pohľad zdá, a limit, ktorý ticho nefunguje,
+      // je horší než žiadny.
+      const { data: mojeObjednavky } = await supabaseAdmin
+        .from("orders")
+        .select("id")
+        .eq("event_id", data.event_id)
+        .ilike("customer_email", email)
+        .in("status", ["pending", "awaiting_payment", "paid"]);
+      const ids = (mojeObjednavky || []).map((o) => o.id);
+      let doteraz = 0;
+      if (ids.length > 0) {
+        const { data: uzKupene } = await supabaseAdmin
+          .from("order_items")
+          .select("quantity")
+          .in("order_id", ids);
+        doteraz = (uzKupene || []).reduce((s, r) => s + (r.quantity || 0), 0);
+      }
+      if (doteraz + totalQuantity > event.max_tickets_per_person) {
+        const zostava = Math.max(0, event.max_tickets_per_person - doteraz);
+        throw new Error(
+          zostava > 0
+            ? `Na toto podujatie si môže jeden človek kúpiť najviac ${pocetVstupeniek(event.max_tickets_per_person)}. Zostáva ti ${zostava}.`
+            : `Na toto podujatie si už kúpil maximum ${pocetVstupeniek(event.max_tickets_per_person)}.`,
+        );
+      }
+    }
 
     // --- Termín ---
     // Kupuje sa vždy konkrétny termín. Ten určuje obsadenosť sedadiel aj

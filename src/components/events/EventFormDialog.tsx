@@ -58,6 +58,8 @@ export type EventFormState = {
   category: string;
   /** Prázdne = predvolená sadzba platformy. */
   vat_rate: string;
+  /** Prázdne = bez vlastného stropu. */
+  max_per_person: string;
   group_id: string;
   /** Za koho admin podujatie zakladá; prázdne = za seba. */
   organizer_id: string;
@@ -103,6 +105,7 @@ const blankEventForm = (mode: "admin" | "organizer"): EventFormState => ({
   title: "",
   category: "Koncert",
   vat_rate: "",
+  max_per_person: "",
   group_id: "",
   organizer_id: OWN_ACCOUNT,
   event_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
@@ -131,6 +134,7 @@ function eventToForm(e: EventRecord): EventFormState {
     title: e.title,
     category: e.category,
     vat_rate: e.vat_rate != null ? String(e.vat_rate) : "",
+    max_per_person: e.max_tickets_per_person != null ? String(e.max_tickets_per_person) : "",
     group_id: e.group_id ?? "",
     organizer_id: e.organizer_id,
     event_date: e.event_date,
@@ -343,6 +347,8 @@ export function EventFormDialog({
         title: form.title.trim(),
         category: form.category,
         vat_rate: form.vat_rate.trim() === "" ? null : Number(form.vat_rate),
+        max_tickets_per_person:
+          form.max_per_person.trim() === "" ? null : Number(form.max_per_person),
         group_id: form.group_id || null,
         event_date: form.event_date,
         event_time: form.event_time,
@@ -436,6 +442,20 @@ export function EventFormDialog({
             <p className="text-[11px] text-muted-foreground mt-1">
               Vstup na divadlo, do múzea či na športové podujatie má 5 %, hudobný koncert základnú
               sadzbu. Zaradenie konkrétneho podujatia potvrď s účtovníčkou.
+            </p>
+          </Field>
+          <Field label="Limit vstupeniek na osobu">
+            <Input
+              type="number"
+              min={1}
+              value={form.max_per_person}
+              onChange={(e) => setForm({ ...form, max_per_person: e.target.value })}
+              placeholder="bez vlastného stropu"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Koľko vstupeniek smie jedna e-mailová adresa kúpiť na toto podujatie dokopy, nielen v
+              jednej objednávke. Pri vypredaných podujatiach to je hlavná brzda prekupníkov.
+              Naprázdno platí len bežný strop 20 kusov na objednávku.
             </p>
           </Field>
           <Field label={t("eventForm.group")}>

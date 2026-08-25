@@ -14,3 +14,8 @@ export function plural(n: number, one: string, few: string, many: string): strin
 export function pocetPodujati(n: number): string {
   return `${n} ${plural(n, "podujatie", "podujatia", "podujatí")}`;
 }
+
+/** „3 vstupenky" — počítané vstupenky sa v textoch pre zákazníka opakujú. */
+export function pocetVstupeniek(n: number): string {
+  return `${n} ${plural(n, "vstupenku", "vstupenky", "vstupeniek")}`;
+}

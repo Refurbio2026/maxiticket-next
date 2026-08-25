@@ -68,6 +68,7 @@ export type Database = {
           id: string;
           group_id: string | null;
           image_url: string | null;
+          max_tickets_per_person: number | null;
           organizer_id: string;
           sale_type: Database["public"]["Enums"]["sale_type"];
           scanner_token: string;
@@ -96,6 +97,7 @@ export type Database = {
           id?: string;
           group_id?: string | null;
           image_url?: string | null;
+          max_tickets_per_person?: number | null;
           organizer_id: string;
           sale_type?: Database["public"]["Enums"]["sale_type"];
           scanner_token?: string;
@@ -124,6 +126,7 @@ export type Database = {
           id?: string;
           group_id?: string | null;
           image_url?: string | null;
+          max_tickets_per_person?: number | null;
           organizer_id?: string;
           sale_type?: Database["public"]["Enums"]["sale_type"];
           scanner_token?: string;
