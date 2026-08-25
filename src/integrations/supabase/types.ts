@@ -215,6 +215,7 @@ export type Database = {
           promo_code: string | null;
           receipt_number: string | null;
           void_reason: string | null;
+          reminder_sent_at: string | null;
           refunded_at: string | null;
           refunded_amount: number;
           refund_reason: string | null;
@@ -264,6 +265,7 @@ export type Database = {
           promo_code?: string | null;
           receipt_number?: string | null;
           void_reason?: string | null;
+          reminder_sent_at?: string | null;
           refunded_at?: string | null;
           refunded_amount?: number;
           refund_reason?: string | null;
@@ -313,6 +315,7 @@ export type Database = {
           promo_code?: string | null;
           receipt_number?: string | null;
           void_reason?: string | null;
+          reminder_sent_at?: string | null;
           refunded_at?: string | null;
           refunded_amount?: number;
           refund_reason?: string | null;
@@ -801,6 +804,7 @@ export type Database = {
           scanned_by?: string | null;
           seat_id?: string | null;
           seat_label: string;
+          reminder_sent_at?: string | null;
           refunded_at?: string | null;
           used_at?: string | null;
         };
@@ -818,6 +822,7 @@ export type Database = {
           scanned_by?: string | null;
           seat_id?: string | null;
           seat_label?: string;
+          reminder_sent_at?: string | null;
           refunded_at?: string | null;
           used_at?: string | null;
         };

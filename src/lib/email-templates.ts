@@ -9,7 +9,7 @@
 
 export type TemplateVars = Record<string, string | number | null | undefined>;
 
-export type TemplateKey = "tickets" | "refund";
+export type TemplateKey = "tickets" | "refund" | "reminder";
 
 export type TemplateDefinition = {
   key: TemplateKey;
@@ -116,6 +116,25 @@ const REFUND_HTML = `<!doctype html>
  * Vstavané znenie. Používa sa, kým šablóna v databáze nie je (alebo je vypnutá),
  * a admin sa naň vie kedykoľvek vrátiť tlačidlom „Obnoviť pôvodné".
  */
+
+const REMINDER_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;color:#111">
+<h2 style="margin:0 0 4px">Zajtra sa vidíme</h2>
+<p style="margin:0 0 16px;color:#555">{{event_title}}</p>
+<table style="border-collapse:collapse;margin:0 0 20px">
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Kedy:</td><td><strong>{{event_date}} o {{event_time}}</strong></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Kde:</td><td>{{venue}}, {{city}}</td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Vstupenky:</td><td>{{ticket_count}}</td></tr>
+</table>
+<p style="margin:0 0 20px">
+  <a href="{{tickets_url}}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:600;">
+    Otvoriť vstupenky
+  </a>
+</p>
+<p style="margin:0;color:#666;font-size:13px">
+  Pri vstupe stačí ukázať QR kód z telefónu. Nemusíš nič tlačiť.
+</p>
+</div>`;
+
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
   tickets: {
     key: "tickets",
@@ -142,6 +161,24 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
         label: "Odkaz na faktúru (môže chýbať)",
         example: "https://…/faktura.pdf",
       },
+    ],
+  },
+  reminder: {
+    key: "reminder",
+    name: "Pripomienka pred podujatím",
+    description: 'Odchádza deň pred termínom. Znižuje neúčasť aj otázky typu „kde mám vstupenku".',
+    subject: "Zajtra: {{event_title}}",
+    html: REMINDER_HTML,
+    text: "Zajtra {{event_date}} o {{event_time}} — {{event_title}}, {{venue}}, {{city}}. Vstupenky: {{tickets_url}}",
+    variables: [
+      { key: "customer_name", label: "Krstné meno zákazníka", example: "Peter" },
+      { key: "event_title", label: "Názov podujatia", example: "Symfonický koncert" },
+      { key: "event_date", label: "Dátum konania", example: "16. 9. 2026" },
+      { key: "event_time", label: "Čas začiatku", example: "19:00" },
+      { key: "venue", label: "Miesto konania", example: "Historická budova SND" },
+      { key: "city", label: "Mesto", example: "Bratislava" },
+      { key: "ticket_count", label: "Počet vstupeniek", example: "2" },
+      { key: "tickets_url", label: "Odkaz na vstupenky online", example: "https://vipky.sk/…" },
     ],
   },
   refund: {

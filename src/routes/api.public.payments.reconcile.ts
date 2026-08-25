@@ -11,6 +11,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { dopytajCakajuce } from "@/lib/order-settlement.server";
+import { posliPripomienky } from "@/lib/reminders.server";
 import { errorMessage } from "@/lib/error-message";
 
 function nenajdene(): Response {
@@ -31,12 +32,22 @@ async function handler({ request }: { request: Request }) {
     const vysledok = await dopytajCakajuce(
       Number.isFinite(hodiny) ? Math.min(Math.max(hodiny, 1), 168) : 48,
     );
+    // Pripomienky idú tou istou cestou — jeden cron, jedno tajomstvo.
+    // Zlyhanie pripomienok nesmie zhodiť dopytovací sken; ten rieši peniaze.
+    let pripomienky: unknown = null;
+    try {
+      pripomienky = await posliPripomienky(1);
+    } catch (e) {
+      console.error("Pripomienky zlyhali", e);
+      pripomienky = { chyba: errorMessage(e) };
+    }
+
     // Odtlačok behu — podľa neho prehľad prevádzky pozná, či cron vôbec beží.
     await supabaseAdmin.rpc("stamp_heartbeat", {
       p_name: "reconcile",
-      p_detail: vysledok as unknown as Json,
+      p_detail: { ...vysledok, pripomienky } as unknown as Json,
     });
-    return new Response(JSON.stringify(vysledok), {
+    return new Response(JSON.stringify({ ...vysledok, pripomienky }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
