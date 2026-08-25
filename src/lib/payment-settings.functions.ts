@@ -19,6 +19,7 @@ import { rezimZAdresy, type PolozkaKonfiguracie } from "./payment-gateways/types
 import { systemPodlaId, vsetkyFakturacneSystemy } from "./invoicing/index.server";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
+import { jePovolenaSadzba, predvolenaSadzba, zabudniSadzbu } from "./dph.server";
 
 const ID_BRANY = z.enum(["gopay", "gpwebpay", "tatrapayplus"]);
 const ID_FAKTURACIE = z.enum(["superfaktura", "faktero"]);
@@ -64,6 +65,8 @@ export type PrehladPlatobnychBran = {
   fakturacia: PrehladFakturacie[];
   /** Systém, ktorý práve vystavuje faktúry. */
   fakturacnySystem: string | null;
+  /** Predvolená sadzba DPH v percentách. */
+  sadzbaDph: number;
   /** Základ všetkých návratových adries — bez neho nefunguje žiadna brána. */
   adresaWebu: string | null;
   adresaWebuChyba: string | null;
@@ -195,6 +198,7 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
       brany,
       fakturacia,
       fakturacnySystem: pouzivaSa,
+      sadzbaDph: await predvolenaSadzba(),
       adresaWebu,
       adresaWebuChyba,
       predvolena,
@@ -214,6 +218,7 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
         tatrapayplus_enabled: z.boolean(),
         default_provider: ID_BRANY.nullable(),
         invoice_provider: ID_FAKTURACIE.nullable(),
+        default_vat_rate: z.number().nonnegative().max(100),
       })
       .parse(input),
   )
@@ -235,6 +240,16 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
         throw new Error(`${brana.label} nemá vyplnené prístupy, nedá sa nastaviť ako predvolená.`);
       }
     }
+
+    if (!jePovolenaSadzba(data.default_vat_rate)) {
+      throw new Error(`Sadzba ${data.default_vat_rate} % nie je platná sadzba DPH.`);
+    }
+    const { error: chybaDph } = await supabaseAdmin
+      .from("platform_settings")
+      .update({ default_vat_rate: data.default_vat_rate })
+      .eq("id", true);
+    if (chybaDph) throw new Error(chybaDph.message);
+    zabudniSadzbu();
 
     const { error } = await supabaseAdmin
       .from("payment_settings")

@@ -74,6 +74,7 @@ export type Database = {
           updated_at: string;
           venue: string;
           venue_id: string | null;
+          vat_rate: number | null;
           venue_layout_id: string | null;
           vip_price: number | null;
         };
@@ -98,6 +99,7 @@ export type Database = {
           updated_at?: string;
           venue: string;
           venue_id?: string | null;
+          vat_rate?: number | null;
           venue_layout_id?: string | null;
           vip_price?: number | null;
         };
@@ -122,6 +124,7 @@ export type Database = {
           updated_at?: string;
           venue?: string;
           venue_id?: string | null;
+          vat_rate?: number | null;
           venue_layout_id?: string | null;
           vip_price?: number | null;
         };
@@ -403,16 +406,19 @@ export type Database = {
       platform_settings: {
         Row: {
           default_commission_rate: number;
+          default_vat_rate: number;
           id: boolean;
           updated_at: string;
         };
         Insert: {
           default_commission_rate?: number;
+          default_vat_rate?: number;
           id?: boolean;
           updated_at?: string;
         };
         Update: {
           default_commission_rate?: number;
+          default_vat_rate?: number;
           id?: boolean;
           updated_at?: string;
         };

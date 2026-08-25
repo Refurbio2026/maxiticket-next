@@ -5,7 +5,6 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { siteUrl } from "./site-url.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createPaidInvoice } from "./superfaktura.server";
 import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
@@ -13,7 +12,9 @@ import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
-import { dopytajCakajuce, settleOrder } from "./order-settlement.server";
+import { adresaNasehoPdf, dopytajCakajuce, settleOrder } from "./order-settlement.server";
+import { fakturacnySystem } from "./invoicing/index.server";
+import { sadzbaPodujatia } from "./dph.server";
 
 /**
  * IP klienta spoza nginxu.
@@ -753,10 +754,20 @@ export const reissueInvoice = createServerFn({ method: "POST" })
       .from("order_items")
       .select("*")
       .eq("order_id", order.id);
-    const orderShort = order.id.slice(0, 8).toUpperCase();
-    const result = await createPaidInvoice({
+    // Rovnaká cesta ako pri doúčtovaní: systém podľa nastavenia a sadzba
+    // podľa podujatia, nie natvrdo SuperFaktúra a 20 %.
+    const system = await fakturacnySystem();
+    if (!system) {
+      throw new Error(
+        "Nie je nastavený fakturačný systém. Doplň prístupy v Systém → Platobné brány, sekcia Fakturácia.",
+      );
+    }
+    const dph = await sadzbaPodujatia(order.event_id);
+    const result = await system.vystav({
       orderId: order.id,
-      variableSymbol: orderShort,
+      variableSymbol: order.payment_vs
+        ? String(order.payment_vs)
+        : order.id.slice(0, 8).toUpperCase(),
       customer: {
         name: order.customer_name || "Zákazník",
         email: order.customer_email || "",
@@ -766,16 +777,17 @@ export const reissueInvoice = createServerFn({ method: "POST" })
         name: it.label,
         unit_price: Number(it.unit_price),
         quantity: it.quantity || 1,
-        tax: 20,
+        tax: dph,
       })),
       paymentType: "card",
     });
     await supabaseAdmin
       .from("orders")
       .update({
+        invoice_provider: system.id,
         superfaktura_invoice_id: result.invoice_id,
         superfaktura_invoice_number: result.invoice_number,
-        superfaktura_invoice_pdf_url: result.pdf_url,
+        superfaktura_invoice_pdf_url: result.pdf_url || adresaNasehoPdf(order.id),
       })
       .eq("id", order.id);
     await supabaseAdmin.from("superfaktura_logs").insert({

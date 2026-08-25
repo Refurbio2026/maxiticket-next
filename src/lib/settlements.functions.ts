@@ -770,6 +770,7 @@ export const issueCommissionInvoice = createServerFn({ method: "POST" })
     if (amount <= 0) throw new Error("Provízia je nulová, nie je čo fakturovať.");
 
     const { fakturacnySystem } = await import("./invoicing/index.server");
+    const { ZAKLADNA_SADZBA } = await import("./dph.server");
     const { adresaNasehoPdf } = await import("./order-settlement.server");
     const system = await fakturacnySystem();
     if (!system) {
@@ -793,7 +794,8 @@ export const issueCommissionInvoice = createServerFn({ method: "POST" })
           name: invoiceItemName(settlement.period_from, settlement.period_to),
           unit_price: amount,
           quantity: 1,
-          tax: 20,
+          // Provízia je služba — základná sadzba, nie znížená pre vstupné.
+          tax: ZAKLADNA_SADZBA,
         },
       ],
     });

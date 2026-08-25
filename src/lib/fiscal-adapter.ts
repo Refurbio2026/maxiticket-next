@@ -2,6 +2,7 @@
 // Mock implementácia. Reálne napojenie sa doplní podľa dokumentácie
 // poskytovateľa ORP brány alebo eKasa providera.
 
+import { ZAKLADNA_SADZBA } from "./dph";
 import {
   addFiscalReceipt,
   cancelFiscalReceiptInStore,
@@ -86,7 +87,8 @@ export const orpAdapter: OrpAdapter = {
       ico: settings.ico || "00000000",
       dkp: settings.pos_code || "0000",
       total: input.total,
-      vat_rate: 20,
+      // Simulátor ORP; skutočná sadzba príde z položiek predaja.
+      vat_rate: ZAKLADNA_SADZBA,
       payment_method: input.payment_method,
       signature: "OKP-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       qr_url: "https://ekasa.financnasprava.sk/?r=" + receipt_number,

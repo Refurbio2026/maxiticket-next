@@ -10,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // `scanner_token` je zdieľané tajomstvo, ktoré autorizuje skenovanie vstupeniek —
 // nesmie sa dostať do odpovede pre verejnosť. Nikdy tu nepoužívaj select("*").
 const EVENT_COLUMNS =
-  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_id, venue_layout_id, group_id, base_price, total_tickets, vip_price, created_at, updated_at";
+  "id, organizer_id, title, category, event_date, event_time, venue, city, address, description, image_url, status, sale_type, venue_id, venue_layout_id, group_id, base_price, total_tickets, vip_price, vat_rate, created_at, updated_at";
 
 export type EventTicketType = {
   id: string;
@@ -36,6 +36,8 @@ export type EventRecord = {
   organizer_name?: string;
   title: string;
   category: string;
+  /** Sadzba DPH pre vstupné v percentách; `null` = predvolená sadzba platformy. */
+  vat_rate: number | null;
   event_date: string;
   event_time: string;
   venue: string;
@@ -76,6 +78,7 @@ function mapEvent(
     organizer_name: organizerName,
     title: row.title as string,
     category: row.category as string,
+    vat_rate: row.vat_rate === null || row.vat_rate === undefined ? null : Number(row.vat_rate),
     event_date: row.event_date as string,
     event_time: row.event_time as string,
     venue: row.venue as string,
@@ -271,6 +274,8 @@ const EventInput = z.object({
   base_price: z.number().nonnegative().optional().nullable(),
   total_tickets: z.number().int().nonnegative().optional().nullable(),
   vip_price: z.number().nonnegative().optional().nullable(),
+  /** Sadzba DPH pre vstupné; NULL = predvolená sadzba platformy. */
+  vat_rate: z.number().nonnegative().max(100).optional().nullable(),
   tickets: z.array(TicketTypeInput).max(50).default([]),
 });
 
@@ -333,6 +338,7 @@ export const upsertEvent = createServerFn({ method: "POST" })
     const row = {
       title: data.title,
       category: data.category,
+      vat_rate: data.vat_rate ?? null,
       venue,
       city,
       address,

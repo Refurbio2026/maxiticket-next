@@ -33,6 +33,14 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { POVOLENE_SADZBY, POPIS_SADZIEB } from "@/lib/dph";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/lib/error-message";
 
@@ -51,6 +59,7 @@ type Form = {
   tatrapayplus_enabled: boolean;
   default_provider: IdBrany | null;
   invoice_provider: IdFakturacie | null;
+  default_vat_rate: number;
 };
 
 function PaymentGatewaysPage() {
@@ -78,6 +87,7 @@ function PaymentGatewaysPage() {
       tatrapayplus_enabled: najdi("tatrapayplus"),
       default_provider: (prehlad.data.predvolena as IdBrany | null) ?? null,
       invoice_provider: (prehlad.data.fakturacnySystem as IdFakturacie | null) ?? null,
+      default_vat_rate: prehlad.data.sadzbaDph,
     });
   }, [prehlad.data, form]);
 
@@ -223,6 +233,34 @@ function PaymentGatewaysPage() {
           vždy len jeden — ten, ktorý je označený ako používaný.
         </p>
       </div>
+
+      <Card className="bg-card/60 border-border/50 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <Label className="text-sm">Predvolená sadzba DPH</Label>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+              Použije sa, keď podujatie nemá vlastnú sadzbu. Vstup na divadlo, do múzea či na
+              športové podujatie má 5 %, hudobný koncert základnú sadzbu — nastav to na konkrétnom
+              podujatí. Provízia organizátorom je služba a fakturuje sa vždy základnou sadzbou.
+            </p>
+          </div>
+          <Select
+            value={String(form.default_vat_rate)}
+            onValueChange={(v) => setForm((f) => (f ? { ...f, default_vat_rate: Number(v) } : f))}
+          >
+            <SelectTrigger className="w-[420px] max-w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {POVOLENE_SADZBY.map((x) => (
+                <SelectItem key={x} value={String(x)}>
+                  {x} % — {POPIS_SADZIEB[x]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </Card>
 
       <div className="space-y-4">
         {data.fakturacia.map((f) => (

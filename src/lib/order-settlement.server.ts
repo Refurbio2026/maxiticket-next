@@ -14,6 +14,7 @@ import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { releaseCouponForOrder } from "./coupons.server";
 import { errorMessage } from "./error-message";
+import { sadzbaPodujatia } from "./dph.server";
 import { siteUrl } from "./site-url.server";
 import { signOrderAccess } from "./order-access.server";
 
@@ -246,6 +247,9 @@ async function vystavFakturu(order: Objednavka): Promise<void> {
       .from("order_items")
       .select("*")
       .eq("order_id", order.id);
+    // Sadzba sa nedá odvodiť z kódu — vstup na divadlo a šport má 5 %,
+    // hudobný koncert základnú. Berie sa z podujatia, inak predvolená.
+    const dph = await sadzbaPodujatia(order.event_id as string);
     const result = await system.vystav({
       orderId: order.id,
       // Variabilný symbol je ten istý, aký šiel do banky — inak by sa platba
@@ -262,7 +266,7 @@ async function vystavFakturu(order: Objednavka): Promise<void> {
         name: it.label,
         unit_price: Number(it.unit_price),
         quantity: it.quantity || 1,
-        tax: 20,
+        tax: dph,
       })),
       paymentType: "card",
     });

@@ -18,6 +18,7 @@ import { useLayouts } from "@/hooks/use-layouts";
 import { useUpsertEvent, type EventRecord } from "@/hooks/use-events";
 import { listVenues } from "@/lib/venues.functions";
 import { listOrganizers } from "@/lib/events.functions";
+import { POVOLENE_SADZBY, POPIS_SADZIEB } from "@/lib/dph";
 import { listEventCategories } from "@/lib/event-categories.functions";
 import { listEventGroups } from "@/lib/event-groups.functions";
 import { uploadEventImage } from "@/lib/event-images.functions";
@@ -55,6 +56,8 @@ export type EventFormState = {
   id?: string;
   title: string;
   category: string;
+  /** Prázdne = predvolená sadzba platformy. */
+  vat_rate: string;
   group_id: string;
   /** Za koho admin podujatie zakladá; prázdne = za seba. */
   organizer_id: string;
@@ -99,6 +102,7 @@ const OWN_ACCOUNT = "__me__";
 const blankEventForm = (mode: "admin" | "organizer"): EventFormState => ({
   title: "",
   category: "Koncert",
+  vat_rate: "",
   group_id: "",
   organizer_id: OWN_ACCOUNT,
   event_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
@@ -126,6 +130,7 @@ function eventToForm(e: EventRecord): EventFormState {
     id: e.id,
     title: e.title,
     category: e.category,
+    vat_rate: e.vat_rate != null ? String(e.vat_rate) : "",
     group_id: e.group_id ?? "",
     organizer_id: e.organizer_id,
     event_date: e.event_date,
@@ -335,6 +340,7 @@ export function EventFormDialog({
         organizer_id: isAdmin && form.organizer_id !== OWN_ACCOUNT ? form.organizer_id : undefined,
         title: form.title.trim(),
         category: form.category,
+        vat_rate: form.vat_rate.trim() === "" ? null : Number(form.vat_rate),
         group_id: form.group_id || null,
         event_date: form.event_date,
         event_time: form.event_time,
@@ -407,6 +413,28 @@ export function EventFormDialog({
                 )}
               </SelectContent>
             </Select>
+          </Field>
+          <Field label="Sadzba DPH">
+            <Select
+              value={form.vat_rate === "" ? "default" : form.vat_rate}
+              onValueChange={(v) => setForm({ ...form, vat_rate: v === "default" ? "" : v })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Predvolená sadzba platformy</SelectItem>
+                {POVOLENE_SADZBY.map((s) => (
+                  <SelectItem key={s} value={String(s)}>
+                    {s} % — {POPIS_SADZIEB[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Vstup na divadlo, do múzea či na športové podujatie má 5 %, hudobný koncert základnú
+              sadzbu. Zaradenie konkrétneho podujatia potvrď s účtovníčkou.
+            </p>
           </Field>
           <Field label={t("eventForm.group")}>
             <Select

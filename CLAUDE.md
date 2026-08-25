@@ -608,8 +608,15 @@ a čerstvá adresa sa vypýta až pri kliknutí. Tá istá routa obsluhuje aj vy
   tohto kroku fakturáciu nezhodí — faktúra existuje.
 - Stĺpce `orders.superfaktura_*` sú **historický názov** a nesú údaje z ktoréhokoľvek
   systému; ktorý to bol, hovorí `orders.invoice_provider`.
-- Sadzba DPH sa posiela z volajúceho (`tax`), dnes natvrdo `20`. Pri zmene sadzby to treba
-  opraviť na oboch miestach, kde sa faktúra skladá.
+- **Sadzba DPH sa neodvodzuje z kódu.** Od 1. 1. 2025 je základná sadzba 23 %, ale príloha
+  7a zákona o DPH dáva 5 % na vstup na divadelné predstavenia, do múzeí a na športové
+  podujatia — pričom **hudobné koncerty zostávajú v základnej sadzbe**. Preto:
+  - `platform_settings.default_vat_rate` je predvolená sadzba (nastaví sa v admine),
+  - `events.vat_rate` ju prebíja na konkrétnom podujatí (`NULL` = predvolená),
+  - `sadzbaPodujatia()` v `dph.server.ts` je jediné miesto, kde sa to rozhoduje.
+
+  Provízia organizátorom je služba a fakturuje sa vždy `ZAKLADNA_SADZBA`. Zaradenie
+  konkrétneho podujatia je vec obchodníka a jeho účtovníčky, nie kódu.
 
 ## Pripojenie k databáze (správa schémy)
 
