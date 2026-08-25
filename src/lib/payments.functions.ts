@@ -13,7 +13,7 @@ import { loadSeatPricing } from "./seat-pricing.server";
 import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
-import { settleOrder } from "./order-settlement.server";
+import { dopytajCakajuce, settleOrder } from "./order-settlement.server";
 
 /**
  * IP klienta spoza nginxu.
@@ -481,6 +481,12 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
       };
     }
 
+    // Prepnutie brány nesmie nechať dva živé odkazy na zaplatenie tej istej
+    // objednávky — zákazník by mohol zaplatiť oba.
+    if (order.payment_provider && order.payment_ref && order.payment_provider !== brana.id) {
+      await zrusPredoslyZamer(order.id, order.payment_provider, order.payment_ref);
+    }
+
     const { data: items } = await supabaseAdmin
       .from("order_items")
       .select("*")
@@ -573,6 +579,43 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
   });
 
 /**
+ * Zruší rozrobený zámer u predošlej brány. Keď to brána nevie (GP webpay),
+ * odkaz zostane u nej použiteľný — preto sa to zapíše, nech je pri prípadnej
+ * dvojitej platbe jasné, odkiaľ sa vzala.
+ */
+async function zrusPredoslyZamer(
+  orderId: string,
+  provider: "gopay" | "gpwebpay" | "tatrapayplus",
+  ref: string,
+): Promise<void> {
+  let zruseny = false;
+  try {
+    const brana = branaPodlaId(provider);
+    zruseny = brana.zrus ? await brana.zrus(ref) : false;
+  } catch (e) {
+    console.error("Zrušenie predošlého zámeru zlyhalo", orderId, provider, ref, errorMessage(e));
+  }
+
+  await supabaseAdmin
+    .from("payments")
+    .update({ status: "cancelled" })
+    .eq("order_id", orderId)
+    .eq("provider", provider)
+    .eq("provider_payment_id", ref)
+    .eq("status", "pending");
+
+  await supabaseAdmin.from("payment_logs").insert({
+    order_id: orderId,
+    provider,
+    endpoint: `zrusenie_zameru:${ref}`,
+    status: zruseny ? "ok" : "error",
+    error_message: zruseny
+      ? null
+      : "Brána zrušenie nepodporuje — starý odkaz na zaplatenie môže zostať funkčný.",
+  });
+}
+
+/**
  * Kam sa má zákazník vrátiť. GP webpay adresy s parametrami blokuje, preto
  * dostane holú cestu a objednávku si nesie v poli MD.
  */
@@ -613,29 +656,22 @@ export const settleGoPayOrder = createServerFn({ method: "POST" })
  * Toto je záchranná sieť; patrí do cronu.
  */
 export const reconcilePendingPayments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z.object({ max_age_hours: z.number().min(1).max(168).default(48) }).parse(input ?? {}),
   )
-  .handler(async ({ data }) => {
-    const od = new Date(Date.now() - data.max_age_hours * 3600_000).toISOString();
-    const { data: orders } = await supabaseAdmin
-      .from("orders")
-      .select("id, payment_provider")
-      .eq("status", "awaiting_payment")
-      .not("payment_ref", "is", null)
-      .gte("created_at", od)
-      .limit(200);
-
-    const vysledky: Array<{ order_id: string; status: string; changed: boolean }> = [];
-    for (const o of orders || []) {
-      try {
-        const r = await settleOrder(o.id);
-        vysledky.push({ order_id: o.id, status: r.status, changed: r.changed });
-      } catch (e) {
-        console.error("Dopyt stavu zlyhal pre objednávku", o.id, errorMessage(e));
-      }
-    }
-    return { checked: orders?.length ?? 0, results: vysledky };
+  .handler(async ({ data, context }) => {
+    // Sken púšťa dopyty do banky pre desiatky objednávok — nesmie to vedieť
+    // spustiť ktokoľvek. Z cronu sa volá cez /api/public/payments/reconcile
+    // s tajomstvom v hlavičke.
+    const { data: role } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!role) throw new Error("Forbidden: vyžaduje sa rola admin");
+    return dopytajCakajuce(data.max_age_hours);
   });
 
 // Read shape for /checkout/return and /checkout/success.

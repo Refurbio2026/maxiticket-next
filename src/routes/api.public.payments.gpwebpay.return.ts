@@ -69,8 +69,28 @@ async function handler({ request }: { request: Request }) {
       status: "ok",
     });
 
+    if (!navrat.orderNumber) {
+      // Bez ORDERNUMBER by sa platba nedala pripísať konkrétnemu zámeru.
+      await supabaseAdmin.from("payment_logs").insert({
+        order_id: navrat.orderId,
+        provider: "gpwebpay",
+        endpoint: "return",
+        response_payload: params,
+        status: "error",
+        error_message: "Overená odpoveď bez ORDERNUMBER",
+      });
+      return presmeruj(`${origin}/checkout/return?chyba=objednavka`);
+    }
+
     // Stav je overený podpisom brány, takže ho smieme podstrčiť doúčtovaniu.
-    await settleOrder(navrat.orderId, { state: navrat.state, raw: params });
+    // Referencia je ORDERNUMBER tejto platby — nie to, na čo práve ukazuje
+    // objednávka. Zákazník totiž mohol medzitým skúsiť inú bránu.
+    await settleOrder(navrat.orderId, {
+      provider: "gpwebpay",
+      ref: navrat.orderNumber,
+      state: navrat.state,
+      raw: params,
+    });
 
     return presmeruj(
       `${origin}/checkout/return?orderId=${navrat.orderId}&t=${signOrderAccess(navrat.orderId)}`,

@@ -49,7 +49,24 @@ async function handler({ request }: { request: Request }) {
       return presmeruj(`${origin}/checkout/return?chyba=objednavka`);
     }
 
-    await settleOrder(orderId);
+    // Doúčtovať treba práve ten zámer tatrapay+, ktorý sa vrátil — nie to, na
+    // čo objednávka práve ukazuje. Zákazník mohol medzitým skúsiť inú bránu
+    // a bez toho by sme stav pýtali od nesprávnej.
+    const { data: platba } = await supabaseAdmin
+      .from("payments")
+      .select("provider_payment_id")
+      .eq("order_id", orderId)
+      .eq("provider", "tatrapayplus")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    await settleOrder(
+      orderId,
+      platba?.provider_payment_id
+        ? { provider: "tatrapayplus", ref: platba.provider_payment_id }
+        : undefined,
+    );
     return presmeruj(`${origin}/checkout/return?orderId=${orderId}&t=${signOrderAccess(orderId)}`);
   } catch (e) {
     console.error("tatrapay+ návrat zlyhal", e);

@@ -271,6 +271,14 @@ export const tatraPayPlusGateway: PaymentGateway = {
     return { raw: (data ?? { status }) as Json };
   },
 
+  async zrus(providerRef: string): Promise<boolean> {
+    const { status } = await volaj(`/v1/payments/${encodeURIComponent(providerRef)}`, {
+      method: "DELETE",
+    });
+    // 404 znamená, že zámer už neexistuje — pre nás rovnaký výsledok.
+    return status === 200 || status === 202 || status === 204 || status === 404;
+  },
+
   konfiguracia(): PolozkaKonfiguracie[] {
     return [
       polozka("tatrapayplus", {

@@ -84,6 +84,7 @@ import { Route as AdminDataContentRouteImport } from './routes/admin.data.conten
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
 import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
+import { Route as ApiPublicPaymentsReconcileRouteImport } from './routes/api.public.payments.reconcile'
 import { Route as ApiPublicEventsByTokenRouteImport } from './routes/api.public.events.by-token'
 import { Route as ApiPublicPaymentsTatrapayplusReturnRouteImport } from './routes/api.public.payments.tatrapayplus.return'
 import { Route as ApiPublicPaymentsGpwebpayReturnRouteImport } from './routes/api.public.payments.gpwebpay.return'
@@ -474,6 +475,12 @@ const ApiPublicTicketsScanRoute = ApiPublicTicketsScanRouteImport.update({
   path: '/api/public/tickets/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsReconcileRoute =
+  ApiPublicPaymentsReconcileRouteImport.update({
+    id: '/api/public/payments/reconcile',
+    path: '/api/public/payments/reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicEventsByTokenRoute = ApiPublicEventsByTokenRouteImport.update({
   id: '/api/public/events/by-token',
   path: '/api/public/events/by-token',
@@ -579,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
   '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
+  '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
@@ -657,6 +665,7 @@ export interface FileRoutesByTo {
   '/organizer/marketing': typeof OrganizerMarketingIndexRoute
   '/organizer/pos': typeof OrganizerPosIndexRoute
   '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
+  '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
@@ -740,6 +749,7 @@ export interface FileRoutesById {
   '/organizer/marketing/': typeof OrganizerMarketingIndexRoute
   '/organizer/pos/': typeof OrganizerPosIndexRoute
   '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
+  '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
@@ -824,6 +834,7 @@ export interface FileRouteTypes {
     | '/organizer/marketing/'
     | '/organizer/pos/'
     | '/api/public/events/by-token'
+    | '/api/public/payments/reconcile'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
@@ -902,6 +913,7 @@ export interface FileRouteTypes {
     | '/organizer/marketing'
     | '/organizer/pos'
     | '/api/public/events/by-token'
+    | '/api/public/payments/reconcile'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
@@ -984,6 +996,7 @@ export interface FileRouteTypes {
     | '/organizer/marketing/'
     | '/organizer/pos/'
     | '/api/public/events/by-token'
+    | '/api/public/payments/reconcile'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/payments/gopay/webhook'
@@ -1012,6 +1025,7 @@ export interface RootRouteChildren {
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
   ApiPublicEventsByTokenRoute: typeof ApiPublicEventsByTokenRoute
+  ApiPublicPaymentsReconcileRoute: typeof ApiPublicPaymentsReconcileRoute
   ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
   ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
@@ -1546,6 +1560,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTicketsScanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/reconcile': {
+      id: '/api/public/payments/reconcile'
+      path: '/api/public/payments/reconcile'
+      fullPath: '/api/public/payments/reconcile'
+      preLoaderRoute: typeof ApiPublicPaymentsReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/events/by-token': {
       id: '/api/public/events/by-token'
       path: '/api/public/events/by-token'
@@ -1772,6 +1793,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
   ApiPublicEventsByTokenRoute: ApiPublicEventsByTokenRoute,
+  ApiPublicPaymentsReconcileRoute: ApiPublicPaymentsReconcileRoute,
   ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
   ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,

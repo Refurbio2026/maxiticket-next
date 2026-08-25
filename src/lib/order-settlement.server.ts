@@ -21,8 +21,26 @@ export type SettleResult = {
   reason?: string;
 };
 
-/** Stav, ktorý nám doručil overený návrat z brány (GP webpay). */
-export type OverenyStav = { state: PaymentState; raw: Json };
+/**
+ * Ktorej platby sa doúčtovanie týka.
+ *
+ * Bez toho by sa platba pripísala tomu, na čo práve ukazuje
+ * `orders.payment_ref` — a to nemusí byť tá istá platba, ktorá sa vrátila.
+ * Zákazník totiž mohol medzitým skúsiť inú bránu.
+ *
+ * `state` sa vypĺňa iba vtedy, keď brána stav dopytovať nevie a výsledok
+ * prišiel overeným návratom (GP webpay). Inak sa stav zistí dopytom.
+ */
+export type ZdrojStavu = {
+  provider: GatewayId;
+  ref: string;
+  /** Vyplniť len pri stave, ktorého podpis už bol overený. */
+  state?: PaymentState;
+  raw?: Json;
+};
+
+/** @deprecated Ponechané pre staršie volania; použi ZdrojStavu. */
+export type OverenyStav = ZdrojStavu;
 
 /**
  * Zistí stav platby a dotiahne objednávku do zodpovedajúceho stavu.
@@ -30,20 +48,24 @@ export type OverenyStav = { state: PaymentState; raw: Json };
  * @param overeny Keď brána stav dopytovať nevie, dá sa jej výsledok podstrčiť —
  *   ale iba taký, ktorého podpis už bol overený. Nepodpísaný vstup sem nesmie.
  */
-export async function settleOrder(orderId: string, overeny?: OverenyStav): Promise<SettleResult> {
+export async function settleOrder(orderId: string, zdroj?: ZdrojStavu): Promise<SettleResult> {
   await pripravPristupy();
   const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
   if (!order) throw new Error("Objednávka sa nenašla");
 
-  // Staré objednávky majú bránu len v gopay_* stĺpcoch.
-  const providerId = (order.payment_provider ||
-    (order.gopay_payment_id ? "gopay" : null)) as GatewayId | null;
-  const providerRef = order.payment_ref || order.gopay_payment_id;
+  // Brána a referencia platby, ktorej sa toto doúčtovanie týka. Pri overenom
+  // návrate sú to údaje tej platby, ktorá sa vrátila — nie tie, čo má práve
+  // objednávka. Zákazník totiž mohol medzitým založiť platbu inou bránou.
+  const providerId =
+    zdroj?.provider ??
+    ((order.payment_provider || (order.gopay_payment_id ? "gopay" : null)) as GatewayId | null);
+  const providerRef = zdroj?.ref ?? order.payment_ref ?? order.gopay_payment_id;
   if (!providerId || !providerRef) {
     return { changed: false, status: order.status, reason: "no_payment_id" };
   }
 
-  let stav = overeny;
+  let stav: { state: PaymentState; raw: Json } | undefined =
+    zdroj?.state !== undefined ? { state: zdroj.state, raw: zdroj.raw ?? null } : undefined;
   if (!stav) {
     const brana = branaPodlaId(providerId);
     const zistene = await brana.getStatus(providerRef);
@@ -63,34 +85,63 @@ export async function settleOrder(orderId: string, overeny?: OverenyStav): Promi
     status: "ok",
   });
 
-  await supabaseAdmin
-    .from("payments")
-    .update({
-      status:
-        stav.state === "paid"
-          ? "paid"
-          : stav.state === "cancelled"
-            ? "cancelled"
-            : stav.state === "failed"
-              ? "failed"
-              : stav.state === "refunded"
-                ? "refunded"
-                : "pending",
-      raw_response: stav.raw,
-    })
-    .eq("order_id", order.id)
-    .eq("provider_payment_id", String(providerRef));
+  // Aktualizuje sa riadok tej platby, ktorá sa naozaj vrátila.
+  const novyStavPlatby =
+    stav.state === "paid"
+      ? "paid"
+      : stav.state === "cancelled"
+        ? "cancelled"
+        : stav.state === "failed"
+          ? "failed"
+          : stav.state === "refunded"
+            ? "refunded"
+            : "pending";
 
-  // Už zaplatená objednávka sa druhýkrát nespracúva.
-  if (order.status === "paid" && stav.state === "paid") {
-    return { changed: false, status: "paid" };
+  let zapisPlatby = supabaseAdmin
+    .from("payments")
+    .update({ status: novyStavPlatby, raw_response: stav.raw })
+    .eq("order_id", order.id)
+    .eq("provider", providerId)
+    .eq("provider_payment_id", String(providerRef));
+  if (novyStavPlatby !== "paid" && novyStavPlatby !== "refunded") {
+    // Prijatú platbu nesmie zhodiť neskorá alebo zopakovaná správa o zrušení.
+    // Z „paid" sa smie ísť už len na „refunded".
+    zapisPlatby = zapisPlatby.not("status", "eq", "paid");
   }
+  await zapisPlatby;
 
   if (stav.state === "paid") {
-    await supabaseAdmin
-      .from("orders")
-      .update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", order.id);
+    // Preklopenie na zaplatenú vyhrá práve jeden volajúci. Ostatní sa
+    // vstupeniek, faktúry ani e-mailu nedotknú — inak by ich pri súbežných
+    // návratoch z brány vzniklo toľko, koľko prišlo požiadaviek.
+    const { data: vyhral, error: chybaClaim } = await supabaseAdmin.rpc("claim_order_paid", {
+      p_order_id: order.id,
+    });
+    if (chybaClaim) throw new Error(chybaClaim.message);
+
+    if (!vyhral) {
+      // Objednávka už zaplatená bola. Ak to bola iná platba než táto, práve
+      // sme prijali peniaze druhýkrát a treba ich vrátiť.
+      const inaPlatba = String(order.payment_ref ?? "") !== String(providerRef);
+      if (inaPlatba || order.status !== "paid") {
+        await supabaseAdmin.from("payment_logs").insert({
+          order_id: order.id,
+          provider: providerId,
+          endpoint: `duplicitna_platba:${providerRef}`,
+          response_payload: stav.raw,
+          status: "error",
+          error_message:
+            `Objednávka už bola zaplatená iným zámerom (${order.payment_provider ?? "?"} ` +
+            `${order.payment_ref ?? "?"}). Túto platbu treba zákazníkovi vrátiť.`,
+        });
+        console.error("Duplicitná platba pre objednávku", order.id, providerId, providerRef);
+      }
+      return {
+        changed: false,
+        status: "paid",
+        reason: inaPlatba ? "duplicitna_platba" : undefined,
+      };
+    }
 
     await supabaseAdmin
       .from("seat_inventory")
@@ -112,7 +163,19 @@ export async function settleOrder(orderId: string, overeny?: OverenyStav): Promi
   }
 
   if (stav.state === "cancelled" || stav.state === "failed") {
-    await supabaseAdmin.from("orders").update({ status: stav.state }).eq("id", order.id);
+    // Zaplatenú objednávku už nič nezhodí. Bez tejto podmienky by neskoré
+    // „vypršalo" z opusteného zámeru zrušilo objednávku, za ktorú už prišli
+    // peniaze, a uvoľnilo predané sedadlá.
+    const { data: zmenene } = await supabaseAdmin
+      .from("orders")
+      .update({ status: stav.state })
+      .eq("id", order.id)
+      .in("status", ["pending", "awaiting_payment"])
+      .select("id");
+    if (!zmenene || zmenene.length === 0) {
+      return { changed: false, status: order.status, reason: "objednavka_uz_uzavreta" };
+    }
+
     await supabaseAdmin
       .from("seat_inventory")
       .update({ status: "available", reserved_until: null, order_id: null })
@@ -209,4 +272,36 @@ async function vystavFakturu(order: Objednavka): Promise<void> {
     // Nepadáme — platba je úspešná, faktúru vie admin vystaviť znovu.
     console.error("SuperFaktúra zlyhala pre objednávku", order.id, e);
   }
+}
+
+/**
+ * Dopýta sa brány na objednávky, ktoré zostali visieť v `awaiting_payment`.
+ *
+ * Ani GP webpay, ani tatrapay+ nemajú webhook — výsledok chodí len návratom
+ * zákazníka. Kto po zaplatení zavrie prehliadač, ostal by bez vstupeniek.
+ * Toto je záchranná sieť a patrí do cronu.
+ */
+export async function dopytajCakajuce(maxAgeHours: number): Promise<{
+  checked: number;
+  results: Array<{ order_id: string; status: string; changed: boolean }>;
+}> {
+  const od = new Date(Date.now() - maxAgeHours * 3600_000).toISOString();
+  const { data: orders } = await supabaseAdmin
+    .from("orders")
+    .select("id")
+    .eq("status", "awaiting_payment")
+    .not("payment_ref", "is", null)
+    .gte("created_at", od)
+    .limit(200);
+
+  const results: Array<{ order_id: string; status: string; changed: boolean }> = [];
+  for (const o of orders || []) {
+    try {
+      const r = await settleOrder(o.id);
+      results.push({ order_id: o.id, status: r.status, changed: r.changed });
+    } catch (e) {
+      console.error("Dopyt stavu zlyhal pre objednávku", o.id, errorMessage(e));
+    }
+  }
+  return { checked: orders?.length ?? 0, results };
 }

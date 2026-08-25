@@ -2219,6 +2219,12 @@ export type Database = {
         };
         Returns: undefined;
       };
+      claim_order_paid: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: boolean;
+      };
       next_payment_ref: {
         Args: Record<PropertyKey, never>;
         Returns: number;

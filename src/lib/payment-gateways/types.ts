@@ -63,6 +63,14 @@ export interface PaymentGateway {
   refund(providerRef: string, amount: number): Promise<{ raw: Json }>;
 
   /**
+   * Zruší rozrobený zámer platby, aby po prepnutí brány neostali dva živé
+   * odkazy na zaplatenie tej istej objednávky. Vracia `false`, keď to brána
+   * nevie — vtedy starý odkaz zostáva použiteľný až do vypršania a druhú
+   * prijatú platbu zachytí až doúčtovanie.
+   */
+  zrus?(providerRef: string): Promise<boolean>;
+
+  /**
    * Čo brána potrebuje a či to má. Vracia **len** názvy premenných a či sú
    * vyplnené — hodnoty nikdy, aj keď ich číta admin.
    */
