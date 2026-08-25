@@ -1482,6 +1482,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      waitlist: {
+        Row: {
+          created_at: string;
+          email: string;
+          event_date_id: string | null;
+          event_id: string;
+          id: string;
+          notified_at: string | null;
+          wanted: number;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          event_date_id?: string | null;
+          event_id: string;
+          id?: string;
+          notified_at?: string | null;
+          wanted?: number;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          event_date_id?: string | null;
+          event_id?: string;
+          id?: string;
+          notified_at?: string | null;
+          wanted?: number;
+        };
+        Relationships: [];
+      };
       wallet_settings: {
         Row: {
           apple_enabled: boolean;

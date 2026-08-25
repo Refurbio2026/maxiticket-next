@@ -12,6 +12,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { dopytajCakajuce } from "@/lib/order-settlement.server";
 import { posliPripomienky } from "@/lib/reminders.server";
+import { upovedomCakajucich } from "@/lib/waitlist.server";
 import { errorMessage } from "@/lib/error-message";
 
 function nenajdene(): Response {
@@ -42,12 +43,20 @@ async function handler({ request }: { request: Request }) {
       pripomienky = { chyba: errorMessage(e) };
     }
 
+    let cakacka: unknown = null;
+    try {
+      cakacka = await upovedomCakajucich();
+    } catch (e) {
+      console.error("Čakačka zlyhala", e);
+      cakacka = { chyba: errorMessage(e) };
+    }
+
     // Odtlačok behu — podľa neho prehľad prevádzky pozná, či cron vôbec beží.
     await supabaseAdmin.rpc("stamp_heartbeat", {
       p_name: "reconcile",
-      p_detail: { ...vysledok, pripomienky } as unknown as Json,
+      p_detail: { ...vysledok, pripomienky, cakacka } as unknown as Json,
     });
-    return new Response(JSON.stringify({ ...vysledok, pripomienky }), {
+    return new Response(JSON.stringify({ ...vysledok, pripomienky, cakacka }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });

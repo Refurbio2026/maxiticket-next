@@ -9,7 +9,7 @@
 
 export type TemplateVars = Record<string, string | number | null | undefined>;
 
-export type TemplateKey = "tickets" | "refund" | "reminder";
+export type TemplateKey = "tickets" | "refund" | "reminder" | "waitlist";
 
 export type TemplateDefinition = {
   key: TemplateKey;
@@ -135,6 +135,24 @@ const REMINDER_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI
 </p>
 </div>`;
 
+const WAITLIST_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;color:#111">
+<h2 style="margin:0 0 4px">Uvoľnili sa vstupenky</h2>
+<p style="margin:0 0 16px;color:#555">{{event_title}}</p>
+<table style="border-collapse:collapse;margin:0 0 20px">
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Kedy:</td><td><strong>{{event_date}} o {{event_time}}</strong></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Kde:</td><td>{{venue}}, {{city}}</td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Voľných:</td><td>{{available}}</td></tr>
+</table>
+<p style="margin:0 0 20px">
+  <a href="{{event_url}}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:600;">
+    Kúpiť vstupenky
+  </a>
+</p>
+<p style="margin:0;color:#666;font-size:13px">
+  Píšeme všetkým, ktorí čakali, takže sa ponáhľaj — kto príde prvý, ten kúpi.
+</p>
+</div>`;
+
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
   tickets: {
     key: "tickets",
@@ -179,6 +197,23 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
       { key: "city", label: "Mesto", example: "Bratislava" },
       { key: "ticket_count", label: "Počet vstupeniek", example: "2" },
       { key: "tickets_url", label: "Odkaz na vstupenky online", example: "https://vipky.sk/…" },
+    ],
+  },
+  waitlist: {
+    key: "waitlist",
+    name: "Uvoľnené vstupenky",
+    description: "Odchádza tým, ktorí sa zapísali na čakačku, keď sa miesta uvoľnia.",
+    subject: "Uvoľnili sa vstupenky: {{event_title}}",
+    html: WAITLIST_HTML,
+    text: "Uvoľnili sa vstupenky na {{event_title}} ({{event_date}} o {{event_time}}). Kúpiť: {{event_url}}",
+    variables: [
+      { key: "event_title", label: "Názov podujatia", example: "Symfonický koncert" },
+      { key: "event_date", label: "Dátum konania", example: "16. 9. 2026" },
+      { key: "event_time", label: "Čas začiatku", example: "19:00" },
+      { key: "venue", label: "Miesto konania", example: "Historická budova SND" },
+      { key: "city", label: "Mesto", example: "Bratislava" },
+      { key: "available", label: "Koľko sa uvoľnilo", example: "4" },
+      { key: "event_url", label: "Odkaz na podujatie", example: "https://vipky.sk/events/…" },
     ],
   },
   refund: {

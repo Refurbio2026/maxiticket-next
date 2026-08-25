@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEvent, type EventRecord } from "@/hooks/use-events";
 import { verejnaAdresa } from "@/lib/site-url.server";
+import { CakackaBox } from "@/components/events/CakackaBox";
 import { getEventById } from "@/lib/events.functions";
 import { getSeatAvailability } from "@/lib/event-dates.functions";
 import { listEventZonePrices } from "@/lib/price-categories.functions";
@@ -436,6 +437,8 @@ function EventDetail() {
     ? inventory.filter((r) => r.status !== "available").length
     : (availability.data?.taken_count ?? 0);
   const availableCount = Math.max(0, totalCapacity - takenCount);
+  /** Vypredané vieme povedať len tam, kde je kapacita vôbec určená. */
+  const vypredane = totalCapacity > 0 && availableCount === 0;
   const lowAvailability = totalCapacity > 0 && availableCount / totalCapacity < 0.2;
 
   const toggleSeat = (s: Selected) => {
@@ -927,15 +930,23 @@ function EventDetail() {
                   vrátane DPH · žiadne skryté poplatky
                 </div>
 
-                <Button
-                  onClick={checkout}
-                  disabled={submitting || !activeDate || (isMap && selected.length === 0)}
-                  className="w-full mt-5 bg-gradient-flame text-primary-foreground shadow-glow"
-                  size="lg"
-                >
-                  <Ticket className="size-4 mr-2" />
-                  Kúpiť vstupenky
-                </Button>
+                {vypredane ? (
+                  <CakackaBox
+                    eventId={event.id}
+                    eventDateId={activeDate?.id ?? null}
+                    className="mt-5"
+                  />
+                ) : (
+                  <Button
+                    onClick={checkout}
+                    disabled={submitting || !activeDate || (isMap && selected.length === 0)}
+                    className="w-full mt-5 bg-gradient-flame text-primary-foreground shadow-glow"
+                    size="lg"
+                  >
+                    <Ticket className="size-4 mr-2" />
+                    Kúpiť vstupenky
+                  </Button>
+                )}
 
                 <div className="mt-4 grid grid-cols-3 gap-2 text-[10px] text-muted-foreground">
                   <div className="flex flex-col items-center text-center gap-1 p-1.5 rounded-md border border-border/40">
