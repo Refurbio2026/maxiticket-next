@@ -20,7 +20,9 @@ import { Route as MarketingRouteImport } from './routes/marketing'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ScannerRouteImport } from './routes/scanner'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -147,9 +149,19 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScannerRoute = ScannerRouteImport.update({
   id: '/scanner',
   path: '/scanner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -530,7 +542,9 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/scanner': typeof ScannerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -612,7 +626,9 @@ export interface FileRoutesByTo {
   '/marketing': typeof MarketingRoute
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/scanner': typeof ScannerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -695,7 +711,9 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/scanner': typeof ScannerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
@@ -781,7 +799,9 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/partners'
     | '/register'
+    | '/robots.txt'
     | '/scanner'
+    | '/sitemap.xml'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -863,7 +883,9 @@ export interface FileRouteTypes {
     | '/marketing'
     | '/partners'
     | '/register'
+    | '/robots.txt'
     | '/scanner'
+    | '/sitemap.xml'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -945,7 +967,9 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/partners'
     | '/register'
+    | '/robots.txt'
     | '/scanner'
+    | '/sitemap.xml'
     | '/support'
     | '/admin/marketing'
     | '/checkout/$orderId'
@@ -1030,7 +1054,9 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   PartnersRoute: typeof PartnersRoute
   RegisterRoute: typeof RegisterRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   ScannerRoute: typeof ScannerRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
@@ -1126,11 +1152,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scanner': {
       id: '/scanner'
       path: '/scanner'
       fullPath: '/scanner'
       preLoaderRoute: typeof ScannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -1806,7 +1846,9 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   PartnersRoute: PartnersRoute,
   RegisterRoute: RegisterRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   ScannerRoute: ScannerRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,

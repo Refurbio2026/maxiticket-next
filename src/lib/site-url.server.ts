@@ -1,3 +1,4 @@
+import { createServerFn } from "@tanstack/react-start";
 // Verejná adresa webu.
 //
 // Skladajú sa z nej všetky odkazy, ktoré opúšťajú server: návrat zákazníka
@@ -25,3 +26,9 @@ export function siteUrl(): string {
   }
   return fromEnv.trim().replace(/\/+$/, "");
 }
+
+/**
+ * Adresa webu pre klientské použitie. Server ju vie z konfigurácie, prehliadač
+ * ju musí dostať — preto samostatná serverová funkcia.
+ */
+export const verejnaAdresa = createServerFn({ method: "GET" }).handler(async () => siteUrl());

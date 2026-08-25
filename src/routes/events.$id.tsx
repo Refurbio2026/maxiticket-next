@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEvent, type EventRecord } from "@/hooks/use-events";
+import { verejnaAdresa } from "@/lib/site-url.server";
+import { getEventById } from "@/lib/events.functions";
 import { getSeatAvailability } from "@/lib/event-dates.functions";
 import { listEventZonePrices } from "@/lib/price-categories.functions";
 import { listEventPerformers } from "@/lib/performers.functions";
@@ -55,9 +57,130 @@ const CustomerSeatingMap = lazy(() =>
 );
 
 export const Route = createFileRoute("/events/$id")({
-  head: () => ({ meta: [{ title: "Podujatie · vipky.sk" }] }),
+  // Podujatie načítame už na serveri, aby mal titulok, popis aj náhľad pri
+  // zdieľaní skutočné údaje. Bez toho vidí Google aj Facebook len „Podujatie".
+  loader: async ({ params }) => {
+    try {
+      const event = await getEventById({ data: { id: params.id } });
+      // Adresu webu berieme zo servera — schema.org chce absolútne odkazy
+      // a `head` beží aj v prehliadači, kde by sme ju už nezistili.
+      return { event, origin: await verejnaAdresa() };
+    } catch {
+      // Nedostupné podujatie nesmie zhodiť stránku — komponent si poradí sám.
+      return { event: null, origin: "" };
+    }
+  },
+  head: ({ loaderData }) => {
+    const e = loaderData?.event ?? null;
+    const origin = loaderData?.origin ?? "";
+    if (!e) return { meta: [{ title: "Podujatie · vipky.sk" }] };
+    const popis =
+      (e.description || "").replace(/\s+/g, " ").trim().slice(0, 160) ||
+      `${e.title} — ${e.venue}, ${e.city}. Vstupenky online na vipky.sk.`;
+    return {
+      meta: [
+        { title: `${e.title} · ${e.city} · vipky.sk` },
+        { name: "description", content: popis },
+        { property: "og:type", content: "website" },
+        { property: "og:title", content: e.title },
+        { property: "og:description", content: popis },
+        ...(e.image_url ? [{ property: "og:image", content: e.image_url }] : []),
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          // Značkovanie pre Google podujatia. Termíny sú samostatné udalosti,
+          // takže sa ponúkajú všetky, ktoré sú v predaji.
+          children: JSON.stringify(strukturovaneUdaje(e, origin)),
+        },
+      ],
+    };
+  },
   component: EventDetail,
 });
+
+/**
+ * Čas s posunom voči UTC. Bez neho si Google čas domyslí a podujatie sa
+ * ľuďom v inej zóne ukáže o hodinu inak.
+ */
+function sZonou(datum: string, cas: string): string {
+  const hhmm = (cas || "00:00").slice(0, 5);
+  const cely = `${datum}T${hhmm}:00`;
+
+  // Posun voči UTC pre daný dátum: rozdiel medzi tým, čo z rovnakého okamihu
+  // prečíta Bratislava, a tým, čo prečíta UTC. Vyjde +02:00 v lete, +01:00 v zime.
+  const okamih = new Date(`${cely}Z`);
+  const vZone = new Date(okamih.toLocaleString("en-US", { timeZone: "Europe/Bratislava" }));
+  const vUtc = new Date(okamih.toLocaleString("en-US", { timeZone: "UTC" }));
+  const minuty = Math.round((vZone.getTime() - vUtc.getTime()) / 60000);
+  if (!Number.isFinite(minuty)) return cely;
+
+  const znak = minuty < 0 ? "-" : "+";
+  const h = String(Math.floor(Math.abs(minuty) / 60)).padStart(2, "0");
+  const m = String(Math.abs(minuty) % 60).padStart(2, "0");
+  return `${cely}${znak}${h}:${m}`;
+}
+
+/** schema.org/Event — z toho Google skladá kartu podujatia vo vyhľadávaní. */
+function strukturovaneUdaje(e: EventRecord, origin: string) {
+  const terminy = (e.dates ?? []).filter((d) => d.status === "on_sale");
+  const zaklad = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: e.title,
+    ...(e.description ? { description: e.description } : {}),
+    ...(e.image_url ? { image: [e.image_url] } : {}),
+    eventStatus:
+      e.status === "cancelled"
+        ? "https://schema.org/EventCancelled"
+        : "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: e.venue,
+      address: {
+        "@type": "PostalAddress",
+        ...(e.address ? { streetAddress: e.address } : {}),
+        addressLocality: e.city,
+        addressCountry: "SK",
+      },
+    },
+    ...(e.base_price != null
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: String(e.base_price),
+            priceCurrency: "EUR",
+            availability:
+              e.status === "published"
+                ? "https://schema.org/InStock"
+                : "https://schema.org/SoldOut",
+            url: `${origin}/events/${e.id}`,
+          },
+        }
+      : {}),
+  };
+
+  if (terminy.length <= 1) {
+    const d = terminy[0];
+    return {
+      ...zaklad,
+      startDate: sZonou(d?.event_date ?? e.event_date, d?.event_time ?? e.event_time),
+    };
+  }
+  // Séria termínov: každý je vlastná udalosť pod spoločným názvom.
+  return {
+    ...zaklad,
+    "@type": "EventSeries",
+    startDate: sZonou(terminy[0].event_date, terminy[0].event_time),
+    subEvent: terminy.map((d) => ({
+      "@type": "Event",
+      name: e.title,
+      startDate: sZonou(d.event_date, d.event_time),
+      location: zaklad.location,
+    })),
+  };
+}
 
 type Selected = { seat_id: string; label: string; price: number; is_vip: boolean };
 
