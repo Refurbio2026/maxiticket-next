@@ -12,7 +12,8 @@ import { EventFormDialog } from "@/components/events/EventFormDialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Plus, Sparkles, ExternalLink, QrCode, Loader2, Pencil } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, QrCode, Loader2, Pencil, Ban } from "lucide-react";
+import { CancelEventDialog } from "@/components/events/CancelEventDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { renderEventTicketsPdf } from "@/lib/ticket-pdf.functions";
 import { downloadBase64 } from "@/lib/download";
@@ -34,6 +35,7 @@ function Page() {
     event: null,
   });
   const [qrLoading, setQrLoading] = useState<string | null>(null);
+  const [zrusit, setZrusit] = useState<EventRecord | null>(null);
   const renderPdf = useServerFn(renderEventTicketsPdf);
 
   const downloadQrs = async (e: EventRecord) => {
@@ -174,10 +176,16 @@ function Page() {
                       className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                         e.status === "published"
                           ? "bg-primary/15 text-primary border-primary/30"
-                          : "bg-muted text-muted-foreground border-border/50"
+                          : e.status === "cancelled"
+                            ? "bg-destructive/15 text-destructive border-destructive/30"
+                            : "bg-muted text-muted-foreground border-border/50"
                       }`}
                     >
-                      {e.status === "published" ? "Publikované" : "Koncept"}
+                      {e.status === "published"
+                        ? "Publikované"
+                        : e.status === "cancelled"
+                          ? "Zrušené"
+                          : "Koncept"}
                     </span>
                   </td>
                   <td className="p-3 text-right space-x-1">
@@ -218,6 +226,16 @@ function Page() {
                         Stiahnuť
                       </Button>
                     )}
+                    {e.status !== "cancelled" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-amber-500 hover:text-amber-500"
+                        onClick={() => setZrusit(e)}
+                      >
+                        <Ban className="size-3.5 mr-1" /> Zrušiť
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
@@ -233,6 +251,8 @@ function Page() {
           </table>
         </Card>
       )}
+
+      <CancelEventDialog event={zrusit} onOpenChange={(o) => !o && setZrusit(null)} />
 
       <EventFormDialog
         mode="admin"

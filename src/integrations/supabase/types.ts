@@ -56,6 +56,9 @@ export type Database = {
         Row: {
           address: string | null;
           base_price: number | null;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
           category: string;
           city: string;
           created_at: string;
@@ -81,6 +84,9 @@ export type Database = {
         Insert: {
           address?: string | null;
           base_price?: number | null;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           category: string;
           city: string;
           created_at?: string;
@@ -106,6 +112,9 @@ export type Database = {
         Update: {
           address?: string | null;
           base_price?: number | null;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           category?: string;
           city?: string;
           created_at?: string;
@@ -2083,6 +2092,8 @@ export type Database = {
       };
       event_dates: {
         Row: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
           created_at: string;
           event_date: string;
           event_id: string;
@@ -2094,6 +2105,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
           created_at?: string;
           event_date: string;
           event_id: string;
@@ -2105,6 +2118,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
           created_at?: string;
           event_date?: string;
           event_id?: string;
@@ -2282,7 +2297,7 @@ export type Database = {
     Enums: {
       settlement_status: "draft" | "approved" | "paid";
       app_role: "user" | "organizer" | "admin";
-      event_status: "draft" | "published";
+      event_status: "draft" | "published" | "cancelled";
       order_status:
         "pending" | "awaiting_payment" | "paid" | "failed" | "cancelled" | "refunded" | "expired";
       payment_provider: "gopay" | "gpwebpay" | "tatrapayplus";
@@ -2413,7 +2428,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "organizer", "admin"],
-      event_status: ["draft", "published"],
+      event_status: ["draft", "published", "cancelled"],
       order_status: [
         "pending",
         "awaiting_payment",

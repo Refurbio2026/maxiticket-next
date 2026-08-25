@@ -143,7 +143,9 @@ function eventToForm(e: EventRecord): EventFormState {
     city: e.city ?? "",
     description: e.description ?? "",
     image_url: e.image_url ?? "",
-    status: e.status,
+    // Zrušené podujatie sa vo formulári needituje ako stav; zrušenie sa
+    // robí vlastnou akciou a späť sa vracia publikovaním.
+    status: e.status === "cancelled" ? "draft" : e.status,
     sale_type: (e.sale_type ?? "standing") as SaleType,
     venue_layout_id: e.venue_layout_id ?? "",
     base_price: e.base_price != null ? String(e.base_price) : "0",

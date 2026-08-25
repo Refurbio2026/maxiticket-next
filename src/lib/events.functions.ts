@@ -45,7 +45,7 @@ export type EventRecord = {
   address?: string;
   description?: string;
   image_url?: string;
-  status: "draft" | "published";
+  status: "draft" | "published" | "cancelled";
   created_at: string;
   tickets: EventTicketType[];
   /** Termíny; `event_date` vyššie je len ten najbližší z nich. */
@@ -86,7 +86,7 @@ function mapEvent(
     address: opt<string>(row.address),
     description: opt<string>(row.description),
     image_url: opt<string>(row.image_url),
-    status: row.status as "draft" | "published",
+    status: row.status as "draft" | "published" | "cancelled",
     created_at: row.created_at as string,
     tickets,
     dates,
@@ -178,7 +178,7 @@ export const listEvents = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
-        status: z.enum(["published", "draft", "all"]).default("published"),
+        status: z.enum(["published", "draft", "cancelled", "all"]).default("published"),
         organizer_id: z.string().uuid().optional(),
         limit: z.number().int().positive().max(500).default(200),
       })

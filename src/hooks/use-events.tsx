@@ -70,7 +70,9 @@ export function toEventInput(e: EventRecord, patch?: Partial<EventInputData>): E
     address: e.address ?? null,
     description: e.description ?? null,
     image_url: e.image_url ?? null,
-    status: e.status,
+    // Zrušenie sa robí vlastnou akciou, nie uložením formulára — späť do
+    // predaja sa podujatie vracia publikovaním.
+    status: e.status === "cancelled" ? "draft" : e.status,
     sale_type: e.sale_type ?? "standing",
     venue_id: e.venue_id ?? null,
     venue_layout_id: e.venue_layout_id ?? null,
