@@ -15,6 +15,7 @@ import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { releaseCouponForOrder } from "./coupons.server";
 import { errorMessage } from "./error-message";
+import { objednavkySVstupenkou } from "./tickets-by-order.server";
 import { sadzbaPodujatia } from "./dph.server";
 import { siteUrl } from "./site-url.server";
 import { signOrderAccess } from "./order-access.server";
@@ -374,13 +375,13 @@ async function dopravZaplatene(maxAgeHours: number): Promise<{
   let bezVstupeniek = 0;
   let vydanych = 0;
 
+  // Ktoré objednávky vstupenky majú, sa zistí hromadne — inak by sken pri
+  // dvesto objednávkach spravil dvesto dotazov len na to, že je všetko v poriadku.
+  const maju = await objednavkySVstupenkou((zaplatene || []).map((o) => o.id));
+
   for (const order of zaplatene || []) {
     try {
-      const { count } = await supabaseAdmin
-        .from("tickets")
-        .select("id", { count: "exact", head: true })
-        .eq("order_id", order.id);
-      if ((count ?? 0) > 0) continue;
+      if (maju.has(order.id)) continue;
 
       bezVstupeniek++;
       const pocet = await vydajVstupenky(order);

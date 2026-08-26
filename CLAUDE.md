@@ -301,7 +301,9 @@ V pokladni má kupón prednosť pred ručnou zľavou pokladníka (`discount_pct`
 
 `email_templates` + `email-templates.ts` (izomorfné, vstavané znenie + renderer),
 `email-templates.server.ts` (`renderEmail`) a `/admin/system/email-templates`.
-Kľúče sú `tickets` a `refund`; nový kľúč pridávaj **spolu s kódom, ktorý ho odošle**.
+Kľúče sú `tickets`, `refund`, `reminder`, `waitlist` a `cancel`; nový kľúč pridávaj
+**spolu s kódom, ktorý ho odošle**. `variables` je nápoveda pre admina — smie ponúkať aj
+premenné, ktoré vstavané znenie nepoužíva, ale opačne to neplatí a test to stráži.
 
 Šablóna v databáze je nepovinná — keď riadok chýba alebo má `enabled = false`, použije sa
 `DEFAULT_TEMPLATES` z kódu. Odosielanie tak nikdy nezávisí od toho, či niekto šablónu založil.
@@ -607,6 +609,11 @@ za posledné tri dni, plus veci, ktoré samy nekričia: prijaté dve platby za j
 zaplatené objednávky bez vstupeniek, platby visiace viac než šesť hodín a či beží cron.
 Keď pribudne nový druh zlyhania, pridaj ho sem — inak si ho nikto nevšimne.
 
+Stránka sa **sama obnovuje každú minútu**, takže tu nesmie vzniknúť dotaz na objednávku:
+prvá verzia sa pýtala na vstupenky zvlášť pre každú z päťsto objednávok. Hromadné zistenie
+je v `tickets-by-order.server.ts` (dávky po sto — `in()` ide v PostgREST cez URL) a používa
+ho aj dopytovací sken. Filtre nad logmi majú parciálne indexy `*_chyby_idx`.
+
 ## Čakačka
 
 `waitlist` + `waitlist.server.ts`. Upovedomenie **nevisí na miestach, kde sa kapacita
@@ -624,6 +631,13 @@ jeden termín: vráti peniaze, zneplatní vstupenky, uvoľní sedadlá a pošle 
   lístok na podujatie, ktoré sa práve ruší. Stav sa zapisuje na podujatie aj na termíny, lebo
   `submitOrder` kontroluje `events.status = 'published'` aj `event_dates.status = 'on_sale'`.
 - Zlyhanie jedného refundu **nezastaví zvyšok**; vypíše sa zoznam, čo treba dobiť ručne.
+- **Oznámenie zákazníkovi nevisí na refunde.** Šablóna `cancel` odchádza aj pri zrušení bez
+  vrátenia peňazí a aj vtedy, keď refund neprejde — inak by človek prišiel k dverám s
+  platnou vstupenkou a bez tušenia. Veta o peniazoch sa skladá podľa toho, ako refund
+  naozaj dopadol, takže nesľubuje prevod, ktorý sa nestal. `vratPeniaze` sa preto volá
+  s `notifyCustomer: false`; dva e-maily naraz sú mätúce.
+- **Skener odmieta zrušené podujatie aj zrušený termín**, nielen refundovanú vstupenku.
+  Pri zrušení bez refundu totiž na vstupenke značka `refunded_at` nevznikne.
 - Opakované spustenie je neškodné — hľadajú sa len objednávky v stave `paid`, takže už
   vrátené sa preskočia.
 - Samotné vrátenie peňazí je v `refunds.server.ts`, aby ho nemusel kopírovať ani admin

@@ -9,7 +9,7 @@
 
 export type TemplateVars = Record<string, string | number | null | undefined>;
 
-export type TemplateKey = "tickets" | "refund" | "reminder" | "waitlist";
+export type TemplateKey = "tickets" | "refund" | "reminder" | "waitlist" | "cancel";
 
 export type TemplateDefinition = {
   key: TemplateKey;
@@ -153,6 +153,22 @@ const WAITLIST_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI
 </p>
 </div>`;
 
+const CANCEL_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;color:#111">
+<h2 style="margin:0 0 4px">Podujatie sa ruší</h2>
+<p style="margin:0 0 16px;color:#555">{{event_title}}</p>
+<p>Dobrý deň {{customer_name}},</p>
+<p>mrzí nás to, ale podujatie <strong>{{event_title}}</strong> ({{event_date}}) sa ruší.</p>
+<table style="border-collapse:collapse;margin:16px 0">
+  <tr><td style="padding:4px 12px 4px 0;color:#666;vertical-align:top">Dôvod:</td><td>{{reason}}</td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Objednávka:</td><td>#{{order_short}}</td></tr>
+</table>
+<p>{{refund_note}}</p>
+<p style="margin:0;color:#666;font-size:13px">
+  Vaše vstupenky na toto podujatie už neplatia. Ak by čokoľvek nesedelo, odpíšte na tento e-mail.
+</p>
+<p style="color:#888;font-size:12px;margin-top:24px">vipky.sk</p>
+</div>`;
+
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
   tickets: {
     key: "tickets",
@@ -230,6 +246,30 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
       { key: "currency", label: "Mena", example: "EUR" },
       { key: "refund_type", label: "Plný alebo čiastočný refund", example: "Plný refund" },
       { key: "reason", label: "Dôvod (môže chýbať)", example: "Zrušené podujatie" },
+    ],
+  },
+  cancel: {
+    key: "cancel",
+    name: "Zrušenie podujatia",
+    description:
+      "Odchádza všetkým, ktorí majú zaplatenú vstupenku, keď sa podujatie alebo termín ruší. " +
+      "Posiela sa aj vtedy, keď sa peniaze nevracajú automaticky.",
+    subject: "vipky.sk — zrušené: {{event_title}}",
+    html: CANCEL_HTML,
+    text:
+      "Podujatie {{event_title}} ({{event_date}}) sa ruší. Dôvod: {{reason}}. " +
+      "Objednávka #{{order_short}}. {{refund_note}}",
+    variables: [
+      { key: "customer_name", label: "Meno zákazníka", example: "Peter Novák" },
+      { key: "event_title", label: "Názov podujatia", example: "Symfonický koncert" },
+      { key: "event_date", label: "Dátum podujatia", example: "14. 9. 2026" },
+      { key: "reason", label: "Dôvod zrušenia", example: "Choroba účinkujúceho" },
+      { key: "order_short", label: "Skrátené číslo objednávky", example: "A1B2C3D4" },
+      {
+        key: "refund_note",
+        label: "Veta o peniazoch podľa toho, ako refund dopadol",
+        example: "Sumu 29.00 EUR posielame späť na účet, z ktorého ste platili.",
+      },
     ],
   },
 };

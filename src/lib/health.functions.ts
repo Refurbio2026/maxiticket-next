@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { objednavkySVstupenkou } from "./tickets-by-order.server";
 
 async function assertAdmin(userId: string) {
   const { data } = await supabaseAdmin
@@ -106,20 +107,19 @@ export const getOperationsHealth = createServerFn({ method: "POST" })
     }
 
     // Zaplatené bez vstupeniek by mal dorobiť sken; keď tu niečo visí, sken nebeží.
+    //
+    // Zámerne to nie je dotaz na objednávku. Táto stránka sa sama obnovuje
+    // každú minútu a pri rušnom víkende by to bolo päťsto dotazov za sebou
+    // zakaždým. Namiesto toho sa vstupenky načítajú po dávkach a porovnajú.
     const { data: zaplatene } = await supabaseAdmin
       .from("orders")
       .select("id")
       .eq("status", "paid")
       .gte("created_at", od)
       .limit(500);
-    let bezVstupeniek = 0;
-    for (const o of zaplatene || []) {
-      const { count } = await supabaseAdmin
-        .from("tickets")
-        .select("id", { count: "exact", head: true })
-        .eq("order_id", o.id);
-      if ((count ?? 0) === 0) bezVstupeniek++;
-    }
+    const idcka = (zaplatene || []).map((o) => o.id);
+    const sVstupenkou = await objednavkySVstupenkou(idcka);
+    const bezVstupeniek = idcka.filter((id) => !sVstupenkou.has(id)).length;
     if (bezVstupeniek > 0) {
       zavady.push({
         uroven: "chyba",

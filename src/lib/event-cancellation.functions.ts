@@ -13,6 +13,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { vratPeniaze } from "./refunds.server";
 import { errorMessage } from "./error-message";
+import { renderEmail } from "./email-templates.server";
+import { sendMail } from "./mailer.server";
 
 async function assertAdmin(userId: string) {
   const { data } = await supabaseAdmin
@@ -134,22 +136,34 @@ export const cancelEvent = createServerFn({ method: "POST" })
         .eq("order_id", o.id);
     }
 
-    // 3) Peniaze. Zlyhanie jednej objednávky nesmie zastaviť zvyšok — inak by
-    //    sa prvý problém premietol do stoviek nevrátených platieb.
-    if (data.refund) {
-      for (const o of objednavky) {
+    // 3) Peniaze a oznámenie. Zlyhanie jednej objednávky nesmie zastaviť
+    //    zvyšok — inak by sa prvý problém premietol do stoviek nevrátených platieb.
+    //
+    //    Oznámenie zámerne nevisí na refunde. Keď sa peniaze vracajú mimo
+    //    systému alebo refund neprejde, človek sa aj tak musí dozvedieť, že
+    //    podujatie nebude — inak príde k dverám s platnou vstupenkou.
+    const popisTerminu = await popisPodujatia(data.event_id, data.event_date_id);
+    for (const o of objednavky) {
+      let poznamkaOPeniazoch = "O vrátení peňazí sa vám ozveme.";
+
+      if (data.refund) {
         try {
           const r = await vratPeniaze({
             order_id: o.id,
             reason: `Zrušené podujatie: ${data.reason}`,
-            notifyCustomer: data.notify,
+            // Zákazníkovi píšeme sami, nižšie — jedným e-mailom, ktorý povie
+            // aj to, že sa podujatie ruší. Dva e-maily naraz sú mätúce.
+            notifyCustomer: false,
             userId: context.userId,
           });
           vysledok.vratenych++;
           vysledok.vratenaSuma += r.refunded_amount;
-          if (r.email_queued) vysledok.upovedomenych++;
           if (r.manual_action_required) {
             vysledok.rucne.push({ order_id: o.id, poznamka: r.manual_action_required });
+          } else {
+            poznamkaOPeniazoch =
+              `Sumu ${r.refunded_amount.toFixed(2)} ${o.currency || "EUR"} posielame späť ` +
+              "na účet, z ktorého ste platili. Pripísanie trvá zvyčajne pár pracovných dní.";
           }
         } catch (e) {
           const dovod = errorMessage(e);
@@ -164,6 +178,13 @@ export const cancelEvent = createServerFn({ method: "POST" })
           });
         }
       }
+
+      if (
+        data.notify &&
+        (await posliOznamZrusenia(o, popisTerminu, data.reason, poznamkaOPeniazoch))
+      ) {
+        vysledok.upovedomenych++;
+      }
     }
 
     vysledok.vratenaSuma = Number(vysledok.vratenaSuma.toFixed(2));
@@ -174,7 +195,9 @@ type ObjednavkaNaZrusenie = {
   id: string;
   total_amount: number;
   refunded_amount: number | null;
+  customer_name: string | null;
   customer_email: string | null;
+  currency: string | null;
   payment_provider: string | null;
   pocet_vstupeniek: number;
 };
@@ -186,7 +209,9 @@ async function zaplateneObjednavky(
 ): Promise<ObjednavkaNaZrusenie[]> {
   let q = supabaseAdmin
     .from("orders")
-    .select("id, total_amount, refunded_amount, customer_email, payment_provider, tickets(count)")
+    .select(
+      "id, total_amount, refunded_amount, customer_name, customer_email, currency, payment_provider, tickets(count)",
+    )
     .eq("event_id", eventId)
     .eq("status", "paid");
   if (eventDateId) q = q.eq("event_date_id", eventDateId);
@@ -198,8 +223,82 @@ async function zaplateneObjednavky(
     id: o.id,
     total_amount: Number(o.total_amount),
     refunded_amount: o.refunded_amount === null ? null : Number(o.refunded_amount),
+    customer_name: o.customer_name,
     customer_email: o.customer_email,
+    currency: o.currency,
     payment_provider: o.payment_provider,
     pocet_vstupeniek: (o.tickets as unknown as Array<{ count: number }>)?.[0]?.count ?? 0,
   }));
+}
+
+type PopisPodujatia = { title: string; datum: string };
+
+/** Názov a dátum do e-mailu. Pri zrušení jedného termínu ide dátum z termínu. */
+async function popisPodujatia(
+  eventId: string,
+  eventDateId?: string | null,
+): Promise<PopisPodujatia> {
+  const { data: event } = await supabaseAdmin
+    .from("events")
+    .select("title, event_date")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  let datum = event?.event_date ?? null;
+  if (eventDateId) {
+    const { data: termin } = await supabaseAdmin
+      .from("event_dates")
+      .select("event_date")
+      .eq("id", eventDateId)
+      .maybeSingle();
+    if (termin?.event_date) datum = termin.event_date;
+  }
+
+  return {
+    title: event?.title || "Podujatie",
+    datum: datum ? new Date(datum).toLocaleDateString("sk") : "",
+  };
+}
+
+/**
+ * Oznámi zákazníkovi zrušenie. Vracia `true`, len keď e-mail naozaj odišiel —
+ * počítadlo v prehľade nesmie tvrdiť, že sme upovedomili niekoho, komu
+ * odosielanie zlyhalo.
+ */
+async function posliOznamZrusenia(
+  o: ObjednavkaNaZrusenie,
+  popis: PopisPodujatia,
+  dovod: string,
+  poznamkaOPeniazoch: string,
+): Promise<boolean> {
+  if (!o.customer_email) return false;
+  try {
+    const rendered = await renderEmail("cancel", {
+      customer_name: (o.customer_name || "").split(" ")[0] || "",
+      event_title: popis.title,
+      event_date: popis.datum,
+      reason: dovod,
+      order_short: o.id.slice(0, 8).toUpperCase(),
+      refund_note: poznamkaOPeniazoch,
+    });
+    const sent = await sendMail({
+      to: o.customer_email,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+    await supabaseAdmin.from("email_logs").insert({
+      order_id: o.id,
+      recipient: o.customer_email,
+      subject: rendered.subject,
+      provider: "resend",
+      provider_message_id: sent.ok ? sent.id : null,
+      status: sent.ok ? "ok" : "error",
+      error_message: sent.ok ? null : sent.message,
+    });
+    return sent.ok;
+  } catch (e) {
+    console.error("Oznam o zrušení zlyhal", o.id, errorMessage(e));
+    return false;
+  }
 }

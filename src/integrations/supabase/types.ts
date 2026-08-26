@@ -835,6 +835,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "tickets_event_date_id_fkey";
+            columns: ["event_date_id"];
+            isOneToOne: false;
+            referencedRelation: "event_dates";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "tickets_order_id_fkey";
             columns: ["order_id"];
             isOneToOne: false;

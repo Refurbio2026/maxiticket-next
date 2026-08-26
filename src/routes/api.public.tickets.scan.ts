@@ -67,7 +67,7 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
         }
         const { data: ev } = await supabaseAdmin
           .from("events")
-          .select("id")
+          .select("id, status")
           .eq("scanner_token", eventToken)
           .maybeSingle();
         const eventId: string | null = ev?.id || null;
@@ -77,13 +77,22 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
             { status: 200 },
           );
         }
+        // Zrušené podujatie nemá koho púšťať dnu. Kontrola nemôže stáť len na
+        // `refunded_at` vstupenky — pri zrušení bez refundu alebo pri refunde,
+        // ktorý neprešiel, vstupenka označená nie je.
+        if (ev?.status === "cancelled") {
+          return Response.json(
+            { ok: false, result: "invalid" as const, message: "Podujatie je zrušené" },
+            { status: 200 },
+          );
+        }
 
         // Accept legacy plaintext qr_code too (fallback)
         const ticketId = verifyTicket(token);
         const query = supabaseAdmin
           .from("tickets")
           .select(
-            "id, event_id, event_date_id, order_id, seat_label, seat_id, qr_code, qr_token, scan_count, last_scan_at, used_at, refunded_at, allow_reentry, scanned_by, issued_at",
+            "id, event_id, event_date_id, order_id, seat_label, seat_id, qr_code, qr_token, scan_count, last_scan_at, used_at, refunded_at, allow_reentry, scanned_by, issued_at, event_dates(status)",
           );
         const { data: ticket } = ticketId
           ? await query.eq("id", ticketId).maybeSingle()
@@ -120,6 +129,25 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
             ok: false,
             result: "invalid" as const,
             message: "Vstupenka patrí inému podujatiu",
+          });
+        }
+
+        // Zrušený je aj samotný termín, nielen celé podujatie — pri viacdňovom
+        // podujatí sa ruší po termínoch.
+        if (ticket.event_dates?.status === "cancelled") {
+          await logScan({
+            ticket_id: ticket.id,
+            event_id: ticket.event_id,
+            qr_token: token,
+            result: "invalid",
+            scanned_by: scannedBy,
+            scanner_name: scannerName,
+            user_agent: ua,
+          });
+          return Response.json({
+            ok: false,
+            result: "invalid" as const,
+            message: "Termín je zrušený",
           });
         }
 
