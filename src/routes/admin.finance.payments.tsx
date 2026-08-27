@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/finance/payments")({
-  head: () => ({ meta: [{ title: "Platby (GoPay) · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Platby (GoPay) · eticketo.sk Admin" }] }),
   component: Page,
 });
 

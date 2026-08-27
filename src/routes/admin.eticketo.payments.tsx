@@ -27,8 +27,8 @@ import {
 import { Loader2, CreditCard, Download, AlertTriangle, Check } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/maxiticket/payments")({
-  head: () => ({ meta: [{ title: "Platby organizátorom · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/payments")({
+  head: () => ({ meta: [{ title: "Platby organizátorom · eticketo.sk Admin" }] }),
   component: Page,
 });
 
@@ -111,7 +111,7 @@ function Page() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Platby organizátorom</h1>
           <p className="text-muted-foreground mt-1">
             Schválené{" "}
-            <Link to="/admin/maxiticket/protocols" className="text-primary hover:underline">
+            <Link to="/admin/eticketo/protocols" className="text-primary hover:underline">
               vyúčtovacie protokoly
             </Link>{" "}
             čakajúce na prevod a história vyplatených. Návrh protokolu sem nepatrí — najprv ho treba
@@ -141,7 +141,7 @@ function Page() {
             <div className="font-semibold">Chýba výplatný účet</div>
             <p className="text-muted-foreground">
               {q.data!.missing_iban} schválených výplat nemá IBAN. Doplň ho v{" "}
-              <Link to="/admin/maxiticket/organizers" className="text-primary hover:underline">
+              <Link to="/admin/eticketo/organizers" className="text-primary hover:underline">
                 Organizátoroch
               </Link>
               , inak sa prevod nedá odoslať.

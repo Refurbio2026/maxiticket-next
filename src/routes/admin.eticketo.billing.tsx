@@ -32,8 +32,8 @@ import {
   type SettlementRow,
 } from "@/lib/settlements.functions";
 
-export const Route = createFileRoute("/admin/maxiticket/billing")({
-  head: () => ({ meta: [{ title: "Zostavy / fakturovanie · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/billing")({
+  head: () => ({ meta: [{ title: "Zostavy / fakturovanie · eticketo.sk Admin" }] }),
   component: Page,
 });
 
@@ -109,7 +109,7 @@ function Page() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Zostavy / fakturovanie</h1>
           <p className="text-muted-foreground mt-1">
             Faktúry za províziu k{" "}
-            <Link to="/admin/maxiticket/protocols" className="text-primary hover:underline">
+            <Link to="/admin/eticketo/protocols" className="text-primary hover:underline">
               vyúčtovacím protokolom
             </Link>
             . Protokol províziu vypočíta, faktúra je až daňový doklad.

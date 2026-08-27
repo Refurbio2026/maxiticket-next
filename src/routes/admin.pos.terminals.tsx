@@ -37,7 +37,7 @@ function AdminPosTerminalsPage() {
         <h1 className="font-display text-3xl font-bold">Terminály</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Platobné terminály, tlačiarne a kiosky naprieč organizátormi. Pridávajú sa v{" "}
-          <Link to="/admin/maxiticket/devices" className="text-primary hover:underline">
+          <Link to="/admin/eticketo/devices" className="text-primary hover:underline">
             Zariadeniach
           </Link>
           ; samotné spojenie s terminálom je zatiaľ simulované.

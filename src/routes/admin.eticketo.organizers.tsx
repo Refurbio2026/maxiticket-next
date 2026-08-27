@@ -25,8 +25,8 @@ import {
   type OrganizerAccount,
 } from "@/lib/settlements.functions";
 
-export const Route = createFileRoute("/admin/maxiticket/organizers")({
-  head: () => ({ meta: [{ title: "Organizátori · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/organizers")({
+  head: () => ({ meta: [{ title: "Organizátori · eticketo.sk Admin" }] }),
   component: Page,
 });
 

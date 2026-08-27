@@ -35,7 +35,7 @@ import { listPosDocuments, downloadPosDocument } from "@/lib/pos-documents.funct
 import { downloadBase64 } from "@/lib/download";
 
 export const Route = createFileRoute("/organizer/pos/closing")({
-  head: () => ({ meta: [{ title: "Denná uzávierka · vipky.sk" }] }),
+  head: () => ({ meta: [{ title: "Denná uzávierka · eticketo.sk" }] }),
   component: ClosingPage,
 });
 

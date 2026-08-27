@@ -1,4 +1,4 @@
-// Import sál zo starého MaxiTicketu (export `maxiticket-export-hall`).
+// Import sál zo starého ticketingového systému (export `maxiticket-export-hall`).
 //
 // Starý formát drží každé sedadlo ako bod so súradnicami (rozostup 16 × 17 px,
 // sedadlo 13 px), takže rozloženie prenášame 1:1 — sedadlo = jeden tvar.
@@ -190,6 +190,8 @@ export function convertHall(src) {
   const address = [nonEmpty(hall.street), nonEmpty(hall.zip)].filter(Boolean).join(", ");
 
   return {
+    // Semienko je historické a NESMIE sa meniť — inak by opakovaný import
+    // vyrobil nové UUID a založil duplicitné sály.
     id: stableUuid(`maxiticket-hall:${src.id_hall_desc}:${src.id_hall}`),
     name,
     type: hallType(name),

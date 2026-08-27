@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Smartphone, Wallet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/system/wallet")({
-  head: () => ({ meta: [{ title: "Wallet nastavenia · Admin · vipky.sk" }] }),
+  head: () => ({ meta: [{ title: "Wallet nastavenia · Admin · eticketo.sk" }] }),
   component: WalletSettingsPage,
 });
 
@@ -96,7 +96,7 @@ function WalletSettingsPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Pass Type Identifier">
             <Input
-              placeholder="pass.sk.vipky.ticket"
+              placeholder="pass.sk.eticketo.ticket"
               value={form.apple_pass_type_identifier}
               onChange={(e) => setForm({ ...form, apple_pass_type_identifier: e.target.value })}
             />

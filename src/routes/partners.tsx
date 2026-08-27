@@ -7,14 +7,14 @@ import { Building2, Users, Handshake, Trophy, Tv2, BadgePercent, ArrowRight } fr
 export const Route = createFileRoute("/partners")({
   head: () => ({
     meta: [
-      { title: "Spolupráca · vipky.sk" },
+      { title: "Spolupráca · eticketo.sk" },
       {
         name: "description",
         content:
           "Pre organizátorov, partnerov, affiliate program, sponzoring a mediálnu spoluprácu.",
       },
-      { property: "og:title", content: "Spolupráca · vipky.sk" },
-      { property: "og:description", content: "Staňte sa partnerom vipky.sk." },
+      { property: "og:title", content: "Spolupráca · eticketo.sk" },
+      { property: "og:description", content: "Staňte sa partnerom eticketo.sk." },
     ],
   }),
   component: PartnersPage,
@@ -29,7 +29,7 @@ function PartnersPage() {
           Rastieme <span className="text-gradient-flame">spoločne</span>
         </>
       }
-      description="Pridajte sa k vipky.sk ekosystému – organizátori, partneri, affiliate tvorcovia, sponzori a mediálne značky. Profitujeme všetci."
+      description="Pridajte sa k eticketo.sk ekosystému – organizátori, partneri, affiliate tvorcovia, sponzori a mediálne značky. Profitujeme všetci."
       cta={
         <>
           <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">

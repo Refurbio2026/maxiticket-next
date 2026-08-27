@@ -15,7 +15,7 @@ import { Loader2, Megaphone, Plug } from "lucide-react";
 import { listCampaigns, listAdAccounts, type CampaignStatus } from "@/lib/marketing.functions";
 
 export const Route = createFileRoute("/admin/marketing")({
-  head: () => ({ meta: [{ title: "Reklamné kampane · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Reklamné kampane · eticketo.sk Admin" }] }),
   component: Page,
 });
 

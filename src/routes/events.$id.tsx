@@ -74,13 +74,13 @@ export const Route = createFileRoute("/events/$id")({
   head: ({ loaderData }) => {
     const e = loaderData?.event ?? null;
     const origin = loaderData?.origin ?? "";
-    if (!e) return { meta: [{ title: "Podujatie · vipky.sk" }] };
+    if (!e) return { meta: [{ title: "Podujatie · eticketo.sk" }] };
     const popis =
       (e.description || "").replace(/\s+/g, " ").trim().slice(0, 160) ||
-      `${e.title} — ${e.venue}, ${e.city}. Vstupenky online na vipky.sk.`;
+      `${e.title} — ${e.venue}, ${e.city}. Vstupenky online na eticketo.sk.`;
     return {
       meta: [
-        { title: `${e.title} · ${e.city} · vipky.sk` },
+        { title: `${e.title} · ${e.city} · eticketo.sk` },
         { name: "description", content: popis },
         { property: "og:type", content: "website" },
         { property: "og:title", content: e.title },
@@ -618,7 +618,7 @@ function EventDetail() {
               <InfoTile
                 icon={<User className="size-4" />}
                 label="Organizátor"
-                value={event.organizer_name || "vipky.sk partner"}
+                value={event.organizer_name || "eticketo.sk partner"}
               />
               <InfoTile icon={<MapPin className="size-4" />} label="Miesto" value={event.venue} />
             </div>

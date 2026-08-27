@@ -38,7 +38,7 @@ import { renderOrderTicketsPdf } from "@/lib/ticket-pdf.functions";
 import { downloadBase64 } from "@/lib/download";
 
 export const Route = createFileRoute("/checkout/success/$orderId")({
-  head: () => ({ meta: [{ title: "Ďakujeme za nákup · vipky.sk" }] }),
+  head: () => ({ meta: [{ title: "Ďakujeme za nákup · eticketo.sk" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     t: typeof s.t === "string" ? s.t : "",
   }),

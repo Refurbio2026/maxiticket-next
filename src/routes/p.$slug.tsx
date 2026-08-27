@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, FileQuestion } from "lucide-react";
 
 export const Route = createFileRoute("/p/$slug")({
-  head: () => ({ meta: [{ title: "vipky.sk" }] }),
+  head: () => ({ meta: [{ title: "eticketo.sk" }] }),
   component: Page,
 });
 
@@ -61,7 +61,7 @@ function Page() {
 
   if (q.isLoading) {
     return (
-      <PageShell eyebrow="vipky.sk" title="Načítavam…" description="">
+      <PageShell eyebrow="eticketo.sk" title="Načítavam…" description="">
         <div className="py-16 text-center">
           <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" />
         </div>
@@ -72,7 +72,7 @@ function Page() {
   if (!q.data) {
     return (
       <PageShell
-        eyebrow="vipky.sk"
+        eyebrow="eticketo.sk"
         title="Stránka sa nenašla"
         description="Táto adresa neexistuje alebo stránka ešte nie je zverejnená."
       >
@@ -91,7 +91,7 @@ function Page() {
 
   const page = q.data;
   return (
-    <PageShell eyebrow="vipky.sk" title={page.title} description={page.meta_description ?? ""}>
+    <PageShell eyebrow="eticketo.sk" title={page.title} description={page.meta_description ?? ""}>
       <Card className="p-6 sm:p-10 bg-card/60 border-border/60 max-w-3xl">
         <div className="text-[15px]">{renderBody(page.body)}</div>
         <p className="text-xs text-muted-foreground mt-10 pt-4 border-t border-border/40">

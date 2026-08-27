@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Ticket, Download, RotateCcw } from "lucide-react";
 
-export const Route = createFileRoute("/admin/maxiticket/tickets")({
-  head: () => ({ meta: [{ title: "Vstupenky organizátorov · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/tickets")({
+  head: () => ({ meta: [{ title: "Vstupenky organizátorov · eticketo.sk Admin" }] }),
   component: Page,
 });
 

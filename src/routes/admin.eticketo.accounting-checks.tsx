@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { runAccountingChecks } from "@/lib/accounting-checks.functions";
 
-export const Route = createFileRoute("/admin/maxiticket/accounting-checks")({
-  head: () => ({ meta: [{ title: "Účtovanie · kontroly · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/accounting-checks")({
+  head: () => ({ meta: [{ title: "Účtovanie · kontroly · eticketo.sk Admin" }] }),
   component: Page,
 });
 
@@ -30,7 +30,7 @@ function Page() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Účtovanie · kontroly</h1>
           <p className="text-muted-foreground mt-1">
             Nezhody vnútri predajných dát. Porovnanie protokolov s prepočtom nájdeš v{" "}
-            <Link to="/admin/maxiticket/control" className="text-primary hover:underline">
+            <Link to="/admin/eticketo/control" className="text-primary hover:underline">
               Kontrole zostavy
             </Link>
             .

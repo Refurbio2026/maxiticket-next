@@ -21,7 +21,7 @@ import {
 import { renderTemplate } from "@/lib/email-templates";
 
 export const Route = createFileRoute("/admin/system/email-templates")({
-  head: () => ({ meta: [{ title: "Emailové šablóny · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Emailové šablóny · eticketo.sk Admin" }] }),
   component: Page,
 });
 

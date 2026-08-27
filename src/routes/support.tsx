@@ -23,12 +23,12 @@ import {
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Podpora · vipky.sk" },
+      { title: "Podpora · eticketo.sk" },
       {
         name: "description",
         content: "FAQ, reklamácie, refundácie a technická podpora pre kupujúcich aj organizátorov.",
       },
-      { property: "og:title", content: "Podpora · vipky.sk" },
+      { property: "og:title", content: "Podpora · eticketo.sk" },
       { property: "og:description", content: "Pomoc s nákupom vstupeniek a technická podpora." },
     ],
   }),
@@ -64,7 +64,7 @@ const FAQ = [
   {
     cat: "Technické",
     q: "Nefunguje mi QR kód pri vstupe.",
-    a: "Kontaktujte personál na vstupe alebo nás napíšte na support@vipky.sk – overíme vás podľa e-mailu objednávky.",
+    a: "Kontaktujte personál na vstupe alebo nás napíšte na support@eticketo.sk – overíme vás podľa e-mailu objednávky.",
   },
 ];
 
@@ -160,10 +160,10 @@ function SupportPage() {
               Po–Pi 9:00–18:00, víkendy 12:00–22:00 počas podujatí.
             </p>
             <a
-              href="mailto:support@vipky.sk"
+              href="mailto:support@eticketo.sk"
               className="text-primary text-sm font-semibold hover:underline mt-2 inline-block"
             >
-              support@vipky.sk
+              support@eticketo.sk
             </a>
           </div>
         </Card>

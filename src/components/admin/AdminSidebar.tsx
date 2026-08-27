@@ -91,37 +91,37 @@ const groups: Group[] = [
     items: [{ title: "Dashboard", url: "/admin", icon: LayoutDashboard }],
   },
   {
-    label: "vipky.sk",
+    label: "eticketo.sk",
     items: [
-      { title: "Zostavy / fakturovanie", url: "/admin/maxiticket/billing", icon: Receipt },
-      { title: "Vyúčtovacie protokoly", url: "/admin/maxiticket/protocols", icon: FileText },
-      { title: "Náklady organizátorov", url: "/admin/maxiticket/costs", icon: Wallet },
-      { title: "Organizátori", url: "/admin/maxiticket/organizers", icon: Users },
-      { title: "Platby organizátorom", url: "/admin/maxiticket/payments", icon: CreditCard },
-      { title: "Vstupenky organizátorov", url: "/admin/maxiticket/tickets", icon: Ticket },
-      { title: "Kontrola zostavy", url: "/admin/maxiticket/control", icon: ShieldCheck },
-      { title: "Zariadenia / čítačky", url: "/admin/maxiticket/devices", icon: Scan },
+      { title: "Zostavy / fakturovanie", url: "/admin/eticketo/billing", icon: Receipt },
+      { title: "Vyúčtovacie protokoly", url: "/admin/eticketo/protocols", icon: FileText },
+      { title: "Náklady organizátorov", url: "/admin/eticketo/costs", icon: Wallet },
+      { title: "Organizátori", url: "/admin/eticketo/organizers", icon: Users },
+      { title: "Platby organizátorom", url: "/admin/eticketo/payments", icon: CreditCard },
+      { title: "Vstupenky organizátorov", url: "/admin/eticketo/tickets", icon: Ticket },
+      { title: "Kontrola zostavy", url: "/admin/eticketo/control", icon: ShieldCheck },
+      { title: "Zariadenia / čítačky", url: "/admin/eticketo/devices", icon: Scan },
       {
         title: "Účtovanie / výpisy z banky",
-        url: "/admin/maxiticket/accounting-bank",
+        url: "/admin/eticketo/accounting-bank",
         icon: Landmark,
       },
       {
         title: "Účtovanie / report",
-        url: "/admin/maxiticket/accounting-report",
+        url: "/admin/eticketo/accounting-report",
         icon: ClipboardList,
       },
       {
         title: "Účtovanie / kontroly",
-        url: "/admin/maxiticket/accounting-checks",
+        url: "/admin/eticketo/accounting-checks",
         icon: CheckSquare,
       },
       {
         title: "Typy refundácií",
-        url: "/admin/maxiticket/refund-types",
+        url: "/admin/eticketo/refund-types",
         icon: RotateCcw,
       },
-      { title: "Bilancie", url: "/admin/maxiticket/balances", icon: Scale },
+      { title: "Bilancie", url: "/admin/eticketo/balances", icon: Scale },
     ],
   },
   {
@@ -210,7 +210,7 @@ export function AdminSidebar() {
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">
-              <span className="font-display text-base font-bold tracking-tight">vipky.sk</span>
+              <span className="font-display text-base font-bold tracking-tight">eticketo.sk</span>
               <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
                 Admin Console
               </span>

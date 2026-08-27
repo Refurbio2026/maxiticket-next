@@ -18,7 +18,7 @@ import {
 import { Loader2, Ban, Search, RotateCcw, Download } from "lucide-react";
 
 export const Route = createFileRoute("/admin/sales/cancellations")({
-  head: () => ({ meta: [{ title: "Storno · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Storno · eticketo.sk Admin" }] }),
   component: Page,
 });
 

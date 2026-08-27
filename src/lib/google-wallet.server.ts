@@ -10,7 +10,7 @@
 //   GOOGLE_WALLET_ISSUER_ID              e.g. 3388000000022123456
 //   GOOGLE_WALLET_SERVICE_ACCOUNT_JSON   the full service-account JSON (one line)
 // Optional:
-//   GOOGLE_WALLET_ISSUER_NAME            display name (default "Vipky.sk")
+//   GOOGLE_WALLET_ISSUER_NAME            display name (default "Eticketo.sk")
 //
 // Until both secrets exist, buildGoogleWalletSaveLink() returns a graceful
 // { ok: false, reason: "not_configured" } result and the UI shows a toast
@@ -66,7 +66,7 @@ function readGoogleConfig(): GoogleConfig | null {
     issuerId,
     clientEmail: sa.client_email,
     privateKey,
-    issuerName: process.env.GOOGLE_WALLET_ISSUER_NAME || "Vipky.sk",
+    issuerName: process.env.GOOGLE_WALLET_ISSUER_NAME || "Eticketo.sk",
   };
 }
 

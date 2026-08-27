@@ -12,6 +12,8 @@ import crypto from "node:crypto";
 const PREFIX = "v1";
 // Pevná soľ je v poriadku: kľúč je odvodený z náhodného serverového tajomstva,
 // nie z hesla, takže soľ tu nechráni pred slovníkovým útokom.
+// Hodnota reťazca je historická a NESMIE sa meniť ani pri premenovaní značky —
+// zmena soli znefunkční dešifrovanie už uložených tajomstiev.
 const SOL = Buffer.from("maxiticket-secrets-v1");
 
 let kluc: Buffer | null = null;

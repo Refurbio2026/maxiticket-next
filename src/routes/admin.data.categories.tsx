@@ -28,7 +28,7 @@ import { Plus, Pencil, Trash2, Eye, CalendarPlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/data/categories")({
-  head: () => ({ meta: [{ title: "Kategórie podujatí · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Kategórie podujatí · eticketo.sk Admin" }] }),
   component: Page,
 });
 

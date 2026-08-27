@@ -26,7 +26,7 @@ import { Plus, Pencil, Trash2, Loader2, FileCode, ExternalLink } from "lucide-re
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/data/content")({
-  head: () => ({ meta: [{ title: "Obsah / stránky · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Obsah / stránky · eticketo.sk Admin" }] }),
   component: Page,
 });
 

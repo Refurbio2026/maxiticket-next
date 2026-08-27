@@ -1,8 +1,21 @@
 # CLAUDE.md
 
-Ticketingová platforma **MaxiTicket / vipky.sk** — predaj vstupeniek, rezervácia sedadiel,
+Ticketingová platforma **eTicketo / eticketo.sk** — predaj vstupeniek, rezervácia sedadiel,
 online platby (GoPay, GP webpay, tatrapay+), SuperFaktúra, QR vstupenky, skener na vstupe,
 POS pokladne, wallet passy.
+
+Projekt sa pôvodne volal **vipky.sk / MaxiTicket**. Značka je premenovaná, ale tri veci
+starý názov zámerne nesú ďalej a **nesmú sa prepísať**:
+
+- `/opt/maxiticket/…` — cesta na serveri, názov procesu v pm2 a `.env` (mení sa len ručne
+  spolu s nginx a pm2, nie premenovaním v kóde),
+- `maxiticket-secrets-v1` v `src/lib/secrets.server.ts` — soľ šifrovania; zmena znefunkční
+  dešifrovanie už uložených tajomstiev,
+- `maxiticket-hall:` v `scripts/import-halls.mjs` — semienko stabilných UUID sál; zmena by
+  pri opakovanom importe založila duplicitné sály.
+
+Staršie migrácie v `supabase/migrations/` sa neprepisujú, sú záznamom histórie. Hodnoty,
+ktoré z nich ostali v databáze, prestavuje `20260827100000_premenovanie_eticketo.sql`.
 
 ## Príkazy
 
@@ -147,7 +160,7 @@ s `on delete set null` — poznámka po zmazaní účtu ostáva.
 
 ### Náklady organizátorov
 
-`organizer_costs` + `organizer-costs.functions.ts` + `/admin/maxiticket/costs`. Položky, ktoré sa
+`organizer_costs` + `organizer-costs.functions.ts` + `/admin/eticketo/costs`. Položky, ktoré sa
 organizátorovi sťahujú z výplaty (tlač vstupeniek, prenájom čítačiek, reklama).
 
 **`settlement_id` rozhoduje o všetkom.** Kým je NULL, náklad je nevyúčtovaný a `computePreview` ho
@@ -161,7 +174,7 @@ nie zo zisku po nákladoch.**
 
 ### Výplaty a bilancie organizátorov
 
-`organizer-finance.functions.ts` + `/admin/maxiticket/payments` a `/admin/maxiticket/balances`.
+`organizer-finance.functions.ts` + `/admin/eticketo/payments` a `/admin/eticketo/balances`.
 **Nová tabuľka tu žiadna nie je** — obe stránky sú pohľad na protokoly, náklady a objednávky.
 
 Výplata = protokol v stave `approved` (na úhradu) alebo `paid` (uhradený). **Návrh sa medzi platby
@@ -169,10 +182,10 @@ nedostane** — najprv sa musí schváliť. „Bez IBAN-u" sa počíta zvlášť
 účtu sa nedá odoslať. Bilancia berie tržbu ako `total_amount − refunded_amount` zaplatených
 objednávok; „mimo protokolov" je `tržba − Σ settlements.gross_amount`, teda práca, ktorá čaká.
 
-`organizer-tickets.functions.ts` + `/admin/maxiticket/tickets` je ten istý druh pohľadu na
+`organizer-tickets.functions.ts` + `/admin/eticketo/tickets` je ten istý druh pohľadu na
 `tickets` — vydané (bez refundovaných), naskenované a kanál predaja podľa `orders.channel`.
 
-`checkSettlements` + `/admin/maxiticket/control` prepočíta každý protokol z dnešných dát a
+`checkSettlements` + `/admin/eticketo/control` prepočíta každý protokol z dnešných dát a
 porovná so zmrazenými číslami. **Rozdiel nie je chyba** — najčastejšie je to refundácia, ktorá
 prišla až po vystavení protokolu. Pripnuté náklady prepočet nevidí (majú `settlement_id`), preto
 sa do porovnania pripočítavajú späť.
@@ -312,13 +325,13 @@ Podporujeme len `{{kľúč}}` a `{{#if kľúč}} … {{/if}}`; hodnoty sa do HTM
 
 ### Zariadenia a dôvody refundácie
 
-`scanner_devices` + `devices.functions.ts` + `/admin/maxiticket/devices`. Skener pri dverách si
+`scanner_devices` + `devices.functions.ts` + `/admin/eticketo/devices`. Skener pri dverách si
 čítačku vyberie zo zoznamu (`listScannerDevicesForEvent` sa autorizuje **skenovacím kódom
 podujatia**, nie prihlásením — tablet sa neprihlasuje) a jej meno ide do
 `ticket_scans.scanner_name`. Posledné použitie zapisuje `touch_scanner_device()` mimo hlavnej
 cesty, aby zlyhanie zápisu nezdržalo sken.
 
-`refund_reasons` + `refund-reasons.functions.ts` + `/admin/maxiticket/refund-types`. Číselník
+`refund_reasons` + `refund-reasons.functions.ts` + `/admin/eticketo/refund-types`. Číselník
 číta ktokoľvek prihlásený, mení ho len admin. Refundačný dialóg posiela do `refundOrder`
 názov dôvodu (plus povinnú poznámku pri `requires_note`), takže sa z refundácií dá robiť
 štatistika — predtým to bol voľný text.
@@ -327,11 +340,11 @@ názov dôvodu (plus povinnú poznámku pri `requires_note`), takže sa z refund
 
 Posledné štyri oblasti presunuté z localStorage (14. 8.):
 
-- **Banka** (`bank.functions.ts`, `/admin/maxiticket/accounting-bank`) — účty, pohyby a ich
+- **Banka** (`bank.functions.ts`, `/admin/eticketo/accounting-bank`) — účty, pohyby a ich
   párovanie s objednávkami. Páruje sa podľa variabilného symbolu (prvých osem znakov id
   objednávky), ale **len keď sedí aj suma** — symbol vie zákazník odpísať zle a objednávka by sa
   označila za zaplatenú neprávom. Import má `external_id` proti dvojitému nahratiu výpisu.
-  `/admin/maxiticket/accounting-report` z tých istých pohybov skladá mesačný prehľad.
+  `/admin/eticketo/accounting-report` z tých istých pohybov skladá mesačný prehľad.
 - **Wallet** (`wallet-settings.functions.ts`) — jeden riadok pre platformu. Certifikáty a
   servisné kľúče do databázy **nepatria**, tie sú v secrets; stránka len ukáže, či na serveri sú.
 - **eKasa** (`fiscal.functions.ts`) — nastavenie na organizátora a evidencia dokladov. Odosielanie
@@ -348,20 +361,20 @@ rozišli.
 
 Tri veci s podobným názvom, ktoré si netreba pliesť:
 
-- **Kontrola zostavy** (`/admin/maxiticket/control`, `checkSettlements`) porovná čísla zmrazené
+- **Kontrola zostavy** (`/admin/eticketo/control`, `checkSettlements`) porovná čísla zmrazené
   v protokole s tým, čo by vyšlo dnes. Rozdiel väčšinou znamená refundáciu po vystavení protokolu.
-- **Účtovanie / kontroly** (`/admin/maxiticket/accounting-checks`, `accounting-checks.functions.ts`)
+- **Účtovanie / kontroly** (`/admin/eticketo/accounting-checks`, `accounting-checks.functions.ts`)
   hľadá nezhody vnútri predaja: zaplatená objednávka bez vstupeniek, vstupenka bez `qr_token`,
   refundovaná objednávka s platnou vstupenkou, predané sedadlo bez zaplatenej objednávky a pod.
   Je to **len diagnostika** — žiadna kontrola dáta nemení. Novú kontrolu pridaj do `runAccountingChecks`.
-- **Zostavy / fakturovanie** (`/admin/maxiticket/billing`) pripne k protokolu faktúru za províziu.
+- **Zostavy / fakturovanie** (`/admin/eticketo/billing`) pripne k protokolu faktúru za províziu.
   Buď cez SuperFaktúru (`issueCommissionInvoice`, vystaví sa **so splatnosťou**, nie ako zaplatená —
   na to slúži `alreadyPaid: false`), alebo ručným zápisom čísla, keď sa fakturuje z iného systému.
 
 ### Vyúčtovanie organizátorom
 
-`settlements.functions.ts` + `/admin/maxiticket/organizers` (sadzby, fakturačné a výplatné údaje)
-a `/admin/maxiticket/protocols` (protokoly). Provízia je **percento na organizátora**
+`settlements.functions.ts` + `/admin/eticketo/organizers` (sadzby, fakturačné a výplatné údaje)
+a `/admin/eticketo/protocols` (protokoly). Provízia je **percento na organizátora**
 (`profiles.commission_rate`); `NULL` znamená predvolenú sadzbu platformy z `platform_settings`.
 
 Prepočet za obdobie: hrubá tržba = objednávky so stavom `paid`/`refunded`, ktoré sa v období
@@ -483,25 +496,25 @@ V komponentoch cez `useI18n()`.
 V `.env` sú len `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID` (+ `VITE_` varianty).
 Server kód navyše potrebuje (inak hodí runtime error):
 
-| Premenná                                                                  | Načo                                                                          |
-| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `SUPABASE_SERVICE_ROLE_KEY`                                               | **povinné** — `supabaseAdmin`, celý serverový tok                             |
-| `TICKET_QR_SECRET`                                                        | podpis QR vstupeniek a order access tokenov (fallback: service role key)      |
-| `GOPAY_CLIENT_ID` / `GOPAY_CLIENT_SECRET` / `GOPAY_GOID`                  | platby cez GoPay (`GOPAY_API_URL` default sandbox)                            |
-| `GPWEBPAY_MERCHANT_NUMBER` / `_PRIVATE_KEY(_FILE)` / `_PUBLIC_KEY(_FILE)` | platby cez GP webpay (ČSOB); `GPWEBPAY_URL` default testovacia brána          |
-| `TATRAPAYPLUS_CLIENT_ID` / `_CLIENT_SECRET`                               | platby cez tatrapay+; `TATRAPAYPLUS_API_URL` default sandbox                  |
-| `PAYMENT_PROVIDER`                                                        | predvolená brána; bez nej sa použije prvá nakonfigurovaná                     |
-| `SUPERFAKTURA_EMAIL` / `_API_KEY` / `_COMPANY_ID`                         | fakturácia cez SuperFaktúru (dajú sa zadať aj v admine)                       |
-| `FAKTERO_API_KEY`                                                         | fakturácia cez Faktero (`FAKTERO_API_URL` default https://faktero.sk/api/v1)  |
-| `INVOICE_PROVIDER`                                                        | fakturačný systém; nastavenie v admine ho prebíja                             |
-| `PUBLIC_SITE_URL`                                                         | **povinné** — návratové a notifikačné adresy všetkých brán; bez nej to spadne |
-| `GOOGLE_WALLET_*`                                                         | wallet passy, viď `WALLET_SETUP.md`                                           |
-| `OPENAI_API_KEY`                                                          | AI support chat (bez neho vracia „nie je aktivovaná")                         |
-| `RESEND_API_KEY`                                                          | odosielanie vstupeniek e-mailom (bez neho sa ticho preskočí)                  |
-| `MAIL_FROM` / `MAIL_REPLY_TO`                                             | odosielateľ, default `vipky.sk <listky@vipky.sk>` (doména overená v Resende)  |
-| `SEED_SECRET`                                                             | odomkne `/api/public/seed-demo`                                               |
-| `SECRETS_ENCRYPTION_KEY`                                                  | šifrovanie prístupov zadaných v admine (fallback `TICKET_QR_SECRET`)          |
-| `RECONCILE_SECRET`                                                        | odomkne cron routu `/api/public/payments/reconcile` (bez neho 404)            |
+| Premenná                                                                  | Načo                                                                               |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY`                                               | **povinné** — `supabaseAdmin`, celý serverový tok                                  |
+| `TICKET_QR_SECRET`                                                        | podpis QR vstupeniek a order access tokenov (fallback: service role key)           |
+| `GOPAY_CLIENT_ID` / `GOPAY_CLIENT_SECRET` / `GOPAY_GOID`                  | platby cez GoPay (`GOPAY_API_URL` default sandbox)                                 |
+| `GPWEBPAY_MERCHANT_NUMBER` / `_PRIVATE_KEY(_FILE)` / `_PUBLIC_KEY(_FILE)` | platby cez GP webpay (ČSOB); `GPWEBPAY_URL` default testovacia brána               |
+| `TATRAPAYPLUS_CLIENT_ID` / `_CLIENT_SECRET`                               | platby cez tatrapay+; `TATRAPAYPLUS_API_URL` default sandbox                       |
+| `PAYMENT_PROVIDER`                                                        | predvolená brána; bez nej sa použije prvá nakonfigurovaná                          |
+| `SUPERFAKTURA_EMAIL` / `_API_KEY` / `_COMPANY_ID`                         | fakturácia cez SuperFaktúru (dajú sa zadať aj v admine)                            |
+| `FAKTERO_API_KEY`                                                         | fakturácia cez Faktero (`FAKTERO_API_URL` default https://faktero.sk/api/v1)       |
+| `INVOICE_PROVIDER`                                                        | fakturačný systém; nastavenie v admine ho prebíja                                  |
+| `PUBLIC_SITE_URL`                                                         | **povinné** — návratové a notifikačné adresy všetkých brán; bez nej to spadne      |
+| `GOOGLE_WALLET_*`                                                         | wallet passy, viď `WALLET_SETUP.md`                                                |
+| `OPENAI_API_KEY`                                                          | AI support chat (bez neho vracia „nie je aktivovaná")                              |
+| `RESEND_API_KEY`                                                          | odosielanie vstupeniek e-mailom (bez neho sa ticho preskočí)                       |
+| `MAIL_FROM` / `MAIL_REPLY_TO`                                             | odosielateľ, default `eticketo.sk <listky@eticketo.sk>` (doména overená v Resende) |
+| `SEED_SECRET`                                                             | odomkne `/api/public/seed-demo`                                                    |
+| `SECRETS_ENCRYPTION_KEY`                                                  | šifrovanie prístupov zadaných v admine (fallback `TICKET_QR_SECRET`)               |
+| `RECONCILE_SECRET`                                                        | odomkne cron routu `/api/public/payments/reconcile` (bez neho 404)                 |
 
 ## Platobné brány
 

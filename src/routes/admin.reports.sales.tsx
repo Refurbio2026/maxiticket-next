@@ -18,7 +18,7 @@ import {
 import { Loader2, TrendingUp, Download } from "lucide-react";
 
 export const Route = createFileRoute("/admin/reports/sales")({
-  head: () => ({ meta: [{ title: "Reporty predajov · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Reporty predajov · eticketo.sk Admin" }] }),
   component: Page,
 });
 

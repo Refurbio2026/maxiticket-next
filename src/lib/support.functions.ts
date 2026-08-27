@@ -55,7 +55,7 @@ export const askSupport = createServerFn({ method: "POST" })
         ok: false,
         reason: "error",
         message:
-          "Priveľa správ za krátky čas. Skús to prosím o chvíľu, alebo napíš na support@vipky.sk.",
+          "Priveľa správ za krátky čas. Skús to prosím o chvíľu, alebo napíš na support@eticketo.sk.",
       };
     }
     return askSupportBot(data.messages, data.lang || "sk");

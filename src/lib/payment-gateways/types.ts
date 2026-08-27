@@ -124,6 +124,6 @@ export function rezimZAdresy(endpoint: string): "test" | "ostrá" | "neznáma" {
 export function nemaRefund(id: GatewayId): never {
   throw new Error(
     `Brána ${id} nevie vrátiť peniaze cez API — refund sprav v jej portáli ` +
-      `a v Maxitickete ho zapíš ako ručný.`,
+      `a v eTicketo ho zapíš ako ručný.`,
   );
 }

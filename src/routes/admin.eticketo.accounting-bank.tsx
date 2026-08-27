@@ -35,8 +35,8 @@ import {
   type BankAccountRecord,
 } from "@/lib/bank.functions";
 
-export const Route = createFileRoute("/admin/maxiticket/accounting-bank")({
-  head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/accounting-bank")({
+  head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · eticketo.sk Admin" }] }),
   component: Page,
 });
 

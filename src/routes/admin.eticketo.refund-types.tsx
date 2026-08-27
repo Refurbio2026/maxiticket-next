@@ -26,8 +26,8 @@ import {
   type RefundReasonRecord,
 } from "@/lib/refund-reasons.functions";
 
-export const Route = createFileRoute("/admin/maxiticket/refund-types")({
-  head: () => ({ meta: [{ title: "Typy refundácií · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/refund-types")({
+  head: () => ({ meta: [{ title: "Typy refundácií · eticketo.sk Admin" }] }),
   component: Page,
 });
 

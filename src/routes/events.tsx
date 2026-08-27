@@ -22,10 +22,10 @@ import { Calendar, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
-      { title: "Podujatia · vipky.sk" },
+      { title: "Podujatia · eticketo.sk" },
       {
         name: "description",
-        content: "Objavte všetky podujatia, koncerty, festivaly a kultúru na vipky.sk.",
+        content: "Objavte všetky podujatia, koncerty, festivaly a kultúru na eticketo.sk.",
       },
     ],
   }),

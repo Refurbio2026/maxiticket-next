@@ -46,7 +46,7 @@ const wizardSearch = z.object({ eventId: z.string().optional() });
 
 export const Route = createFileRoute("/organizer/marketing/new")({
   validateSearch: wizardSearch,
-  head: () => ({ meta: [{ title: "Spustiť reklamu · vipky.sk" }] }),
+  head: () => ({ meta: [{ title: "Spustiť reklamu · eticketo.sk" }] }),
   component: WizardPage,
 });
 

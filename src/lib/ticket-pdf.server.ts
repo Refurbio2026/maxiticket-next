@@ -63,7 +63,7 @@ function drawHeader(doc: jsPDF, index: number, total: number) {
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
-  doc.text("vipky.sk", M, 19);
+  doc.text("eticketo.sk", M, 19);
   doc.setFontSize(9);
   doc.setTextColor(190, 190, 200);
   doc.text("ELEKTRONICKÁ VSTUPENKA", M, 27);
@@ -216,7 +216,7 @@ async function drawTicketBody(
     278,
   );
   doc.text("Vstupenka platí na jeden vstup. Kopírovaním nevzniká nárok na ďalší vstup.", M, 282);
-  doc.text("Reklamácie: support@vipky.sk · www.vipky.sk", M, 286);
+  doc.text("Reklamácie: support@eticketo.sk · www.eticketo.sk", M, 286);
   setText(doc, INK);
 }
 

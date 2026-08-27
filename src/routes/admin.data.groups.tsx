@@ -28,7 +28,7 @@ import { Plus, Pencil, Trash2, Loader2, FolderTree } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/data/groups")({
-  head: () => ({ meta: [{ title: "Skupiny podujatí · vipky.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Skupiny podujatí · eticketo.sk Admin" }] }),
   component: Page,
 });
 

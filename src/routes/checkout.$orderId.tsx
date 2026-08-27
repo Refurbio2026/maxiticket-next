@@ -35,7 +35,7 @@ import { errorMessage } from "@/lib/error-message";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout/$orderId")({
-  head: () => ({ meta: [{ title: "Checkout · vipky.sk" }] }),
+  head: () => ({ meta: [{ title: "Checkout · eticketo.sk" }] }),
   component: CheckoutPage,
 });
 

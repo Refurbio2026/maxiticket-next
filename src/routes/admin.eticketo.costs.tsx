@@ -33,8 +33,8 @@ import {
 import { Loader2, Plus, Pencil, Trash2, Wallet, Lock } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/maxiticket/costs")({
-  head: () => ({ meta: [{ title: "Náklady organizátorov · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/costs")({
+  head: () => ({ meta: [{ title: "Náklady organizátorov · eticketo.sk Admin" }] }),
   component: Page,
 });
 
@@ -163,7 +163,7 @@ function Page() {
           <p className="text-muted-foreground mt-1">
             Položky, ktoré sa organizátorovi sťahujú z výplaty — tlač vstupeniek, prenájom čítačiek,
             dohodnutá reklama. Nevyúčtované sa odpočítajú v najbližšom{" "}
-            <Link to="/admin/maxiticket/protocols" className="text-primary hover:underline">
+            <Link to="/admin/eticketo/protocols" className="text-primary hover:underline">
               vyúčtovacom protokole
             </Link>
             .

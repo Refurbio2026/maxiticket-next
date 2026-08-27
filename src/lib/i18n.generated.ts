@@ -168,7 +168,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.view": "Zobraziť",
     "orgHome.welcome": "Vitaj, {{name}}.",
     "orgMktList.autoPromoteDesc":
-      "Po publikovaní podujatia ti vipky.sk automaticky pripraví návrh kampane (Google + Meta), vygeneruje reklamné texty a kreatívy. Stačí ich potvrdiť a spustiť.",
+      "Po publikovaní podujatia ti eticketo.sk automaticky pripraví návrh kampane (Google + Meta), vygeneruje reklamné texty a kreatívy. Stačí ich potvrdiť a spustiť.",
     "orgMktList.autoPromoteNote":
       "Pri spustení: rozpočet €20 / podujatie, cieľ „Predaj vstupeniek“, lokalita SK, kreatíva generovaná z názvu, miesta a kategórie podujatia.",
     "orgMktList.autoPromoteTitle": "Automaticky propagovať podujatie",
@@ -183,7 +183,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.emptyCampaigns": "Žiadne kampane. Klikni na „Spustiť reklamu“.",
     "orgMktList.emptyCampaignsChart": "Zatiaľ žiadne kampane. Spusti svoju prvú reklamu.",
     "orgMktList.emptyEvents": "Najprv vytvor podujatie, potom ho môžeš propagovať.",
-    "orgMktList.googleDesc": "Pripoj Google Ads účet a spúšťaj kampane priamo z vipky.sk.",
+    "orgMktList.googleDesc": "Pripoj Google Ads účet a spúšťaj kampane priamo z eticketo.sk.",
     "orgMktList.infoAccount": "Účet",
     "orgMktList.infoActiveCampaigns": "Aktívne kampane",
     "orgMktList.infoConnectedSince": "Pripojené od",
@@ -212,7 +212,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.statusDraft": "Koncept",
     "orgMktList.statusPublished": "Publikované",
     "orgMktList.subtitle":
-      "Spusti reklamu na podujatia priamo z vipky.sk. Google Ads, Meta Ads, pixel tracking a AI texty.",
+      "Spusti reklamu na podujatia priamo z eticketo.sk. Google Ads, Meta Ads, pixel tracking a AI texty.",
     "orgMktList.sync": "Synchronizovať",
     "orgMktList.tabAutomation": "Automatizácia",
     "orgMktList.tabCampaigns": "Kampane ({{count}})",
@@ -268,7 +268,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktNew.noEventsDesc": "Pre spustenie reklamy potrebuješ aspoň jedno podujatie.",
     "orgMktNew.noEventsTitle": "Najprv vytvor podujatie",
     "orgMktNew.notConnected": "Nepripojené",
-    "orgMktNew.sponsored": "Sponzorované · vipky.sk",
+    "orgMktNew.sponsored": "Sponzorované · eticketo.sk",
     "orgMktNew.step": "Krok {{step}} / 5",
     "orgMktNew.step1Title": "1. Vyber podujatie a platformu",
     "orgMktNew.step2Title": "2. Rozpočet",
@@ -800,7 +800,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.view": "View",
     "orgHome.welcome": "Welcome, {{name}}.",
     "orgMktList.autoPromoteDesc":
-      "After you publish an event, vipky.sk automatically prepares a campaign draft (Google + Meta) and generates ad copy and creatives. Just confirm and launch.",
+      "After you publish an event, eticketo.sk automatically prepares a campaign draft (Google + Meta) and generates ad copy and creatives. Just confirm and launch.",
     "orgMktList.autoPromoteNote":
       "On launch: budget €20 / event, goal “Ticket sales”, location SK, creative generated from the event's title, venue and category.",
     "orgMktList.autoPromoteTitle": "Automatically promote events",
@@ -816,7 +816,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.emptyCampaignsChart": "No campaigns yet. Launch your first ad.",
     "orgMktList.emptyEvents": "Create an event first, then you can promote it.",
     "orgMktList.googleDesc":
-      "Connect a Google Ads account and launch campaigns directly from vipky.sk.",
+      "Connect a Google Ads account and launch campaigns directly from eticketo.sk.",
     "orgMktList.infoAccount": "Account",
     "orgMktList.infoActiveCampaigns": "Active campaigns",
     "orgMktList.infoConnectedSince": "Connected since",
@@ -845,7 +845,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.statusDraft": "Draft",
     "orgMktList.statusPublished": "Published",
     "orgMktList.subtitle":
-      "Launch ads for your events directly from vipky.sk. Google Ads, Meta Ads, pixel tracking and AI copy.",
+      "Launch ads for your events directly from eticketo.sk. Google Ads, Meta Ads, pixel tracking and AI copy.",
     "orgMktList.sync": "Sync",
     "orgMktList.tabAutomation": "Automation",
     "orgMktList.tabCampaigns": "Campaigns ({{count}})",
@@ -901,7 +901,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktNew.noEventsDesc": "You need at least one event to launch an ad.",
     "orgMktNew.noEventsTitle": "Create an event first",
     "orgMktNew.notConnected": "Not connected",
-    "orgMktNew.sponsored": "Sponsored · vipky.sk",
+    "orgMktNew.sponsored": "Sponsored · eticketo.sk",
     "orgMktNew.step": "Step {{step}} / 5",
     "orgMktNew.step1Title": "1. Select an event and platform",
     "orgMktNew.step2Title": "2. Budget",
@@ -1434,7 +1434,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.view": "Ansehen",
     "orgHome.welcome": "Willkommen, {{name}}.",
     "orgMktList.autoPromoteDesc":
-      "Nach der Veröffentlichung einer Veranstaltung erstellt vipky.sk automatisch einen Kampagnenentwurf (Google + Meta) und generiert Werbetexte und Creatives. Einfach bestätigen und starten.",
+      "Nach der Veröffentlichung einer Veranstaltung erstellt eticketo.sk automatisch einen Kampagnenentwurf (Google + Meta) und generiert Werbetexte und Creatives. Einfach bestätigen und starten.",
     "orgMktList.autoPromoteNote":
       "Beim Start: Budget €20 / Veranstaltung, Ziel „Ticketverkauf“, Standort SK, Creative aus Titel, Ort und Kategorie der Veranstaltung generiert.",
     "orgMktList.autoPromoteTitle": "Veranstaltung automatisch bewerben",
@@ -1450,7 +1450,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.emptyCampaignsChart": "Noch keine Kampagnen. Starte deine erste Werbung.",
     "orgMktList.emptyEvents": "Erstelle zuerst eine Veranstaltung, dann kannst du sie bewerben.",
     "orgMktList.googleDesc":
-      "Verbinde ein Google Ads-Konto und starte Kampagnen direkt über vipky.sk.",
+      "Verbinde ein Google Ads-Konto und starte Kampagnen direkt über eticketo.sk.",
     "orgMktList.infoAccount": "Konto",
     "orgMktList.infoActiveCampaigns": "Aktive Kampagnen",
     "orgMktList.infoConnectedSince": "Verbunden seit",
@@ -1479,7 +1479,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.statusDraft": "Entwurf",
     "orgMktList.statusPublished": "Veröffentlicht",
     "orgMktList.subtitle":
-      "Starte Werbung für deine Veranstaltungen direkt über vipky.sk. Google Ads, Meta Ads, Pixel-Tracking und KI-Texte.",
+      "Starte Werbung für deine Veranstaltungen direkt über eticketo.sk. Google Ads, Meta Ads, Pixel-Tracking und KI-Texte.",
     "orgMktList.sync": "Synchronisieren",
     "orgMktList.tabAutomation": "Automatisierung",
     "orgMktList.tabCampaigns": "Kampagnen ({{count}})",
@@ -1535,7 +1535,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktNew.noEventsDesc": "Du brauchst mindestens eine Veranstaltung, um Werbung zu starten.",
     "orgMktNew.noEventsTitle": "Erstelle zuerst eine Veranstaltung",
     "orgMktNew.notConnected": "Nicht verbunden",
-    "orgMktNew.sponsored": "Gesponsert · vipky.sk",
+    "orgMktNew.sponsored": "Gesponsert · eticketo.sk",
     "orgMktNew.step": "Schritt {{step}} / 5",
     "orgMktNew.step1Title": "1. Veranstaltung und Plattform wählen",
     "orgMktNew.step2Title": "2. Budget",
@@ -2072,7 +2072,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgHome.view": "Megtekintés",
     "orgHome.welcome": "Üdvözlünk, {{name}}.",
     "orgMktList.autoPromoteDesc":
-      "Egy esemény közzététele után a vipky.sk automatikusan elkészít egy kampánytervezetet (Google + Meta), és legenerálja a hirdetésszövegeket és kreatívokat. Csak jóvá kell hagyni és elindítani.",
+      "Egy esemény közzététele után a eticketo.sk automatikusan elkészít egy kampánytervezetet (Google + Meta), és legenerálja a hirdetésszövegeket és kreatívokat. Csak jóvá kell hagyni és elindítani.",
     "orgMktList.autoPromoteNote":
       "Indításkor: költségvetés €20 / esemény, cél „Jegyeladás”, hely SK, a kreatív az esemény címéből, helyszínéből és kategóriájából generálva.",
     "orgMktList.autoPromoteTitle": "Esemény automatikus hirdetése",
@@ -2088,7 +2088,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.emptyCampaignsChart": "Még nincsenek kampányok. Indítsd el az első hirdetésed.",
     "orgMktList.emptyEvents": "Előbb hozz létre eseményt, utána hirdetheted.",
     "orgMktList.googleDesc":
-      "Csatlakoztass egy Google Ads-fiókot, és indíts kampányokat közvetlenül a vipky.sk oldalról.",
+      "Csatlakoztass egy Google Ads-fiókot, és indíts kampányokat közvetlenül a eticketo.sk oldalról.",
     "orgMktList.infoAccount": "Fiók",
     "orgMktList.infoActiveCampaigns": "Aktív kampányok",
     "orgMktList.infoConnectedSince": "Csatlakoztatva ekkor óta",
@@ -2117,7 +2117,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.statusDraft": "Vázlat",
     "orgMktList.statusPublished": "Közzétéve",
     "orgMktList.subtitle":
-      "Indíts hirdetéseket eseményeidhez közvetlenül a vipky.sk oldalról. Google Ads, Meta Ads, pixelkövetés és AI szövegek.",
+      "Indíts hirdetéseket eseményeidhez közvetlenül a eticketo.sk oldalról. Google Ads, Meta Ads, pixelkövetés és AI szövegek.",
     "orgMktList.sync": "Szinkronizálás",
     "orgMktList.tabAutomation": "Automatizálás",
     "orgMktList.tabCampaigns": "Kampányok ({{count}})",
@@ -2173,7 +2173,7 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktNew.noEventsDesc": "Legalább egy eseményre szükséged van a hirdetés indításához.",
     "orgMktNew.noEventsTitle": "Előbb hozz létre eseményt",
     "orgMktNew.notConnected": "Nincs csatlakoztatva",
-    "orgMktNew.sponsored": "Szponzorált · vipky.sk",
+    "orgMktNew.sponsored": "Szponzorált · eticketo.sk",
     "orgMktNew.step": "{{step}}. lépés / 5",
     "orgMktNew.step1Title": "1. Válassz eseményt és platformot",
     "orgMktNew.step2Title": "2. Költségvetés",

@@ -1,4 +1,4 @@
-// LocalStorage "database" for vipky.sk demo mode.
+// LocalStorage "database" for eticketo.sk demo mode.
 // All reads/writes are SSR-safe (guarded by typeof window).
 
 export type Role = "user" | "organizer" | "admin";
@@ -104,15 +104,15 @@ export const uid = () =>
 const DEMO_USERS: StoredUser[] = [
   {
     id: "demo-admin",
-    email: "admin@vipky.sk",
+    email: "admin@eticketo.sk",
     password: "admin123",
     role: "admin",
-    full_name: "Admin vipky.sk",
+    full_name: "Admin eticketo.sk",
     created_at: new Date().toISOString(),
   },
   {
     id: "demo-organizer",
-    email: "organizer@vipky.sk",
+    email: "organizer@eticketo.sk",
     password: "organizer123",
     role: "organizer",
     full_name: "Demo Organizátor",
@@ -121,7 +121,7 @@ const DEMO_USERS: StoredUser[] = [
   },
   {
     id: "demo-user",
-    email: "user@vipky.sk",
+    email: "user@eticketo.sk",
     password: "user123",
     role: "user",
     full_name: "Demo Používateľ",

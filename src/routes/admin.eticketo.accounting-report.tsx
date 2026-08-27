@@ -14,8 +14,8 @@ import {
 import { FileDown, Loader2 } from "lucide-react";
 import { listBankAccounts, bankReport } from "@/lib/bank.functions";
 
-export const Route = createFileRoute("/admin/maxiticket/accounting-report")({
-  head: () => ({ meta: [{ title: "Účtovanie · report · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/accounting-report")({
+  head: () => ({ meta: [{ title: "Účtovanie · report · eticketo.sk Admin" }] }),
   component: Page,
 });
 
@@ -98,7 +98,7 @@ function Page() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Účtovanie · report</h1>
           <p className="text-muted-foreground mt-1">
             Mesačný prehľad bankových pohybov z{" "}
-            <Link to="/admin/maxiticket/accounting-bank" className="text-primary hover:underline">
+            <Link to="/admin/eticketo/accounting-bank" className="text-primary hover:underline">
               výpisov
             </Link>
             .

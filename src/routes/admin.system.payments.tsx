@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
 import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/system/payments")({
-  head: () => ({ meta: [{ title: "Platobné brány · Admin · vipky.sk" }] }),
+  head: () => ({ meta: [{ title: "Platobné brány · Admin · eticketo.sk" }] }),
   component: PaymentGatewaysPage,
 });
 

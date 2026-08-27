@@ -33,7 +33,7 @@ function ticketHtml(
   return `
   <section class="ticket">
     <header>
-      <div class="brand">vipky.sk</div>
+      <div class="brand">eticketo.sk</div>
       <div class="seq">${index ?? ""}${total ? " / " + total : ""}</div>
     </header>
     <h1>${escapeHtml(ev?.title || sale.event_title)}</h1>

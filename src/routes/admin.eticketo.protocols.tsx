@@ -35,8 +35,8 @@ import {
   type SettlementRow,
 } from "@/lib/settlements.functions";
 
-export const Route = createFileRoute("/admin/maxiticket/protocols")({
-  head: () => ({ meta: [{ title: "Vyúčtovacie protokoly · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/protocols")({
+  head: () => ({ meta: [{ title: "Vyúčtovacie protokoly · eticketo.sk Admin" }] }),
   component: Page,
 });
 

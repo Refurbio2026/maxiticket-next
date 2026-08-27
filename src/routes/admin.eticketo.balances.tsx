@@ -6,8 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Scale } from "lucide-react";
 
-export const Route = createFileRoute("/admin/maxiticket/balances")({
-  head: () => ({ meta: [{ title: "Bilancie · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/balances")({
+  head: () => ({ meta: [{ title: "Bilancie · eticketo.sk Admin" }] }),
   component: Page,
 });
 
@@ -39,7 +39,7 @@ function Page() {
         <h1 className="font-display text-3xl font-bold tracking-tight">Bilancie</h1>
         <p className="text-muted-foreground mt-1">
           Kde stojí každý organizátor: koľko sa zaňho predalo, čo je už vo{" "}
-          <Link to="/admin/maxiticket/protocols" className="text-primary hover:underline">
+          <Link to="/admin/eticketo/protocols" className="text-primary hover:underline">
             vyúčtovacom protokole
           </Link>
           , čo naňho ešte čaká a koľko mu dlhujeme. Všetko sa počíta zo skutočných objednávok,

@@ -35,8 +35,8 @@ import {
 } from "@/lib/devices.functions";
 import { useEvents } from "@/hooks/use-events";
 
-export const Route = createFileRoute("/admin/maxiticket/devices")({
-  head: () => ({ meta: [{ title: "Zariadenia / čítačky · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/devices")({
+  head: () => ({ meta: [{ title: "Zariadenia / čítačky · eticketo.sk Admin" }] }),
   component: Page,
 });
 

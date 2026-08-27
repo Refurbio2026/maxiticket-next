@@ -10,8 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Loader2, ShieldCheck, AlertTriangle, RefreshCw } from "lucide-react";
 
-export const Route = createFileRoute("/admin/maxiticket/control")({
-  head: () => ({ meta: [{ title: "Kontrola zostavy · vipky.sk Admin" }] }),
+export const Route = createFileRoute("/admin/eticketo/control")({
+  head: () => ({ meta: [{ title: "Kontrola zostavy · eticketo.sk Admin" }] }),
   component: Page,
 });
 
@@ -37,7 +37,7 @@ function Page() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Kontrola zostavy</h1>
           <p className="text-muted-foreground mt-1">
             Porovnáva čísla zmrazené vo{" "}
-            <Link to="/admin/maxiticket/protocols" className="text-primary hover:underline">
+            <Link to="/admin/eticketo/protocols" className="text-primary hover:underline">
               vyúčtovacích protokoloch
             </Link>{" "}
             s tým, čo by vyšlo dnes. Rozdiel nie je chyba — najčastejšie je to refundácia, ktorá

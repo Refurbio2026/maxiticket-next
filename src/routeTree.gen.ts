@@ -38,6 +38,19 @@ import { Route as AdminDataContentRouteImport } from './routes/admin.data.conten
 import { Route as AdminDataGroupsRouteImport } from './routes/admin.data.groups'
 import { Route as AdminDataPerformersRouteImport } from './routes/admin.data.performers'
 import { Route as AdminDataPriceCategoriesRouteImport } from './routes/admin.data.price-categories'
+import { Route as AdminEticketoAccountingBankRouteImport } from './routes/admin.eticketo.accounting-bank'
+import { Route as AdminEticketoAccountingChecksRouteImport } from './routes/admin.eticketo.accounting-checks'
+import { Route as AdminEticketoAccountingReportRouteImport } from './routes/admin.eticketo.accounting-report'
+import { Route as AdminEticketoBalancesRouteImport } from './routes/admin.eticketo.balances'
+import { Route as AdminEticketoBillingRouteImport } from './routes/admin.eticketo.billing'
+import { Route as AdminEticketoControlRouteImport } from './routes/admin.eticketo.control'
+import { Route as AdminEticketoCostsRouteImport } from './routes/admin.eticketo.costs'
+import { Route as AdminEticketoDevicesRouteImport } from './routes/admin.eticketo.devices'
+import { Route as AdminEticketoOrganizersRouteImport } from './routes/admin.eticketo.organizers'
+import { Route as AdminEticketoPaymentsRouteImport } from './routes/admin.eticketo.payments'
+import { Route as AdminEticketoProtocolsRouteImport } from './routes/admin.eticketo.protocols'
+import { Route as AdminEticketoRefundTypesRouteImport } from './routes/admin.eticketo.refund-types'
+import { Route as AdminEticketoTicketsRouteImport } from './routes/admin.eticketo.tickets'
 import { Route as AdminEventsCouponsRouteImport } from './routes/admin.events.coupons'
 import { Route as AdminEventsDatesRouteImport } from './routes/admin.events.dates'
 import { Route as AdminEventsEventsRouteImport } from './routes/admin.events.events'
@@ -45,19 +58,6 @@ import { Route as AdminEventsVenueLayoutsRouteImport } from './routes/admin.even
 import { Route as AdminEventsVenuesRouteImport } from './routes/admin.events.venues'
 import { Route as AdminFinancePaymentsRouteImport } from './routes/admin.finance.payments'
 import { Route as AdminFinanceStatsRouteImport } from './routes/admin.finance.stats'
-import { Route as AdminMaxiticketAccountingBankRouteImport } from './routes/admin.maxiticket.accounting-bank'
-import { Route as AdminMaxiticketAccountingChecksRouteImport } from './routes/admin.maxiticket.accounting-checks'
-import { Route as AdminMaxiticketAccountingReportRouteImport } from './routes/admin.maxiticket.accounting-report'
-import { Route as AdminMaxiticketBalancesRouteImport } from './routes/admin.maxiticket.balances'
-import { Route as AdminMaxiticketBillingRouteImport } from './routes/admin.maxiticket.billing'
-import { Route as AdminMaxiticketControlRouteImport } from './routes/admin.maxiticket.control'
-import { Route as AdminMaxiticketCostsRouteImport } from './routes/admin.maxiticket.costs'
-import { Route as AdminMaxiticketDevicesRouteImport } from './routes/admin.maxiticket.devices'
-import { Route as AdminMaxiticketOrganizersRouteImport } from './routes/admin.maxiticket.organizers'
-import { Route as AdminMaxiticketPaymentsRouteImport } from './routes/admin.maxiticket.payments'
-import { Route as AdminMaxiticketProtocolsRouteImport } from './routes/admin.maxiticket.protocols'
-import { Route as AdminMaxiticketRefundTypesRouteImport } from './routes/admin.maxiticket.refund-types'
-import { Route as AdminMaxiticketTicketsRouteImport } from './routes/admin.maxiticket.tickets'
 import { Route as AdminPosCashiersRouteImport } from './routes/admin.pos.cashiers'
 import { Route as AdminPosClosingsRouteImport } from './routes/admin.pos.closings'
 import { Route as AdminPosFiscalRouteImport } from './routes/admin.pos.fiscal'
@@ -241,6 +241,75 @@ const AdminDataPriceCategoriesRoute =
     path: '/data/price-categories',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminEticketoAccountingBankRoute =
+  AdminEticketoAccountingBankRouteImport.update({
+    id: '/eticketo/accounting-bank',
+    path: '/eticketo/accounting-bank',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminEticketoAccountingChecksRoute =
+  AdminEticketoAccountingChecksRouteImport.update({
+    id: '/eticketo/accounting-checks',
+    path: '/eticketo/accounting-checks',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminEticketoAccountingReportRoute =
+  AdminEticketoAccountingReportRouteImport.update({
+    id: '/eticketo/accounting-report',
+    path: '/eticketo/accounting-report',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminEticketoBalancesRoute = AdminEticketoBalancesRouteImport.update({
+  id: '/eticketo/balances',
+  path: '/eticketo/balances',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoBillingRoute = AdminEticketoBillingRouteImport.update({
+  id: '/eticketo/billing',
+  path: '/eticketo/billing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoControlRoute = AdminEticketoControlRouteImport.update({
+  id: '/eticketo/control',
+  path: '/eticketo/control',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoCostsRoute = AdminEticketoCostsRouteImport.update({
+  id: '/eticketo/costs',
+  path: '/eticketo/costs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoDevicesRoute = AdminEticketoDevicesRouteImport.update({
+  id: '/eticketo/devices',
+  path: '/eticketo/devices',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoOrganizersRoute = AdminEticketoOrganizersRouteImport.update({
+  id: '/eticketo/organizers',
+  path: '/eticketo/organizers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoPaymentsRoute = AdminEticketoPaymentsRouteImport.update({
+  id: '/eticketo/payments',
+  path: '/eticketo/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoProtocolsRoute = AdminEticketoProtocolsRouteImport.update({
+  id: '/eticketo/protocols',
+  path: '/eticketo/protocols',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoRefundTypesRoute =
+  AdminEticketoRefundTypesRouteImport.update({
+    id: '/eticketo/refund-types',
+    path: '/eticketo/refund-types',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminEticketoTicketsRoute = AdminEticketoTicketsRouteImport.update({
+  id: '/eticketo/tickets',
+  path: '/eticketo/tickets',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEventsCouponsRoute = AdminEventsCouponsRouteImport.update({
   id: '/events/coupons',
   path: '/events/coupons',
@@ -274,77 +343,6 @@ const AdminFinancePaymentsRoute = AdminFinancePaymentsRouteImport.update({
 const AdminFinanceStatsRoute = AdminFinanceStatsRouteImport.update({
   id: '/finance/stats',
   path: '/finance/stats',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketAccountingBankRoute =
-  AdminMaxiticketAccountingBankRouteImport.update({
-    id: '/maxiticket/accounting-bank',
-    path: '/maxiticket/accounting-bank',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketAccountingChecksRoute =
-  AdminMaxiticketAccountingChecksRouteImport.update({
-    id: '/maxiticket/accounting-checks',
-    path: '/maxiticket/accounting-checks',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketAccountingReportRoute =
-  AdminMaxiticketAccountingReportRouteImport.update({
-    id: '/maxiticket/accounting-report',
-    path: '/maxiticket/accounting-report',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketBalancesRoute = AdminMaxiticketBalancesRouteImport.update({
-  id: '/maxiticket/balances',
-  path: '/maxiticket/balances',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketBillingRoute = AdminMaxiticketBillingRouteImport.update({
-  id: '/maxiticket/billing',
-  path: '/maxiticket/billing',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketControlRoute = AdminMaxiticketControlRouteImport.update({
-  id: '/maxiticket/control',
-  path: '/maxiticket/control',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketCostsRoute = AdminMaxiticketCostsRouteImport.update({
-  id: '/maxiticket/costs',
-  path: '/maxiticket/costs',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketDevicesRoute = AdminMaxiticketDevicesRouteImport.update({
-  id: '/maxiticket/devices',
-  path: '/maxiticket/devices',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketOrganizersRoute =
-  AdminMaxiticketOrganizersRouteImport.update({
-    id: '/maxiticket/organizers',
-    path: '/maxiticket/organizers',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketPaymentsRoute = AdminMaxiticketPaymentsRouteImport.update({
-  id: '/maxiticket/payments',
-  path: '/maxiticket/payments',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMaxiticketProtocolsRoute =
-  AdminMaxiticketProtocolsRouteImport.update({
-    id: '/maxiticket/protocols',
-    path: '/maxiticket/protocols',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketRefundTypesRoute =
-  AdminMaxiticketRefundTypesRouteImport.update({
-    id: '/maxiticket/refund-types',
-    path: '/maxiticket/refund-types',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminMaxiticketTicketsRoute = AdminMaxiticketTicketsRouteImport.update({
-  id: '/maxiticket/tickets',
-  path: '/maxiticket/tickets',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPosCashiersRoute = AdminPosCashiersRouteImport.update({
@@ -566,6 +564,19 @@ export interface FileRoutesByFullPath {
   '/admin/data/groups': typeof AdminDataGroupsRoute
   '/admin/data/performers': typeof AdminDataPerformersRoute
   '/admin/data/price-categories': typeof AdminDataPriceCategoriesRoute
+  '/admin/eticketo/accounting-bank': typeof AdminEticketoAccountingBankRoute
+  '/admin/eticketo/accounting-checks': typeof AdminEticketoAccountingChecksRoute
+  '/admin/eticketo/accounting-report': typeof AdminEticketoAccountingReportRoute
+  '/admin/eticketo/balances': typeof AdminEticketoBalancesRoute
+  '/admin/eticketo/billing': typeof AdminEticketoBillingRoute
+  '/admin/eticketo/control': typeof AdminEticketoControlRoute
+  '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
+  '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
+  '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
+  '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
+  '/admin/eticketo/protocols': typeof AdminEticketoProtocolsRoute
+  '/admin/eticketo/refund-types': typeof AdminEticketoRefundTypesRoute
+  '/admin/eticketo/tickets': typeof AdminEticketoTicketsRoute
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
@@ -573,19 +584,6 @@ export interface FileRoutesByFullPath {
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/payments': typeof AdminFinancePaymentsRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
-  '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
-  '/admin/maxiticket/accounting-checks': typeof AdminMaxiticketAccountingChecksRoute
-  '/admin/maxiticket/accounting-report': typeof AdminMaxiticketAccountingReportRoute
-  '/admin/maxiticket/balances': typeof AdminMaxiticketBalancesRoute
-  '/admin/maxiticket/billing': typeof AdminMaxiticketBillingRoute
-  '/admin/maxiticket/control': typeof AdminMaxiticketControlRoute
-  '/admin/maxiticket/costs': typeof AdminMaxiticketCostsRoute
-  '/admin/maxiticket/devices': typeof AdminMaxiticketDevicesRoute
-  '/admin/maxiticket/organizers': typeof AdminMaxiticketOrganizersRoute
-  '/admin/maxiticket/payments': typeof AdminMaxiticketPaymentsRoute
-  '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
-  '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
-  '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
   '/admin/pos/cashiers': typeof AdminPosCashiersRoute
   '/admin/pos/closings': typeof AdminPosClosingsRoute
   '/admin/pos/fiscal': typeof AdminPosFiscalRoute
@@ -649,6 +647,19 @@ export interface FileRoutesByTo {
   '/admin/data/groups': typeof AdminDataGroupsRoute
   '/admin/data/performers': typeof AdminDataPerformersRoute
   '/admin/data/price-categories': typeof AdminDataPriceCategoriesRoute
+  '/admin/eticketo/accounting-bank': typeof AdminEticketoAccountingBankRoute
+  '/admin/eticketo/accounting-checks': typeof AdminEticketoAccountingChecksRoute
+  '/admin/eticketo/accounting-report': typeof AdminEticketoAccountingReportRoute
+  '/admin/eticketo/balances': typeof AdminEticketoBalancesRoute
+  '/admin/eticketo/billing': typeof AdminEticketoBillingRoute
+  '/admin/eticketo/control': typeof AdminEticketoControlRoute
+  '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
+  '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
+  '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
+  '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
+  '/admin/eticketo/protocols': typeof AdminEticketoProtocolsRoute
+  '/admin/eticketo/refund-types': typeof AdminEticketoRefundTypesRoute
+  '/admin/eticketo/tickets': typeof AdminEticketoTicketsRoute
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
@@ -656,19 +667,6 @@ export interface FileRoutesByTo {
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/payments': typeof AdminFinancePaymentsRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
-  '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
-  '/admin/maxiticket/accounting-checks': typeof AdminMaxiticketAccountingChecksRoute
-  '/admin/maxiticket/accounting-report': typeof AdminMaxiticketAccountingReportRoute
-  '/admin/maxiticket/balances': typeof AdminMaxiticketBalancesRoute
-  '/admin/maxiticket/billing': typeof AdminMaxiticketBillingRoute
-  '/admin/maxiticket/control': typeof AdminMaxiticketControlRoute
-  '/admin/maxiticket/costs': typeof AdminMaxiticketCostsRoute
-  '/admin/maxiticket/devices': typeof AdminMaxiticketDevicesRoute
-  '/admin/maxiticket/organizers': typeof AdminMaxiticketOrganizersRoute
-  '/admin/maxiticket/payments': typeof AdminMaxiticketPaymentsRoute
-  '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
-  '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
-  '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
   '/admin/pos/cashiers': typeof AdminPosCashiersRoute
   '/admin/pos/closings': typeof AdminPosClosingsRoute
   '/admin/pos/fiscal': typeof AdminPosFiscalRoute
@@ -737,6 +735,19 @@ export interface FileRoutesById {
   '/admin/data/groups': typeof AdminDataGroupsRoute
   '/admin/data/performers': typeof AdminDataPerformersRoute
   '/admin/data/price-categories': typeof AdminDataPriceCategoriesRoute
+  '/admin/eticketo/accounting-bank': typeof AdminEticketoAccountingBankRoute
+  '/admin/eticketo/accounting-checks': typeof AdminEticketoAccountingChecksRoute
+  '/admin/eticketo/accounting-report': typeof AdminEticketoAccountingReportRoute
+  '/admin/eticketo/balances': typeof AdminEticketoBalancesRoute
+  '/admin/eticketo/billing': typeof AdminEticketoBillingRoute
+  '/admin/eticketo/control': typeof AdminEticketoControlRoute
+  '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
+  '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
+  '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
+  '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
+  '/admin/eticketo/protocols': typeof AdminEticketoProtocolsRoute
+  '/admin/eticketo/refund-types': typeof AdminEticketoRefundTypesRoute
+  '/admin/eticketo/tickets': typeof AdminEticketoTicketsRoute
   '/admin/events/coupons': typeof AdminEventsCouponsRoute
   '/admin/events/dates': typeof AdminEventsDatesRoute
   '/admin/events/events': typeof AdminEventsEventsRoute
@@ -744,19 +755,6 @@ export interface FileRoutesById {
   '/admin/events/venues': typeof AdminEventsVenuesRoute
   '/admin/finance/payments': typeof AdminFinancePaymentsRoute
   '/admin/finance/stats': typeof AdminFinanceStatsRoute
-  '/admin/maxiticket/accounting-bank': typeof AdminMaxiticketAccountingBankRoute
-  '/admin/maxiticket/accounting-checks': typeof AdminMaxiticketAccountingChecksRoute
-  '/admin/maxiticket/accounting-report': typeof AdminMaxiticketAccountingReportRoute
-  '/admin/maxiticket/balances': typeof AdminMaxiticketBalancesRoute
-  '/admin/maxiticket/billing': typeof AdminMaxiticketBillingRoute
-  '/admin/maxiticket/control': typeof AdminMaxiticketControlRoute
-  '/admin/maxiticket/costs': typeof AdminMaxiticketCostsRoute
-  '/admin/maxiticket/devices': typeof AdminMaxiticketDevicesRoute
-  '/admin/maxiticket/organizers': typeof AdminMaxiticketOrganizersRoute
-  '/admin/maxiticket/payments': typeof AdminMaxiticketPaymentsRoute
-  '/admin/maxiticket/protocols': typeof AdminMaxiticketProtocolsRoute
-  '/admin/maxiticket/refund-types': typeof AdminMaxiticketRefundTypesRoute
-  '/admin/maxiticket/tickets': typeof AdminMaxiticketTicketsRoute
   '/admin/pos/cashiers': typeof AdminPosCashiersRoute
   '/admin/pos/closings': typeof AdminPosClosingsRoute
   '/admin/pos/fiscal': typeof AdminPosFiscalRoute
@@ -826,6 +824,19 @@ export interface FileRouteTypes {
     | '/admin/data/groups'
     | '/admin/data/performers'
     | '/admin/data/price-categories'
+    | '/admin/eticketo/accounting-bank'
+    | '/admin/eticketo/accounting-checks'
+    | '/admin/eticketo/accounting-report'
+    | '/admin/eticketo/balances'
+    | '/admin/eticketo/billing'
+    | '/admin/eticketo/control'
+    | '/admin/eticketo/costs'
+    | '/admin/eticketo/devices'
+    | '/admin/eticketo/organizers'
+    | '/admin/eticketo/payments'
+    | '/admin/eticketo/protocols'
+    | '/admin/eticketo/refund-types'
+    | '/admin/eticketo/tickets'
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
@@ -833,19 +844,6 @@ export interface FileRouteTypes {
     | '/admin/events/venues'
     | '/admin/finance/payments'
     | '/admin/finance/stats'
-    | '/admin/maxiticket/accounting-bank'
-    | '/admin/maxiticket/accounting-checks'
-    | '/admin/maxiticket/accounting-report'
-    | '/admin/maxiticket/balances'
-    | '/admin/maxiticket/billing'
-    | '/admin/maxiticket/control'
-    | '/admin/maxiticket/costs'
-    | '/admin/maxiticket/devices'
-    | '/admin/maxiticket/organizers'
-    | '/admin/maxiticket/payments'
-    | '/admin/maxiticket/protocols'
-    | '/admin/maxiticket/refund-types'
-    | '/admin/maxiticket/tickets'
     | '/admin/pos/cashiers'
     | '/admin/pos/closings'
     | '/admin/pos/fiscal'
@@ -909,6 +907,19 @@ export interface FileRouteTypes {
     | '/admin/data/groups'
     | '/admin/data/performers'
     | '/admin/data/price-categories'
+    | '/admin/eticketo/accounting-bank'
+    | '/admin/eticketo/accounting-checks'
+    | '/admin/eticketo/accounting-report'
+    | '/admin/eticketo/balances'
+    | '/admin/eticketo/billing'
+    | '/admin/eticketo/control'
+    | '/admin/eticketo/costs'
+    | '/admin/eticketo/devices'
+    | '/admin/eticketo/organizers'
+    | '/admin/eticketo/payments'
+    | '/admin/eticketo/protocols'
+    | '/admin/eticketo/refund-types'
+    | '/admin/eticketo/tickets'
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
@@ -916,19 +927,6 @@ export interface FileRouteTypes {
     | '/admin/events/venues'
     | '/admin/finance/payments'
     | '/admin/finance/stats'
-    | '/admin/maxiticket/accounting-bank'
-    | '/admin/maxiticket/accounting-checks'
-    | '/admin/maxiticket/accounting-report'
-    | '/admin/maxiticket/balances'
-    | '/admin/maxiticket/billing'
-    | '/admin/maxiticket/control'
-    | '/admin/maxiticket/costs'
-    | '/admin/maxiticket/devices'
-    | '/admin/maxiticket/organizers'
-    | '/admin/maxiticket/payments'
-    | '/admin/maxiticket/protocols'
-    | '/admin/maxiticket/refund-types'
-    | '/admin/maxiticket/tickets'
     | '/admin/pos/cashiers'
     | '/admin/pos/closings'
     | '/admin/pos/fiscal'
@@ -996,6 +994,19 @@ export interface FileRouteTypes {
     | '/admin/data/groups'
     | '/admin/data/performers'
     | '/admin/data/price-categories'
+    | '/admin/eticketo/accounting-bank'
+    | '/admin/eticketo/accounting-checks'
+    | '/admin/eticketo/accounting-report'
+    | '/admin/eticketo/balances'
+    | '/admin/eticketo/billing'
+    | '/admin/eticketo/control'
+    | '/admin/eticketo/costs'
+    | '/admin/eticketo/devices'
+    | '/admin/eticketo/organizers'
+    | '/admin/eticketo/payments'
+    | '/admin/eticketo/protocols'
+    | '/admin/eticketo/refund-types'
+    | '/admin/eticketo/tickets'
     | '/admin/events/coupons'
     | '/admin/events/dates'
     | '/admin/events/events'
@@ -1003,19 +1014,6 @@ export interface FileRouteTypes {
     | '/admin/events/venues'
     | '/admin/finance/payments'
     | '/admin/finance/stats'
-    | '/admin/maxiticket/accounting-bank'
-    | '/admin/maxiticket/accounting-checks'
-    | '/admin/maxiticket/accounting-report'
-    | '/admin/maxiticket/balances'
-    | '/admin/maxiticket/billing'
-    | '/admin/maxiticket/control'
-    | '/admin/maxiticket/costs'
-    | '/admin/maxiticket/devices'
-    | '/admin/maxiticket/organizers'
-    | '/admin/maxiticket/payments'
-    | '/admin/maxiticket/protocols'
-    | '/admin/maxiticket/refund-types'
-    | '/admin/maxiticket/tickets'
     | '/admin/pos/cashiers'
     | '/admin/pos/closings'
     | '/admin/pos/fiscal'
@@ -1290,6 +1288,97 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataPriceCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/eticketo/accounting-bank': {
+      id: '/admin/eticketo/accounting-bank'
+      path: '/eticketo/accounting-bank'
+      fullPath: '/admin/eticketo/accounting-bank'
+      preLoaderRoute: typeof AdminEticketoAccountingBankRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/accounting-checks': {
+      id: '/admin/eticketo/accounting-checks'
+      path: '/eticketo/accounting-checks'
+      fullPath: '/admin/eticketo/accounting-checks'
+      preLoaderRoute: typeof AdminEticketoAccountingChecksRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/accounting-report': {
+      id: '/admin/eticketo/accounting-report'
+      path: '/eticketo/accounting-report'
+      fullPath: '/admin/eticketo/accounting-report'
+      preLoaderRoute: typeof AdminEticketoAccountingReportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/balances': {
+      id: '/admin/eticketo/balances'
+      path: '/eticketo/balances'
+      fullPath: '/admin/eticketo/balances'
+      preLoaderRoute: typeof AdminEticketoBalancesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/billing': {
+      id: '/admin/eticketo/billing'
+      path: '/eticketo/billing'
+      fullPath: '/admin/eticketo/billing'
+      preLoaderRoute: typeof AdminEticketoBillingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/control': {
+      id: '/admin/eticketo/control'
+      path: '/eticketo/control'
+      fullPath: '/admin/eticketo/control'
+      preLoaderRoute: typeof AdminEticketoControlRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/costs': {
+      id: '/admin/eticketo/costs'
+      path: '/eticketo/costs'
+      fullPath: '/admin/eticketo/costs'
+      preLoaderRoute: typeof AdminEticketoCostsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/devices': {
+      id: '/admin/eticketo/devices'
+      path: '/eticketo/devices'
+      fullPath: '/admin/eticketo/devices'
+      preLoaderRoute: typeof AdminEticketoDevicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/organizers': {
+      id: '/admin/eticketo/organizers'
+      path: '/eticketo/organizers'
+      fullPath: '/admin/eticketo/organizers'
+      preLoaderRoute: typeof AdminEticketoOrganizersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/payments': {
+      id: '/admin/eticketo/payments'
+      path: '/eticketo/payments'
+      fullPath: '/admin/eticketo/payments'
+      preLoaderRoute: typeof AdminEticketoPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/protocols': {
+      id: '/admin/eticketo/protocols'
+      path: '/eticketo/protocols'
+      fullPath: '/admin/eticketo/protocols'
+      preLoaderRoute: typeof AdminEticketoProtocolsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/refund-types': {
+      id: '/admin/eticketo/refund-types'
+      path: '/eticketo/refund-types'
+      fullPath: '/admin/eticketo/refund-types'
+      preLoaderRoute: typeof AdminEticketoRefundTypesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/tickets': {
+      id: '/admin/eticketo/tickets'
+      path: '/eticketo/tickets'
+      fullPath: '/admin/eticketo/tickets'
+      preLoaderRoute: typeof AdminEticketoTicketsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events/coupons': {
       id: '/admin/events/coupons'
       path: '/events/coupons'
@@ -1337,97 +1426,6 @@ declare module '@tanstack/react-router' {
       path: '/finance/stats'
       fullPath: '/admin/finance/stats'
       preLoaderRoute: typeof AdminFinanceStatsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/accounting-bank': {
-      id: '/admin/maxiticket/accounting-bank'
-      path: '/maxiticket/accounting-bank'
-      fullPath: '/admin/maxiticket/accounting-bank'
-      preLoaderRoute: typeof AdminMaxiticketAccountingBankRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/accounting-checks': {
-      id: '/admin/maxiticket/accounting-checks'
-      path: '/maxiticket/accounting-checks'
-      fullPath: '/admin/maxiticket/accounting-checks'
-      preLoaderRoute: typeof AdminMaxiticketAccountingChecksRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/accounting-report': {
-      id: '/admin/maxiticket/accounting-report'
-      path: '/maxiticket/accounting-report'
-      fullPath: '/admin/maxiticket/accounting-report'
-      preLoaderRoute: typeof AdminMaxiticketAccountingReportRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/balances': {
-      id: '/admin/maxiticket/balances'
-      path: '/maxiticket/balances'
-      fullPath: '/admin/maxiticket/balances'
-      preLoaderRoute: typeof AdminMaxiticketBalancesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/billing': {
-      id: '/admin/maxiticket/billing'
-      path: '/maxiticket/billing'
-      fullPath: '/admin/maxiticket/billing'
-      preLoaderRoute: typeof AdminMaxiticketBillingRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/control': {
-      id: '/admin/maxiticket/control'
-      path: '/maxiticket/control'
-      fullPath: '/admin/maxiticket/control'
-      preLoaderRoute: typeof AdminMaxiticketControlRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/costs': {
-      id: '/admin/maxiticket/costs'
-      path: '/maxiticket/costs'
-      fullPath: '/admin/maxiticket/costs'
-      preLoaderRoute: typeof AdminMaxiticketCostsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/devices': {
-      id: '/admin/maxiticket/devices'
-      path: '/maxiticket/devices'
-      fullPath: '/admin/maxiticket/devices'
-      preLoaderRoute: typeof AdminMaxiticketDevicesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/organizers': {
-      id: '/admin/maxiticket/organizers'
-      path: '/maxiticket/organizers'
-      fullPath: '/admin/maxiticket/organizers'
-      preLoaderRoute: typeof AdminMaxiticketOrganizersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/payments': {
-      id: '/admin/maxiticket/payments'
-      path: '/maxiticket/payments'
-      fullPath: '/admin/maxiticket/payments'
-      preLoaderRoute: typeof AdminMaxiticketPaymentsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/protocols': {
-      id: '/admin/maxiticket/protocols'
-      path: '/maxiticket/protocols'
-      fullPath: '/admin/maxiticket/protocols'
-      preLoaderRoute: typeof AdminMaxiticketProtocolsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/refund-types': {
-      id: '/admin/maxiticket/refund-types'
-      path: '/maxiticket/refund-types'
-      fullPath: '/admin/maxiticket/refund-types'
-      preLoaderRoute: typeof AdminMaxiticketRefundTypesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/maxiticket/tickets': {
-      id: '/admin/maxiticket/tickets'
-      path: '/maxiticket/tickets'
-      fullPath: '/admin/maxiticket/tickets'
-      preLoaderRoute: typeof AdminMaxiticketTicketsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/pos/cashiers': {
@@ -1705,6 +1703,19 @@ interface AdminRouteChildren {
   AdminDataGroupsRoute: typeof AdminDataGroupsRoute
   AdminDataPerformersRoute: typeof AdminDataPerformersRoute
   AdminDataPriceCategoriesRoute: typeof AdminDataPriceCategoriesRoute
+  AdminEticketoAccountingBankRoute: typeof AdminEticketoAccountingBankRoute
+  AdminEticketoAccountingChecksRoute: typeof AdminEticketoAccountingChecksRoute
+  AdminEticketoAccountingReportRoute: typeof AdminEticketoAccountingReportRoute
+  AdminEticketoBalancesRoute: typeof AdminEticketoBalancesRoute
+  AdminEticketoBillingRoute: typeof AdminEticketoBillingRoute
+  AdminEticketoControlRoute: typeof AdminEticketoControlRoute
+  AdminEticketoCostsRoute: typeof AdminEticketoCostsRoute
+  AdminEticketoDevicesRoute: typeof AdminEticketoDevicesRoute
+  AdminEticketoOrganizersRoute: typeof AdminEticketoOrganizersRoute
+  AdminEticketoPaymentsRoute: typeof AdminEticketoPaymentsRoute
+  AdminEticketoProtocolsRoute: typeof AdminEticketoProtocolsRoute
+  AdminEticketoRefundTypesRoute: typeof AdminEticketoRefundTypesRoute
+  AdminEticketoTicketsRoute: typeof AdminEticketoTicketsRoute
   AdminEventsCouponsRoute: typeof AdminEventsCouponsRoute
   AdminEventsDatesRoute: typeof AdminEventsDatesRoute
   AdminEventsEventsRoute: typeof AdminEventsEventsRoute
@@ -1712,19 +1723,6 @@ interface AdminRouteChildren {
   AdminEventsVenuesRoute: typeof AdminEventsVenuesRoute
   AdminFinancePaymentsRoute: typeof AdminFinancePaymentsRoute
   AdminFinanceStatsRoute: typeof AdminFinanceStatsRoute
-  AdminMaxiticketAccountingBankRoute: typeof AdminMaxiticketAccountingBankRoute
-  AdminMaxiticketAccountingChecksRoute: typeof AdminMaxiticketAccountingChecksRoute
-  AdminMaxiticketAccountingReportRoute: typeof AdminMaxiticketAccountingReportRoute
-  AdminMaxiticketBalancesRoute: typeof AdminMaxiticketBalancesRoute
-  AdminMaxiticketBillingRoute: typeof AdminMaxiticketBillingRoute
-  AdminMaxiticketControlRoute: typeof AdminMaxiticketControlRoute
-  AdminMaxiticketCostsRoute: typeof AdminMaxiticketCostsRoute
-  AdminMaxiticketDevicesRoute: typeof AdminMaxiticketDevicesRoute
-  AdminMaxiticketOrganizersRoute: typeof AdminMaxiticketOrganizersRoute
-  AdminMaxiticketPaymentsRoute: typeof AdminMaxiticketPaymentsRoute
-  AdminMaxiticketProtocolsRoute: typeof AdminMaxiticketProtocolsRoute
-  AdminMaxiticketRefundTypesRoute: typeof AdminMaxiticketRefundTypesRoute
-  AdminMaxiticketTicketsRoute: typeof AdminMaxiticketTicketsRoute
   AdminPosCashiersRoute: typeof AdminPosCashiersRoute
   AdminPosClosingsRoute: typeof AdminPosClosingsRoute
   AdminPosFiscalRoute: typeof AdminPosFiscalRoute
@@ -1749,6 +1747,19 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDataGroupsRoute: AdminDataGroupsRoute,
   AdminDataPerformersRoute: AdminDataPerformersRoute,
   AdminDataPriceCategoriesRoute: AdminDataPriceCategoriesRoute,
+  AdminEticketoAccountingBankRoute: AdminEticketoAccountingBankRoute,
+  AdminEticketoAccountingChecksRoute: AdminEticketoAccountingChecksRoute,
+  AdminEticketoAccountingReportRoute: AdminEticketoAccountingReportRoute,
+  AdminEticketoBalancesRoute: AdminEticketoBalancesRoute,
+  AdminEticketoBillingRoute: AdminEticketoBillingRoute,
+  AdminEticketoControlRoute: AdminEticketoControlRoute,
+  AdminEticketoCostsRoute: AdminEticketoCostsRoute,
+  AdminEticketoDevicesRoute: AdminEticketoDevicesRoute,
+  AdminEticketoOrganizersRoute: AdminEticketoOrganizersRoute,
+  AdminEticketoPaymentsRoute: AdminEticketoPaymentsRoute,
+  AdminEticketoProtocolsRoute: AdminEticketoProtocolsRoute,
+  AdminEticketoRefundTypesRoute: AdminEticketoRefundTypesRoute,
+  AdminEticketoTicketsRoute: AdminEticketoTicketsRoute,
   AdminEventsCouponsRoute: AdminEventsCouponsRoute,
   AdminEventsDatesRoute: AdminEventsDatesRoute,
   AdminEventsEventsRoute: AdminEventsEventsRoute,
@@ -1756,19 +1767,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEventsVenuesRoute: AdminEventsVenuesRoute,
   AdminFinancePaymentsRoute: AdminFinancePaymentsRoute,
   AdminFinanceStatsRoute: AdminFinanceStatsRoute,
-  AdminMaxiticketAccountingBankRoute: AdminMaxiticketAccountingBankRoute,
-  AdminMaxiticketAccountingChecksRoute: AdminMaxiticketAccountingChecksRoute,
-  AdminMaxiticketAccountingReportRoute: AdminMaxiticketAccountingReportRoute,
-  AdminMaxiticketBalancesRoute: AdminMaxiticketBalancesRoute,
-  AdminMaxiticketBillingRoute: AdminMaxiticketBillingRoute,
-  AdminMaxiticketControlRoute: AdminMaxiticketControlRoute,
-  AdminMaxiticketCostsRoute: AdminMaxiticketCostsRoute,
-  AdminMaxiticketDevicesRoute: AdminMaxiticketDevicesRoute,
-  AdminMaxiticketOrganizersRoute: AdminMaxiticketOrganizersRoute,
-  AdminMaxiticketPaymentsRoute: AdminMaxiticketPaymentsRoute,
-  AdminMaxiticketProtocolsRoute: AdminMaxiticketProtocolsRoute,
-  AdminMaxiticketRefundTypesRoute: AdminMaxiticketRefundTypesRoute,
-  AdminMaxiticketTicketsRoute: AdminMaxiticketTicketsRoute,
   AdminPosCashiersRoute: AdminPosCashiersRoute,
   AdminPosClosingsRoute: AdminPosClosingsRoute,
   AdminPosFiscalRoute: AdminPosFiscalRoute,
