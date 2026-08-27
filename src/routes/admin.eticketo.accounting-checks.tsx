@@ -8,7 +8,7 @@ import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide
 import { runAccountingChecks } from "@/lib/accounting-checks.functions";
 
 export const Route = createFileRoute("/admin/eticketo/accounting-checks")({
-  head: () => ({ meta: [{ title: "Účtovanie · kontroly · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Účtovanie · kontroly · eticketo.eu Admin" }] }),
   component: Page,
 });
 

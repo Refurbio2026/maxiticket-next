@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, StickyNote, Search, Pin } from "lucide-react";
 
 export const Route = createFileRoute("/admin/sales/notes")({
-  head: () => ({ meta: [{ title: "Poznámky · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Poznámky · eticketo.eu Admin" }] }),
   component: Page,
 });
 

@@ -34,7 +34,7 @@ import {
 import { useEvents } from "@/hooks/use-events";
 
 export const Route = createFileRoute("/admin/events/dates")({
-  head: () => ({ meta: [{ title: "Termíny · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Termíny · eticketo.eu Admin" }] }),
   component: Page,
 });
 

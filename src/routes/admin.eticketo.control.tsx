@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, ShieldCheck, AlertTriangle, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/admin/eticketo/control")({
-  head: () => ({ meta: [{ title: "Kontrola zostavy · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Kontrola zostavy · eticketo.eu Admin" }] }),
   component: Page,
 });
 

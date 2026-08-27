@@ -91,7 +91,7 @@ export function brandHeader(
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
-  doc.text("eticketo.sk", 14, 16);
+  doc.text("eticketo.eu", 14, 16);
   doc.setFontSize(11);
   doc.text(opts.title, 14, 24);
   if (opts.right) {

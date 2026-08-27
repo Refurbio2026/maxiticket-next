@@ -11,7 +11,7 @@ const items = [
   {
     n: "Pohoda Festival",
     r: "Organizátor",
-    q: "eticketo.sk zvládol 80 000 vstupeniek bez výpadku. Check-in cez QR bol bleskový.",
+    q: "eticketo.eu zvládol 80 000 vstupeniek bez výpadku. Check-in cez QR bol bleskový.",
     rating: 5,
   },
   {

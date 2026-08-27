@@ -74,13 +74,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "eticketo.sk" },
+      { title: "eticketo.eu" },
       {
         name: "description",
         content:
           "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
       },
-      { property: "og:title", content: "eticketo.sk" },
+      { property: "og:title", content: "eticketo.eu" },
       {
         property: "og:description",
         content:
@@ -88,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "eticketo.sk" },
+      { name: "twitter:title", content: "eticketo.eu" },
       {
         name: "twitter:description",
         content:

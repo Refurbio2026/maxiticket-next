@@ -33,7 +33,7 @@ import {
 } from "@/lib/settlements.functions";
 
 export const Route = createFileRoute("/admin/eticketo/billing")({
-  head: () => ({ meta: [{ title: "Zostavy / fakturovanie · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Zostavy / fakturovanie · eticketo.eu Admin" }] }),
   component: Page,
 });
 

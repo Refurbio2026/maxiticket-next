@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Ticketingová platforma **eTicketo / eticketo.sk** — predaj vstupeniek, rezervácia sedadiel,
+Ticketingová platforma **eTicketo / eticketo.eu** — predaj vstupeniek, rezervácia sedadiel,
 online platby (GoPay, GP webpay, tatrapay+), SuperFaktúra, QR vstupenky, skener na vstupe,
 POS pokladne, wallet passy.
 
@@ -511,7 +511,7 @@ Server kód navyše potrebuje (inak hodí runtime error):
 | `GOOGLE_WALLET_*`                                                         | wallet passy, viď `WALLET_SETUP.md`                                                |
 | `OPENAI_API_KEY`                                                          | AI support chat (bez neho vracia „nie je aktivovaná")                              |
 | `RESEND_API_KEY`                                                          | odosielanie vstupeniek e-mailom (bez neho sa ticho preskočí)                       |
-| `MAIL_FROM` / `MAIL_REPLY_TO`                                             | odosielateľ, default `eticketo.sk <listky@eticketo.sk>` (doména overená v Resende) |
+| `MAIL_FROM` / `MAIL_REPLY_TO`                                             | odosielateľ, default `eticketo.eu <listky@eticketo.eu>` (doména overená v Resende) |
 | `SEED_SECRET`                                                             | odomkne `/api/public/seed-demo`                                                    |
 | `SECRETS_ENCRYPTION_KEY`                                                  | šifrovanie prístupov zadaných v admine (fallback `TICKET_QR_SECRET`)               |
 | `RECONCILE_SECRET`                                                        | odomkne cron routu `/api/public/payments/reconcile` (bez neho 404)                 |

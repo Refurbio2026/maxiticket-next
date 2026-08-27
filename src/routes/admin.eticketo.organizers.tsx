@@ -26,7 +26,7 @@ import {
 } from "@/lib/settlements.functions";
 
 export const Route = createFileRoute("/admin/eticketo/organizers")({
-  head: () => ({ meta: [{ title: "Organizátori · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Organizátori · eticketo.eu Admin" }] }),
   component: Page,
 });
 

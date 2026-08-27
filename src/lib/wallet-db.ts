@@ -30,14 +30,14 @@ const defaultSettings: WalletSettings = {
     enabled: false,
     pass_type_identifier: "",
     team_identifier: "",
-    organization_name: "eticketo.sk",
+    organization_name: "eticketo.eu",
     cert_uploaded: false,
     wwdr_uploaded: false,
   },
   google: {
     enabled: false,
     issuer_id: "",
-    issuer_name: "eticketo.sk",
+    issuer_name: "eticketo.eu",
     service_account_uploaded: false,
   },
 };

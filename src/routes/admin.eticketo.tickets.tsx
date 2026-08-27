@@ -19,7 +19,7 @@ import {
 import { Loader2, Ticket, Download, RotateCcw } from "lucide-react";
 
 export const Route = createFileRoute("/admin/eticketo/tickets")({
-  head: () => ({ meta: [{ title: "Vstupenky organizátorov · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Vstupenky organizátorov · eticketo.eu Admin" }] }),
   component: Page,
 });
 

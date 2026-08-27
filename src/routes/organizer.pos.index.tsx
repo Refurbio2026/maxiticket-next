@@ -61,7 +61,7 @@ import { toast } from "sonner";
 import { CashierLoginGate } from "@/components/pos/CashierLoginGate";
 
 export const Route = createFileRoute("/organizer/pos/")({
-  head: () => ({ meta: [{ title: "Pokladňa · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Pokladňa · eticketo.eu" }] }),
   component: PosPage,
 });
 

@@ -15,7 +15,7 @@ import { FileDown, Loader2 } from "lucide-react";
 import { listBankAccounts, bankReport } from "@/lib/bank.functions";
 
 export const Route = createFileRoute("/admin/eticketo/accounting-report")({
-  head: () => ({ meta: [{ title: "Účtovanie · report · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Účtovanie · report · eticketo.eu Admin" }] }),
   component: Page,
 });
 

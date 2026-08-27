@@ -15,7 +15,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { getFinanceStats } from "@/lib/admin-stats.functions";
 
 export const Route = createFileRoute("/admin/finance/stats")({
-  head: () => ({ meta: [{ title: "Finančné štatistiky · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Finančné štatistiky · eticketo.eu Admin" }] }),
   component: Page,
 });
 

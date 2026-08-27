@@ -65,7 +65,7 @@ const TICKETS_HTML = `<!doctype html>
 <html lang="sk"><body style="margin:0;background:#f1f5f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
   <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
     <div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;">
-      <div style="font-size:22px;font-weight:700;">eticketo.sk</div>
+      <div style="font-size:22px;font-weight:700;">eticketo.eu</div>
     </div>
     <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px;">
       <h1 style="margin:0 0 8px;font-size:20px;">Vstupenky sú tvoje 🎟️</h1>
@@ -90,7 +90,7 @@ const TICKETS_HTML = `<!doctype html>
       {{/if}}
       <p style="margin:20px 0 0;font-size:13px;color:#64748b;line-height:1.5;">
         Pri vstupe stačí ukázať QR kód z mobilu alebo vytlačenú vstupenku.
-        Otázky? Napíš na <a href="mailto:support@eticketo.sk" style="color:#2563eb;">support@eticketo.sk</a>.
+        Otázky? Napíš na <a href="mailto:support@eticketo.eu" style="color:#2563eb;">support@eticketo.eu</a>.
       </p>
     </div>
   </div>
@@ -109,7 +109,7 @@ const REFUND_HTML = `<!doctype html>
   {{/if}}
 </table>
 <p>Suma sa vráti na pôvodný spôsob platby (zvyčajne do 5 pracovných dní).</p>
-<p style="color:#888;font-size:12px;margin-top:24px">eticketo.sk</p>
+<p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
 </body></html>`;
 
 /**
@@ -166,7 +166,7 @@ const CANCEL_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',
 <p style="margin:0;color:#666;font-size:13px">
   Vaše vstupenky na toto podujatie už neplatia. Ak by čokoľvek nesedelo, odpíšte na tento e-mail.
 </p>
-<p style="color:#888;font-size:12px;margin-top:24px">eticketo.sk</p>
+<p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
 </div>`;
 
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
@@ -189,7 +189,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
       { key: "ticket_sentence", label: "Veta o počte vstupeniek", example: "2 vstupenky nájdeš" },
       { key: "total", label: "Zaplatená suma", example: "58.00" },
       { key: "currency", label: "Mena", example: "EUR" },
-      { key: "tickets_url", label: "Odkaz na vstupenky online", example: "https://eticketo.sk/…" },
+      { key: "tickets_url", label: "Odkaz na vstupenky online", example: "https://eticketo.eu/…" },
       {
         key: "invoice_url",
         label: "Odkaz na faktúru (môže chýbať)",
@@ -212,7 +212,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
       { key: "venue", label: "Miesto konania", example: "Historická budova SND" },
       { key: "city", label: "Mesto", example: "Bratislava" },
       { key: "ticket_count", label: "Počet vstupeniek", example: "2" },
-      { key: "tickets_url", label: "Odkaz na vstupenky online", example: "https://eticketo.sk/…" },
+      { key: "tickets_url", label: "Odkaz na vstupenky online", example: "https://eticketo.eu/…" },
     ],
   },
   waitlist: {
@@ -229,14 +229,14 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
       { key: "venue", label: "Miesto konania", example: "Historická budova SND" },
       { key: "city", label: "Mesto", example: "Bratislava" },
       { key: "available", label: "Koľko sa uvoľnilo", example: "4" },
-      { key: "event_url", label: "Odkaz na podujatie", example: "https://eticketo.sk/events/…" },
+      { key: "event_url", label: "Odkaz na podujatie", example: "https://eticketo.eu/events/…" },
     ],
   },
   refund: {
     key: "refund",
     name: "Potvrdenie refundácie",
     description: "Odchádza zákazníkovi, keď admin alebo organizátor vráti peniaze.",
-    subject: "eticketo.sk — refund objednávky #{{order_short}}",
+    subject: "eticketo.eu — refund objednávky #{{order_short}}",
     html: REFUND_HTML,
     text: "Refund za objednávku #{{order_short}} vo výške {{amount}} {{currency}} bol spracovaný.",
     variables: [
@@ -254,7 +254,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
     description:
       "Odchádza všetkým, ktorí majú zaplatenú vstupenku, keď sa podujatie alebo termín ruší. " +
       "Posiela sa aj vtedy, keď sa peniaze nevracajú automaticky.",
-    subject: "eticketo.sk — zrušené: {{event_title}}",
+    subject: "eticketo.eu — zrušené: {{event_title}}",
     html: CANCEL_HTML,
     text:
       "Podujatie {{event_title}} ({{event_date}}) sa ruší. Dôvod: {{reason}}. " +

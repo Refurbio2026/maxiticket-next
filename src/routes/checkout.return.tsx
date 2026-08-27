@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/checkout/return")({
-  head: () => ({ meta: [{ title: "Overujeme platbu · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Overujeme platbu · eticketo.eu" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     orderId: typeof s.orderId === "string" ? s.orderId : "",
     t: typeof s.t === "string" ? s.t : "",

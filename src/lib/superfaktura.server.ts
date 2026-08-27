@@ -28,7 +28,7 @@ function env() {
 
 function authHeader() {
   const { email, apiKey, companyId } = env();
-  return `SFAPI email=${email}&apikey=${apiKey}&company_id=${companyId}&module=Lovable+eticketo.sk`;
+  return `SFAPI email=${email}&apikey=${apiKey}&company_id=${companyId}&module=Lovable+eticketo.eu`;
 }
 
 export type SfCustomer = FakturaZakaznik;

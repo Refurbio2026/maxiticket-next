@@ -54,7 +54,7 @@ oznámi, že funkcia zatiaľ nie je nakonfigurovaná (nič nespadne).
 ### Čo od teba budem potrebovať, aby som to dokončil naostro
 
 1. **Apple Developer Program** — členstvo (99 $/rok) na https://developer.apple.com
-2. **Pass Type ID** — vytvoríš v Apple Developer portáli (napr. `pass.sk.eticketo.event`)
+2. **Pass Type ID** — vytvoríš v Apple Developer portáli (napr. `pass.eu.eticketo.event`)
 3. **Pass Type ID certifikát** — vygenerovaný `.p12` súbor + jeho heslo
 4. **Apple WWDR certifikát** (G4) — verejne stiahnuteľný z Apple
 5. **Team Identifier** — 10-znakový reťazec z Apple Developer účtu

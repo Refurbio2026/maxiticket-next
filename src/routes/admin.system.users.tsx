@@ -34,7 +34,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/admin/system/users")({
-  head: () => ({ meta: [{ title: "Používatelia · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Používatelia · eticketo.eu Admin" }] }),
   component: Page,
 });
 

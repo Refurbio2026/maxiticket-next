@@ -100,7 +100,7 @@ export const Route = createFileRoute("/scanner")({
   component: ScannerPage,
   head: () => ({
     meta: [
-      { title: "Čítačka QR vstupeniek — eticketo.sk" },
+      { title: "Čítačka QR vstupeniek — eticketo.eu" },
       { name: "description", content: "Skenovanie a validácia QR vstupeniek na vstupe." },
     ],
   }),

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Scale } from "lucide-react";
 
 export const Route = createFileRoute("/admin/eticketo/balances")({
-  head: () => ({ meta: [{ title: "Bilancie · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Bilancie · eticketo.eu Admin" }] }),
   component: Page,
 });
 

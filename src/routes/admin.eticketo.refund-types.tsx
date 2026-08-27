@@ -27,7 +27,7 @@ import {
 } from "@/lib/refund-reasons.functions";
 
 export const Route = createFileRoute("/admin/eticketo/refund-types")({
-  head: () => ({ meta: [{ title: "Typy refundácií · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Typy refundácií · eticketo.eu Admin" }] }),
   component: Page,
 });
 

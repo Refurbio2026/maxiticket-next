@@ -16,7 +16,7 @@ import { Plus, Eye, Trash2, CheckCircle2, FileText, Calendar, MapPin, Pencil } f
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/events/")({
-  head: () => ({ meta: [{ title: "Moje podujatia · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Moje podujatia · eticketo.eu" }] }),
   // `?new=1` otvorí prázdny formulár. Sem presmerúva /organizer/events/new,
   // na ktoré vedie bočné menu aj odkazy z dashboardu a pokladne.
   validateSearch: (s: Record<string, unknown>): { new?: boolean } => ({

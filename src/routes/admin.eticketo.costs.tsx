@@ -34,7 +34,7 @@ import { Loader2, Plus, Pencil, Trash2, Wallet, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/eticketo/costs")({
-  head: () => ({ meta: [{ title: "Náklady organizátorov · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Náklady organizátorov · eticketo.eu Admin" }] }),
   component: Page,
 });
 

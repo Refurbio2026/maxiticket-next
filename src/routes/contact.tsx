@@ -13,12 +13,12 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Kontakt · eticketo.sk" },
+      { title: "Kontakt · eticketo.eu" },
       {
         name: "description",
-        content: "Kontaktujte tím eticketo.sk – e-mail, telefón, adresa a sociálne siete.",
+        content: "Kontaktujte tím eticketo.eu – e-mail, telefón, adresa a sociálne siete.",
       },
-      { property: "og:title", content: "Kontakt · eticketo.sk" },
+      { property: "og:title", content: "Kontakt · eticketo.eu" },
       { property: "og:description", content: "Spojte sa s nami." },
     ],
   }),
@@ -114,10 +114,10 @@ function ContactPage() {
                 <div>
                   <div className="font-display font-bold">E-mail</div>
                   <a
-                    href="mailto:hello@eticketo.sk"
+                    href="mailto:hello@eticketo.eu"
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    hello@eticketo.sk
+                    hello@eticketo.eu
                   </a>
                 </div>
               </div>
@@ -138,7 +138,7 @@ function ContactPage() {
                 <div>
                   <div className="font-display font-bold">Adresa</div>
                   <div className="text-muted-foreground">
-                    eticketo.sk s.r.o.
+                    eticketo.eu s.r.o.
                     <br />
                     Mlynské nivy 5<br />
                     821 09 Bratislava
@@ -173,7 +173,7 @@ function ContactPage() {
 
           <Card className="overflow-hidden bg-card/60 border-border/60">
             <iframe
-              title="eticketo.sk sídlo"
+              title="eticketo.eu sídlo"
               src="https://www.openstreetmap.org/export/embed.html?bbox=17.135%2C48.140%2C17.165%2C48.155&layer=mapnik&marker=48.1475%2C17.150"
               className="w-full h-56 border-0"
               loading="lazy"

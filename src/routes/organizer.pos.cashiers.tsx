@@ -40,7 +40,7 @@ import { History, KeyRound, Pencil, Plus, Power, Trash2, Users } from "lucide-re
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/cashiers")({
-  head: () => ({ meta: [{ title: "Pokladníci · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Pokladníci · eticketo.eu" }] }),
   component: CashiersPage,
 });
 

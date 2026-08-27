@@ -1,4 +1,4 @@
-// POS / Pokladňa local storage layer for eticketo.sk.
+// POS / Pokladňa local storage layer for eticketo.eu.
 // Architektúra je pripravená na neskoršie napojenie na reálnu DB,
 // ORP / eKasa (fiscal-adapter) a USB platobné terminály (payment-terminal-adapter).
 

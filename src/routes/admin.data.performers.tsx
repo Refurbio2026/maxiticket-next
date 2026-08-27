@@ -28,7 +28,7 @@ import { Plus, Pencil, Trash2, Search, Loader2, Music, ExternalLink } from "luci
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/data/performers")({
-  head: () => ({ meta: [{ title: "Účinkujúci · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Účinkujúci · eticketo.eu Admin" }] }),
   component: Page,
 });
 

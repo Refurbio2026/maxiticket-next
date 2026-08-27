@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useI18n } from "@/hooks/use-i18n";
 
 export const Route = createFileRoute("/organizer")({
-  head: () => ({ meta: [{ title: "Organizer · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Organizer · eticketo.eu" }] }),
   component: OrganizerLayout,
 });
 

@@ -260,7 +260,7 @@ export function generateClosingPdfBase64(d: ClosingPdfData): string {
 
   pageFooter(doc, [
     "Uzávierka je zmrazený doklad — neskorší predaj ani storno ju už nemenia.",
-    "eticketo.sk · support@eticketo.sk",
+    "eticketo.eu · support@eticketo.eu",
   ]);
 
   return toBase64(doc);
@@ -316,7 +316,7 @@ export function generateReceiptPdfBase64(d: ReceiptPdfData): string {
 
   doc.setFontSize(15);
   setText(doc, INK);
-  doc.text("eticketo.sk", W / 2, y, { align: "center" });
+  doc.text("eticketo.eu", W / 2, y, { align: "center" });
   y += 5;
   doc.setFontSize(8);
   setText(doc, MUTED);
@@ -460,7 +460,7 @@ export function generateReceiptPdfBase64(d: ReceiptPdfData): string {
   setText(doc, MUTED);
   doc.text("Ďakujeme za návštevu!", W / 2, y, { align: "center" });
   y += 4;
-  doc.text("www.eticketo.sk", W / 2, y, { align: "center" });
+  doc.text("www.eticketo.eu", W / 2, y, { align: "center" });
 
   return toBase64(doc);
 }

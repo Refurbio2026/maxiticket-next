@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, Activity } from "lucide-react";
 
 export const Route = createFileRoute("/admin/system/health")({
-  head: () => ({ meta: [{ title: "Prevádzka · Admin · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Prevádzka · Admin · eticketo.eu" }] }),
   component: HealthPage,
 });
 

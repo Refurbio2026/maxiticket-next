@@ -22,12 +22,12 @@ import {
 export const Route = createFileRoute("/artists")({
   head: () => ({
     meta: [
-      { title: "Umelci · eticketo.sk" },
+      { title: "Umelci · eticketo.eu" },
       {
         name: "description",
-        content: "Objavte umelcov, kapely a interpretov vystupujúcich na podujatiach eticketo.sk.",
+        content: "Objavte umelcov, kapely a interpretov vystupujúcich na podujatiach eticketo.eu.",
       },
-      { property: "og:title", content: "Umelci · eticketo.sk" },
+      { property: "og:title", content: "Umelci · eticketo.eu" },
       {
         property: "og:description",
         content: "Profily umelcov, nadchádzajúce podujatia a galéria.",
@@ -93,7 +93,7 @@ function ArtistsPage() {
           Hviezdy, ktoré <span className="text-gradient-flame">tvoria scénu</span>
         </>
       }
-      description="Objavte interpretov, kapely a umelcov vystupujúcich na podujatiach eticketo.sk. Profily, galéria a nadchádzajúce vystúpenia na jednom mieste."
+      description="Objavte interpretov, kapely a umelcov vystupujúcich na podujatiach eticketo.eu. Profily, galéria a nadchádzajúce vystúpenia na jednom mieste."
       cta={
         <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
           <Link to="/events">Pozrieť všetky podujatia</Link>

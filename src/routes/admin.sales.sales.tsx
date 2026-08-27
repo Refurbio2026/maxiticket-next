@@ -34,7 +34,7 @@ import { OrderNotesDialog, type OrderNotesTarget } from "@/components/admin/Orde
 import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/sales/sales")({
-  head: () => ({ meta: [{ title: "Predaj · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Predaj · eticketo.eu Admin" }] }),
   component: Page,
 });
 

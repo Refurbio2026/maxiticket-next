@@ -19,7 +19,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
-  head: () => ({ meta: [{ title: "Môj účet · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Môj účet · eticketo.eu" }] }),
   component: AccountPage,
 });
 

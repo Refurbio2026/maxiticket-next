@@ -28,7 +28,7 @@ import { Loader2, CreditCard, Download, AlertTriangle, Check } from "lucide-reac
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/eticketo/payments")({
-  head: () => ({ meta: [{ title: "Platby organizátorom · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Platby organizátorom · eticketo.eu Admin" }] }),
   component: Page,
 });
 

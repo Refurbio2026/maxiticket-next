@@ -27,7 +27,7 @@ import {
 } from "@/lib/price-categories.functions";
 
 export const Route = createFileRoute("/admin/data/price-categories")({
-  head: () => ({ meta: [{ title: "Cenové kategórie · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Cenové kategórie · eticketo.eu Admin" }] }),
   component: Page,
 });
 

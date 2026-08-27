@@ -4,7 +4,7 @@
 //
 // Secrets:
 //   RESEND_API_KEY   povinné, inak je odosielanie vypnuté
-//   MAIL_FROM        odosielateľ, default "eticketo.sk <listky@eticketo.sk>"
+//   MAIL_FROM        odosielateľ, default "eticketo.eu <listky@eticketo.eu>"
 //                    (doména musí byť v Resende overená, inak API odmietne)
 //   MAIL_REPLY_TO    voliteľné
 //
@@ -33,7 +33,7 @@ function readConfig() {
   if (!apiKey) return null;
   return {
     apiKey,
-    from: process.env.MAIL_FROM || "eticketo.sk <listky@eticketo.sk>",
+    from: process.env.MAIL_FROM || "eticketo.eu <listky@eticketo.eu>",
     replyTo: process.env.MAIL_REPLY_TO || undefined,
   };
 }

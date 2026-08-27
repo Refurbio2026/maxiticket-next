@@ -28,7 +28,7 @@ import { listVenues, upsertVenue, deleteVenue, type VenueRecord } from "@/lib/ve
 import { useLayouts } from "@/hooks/use-layouts";
 
 export const Route = createFileRoute("/admin/events/venues")({
-  head: () => ({ meta: [{ title: "Miesta konania · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Miesta konania · eticketo.eu Admin" }] }),
   component: Page,
 });
 

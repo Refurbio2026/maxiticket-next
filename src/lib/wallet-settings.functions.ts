@@ -54,14 +54,14 @@ export const getWalletSettings = createServerFn({ method: "POST" })
         enabled: data?.apple_enabled ?? false,
         pass_type_identifier: data?.apple_pass_type_identifier ?? "",
         team_identifier: data?.apple_team_identifier ?? "",
-        organization_name: data?.apple_organization_name ?? "eticketo.sk",
+        organization_name: data?.apple_organization_name ?? "eticketo.eu",
         // Apple pass sa podpisuje .p12 certifikátom; ten na serveri zatiaľ nie je.
         cert_configured: !!process.env.APPLE_WALLET_CERT_P12,
       },
       google: {
         enabled: data?.google_enabled ?? false,
         issuer_id: data?.google_issuer_id ?? "",
-        issuer_name: data?.google_issuer_name ?? "eticketo.sk",
+        issuer_name: data?.google_issuer_name ?? "eticketo.eu",
         service_account_configured: !!process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON,
       },
       updated_at: data?.updated_at ?? null,
@@ -76,10 +76,10 @@ export const updateWalletSettings = createServerFn({ method: "POST" })
         apple_enabled: z.boolean(),
         apple_pass_type_identifier: z.string().max(200).optional().nullable(),
         apple_team_identifier: z.string().max(200).optional().nullable(),
-        apple_organization_name: z.string().max(200).default("eticketo.sk"),
+        apple_organization_name: z.string().max(200).default("eticketo.eu"),
         google_enabled: z.boolean(),
         google_issuer_id: z.string().max(200).optional().nullable(),
-        google_issuer_name: z.string().max(200).default("eticketo.sk"),
+        google_issuer_name: z.string().max(200).default("eticketo.eu"),
       })
       .parse(input),
   )

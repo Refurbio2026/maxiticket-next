@@ -56,7 +56,7 @@ import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/organizer/marketing/")({
-  head: () => ({ meta: [{ title: "Marketing Center · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Marketing Center · eticketo.eu" }] }),
   component: MarketingCenter,
 });
 
@@ -87,7 +87,7 @@ function MarketingCenter() {
           platform === "google"
             ? `${Math.floor(100 + Math.random() * 899)}-${Math.floor(100 + Math.random() * 899)}-${Math.floor(1000 + Math.random() * 8999)}`
             : `act_${Math.floor(100000000 + Math.random() * 899999999)}`,
-        account_name: platform === "google" ? "eticketo.sk – Google Ads" : "eticketo.sk – Meta Ads",
+        account_name: platform === "google" ? "eticketo.eu – Google Ads" : "eticketo.eu – Meta Ads",
         status: "connected",
       },
     });

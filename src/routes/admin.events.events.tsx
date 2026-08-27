@@ -19,7 +19,7 @@ import { renderEventTicketsPdf } from "@/lib/ticket-pdf.functions";
 import { downloadBase64 } from "@/lib/download";
 
 export const Route = createFileRoute("/admin/events/events")({
-  head: () => ({ meta: [{ title: "Podujatia · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Podujatia · eticketo.eu Admin" }] }),
   component: Page,
 });
 

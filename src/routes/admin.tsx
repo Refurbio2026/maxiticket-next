@@ -9,8 +9,8 @@ import { useAuth } from "@/hooks/use-auth";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "eticketo.sk Admin Console" },
-      { name: "description", content: "Interný admin systém pre ticketing platformu eticketo.sk." },
+      { title: "eticketo.eu Admin Console" },
+      { name: "description", content: "Interný admin systém pre ticketing platformu eticketo.eu." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

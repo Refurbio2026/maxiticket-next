@@ -16,13 +16,13 @@ import {
 export const Route = createFileRoute("/marketing")({
   head: () => ({
     meta: [
-      { title: "Marketing podujatí · eticketo.sk" },
+      { title: "Marketing podujatí · eticketo.eu" },
       {
         name: "description",
         content:
           "Reklamné možnosti, sociálne siete, newsletter a partnerské kampane pre organizátorov.",
       },
-      { property: "og:title", content: "Marketing podujatí · eticketo.sk" },
+      { property: "og:title", content: "Marketing podujatí · eticketo.eu" },
       { property: "og:description", content: "Propagujte svoje podujatie naprieč Slovenskom." },
     ],
   }),
@@ -38,7 +38,7 @@ function MarketingPage() {
           Vypredajte sálu skôr, než <span className="text-gradient-flame">otvoríte dvere</span>
         </>
       }
-      description="Propagujte vaše podujatia naprieč eticketo.sk sieťou, sociálnymi sieťami, newsletterom a partnerskými kanálmi. Mediálna podpora a kampane na mieru."
+      description="Propagujte vaše podujatia naprieč eticketo.eu sieťou, sociálnymi sieťami, newsletterom a partnerskými kanálmi. Mediálna podpora a kampane na mieru."
       cta={
         <>
           <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
@@ -62,7 +62,7 @@ function MarketingPage() {
           {
             icon: Share2,
             title: "Sociálne siete",
-            description: "Promo posty na Instagrame, Facebooku a TikToku v eticketo.sk kanáloch.",
+            description: "Promo posty na Instagrame, Facebooku a TikToku v eticketo.eu kanáloch.",
           },
           {
             icon: Mail,

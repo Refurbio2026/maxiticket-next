@@ -12,7 +12,7 @@ import { verifyTicket } from "./qr-token.server";
 // BEZPEČNOSŤ: pôvodne táto funkcia podpísala čokoľvek, čo dostala — názov
 // podujatia, miesto aj meno držiteľa prichádzali z klienta. Nič tým neunikalo
 // (volajúci už musí poznať QR hodnotu), ale ktokoľvek si vedel nechať podpísať
-// wallet pass s ľubovoľným textom pod issuer účtom eticketo.sk. Teraz overujeme
+// wallet pass s ľubovoľným textom pod issuer účtom eticketo.eu. Teraz overujeme
 // QR token a všetky údaje na passe berieme z databázy — klient určuje výhradne
 // to, KTORÁ vstupenka sa má pridať.
 export const getGoogleWalletSaveLink = createServerFn({ method: "POST" })

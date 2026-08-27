@@ -4,7 +4,7 @@
 
 export const SUPPORT_KB = `
 PLATFORMA
-- eticketo.sk (eTicketo) je online platforma na predaj vstupeniek na podujatia (koncerty, festivaly, šport, divadlo, stand-up, kultúra) na Slovensku.
+- eticketo.eu (eTicketo) je online platforma na predaj vstupeniek na podujatia (koncerty, festivaly, šport, divadlo, stand-up, kultúra) na Slovensku.
 
 AKO KÚPIŤ VSTUPENKU
 1. Na stránke Podujatia si vyber podujatie.

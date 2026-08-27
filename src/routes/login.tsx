@@ -19,7 +19,7 @@ import {
 type Section = "user" | "organizer" | "cashier" | "admin";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Prihlásenie · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Prihlásenie · eticketo.eu" }] }),
   // Návratový typ má kľúč voliteľný — inak by TanStack vyžadoval `search`
   // pri každom <Link to="/login">.
   validateSearch: (s: Record<string, unknown>): { section?: Section } => ({
@@ -172,9 +172,9 @@ function LoginPage() {
             </div>
             <div className="mt-6 p-3 rounded-lg bg-muted/30 border border-border/40 text-xs space-y-1">
               <div className="font-semibold text-foreground mb-1">Demo účty</div>
-              <div>admin@eticketo.sk / admin123</div>
-              <div>organizer@eticketo.sk / organizer123</div>
-              <div>user@eticketo.sk / user123</div>
+              <div>admin@eticketo.eu / admin123</div>
+              <div>organizer@eticketo.eu / organizer123</div>
+              <div>user@eticketo.eu / user123</div>
             </div>
           </Card>
         )}
@@ -191,7 +191,7 @@ function SectionPicker() {
           Kam sa chceš prihlásiť?
         </h1>
         <p className="text-sm text-muted-foreground mt-2">
-          Vyber sekciu eticketo.sk, do ktorej patrí tvoj účet.
+          Vyber sekciu eticketo.eu, do ktorej patrí tvoj účet.
         </p>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">

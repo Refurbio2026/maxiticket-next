@@ -16,7 +16,7 @@ import { Ban, Loader2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/fiscal")({
-  head: () => ({ meta: [{ title: "ORP / eKasa · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "ORP / eKasa · eticketo.eu" }] }),
   component: FiscalPage,
 });
 

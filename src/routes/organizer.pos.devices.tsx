@@ -43,7 +43,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/organizer/pos/devices")({
-  head: () => ({ meta: [{ title: "Zariadenia · eticketo.sk" }] }),
+  head: () => ({ meta: [{ title: "Zariadenia · eticketo.eu" }] }),
   component: DevicesPage,
 });
 

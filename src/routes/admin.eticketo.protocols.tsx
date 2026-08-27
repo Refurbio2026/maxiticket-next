@@ -36,7 +36,7 @@ import {
 } from "@/lib/settlements.functions";
 
 export const Route = createFileRoute("/admin/eticketo/protocols")({
-  head: () => ({ meta: [{ title: "Vyúčtovacie protokoly · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Vyúčtovacie protokoly · eticketo.eu Admin" }] }),
   component: Page,
 });
 

@@ -36,7 +36,7 @@ import {
 } from "@/lib/bank.functions";
 
 export const Route = createFileRoute("/admin/eticketo/accounting-bank")({
-  head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · eticketo.sk Admin" }] }),
+  head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · eticketo.eu Admin" }] }),
   component: Page,
 });
 

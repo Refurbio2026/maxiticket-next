@@ -27,7 +27,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const labels: Record<string, string> = {
   admin: "Admin",
-  eticketo: "eticketo.sk",
+  eticketo: "eticketo.eu",
   billing: "Zostavy / fakturovanie",
   protocols: "Vyúčtovacie protokoly",
   costs: "Náklady organizátorov",

@@ -107,8 +107,8 @@ describe("stavZKodu", () => {
 
 describe("ocistiAscii", () => {
   it("zhodí diakritiku a nechá text čitateľný", () => {
-    expect(ocistiAscii("Vstupenky eticketo.sk — Ľuboš Ščasný", 255)).toBe(
-      "Vstupenky eticketo.sk Lubos Scasny",
+    expect(ocistiAscii("Vstupenky eticketo.eu — Ľuboš Ščasný", 255)).toBe(
+      "Vstupenky eticketo.eu Lubos Scasny",
     );
   });
 
