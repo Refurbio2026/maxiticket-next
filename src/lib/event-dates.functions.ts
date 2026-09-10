@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { cachuj } from "./cache.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type EventDateRecord = {
@@ -336,6 +337,20 @@ export type SeatAvailability = {
 export const getSeatAvailability = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ event_date_id: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<SeatAvailability> => {
+    // Pri spustení predaja si mapu sedadiel obnovuje každý divák raz za 15 s.
+    // Tisíc ľudí na jednom podujatí je 67 dopytov za sekundu na to isté —
+    // preto sa odpoveď na dve sekundy pamätá a súbežné dopyty sa zlúčia.
+    //
+    // Dve sekundy zastarania sú bezpečné: či je sedadlo naozaj voľné,
+    // nerozhoduje táto mapa, ale `reserve_seats` pri objednávke, ktorý stojí
+    // na jedinečnom indexe `(event_date_id, seat_id)`. Mapa je len nápoveda,
+    // aby človek needal klikať na obsadené. Po rezervácii sa navyše zahodí,
+    // takže bežne je čerstvejšia než tie dve sekundy.
+    return cachuj(`dostupnost:${data.event_date_id}`, 2000, () => nacitajDostupnost(data));
+  });
+
+async function nacitajDostupnost(data: { event_date_id: string }): Promise<SeatAvailability> {
+  {
     const { data: date } = await supabaseAdmin
       .from("event_dates")
       .select("id, event_id, total_tickets")
@@ -379,4 +394,5 @@ export const getSeatAvailability = createServerFn({ method: "POST" })
       .reduce((s, it: { quantity: number }) => s + (it.quantity || 0), 0);
 
     return { taken, capacity, taken_count: takenCount };
-  });
+  }
+}

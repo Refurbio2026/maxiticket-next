@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { cachuj, zabudni } from "./cache.server";
 import { deleteEventImageIfUnused } from "./event-images.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -222,6 +223,18 @@ export const getEventById = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), viewer_id: z.string().uuid().optional() }).parse(input),
   )
   .handler(async ({ data }): Promise<EventRecord | null> => {
+    // Publikované podujatie vyzerá rovnako pre každého, tak sa smie pamätať.
+    // Nepublikované závisí od toho, kto sa pýta (organizátor či admin ho vidí),
+    // preto sa pri známom divákovi cache obchádza.
+    if (!data.viewer_id) {
+      return cachuj(`podujatie:${data.id}`, 30_000, () => nacitajPodujatie(data));
+    }
+    return nacitajPodujatie(data);
+  });
+
+/** Samotné načítanie — oddelené, aby sa dalo obaliť pamäťou. */
+async function nacitajPodujatie(data: { id: string; viewer_id?: string }) {
+  {
     const { data: row } = await supabaseAdmin
       .from("events")
       .select(EVENT_COLUMNS)
@@ -249,7 +262,8 @@ export const getEventById = createServerFn({ method: "POST" })
       names.get(r.organizer_id as string),
       r.group_id ? groups.get(r.group_id as string) : undefined,
     );
-  });
+  }
+}
 
 const TicketTypeInput = z.object({
   id: z.string().uuid().optional(),
@@ -383,6 +397,10 @@ export const upsertEvent = createServerFn({ method: "POST" })
       eventId = created.id;
     }
 
+    // Podujatie sa pol minúty pamätá — po úprave to zahodíme, nech organizátor
+    // svoju zmenu vidí hneď a nie až po vypršaní platnosti.
+    zabudni(`podujatie:${eventId}`);
+
     // Termíny. Podujatie bez termínu sa nedá kúpiť, takže prvý vzniká hneď pri
     // založení. Pri úprave posunieme termín len vtedy, keď je jediný — pri
     // repríze by inak formulár podujatia prepísal jeden z viacerých dátumov.
@@ -448,6 +466,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
     }
     const { error } = await supabaseAdmin.from("events").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    zabudni(`podujatie:${data.id}`);
     await deleteEventImageIfUnused(existing.image_url);
     return { ok: true };
   });
