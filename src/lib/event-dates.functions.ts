@@ -3,7 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { cachuj } from "./cache.server";
+import { cachuj, zabudni } from "./cache.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type EventDateRecord = {
@@ -396,3 +396,94 @@ async function nacitajDostupnost(data: { event_date_id: string }): Promise<SeatA
     return { taken, capacity, taken_count: takenCount };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Držanie sedadiel pri výbere
+// ---------------------------------------------------------------------------
+//
+// Kým sa toto robilo v `localStorage`, o vybranom sedadle nikto iný nevedel:
+// dvaja kupujúci ho označili naraz, obaja vyplnili údaje a druhý sa dozvedel
+// až pri odoslaní objednávky, že prišiel neskoro. Držanie je preto v databáze,
+// viazané na nákupnú reláciu (`hold_session`) a s krátkou platnosťou.
+//
+// Platnosť je zámerne krátka (2 minúty) a stránka ju priebežne predlžuje, kým
+// má človek košík otvorený. Kto zavrie okno, uvoľní sedadlo sám od seba.
+
+const SedadloVstup = z.object({
+  seat_id: z.string().min(1).max(120),
+  price: z.number().nonnegative(),
+  label: z.string().max(200).optional(),
+  is_vip: z.boolean().optional(),
+});
+
+/** Podrží sedadlá pre danú nákupnú reláciu. Vráti tie, ktoré sa naozaj podarilo získať. */
+export const holdSeats = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        event_id: z.string().uuid(),
+        event_date_id: z.string().uuid(),
+        session: z.string().min(6).max(80),
+        seats: z.array(SedadloVstup).min(1).max(20),
+        minutes: z.number().int().min(1).max(15).default(2),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ held: string[] }> => {
+    const until = new Date(Date.now() + data.minutes * 60_000).toISOString();
+    const { data: rows, error } = await supabaseAdmin.rpc("hold_seats", {
+      p_event_id: data.event_id,
+      p_event_date_id: data.event_date_id,
+      p_session: data.session,
+      p_seats: data.seats,
+      p_until: until,
+    });
+    if (error) throw new Error(error.message);
+    // Mapa sedadiel sa dve sekundy pamätá — po zmene ju treba zahodiť, inak
+    // by ostatní o obsadení sedadla vedeli až o chvíľu neskôr.
+    zabudni(`dostupnost:${data.event_date_id}`);
+    return { held: (rows || []).map((r: { seat_id: string }) => r.seat_id) };
+  });
+
+/** Uvoľní jedno sedadlo, alebo všetky, ktoré relácia na termíne drží. */
+export const releaseHolds = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        event_date_id: z.string().uuid(),
+        session: z.string().min(6).max(80),
+        seat_id: z.string().min(1).max(120).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ released: number }> => {
+    const { data: pocet, error } = await supabaseAdmin.rpc("release_holds", {
+      p_event_date_id: data.event_date_id,
+      p_session: data.session,
+      p_seat_id: data.seat_id ?? null,
+    });
+    if (error) throw new Error(error.message);
+    zabudni(`dostupnost:${data.event_date_id}`);
+    return { released: Number(pocet || 0) };
+  });
+
+/** Predĺži platnosť držaných sedadiel, kým má človek košík otvorený. */
+export const extendHolds = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        event_date_id: z.string().uuid(),
+        session: z.string().min(6).max(80),
+        minutes: z.number().int().min(1).max(15).default(2),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ extended: number }> => {
+    const { data: pocet, error } = await supabaseAdmin.rpc("extend_holds", {
+      p_event_date_id: data.event_date_id,
+      p_session: data.session,
+      p_until: new Date(Date.now() + data.minutes * 60_000).toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return { extended: Number(pocet || 0) };
+  });

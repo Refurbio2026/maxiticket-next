@@ -161,6 +161,9 @@ export const submitOrder = createServerFn({ method: "POST" })
         items: z.array(ItemSchema).min(1).max(100),
         // Kód zľavového kupónu. Zľavu počíta server — klient posiela len kód.
         coupon_code: z.string().max(40).optional().nullable(),
+        // Nákupná relácia, ktorá si sedadlá podržala pri výbere. Bez nej by
+        // objednávka narazila na vlastné držanie ako na cudzie a odmietla sa.
+        cart_session: z.string().min(6).max(80).optional().nullable(),
       })
       .parse(input),
   )
@@ -474,6 +477,7 @@ export const submitOrder = createServerFn({ method: "POST" })
           price: s.unit_price,
           is_vip: s.is_vip,
         })),
+        p_session: data.cart_session ?? null,
       });
       // Mapa sedadiel sa dve sekundy pamätá — po skutočnej rezervácii ju
       // zahodíme, nech ďalší kupujúci nevidí sedadlo, ktoré už niekto drží.

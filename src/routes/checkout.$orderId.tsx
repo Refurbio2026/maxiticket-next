@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getOrder,
+  getCartSessionId,
   releaseExpired,
   releaseOrder,
   upsertOrder,
@@ -195,6 +196,9 @@ function CheckoutPage() {
             quantity: 1,
           })),
           coupon_code: coupon?.code || undefined,
+          // Sedadlá si tento košík podržal pri výbere; bez relácie by ich
+          // objednávka videla ako cudzie a odmietla by sa.
+          cart_session: getCartSessionId(),
         },
       });
       const { payment_url } = await createPayment({

@@ -1,12 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEvent, type EventRecord } from "@/hooks/use-events";
 import { verejnaAdresa } from "@/lib/site-url.server";
 import { CakackaBox } from "@/components/events/CakackaBox";
 import { getEventById } from "@/lib/events.functions";
-import { getSeatAvailability } from "@/lib/event-dates.functions";
+import {
+  getSeatAvailability,
+  holdSeats,
+  releaseHolds,
+  extendHolds,
+} from "@/lib/event-dates.functions";
 import { listEventZonePrices } from "@/lib/price-categories.functions";
 import { listEventPerformers } from "@/lib/performers.functions";
 import { useLayout, useLayouts } from "@/hooks/use-layouts";
@@ -16,11 +21,7 @@ import {
   INV_EVENT,
   releaseExpired,
   createOrder,
-  reserveSeats,
-  holdSeat,
-  releaseHeldSeat,
-  extendHolds,
-  releaseAllHolds,
+  getCartSessionId,
   type SeatInventoryRow,
 } from "@/lib/ticketing-db";
 import { Navbar } from "@/components/site/Navbar";
@@ -329,10 +330,16 @@ function EventDetail() {
   // Obsadenosť ťaháme z databázy, aby dvaja kupujúci na dvoch počítačoch videli
   // ten istý stav; localStorage vie len o vlastnom prehliadači.
   const fetchAvailability = useServerFn(getSeatAvailability);
+  const drzSedadla = useServerFn(holdSeats);
+  const uvolniSedadla = useServerFn(releaseHolds);
+  const predlzDrzanie = useServerFn(extendHolds);
   const availability = useQuery({
     queryKey: ["seat-availability", activeDate?.id ?? null],
     enabled: !!activeDate,
-    refetchInterval: 15_000,
+    // Päť sekúnd, nie pätnásť — odpoveď sa na serveri dve sekundy pamätá,
+    // takže častejšie obnovovanie databázu nezaťaží a výber cudzieho
+    // sedadla je vidieť takmer okamžite.
+    refetchInterval: 5_000,
     queryFn: () => fetchAvailability({ data: { event_date_id: activeDate!.id } }),
   });
 
@@ -387,8 +394,12 @@ function EventDetail() {
   // Mapa vidí obsadené sedadlá z databázy aj tie, ktoré si práve drží tento
   // košík — inak by vlastný výber vyzeral ako voľné miesto.
   const inventory = useMemo<SeatInventoryRow[]>(() => {
+    // Vlastné podržané sedadlá chodia zo servera medzi obsadenými — pre tohto
+    // kupujúceho to však nie sú obsadené miesta, ale jeho vlastný výber.
+    const moje = new Set(selected.map((s) => s.seat_id));
     const rows = new Map<string, SeatInventoryRow>();
     for (const t of availability.data?.taken ?? []) {
+      if (moje.has(t.seat_id)) continue;
       rows.set(t.seat_id, {
         event_date_id: activeDate?.id ?? "",
         seat_id: t.seat_id,
@@ -396,9 +407,9 @@ function EventDetail() {
         price: 0,
       });
     }
-    for (const h of localHolds) rows.set(h.seat_id, h);
+    for (const h of localHolds) if (!moje.has(h.seat_id)) rows.set(h.seat_id, h);
     return [...rows.values()];
-  }, [availability.data, localHolds, activeDate]);
+  }, [availability.data, localHolds, activeDate, selected]);
 
   const isMap = !!layout && event?.sale_type !== "standing";
   const basePrice = event?.base_price ?? Number(event?.tickets?.[0]?.price ?? 0);
@@ -441,29 +452,69 @@ function EventDetail() {
   const vypredane = totalCapacity > 0 && availableCount === 0;
   const lowAvailability = totalCapacity > 0 && availableCount / totalCapacity < 0.2;
 
-  const toggleSeat = (s: Selected) => {
+  // Výber sedadla ho hneď podrží v databáze, takže ho ostatní vidia obsadené.
+  // Kým to bolo v localStorage, o vybranom mieste nikto iný nevedel a druhý
+  // kupujúci narazil až pri odosielaní objednávky.
+  const toggleSeat = async (s: Selected) => {
     if (!event || !activeDate) return;
     const already = selected.some((x) => x.seat_id === s.seat_id);
     if (already) {
-      releaseHeldSeat(activeDate.id, s.seat_id);
       setSelected((prev) => prev.filter((x) => x.seat_id !== s.seat_id));
+      try {
+        await uvolniSedadla({
+          data: { event_date_id: activeDate.id, session: getCartSessionId(), seat_id: s.seat_id },
+        });
+      } catch {
+        /* Neuvoľnené sedadlo si o dve minúty vypýta platnosť samo. */
+      }
+      availability.refetch();
       return;
     }
-    const ok = holdSeat(activeDate.id, s, 2);
-    if (!ok) {
-      toast.error("Sedadlo si práve berie iný kupujúci. Vyber prosím iné.");
+    try {
+      const { held } = await drzSedadla({
+        data: {
+          event_id: event.id,
+          event_date_id: activeDate.id,
+          session: getCartSessionId(),
+          seats: [{ seat_id: s.seat_id, price: s.price, label: s.label, is_vip: s.is_vip }],
+          minutes: 2,
+        },
+      });
+      if (!held.includes(s.seat_id)) {
+        toast.error("Sedadlo si práve berie iný kupujúci. Vyber prosím iné.");
+        availability.refetch();
+        return;
+      }
+    } catch {
+      toast.error("Sedadlo sa nepodarilo podržať. Skús to prosím znova.");
       return;
     }
     setSelected((prev) => [...prev, s]);
   };
 
-  // Refresh holds every 60s while the cart is open, and release them when
-  // the user leaves the page without proceeding to checkout.
+  // Serverové funkcie držíme v referencii, aby efekt nižšie nezávisel od ich
+  // identity — inak by sa interval predlžovania reštartoval pri každom
+  // prekreslení a držanie by sa nepredĺžilo nikdy.
+  const drzanieRef = useRef({ predlzDrzanie, uvolniSedadla });
+  drzanieRef.current = { predlzDrzanie, uvolniSedadla };
+
+  // Kým má človek košík otvorený, držanie sa každú minútu predlžuje; keď
+  // odíde bez nákupu, sedadlá pustíme.
   useEffect(() => {
     if (!activeDate || selected.length === 0) return;
     const held = activeDate.id;
-    const t = setInterval(() => extendHolds(held, 2), 60_000);
-    const onUnload = () => releaseAllHolds(held);
+    const sid = getCartSessionId();
+    const t = setInterval(
+      () =>
+        void drzanieRef.current.predlzDrzanie({
+          data: { event_date_id: held, session: sid, minutes: 2 },
+        }),
+      60_000,
+    );
+    // Pri zatváraní okna sa už čakať nedá — pošleme to a necháme tak. Keby to
+    // nedošlo, sedadlo uvoľní vypršanie platnosti do dvoch minút.
+    const onUnload = () =>
+      void drzanieRef.current.uvolniSedadla({ data: { event_date_id: held, session: sid } });
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
     return () => {
@@ -506,22 +557,12 @@ function EventDetail() {
         total_amount: total,
       });
       if (isMap) {
-        const ok = reserveSeats(
-          activeDate.id,
-          selected.map((s) => ({
-            seat_id: s.seat_id,
-            label: s.label,
-            price: s.price,
-            is_vip: s.is_vip,
-          })),
-          order.id,
-          10,
-        );
-        if (!ok) {
-          toast.error("Niektoré sedadlá už nie sú dostupné. Skús znova.");
-          setSubmitting(false);
-          return;
-        }
+        // Sedadlá už držíme v databáze od chvíle, keď na ne človek klikol.
+        // Pred odchodom do pokladne im len predĺžime platnosť, nech stihne
+        // vyplniť údaje — dve minúty na to nestačia.
+        void predlzDrzanie({
+          data: { event_date_id: activeDate.id, session: getCartSessionId(), minutes: 10 },
+        });
       }
       navigate({ to: "/checkout/$orderId", params: { orderId: order.id } });
     } finally {
@@ -692,7 +733,13 @@ function EventDetail() {
                               if (active) return;
                               // Sedadlá platia vždy len pre jeden termín, takže
                               // pri prepnutí sa výber aj držané miesta zahodia.
-                              if (activeDate) releaseAllHolds(activeDate.id);
+                              if (activeDate)
+                                void uvolniSedadla({
+                                  data: {
+                                    event_date_id: activeDate.id,
+                                    session: getCartSessionId(),
+                                  },
+                                });
                               setSelected([]);
                               setDateId(d.id);
                             }}

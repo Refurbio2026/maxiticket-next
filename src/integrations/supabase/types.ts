@@ -601,6 +601,7 @@ export type Database = {
         Row: {
           created_at: string;
           event_id: string;
+          hold_session: string | null;
           event_date_id: string;
           id: string;
           is_vip: boolean;
@@ -615,6 +616,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           event_id: string;
+          hold_session?: string | null;
           event_date_id: string;
           id?: string;
           is_vip?: boolean;
@@ -629,6 +631,7 @@ export type Database = {
         Update: {
           created_at?: string;
           event_id?: string;
+          hold_session?: string | null;
           event_date_id?: string;
           id?: string;
           is_vip?: boolean;
@@ -2311,8 +2314,35 @@ export type Database = {
           p_order_id: string;
           p_reserved_until: string;
           p_seats: Json;
+          p_session?: string | null;
         };
         Returns: undefined;
+      };
+      hold_seats: {
+        Args: {
+          p_event_id: string;
+          p_event_date_id: string;
+          p_session: string;
+          p_seats: Json;
+          p_until: string;
+        };
+        Returns: { seat_id: string }[];
+      };
+      release_holds: {
+        Args: {
+          p_event_date_id: string;
+          p_session: string;
+          p_seat_id?: string | null;
+        };
+        Returns: number;
+      };
+      extend_holds: {
+        Args: {
+          p_event_date_id: string;
+          p_session: string;
+          p_until: string;
+        };
+        Returns: number;
       };
       next_receipt_number: {
         Args: {
