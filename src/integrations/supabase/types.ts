@@ -1115,6 +1115,7 @@ export type Database = {
           min_order_amount: number;
           note: string | null;
           organizer_id: string | null;
+          remaining_amount: number | null;
           status: string;
           updated_at: string;
           used_count: number;
@@ -1134,6 +1135,7 @@ export type Database = {
           min_order_amount?: number;
           note?: string | null;
           organizer_id?: string | null;
+          remaining_amount?: number | null;
           status?: string;
           updated_at?: string;
           used_count?: number;
@@ -1153,6 +1155,7 @@ export type Database = {
           min_order_amount?: number;
           note?: string | null;
           organizer_id?: string | null;
+          remaining_amount?: number | null;
           status?: string;
           updated_at?: string;
           used_count?: number;
@@ -2330,6 +2333,7 @@ export type Database = {
       release_coupon: {
         Args: {
           p_coupon_id: string;
+          p_amount?: number | null;
         };
         Returns: undefined;
       };

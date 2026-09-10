@@ -88,9 +88,12 @@ function toForm(c: CouponRecord): Form {
 }
 
 function formatValue(c: CouponRecord) {
-  return c.discount_type === "percent"
-    ? `−${c.discount_value} %`
-    : `−€${c.discount_value.toFixed(2)}`;
+  if (c.discount_type === "percent") return `−${c.discount_value} %`;
+  // Darčekový poukaz sa míňa po častiach — rozhoduje zostatok, nie nominál.
+  if (c.remaining_amount !== null) {
+    return `€${c.remaining_amount.toFixed(2)} z €${c.discount_value.toFixed(2)}`;
+  }
+  return `−€${c.discount_value.toFixed(2)}`;
 }
 
 /** Kupón môže byť platný, no už neupotrebiteľný — to treba vidieť na prvý pohľad. */
@@ -99,7 +102,11 @@ function usability(c: CouponRecord): { label: string; tone: "ok" | "warn" | "off
   const today = new Date().toISOString().slice(0, 10);
   if (c.valid_until && c.valid_until < today) return { label: "po platnosti", tone: "off" };
   if (c.valid_from && c.valid_from > today) return { label: "ešte neplatí", tone: "warn" };
-  if (c.max_uses && c.used_count >= c.max_uses) return { label: "vyčerpaný", tone: "off" };
+  if (c.remaining_amount !== null) {
+    if (c.remaining_amount <= 0) return { label: "vyčerpaný", tone: "off" };
+  } else if (c.max_uses && c.used_count >= c.max_uses) {
+    return { label: "vyčerpaný", tone: "off" };
+  }
   return { label: "aktívny", tone: "ok" };
 }
 

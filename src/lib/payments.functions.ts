@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { zabudni } from "./cache.server";
 import { siteUrl } from "./site-url.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
@@ -419,7 +420,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       .select()
       .single();
     if (orderErr || !order) {
-      if (couponId) await releaseCoupon(couponId);
+      if (couponId) await releaseCoupon(couponId, discount);
       throw new Error(orderErr?.message || "Nepodarilo sa vytvoriť objednávku");
     }
 
@@ -434,7 +435,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       })),
     );
     if (itemsErr) {
-      if (couponId) await releaseCoupon(couponId);
+      if (couponId) await releaseCoupon(couponId, discount);
       throw new Error(itemsErr.message);
     }
 
@@ -448,7 +449,7 @@ export const submitOrder = createServerFn({ method: "POST" })
     if (capErr) {
       await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
       await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      if (couponId) await releaseCoupon(couponId);
+      if (couponId) await releaseCoupon(couponId, discount);
       const zostava = capErr.message?.match(/CAPACITY_EXCEEDED:(\d+)/)?.[1];
       throw new Error(
         zostava && Number(zostava) > 0
@@ -474,11 +475,14 @@ export const submitOrder = createServerFn({ method: "POST" })
           is_vip: s.is_vip,
         })),
       });
+      // Mapa sedadiel sa dve sekundy pamätá — po skutočnej rezervácii ju
+      // zahodíme, nech ďalší kupujúci nevidí sedadlo, ktoré už niekto drží.
+      zabudni(`dostupnost:${eventDate.id}`);
       if (seatErr) {
         // Objednávka ostala bez sedadiel — zmažeme ju, nech nezavadzia.
         await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
         await supabaseAdmin.from("orders").delete().eq("id", order.id);
-        if (couponId) await releaseCoupon(couponId);
+        if (couponId) await releaseCoupon(couponId, discount);
         throw new Error(
           seatErr.message?.includes("SEATS_TAKEN")
             ? "Niektoré sedadlá si medzitým vzal iný kupujúci. Vyber prosím iné."

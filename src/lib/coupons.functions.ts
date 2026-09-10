@@ -41,6 +41,8 @@ export type CouponRecord = {
   created_at: string;
   /** Koľko peňazí kupón doteraz rozdal. */
   discount_total: number;
+  /** Zostatok darčekového poukazu. NULL = bežný kupón, míňa sa naraz. */
+  remaining_amount: number | null;
 };
 
 async function isAdmin(userId: string): Promise<boolean> {
@@ -62,7 +64,7 @@ export const listCoupons = createServerFn({ method: "POST" })
     let q = supabaseAdmin
       .from("coupons")
       .select(
-        "id, code, organizer_id, event_id, discount_type, discount_value, max_uses, max_uses_per_email, used_count, min_order_amount, valid_from, valid_until, status, note, created_at",
+        "id, code, organizer_id, event_id, discount_type, discount_value, max_uses, max_uses_per_email, used_count, min_order_amount, valid_from, valid_until, status, note, created_at, remaining_amount",
       )
       .order("created_at", { ascending: false });
     if (!admin) q = q.eq("organizer_id", context.userId);
@@ -118,6 +120,7 @@ export const listCoupons = createServerFn({ method: "POST" })
       status: c.status === "paused" ? "paused" : "active",
       note: c.note,
       created_at: c.created_at,
+      remaining_amount: c.remaining_amount === null ? null : Number(c.remaining_amount),
       discount_total: Math.round((discountTotal.get(c.id) || 0) * 100) / 100,
     }));
   });

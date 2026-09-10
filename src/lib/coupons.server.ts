@@ -58,9 +58,18 @@ export async function checkCoupon(opts: {
   return { ok: true, coupon_id: row.coupon_id as string, discount: Number(row.discount || 0) };
 }
 
-/** Vráti použitie kupónu späť. Volaj, keď objednávka po uplatnení zlyhá. */
-export async function releaseCoupon(couponId: string): Promise<void> {
-  const { error } = await supabaseAdmin.rpc("release_coupon", { p_coupon_id: couponId });
+/**
+ * Vráti použitie kupónu späť. Volaj, keď objednávka po uplatnení zlyhá.
+ *
+ * `discount` je suma, ktorá sa kupónom uplatnila. Pri darčekovom poukaze sa
+ * o ňu vráti zostatok — bez nej by poukaz o tú časť hodnoty prišiel, hoci
+ * zákazník nič nezaplatil. Bežný kupón ju ignoruje.
+ */
+export async function releaseCoupon(couponId: string, discount?: number): Promise<void> {
+  const { error } = await supabaseAdmin.rpc("release_coupon", {
+    p_coupon_id: couponId,
+    p_amount: typeof discount === "number" ? discount : null,
+  });
   if (error) console.error("release_coupon zlyhalo", couponId, error.message);
 }
 

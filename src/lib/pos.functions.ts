@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { zabudni } from "./cache.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { newSignedTicket } from "./qr-token.server";
 import { loadSeatPricing } from "./seat-pricing.server";
@@ -700,7 +701,7 @@ export const createPosSale = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (orderErr || !order) {
-      if (couponId) await releaseCoupon(couponId);
+      if (couponId) await releaseCoupon(couponId, discount);
       throw new Error(orderErr?.message || "Predaj sa nepodarilo uložiť");
     }
 
@@ -715,7 +716,7 @@ export const createPosSale = createServerFn({ method: "POST" })
       })),
     );
     if (itemsErr) {
-      if (couponId) await releaseCoupon(couponId);
+      if (couponId) await releaseCoupon(couponId, discount);
       throw new Error(itemsErr.message);
     }
 
@@ -727,7 +728,7 @@ export const createPosSale = createServerFn({ method: "POST" })
     if (capErr) {
       await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
       await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      if (couponId) await releaseCoupon(couponId);
+      if (couponId) await releaseCoupon(couponId, discount);
       const zostava = capErr.message?.match(/CAPACITY_EXCEEDED:(\d+)/)?.[1];
       throw new Error(
         zostava && Number(zostava) > 0 ? `K dispozícii je už len ${zostava} ks.` : "Vypredané.",
@@ -750,10 +751,12 @@ export const createPosSale = createServerFn({ method: "POST" })
           is_vip: s.is_vip,
         })),
       });
+      // Rovnako ako na webe: po rezervácii zahodíme zapamätanú mapu sedadiel.
+      zabudni(`dostupnost:${eventDate.id}`);
       if (seatErr) {
         await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
         await supabaseAdmin.from("orders").delete().eq("id", order.id);
-        if (couponId) await releaseCoupon(couponId);
+        if (couponId) await releaseCoupon(couponId, discount);
         throw new Error(
           seatErr.message?.includes("SEATS_TAKEN")
             ? "Niektoré sedadlá si medzitým vzal iný kupujúci."
