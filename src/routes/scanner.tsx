@@ -90,6 +90,21 @@ type EventInfo = {
   scanner_token: string;
 };
 
+// Vstupenky z pôvodného systému nesú 12-miestny číselný kód vytlačený ako
+// čiarový, nie QR. Server ich pozná (hľadá podľa `tickets.qr_code`), ale kamera
+// by ich pri samotnom `qr_code` preskočila, tak čítame aj čiarové symboliky.
+const FORMATY_VSTUPENKY = [
+  "qr_code",
+  "ean_13",
+  "ean_8",
+  "upc_a",
+  "upc_e",
+  "code_128",
+  "code_39",
+  "itf",
+  "codabar",
+] as const;
+
 export const Route = createFileRoute("/scanner")({
   // Návratový typ má kľúče voliteľné — inak by TanStack vyžadoval `search`
   // pri každom <Link to="/scanner">.
@@ -451,7 +466,7 @@ function ScannerPage() {
                 <Scanner
                   onScan={handleDetected}
                   constraints={{ facingMode: facing }}
-                  formats={["qr_code"]}
+                  formats={[...FORMATY_VSTUPENKY]}
                   components={{ finder: true, torch: false }}
                   styles={{ container: { height: "100%", width: "100%" } }}
                 />
@@ -500,7 +515,7 @@ function ScannerPage() {
             {manualOpen && (
               <div className="p-3 border-t border-border/40 flex gap-2">
                 <Input
-                  placeholder="MT2.xxxxx.yyyyy"
+                  placeholder="MT2.xxxxx.yyyyy alebo 703625741380"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
                   className="rounded-xl"
