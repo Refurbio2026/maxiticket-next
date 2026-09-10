@@ -87,23 +87,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "eticketo.eu" },
       {
         name: "twitter:description",
         content:
           "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
       },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/08198c61-f32f-4a0a-83c9-b29624671e41/id-preview-097e51e0--dff07d0a-f011-4a35-b195-c8c7bc1b200f.lovable.app-1780556826884.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/08198c61-f32f-4a0a-83c9-b29624671e41/id-preview-097e51e0--dff07d0a-f011-4a35-b195-c8c7bc1b200f.lovable.app-1780556826884.png",
-      },
+      // Náhľad pri zdieľaní. Predtým to bol screenshot starého webu na cudzom
+      // CDN — bola na ňom značka „maxiticket", takže každý zdieľaný odkaz
+      // ukazoval starý názov. Obrázok je odteraz náš, v `public/og.png`.
+      // Adresa musí byť absolútna, inak si ju sociálne siete nedotiahnu.
+      { property: "og:image", content: "https://eticketo.eu/og.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:image", content: "https://eticketo.eu/og.png" },
     ],
     links: [
       {

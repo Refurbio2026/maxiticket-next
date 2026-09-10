@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Instagram, Facebook, Youtube, Twitter } from "lucide-react";
 import { listFooterPages } from "@/lib/site-pages.functions";
 import { useI18n } from "@/hooks/use-i18n";
-import logo from "@/assets/logo.png";
+import { Wordmark } from "@/components/site/Wordmark";
 
 type Col = { titleKey: string; l: { labelKey: string; to: string }[] };
 
@@ -59,7 +59,7 @@ export function Footer() {
         <div className="grid lg:grid-cols-5 gap-10">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="eticketo.eu" className="h-9 w-auto dark:invert" />
+              <Wordmark />
             </Link>
 
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">{t("footer.tagline")}</p>

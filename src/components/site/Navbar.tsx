@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import logo from "@/assets/logo.png";
+import { Wordmark } from "@/components/site/Wordmark";
 
 const NAV_LINKS: { key: string; to: string }[] = [
   { key: "nav.events", to: "/events" },
@@ -38,7 +38,7 @@ export function Navbar() {
             className="flex items-center gap-2 group shrink-0"
             onClick={() => setOpen(false)}
           >
-            <img src={logo} alt="eticketo.eu" className="h-9 w-auto dark:invert" />
+            <Wordmark />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-foreground/80">
