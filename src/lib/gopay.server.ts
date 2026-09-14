@@ -84,14 +84,10 @@ export async function createGoPayPayment(input: CreatePaymentInput): Promise<Cre
   const token = await getAccessToken("payment-create");
   const body = {
     payer: {
-      default_payment_instrument: "PAYMENT_CARD",
-      allowed_payment_instruments: [
-        "PAYMENT_CARD",
-        "BANK_ACCOUNT",
-        "GOPAY",
-        "APPLE_PAY",
-        "GOOGLE_PAY",
-      ],
+      // Zoznam povolených metód zámerne neposielame — GoPay ukáže tie, ktoré
+      // má daný účet (GoID) zapnuté. Pevný zoznam by pri účte bez niektorej
+      // metódy spadol na 409 (napr. sandbox nemá peňaženku GOPAY a Google Pay
+      // volá GPAY, nie GOOGLE_PAY).
       contact: {
         first_name: input.customer.firstName || "",
         last_name: input.customer.lastName || "",
