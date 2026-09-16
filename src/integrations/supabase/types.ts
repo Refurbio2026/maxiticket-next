@@ -192,6 +192,9 @@ export type Database = {
       };
       orders: {
         Row: {
+          previous_vs: number[];
+          transfer_due_at: string | null;
+          transfer_reminder_sent_at: string | null;
           created_at: string;
           currency: string;
           customer_company: string | null;
@@ -242,6 +245,9 @@ export type Database = {
           user_id: string | null;
         };
         Insert: {
+          previous_vs?: number[];
+          transfer_due_at?: string | null;
+          transfer_reminder_sent_at?: string | null;
           created_at?: string;
           currency?: string;
           customer_company?: string | null;
@@ -292,6 +298,9 @@ export type Database = {
           user_id?: string | null;
         };
         Update: {
+          previous_vs?: number[];
+          transfer_due_at?: string | null;
+          transfer_reminder_sent_at?: string | null;
           created_at?: string;
           currency?: string;
           customer_company?: string | null;
@@ -444,18 +453,39 @@ export type Database = {
       };
       platform_settings: {
         Row: {
+          transfer_bank_name: string | null;
+          transfer_days_to_cancel: number;
+          transfer_days_to_reminder: number;
+          transfer_enabled: boolean;
+          transfer_holder: string | null;
+          transfer_iban: string | null;
+          transfer_seated_allowed: boolean;
           default_commission_rate: number;
           default_vat_rate: number;
           id: boolean;
           updated_at: string;
         };
         Insert: {
+          transfer_bank_name?: string | null;
+          transfer_days_to_cancel?: number;
+          transfer_days_to_reminder?: number;
+          transfer_enabled?: boolean;
+          transfer_holder?: string | null;
+          transfer_iban?: string | null;
+          transfer_seated_allowed?: boolean;
           default_commission_rate?: number;
           default_vat_rate?: number;
           id?: boolean;
           updated_at?: string;
         };
         Update: {
+          transfer_bank_name?: string | null;
+          transfer_days_to_cancel?: number;
+          transfer_days_to_reminder?: number;
+          transfer_enabled?: boolean;
+          transfer_holder?: string | null;
+          transfer_iban?: string | null;
+          transfer_seated_allowed?: boolean;
           default_commission_rate?: number;
           default_vat_rate?: number;
           id?: boolean;
@@ -1564,41 +1594,203 @@ export type Database = {
         };
         Relationships: [];
       };
+      audit_log: {
+        Row: {
+          action: string;
+          actor: string | null;
+          after: Json | null;
+          at: string;
+          before: Json | null;
+          entity: string;
+          entity_id: string;
+          id: string;
+          reason: string | null;
+        };
+        Insert: {
+          action: string;
+          actor?: string | null;
+          after?: Json | null;
+          at?: string;
+          before?: Json | null;
+          entity: string;
+          entity_id: string;
+          id?: string;
+          reason?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor?: string | null;
+          after?: Json | null;
+          at?: string;
+          before?: Json | null;
+          entity?: string;
+          entity_id?: string;
+          id?: string;
+          reason?: string | null;
+        };
+        Relationships: [];
+      };
       bank_accounts: {
         Row: {
           account_name: string;
+          active: boolean;
           balance: number;
           bank_name: string;
           connected: boolean;
           created_at: string;
           currency: string;
-          iban: string;
+          iban: string | null;
           id: string;
+          kind: string;
           last_sync_at: string | null;
+          owner_name: string | null;
+          provider: string | null;
+          psp_key: string | null;
           updated_at: string;
         };
         Insert: {
           account_name: string;
+          active?: boolean;
           balance?: number;
           bank_name: string;
           connected?: boolean;
           created_at?: string;
           currency?: string;
-          iban: string;
+          iban?: string | null;
           id?: string;
+          kind?: string;
           last_sync_at?: string | null;
+          owner_name?: string | null;
+          provider?: string | null;
+          psp_key?: string | null;
           updated_at?: string;
         };
         Update: {
           account_name?: string;
+          active?: boolean;
           balance?: number;
           bank_name?: string;
           connected?: boolean;
           created_at?: string;
           currency?: string;
-          iban?: string;
+          iban?: string | null;
           id?: string;
+          kind?: string;
           last_sync_at?: string | null;
+          owner_name?: string | null;
+          provider?: string | null;
+          psp_key?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      bank_statement_sources: {
+        Row: {
+          account_id: string;
+          config: Json;
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          kind: string;
+          last_error: string | null;
+          last_error_at: string | null;
+          last_success_at: string | null;
+          name: string;
+          provider: string;
+          secret_enc: string | null;
+          updated_at: string;
+          window_days: number;
+        };
+        Insert: {
+          account_id: string;
+          config?: Json;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          kind: string;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_success_at?: string | null;
+          name: string;
+          provider: string;
+          secret_enc?: string | null;
+          updated_at?: string;
+          window_days?: number;
+        };
+        Update: {
+          account_id?: string;
+          config?: Json;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          kind?: string;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_success_at?: string | null;
+          name?: string;
+          provider?: string;
+          secret_enc?: string | null;
+          updated_at?: string;
+          window_days?: number;
+        };
+        Relationships: [];
+      };
+      bank_statements: {
+        Row: {
+          account_id: string;
+          charges_sum: number;
+          closing_balance: number | null;
+          credit_count: number;
+          credit_sum: number;
+          currency: string;
+          debit_count: number;
+          debit_sum: number;
+          file_name: string | null;
+          id: string;
+          imported_at: string;
+          imported_by: string | null;
+          opening_balance: number | null;
+          period_from: string;
+          period_to: string;
+          source_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          account_id: string;
+          charges_sum?: number;
+          closing_balance?: number | null;
+          credit_count?: number;
+          credit_sum?: number;
+          currency?: string;
+          debit_count?: number;
+          debit_sum?: number;
+          file_name?: string | null;
+          id?: string;
+          imported_at?: string;
+          imported_by?: string | null;
+          opening_balance?: number | null;
+          period_from: string;
+          period_to: string;
+          source_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          account_id?: string;
+          charges_sum?: number;
+          closing_balance?: number | null;
+          credit_count?: number;
+          credit_sum?: number;
+          currency?: string;
+          debit_count?: number;
+          debit_sum?: number;
+          file_name?: string | null;
+          id?: string;
+          imported_at?: string;
+          imported_by?: string | null;
+          opening_balance?: number | null;
+          period_from?: string;
+          period_to?: string;
+          source_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -1607,67 +1799,295 @@ export type Database = {
         Row: {
           account_id: string;
           amount: number;
-          booked_on: string;
+          booked_at: string;
+          constant_symbol: string | null;
           counterparty_iban: string | null;
           counterparty_name: string | null;
           created_at: string;
           currency: string;
+          duplicate_of: string | null;
           external_id: string | null;
           id: string;
-          match_status: string;
+          manual_change: boolean;
           matched_order_id: string | null;
           message: string | null;
+          note: string | null;
+          provider_tx_id: string | null;
+          raw_payload_enc: string | null;
+          received_at: string;
+          review_reason: string | null;
+          source_id: string | null;
+          specific_symbol: string | null;
+          statement_id: string | null;
+          status: string;
           updated_at: string;
+          value_date: string | null;
           variable_symbol: string | null;
+          vs_normalized: string | null;
         };
         Insert: {
           account_id: string;
           amount: number;
-          booked_on: string;
+          booked_at: string;
+          constant_symbol?: string | null;
           counterparty_iban?: string | null;
           counterparty_name?: string | null;
           created_at?: string;
           currency?: string;
+          duplicate_of?: string | null;
           external_id?: string | null;
           id?: string;
-          match_status?: string;
+          manual_change?: boolean;
           matched_order_id?: string | null;
           message?: string | null;
+          note?: string | null;
+          provider_tx_id?: string | null;
+          raw_payload_enc?: string | null;
+          received_at?: string;
+          review_reason?: string | null;
+          source_id?: string | null;
+          specific_symbol?: string | null;
+          statement_id?: string | null;
+          status?: string;
           updated_at?: string;
+          value_date?: string | null;
           variable_symbol?: string | null;
+          vs_normalized?: string | null;
         };
         Update: {
           account_id?: string;
           amount?: number;
-          booked_on?: string;
+          booked_at?: string;
+          constant_symbol?: string | null;
           counterparty_iban?: string | null;
           counterparty_name?: string | null;
           created_at?: string;
           currency?: string;
+          duplicate_of?: string | null;
           external_id?: string | null;
           id?: string;
-          match_status?: string;
+          manual_change?: boolean;
           matched_order_id?: string | null;
           message?: string | null;
+          note?: string | null;
+          provider_tx_id?: string | null;
+          raw_payload_enc?: string | null;
+          received_at?: string;
+          review_reason?: string | null;
+          source_id?: string | null;
+          specific_symbol?: string | null;
+          statement_id?: string | null;
+          status?: string;
           updated_at?: string;
+          value_date?: string | null;
           variable_symbol?: string | null;
+          vs_normalized?: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: "bank_transactions_account_id_fkey";
-            columns: ["account_id"];
-            isOneToOne: false;
-            referencedRelation: "bank_accounts";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "bank_transactions_matched_order_id_fkey";
-            columns: ["matched_order_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
+      };
+      job_runs: {
+        Row: {
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          job: string;
+          started_at: string;
+          stats: Json | null;
+          status: string;
+        };
+        Insert: {
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          job: string;
+          started_at?: string;
+          stats?: Json | null;
+          status?: string;
+        };
+        Update: {
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          job?: string;
+          started_at?: string;
+          stats?: Json | null;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      matching_rules: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          note: string | null;
+          params: Json;
+          priority: number;
+          rule_code: string;
+          scope: string;
+          tolerance: number;
+          updated_at: string;
+          valid_from: string | null;
+          valid_to: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          note?: string | null;
+          params?: Json;
+          priority: number;
+          rule_code: string;
+          scope: string;
+          tolerance?: number;
+          updated_at?: string;
+          valid_from?: string | null;
+          valid_to?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          note?: string | null;
+          params?: Json;
+          priority?: number;
+          rule_code?: string;
+          scope?: string;
+          tolerance?: number;
+          updated_at?: string;
+          valid_from?: string | null;
+          valid_to?: string | null;
+        };
+        Relationships: [];
+      };
+      sk_holidays: {
+        Row: {
+          day: string;
+          name: string;
+        };
+        Insert: {
+          day: string;
+          name: string;
+        };
+        Update: {
+          day?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
+      refund_tasks: {
+        Row: {
+          amount: number;
+          approved_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          export_batch_id: string | null;
+          holder_name: string | null;
+          iban: string | null;
+          id: string;
+          note: string | null;
+          order_id: string | null;
+          outgoing_transaction_id: string | null;
+          reason: string;
+          reject_reason: string | null;
+          status: string;
+          transaction_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          amount: number;
+          approved_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          export_batch_id?: string | null;
+          holder_name?: string | null;
+          iban?: string | null;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          outgoing_transaction_id?: string | null;
+          reason: string;
+          reject_reason?: string | null;
+          status?: string;
+          transaction_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          approved_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          export_batch_id?: string | null;
+          holder_name?: string | null;
+          iban?: string | null;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          outgoing_transaction_id?: string | null;
+          reason?: string;
+          reject_reason?: string | null;
+          status?: string;
+          transaction_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      transaction_matches: {
+        Row: {
+          refund_task_id: string | null;
+          confidence: number;
+          decided_at: string;
+          decided_by: string;
+          decided_by_user: string | null;
+          decision: string;
+          difference: number | null;
+          expected_amount: number | null;
+          id: string;
+          note: string | null;
+          order_id: string | null;
+          paid_amount: number | null;
+          rule_code: string;
+          settlement_id: string | null;
+          transaction_id: string;
+        };
+        Insert: {
+          refund_task_id?: string | null;
+          confidence?: number;
+          decided_at?: string;
+          decided_by?: string;
+          decided_by_user?: string | null;
+          decision: string;
+          difference?: number | null;
+          expected_amount?: number | null;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          paid_amount?: number | null;
+          rule_code: string;
+          settlement_id?: string | null;
+          transaction_id: string;
+        };
+        Update: {
+          refund_task_id?: string | null;
+          confidence?: number;
+          decided_at?: string;
+          decided_by?: string;
+          decided_by_user?: string | null;
+          decision?: string;
+          difference?: number | null;
+          expected_amount?: number | null;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          paid_amount?: number | null;
+          rule_code?: string;
+          settlement_id?: string | null;
+          transaction_id?: string;
+        };
+        Relationships: [];
       };
       fiscal_settings: {
         Row: {
@@ -2300,6 +2720,22 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      add_business_days: {
+        Args: { p_days: number; p_from: string };
+        Returns: string;
+      };
+      is_business_day: {
+        Args: { p_day: string };
+        Returns: boolean;
+      };
+      start_job_run: {
+        Args: { p_job: string; p_ttl_minutes?: number };
+        Returns: string | null;
+      };
+      finish_job_run: {
+        Args: { p_error?: string | null; p_id: string; p_stats?: Json | null; p_status: string };
+        Returns: undefined;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
@@ -2428,7 +2864,7 @@ export type Database = {
       event_status: "draft" | "published" | "cancelled";
       order_status:
         "pending" | "awaiting_payment" | "paid" | "failed" | "cancelled" | "refunded" | "expired";
-      payment_provider: "gopay" | "gpwebpay" | "tatrapayplus";
+      payment_provider: "gopay" | "gpwebpay" | "tatrapayplus" | "prevod";
       payment_status: "pending" | "authorized" | "paid" | "failed" | "cancelled" | "refunded";
       sale_type: "standing" | "seating" | "seating_map";
       seat_status: "available" | "reserved" | "sold";
@@ -2566,7 +3002,7 @@ export const Constants = {
         "refunded",
         "expired",
       ],
-      payment_provider: ["gopay", "gpwebpay", "tatrapayplus"],
+      payment_provider: ["gopay", "gpwebpay", "tatrapayplus", "prevod"],
       payment_status: ["pending", "authorized", "paid", "failed", "cancelled", "refunded"],
       sale_type: ["standing", "seating", "seating_map"],
       seat_status: ["available", "reserved", "sold"],

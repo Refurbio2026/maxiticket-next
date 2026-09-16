@@ -40,6 +40,7 @@ import {
   TrendingUp,
   Flame,
   Megaphone,
+  HelpCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -105,6 +106,11 @@ const groups: Group[] = [
         title: "Účtovanie / výpisy z banky",
         url: "/admin/eticketo/accounting-bank",
         icon: Landmark,
+      },
+      {
+        title: "Nespárované platby",
+        url: "/admin/eticketo/bank-unmatched",
+        icon: HelpCircle,
       },
       {
         title: "Účtovanie / report",

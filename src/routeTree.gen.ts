@@ -42,6 +42,7 @@ import { Route as AdminEticketoAccountingBankRouteImport } from './routes/admin.
 import { Route as AdminEticketoAccountingChecksRouteImport } from './routes/admin.eticketo.accounting-checks'
 import { Route as AdminEticketoAccountingReportRouteImport } from './routes/admin.eticketo.accounting-report'
 import { Route as AdminEticketoBalancesRouteImport } from './routes/admin.eticketo.balances'
+import { Route as AdminEticketoBankUnmatchedRouteImport } from './routes/admin.eticketo.bank-unmatched'
 import { Route as AdminEticketoBillingRouteImport } from './routes/admin.eticketo.billing'
 import { Route as AdminEticketoControlRouteImport } from './routes/admin.eticketo.control'
 import { Route as AdminEticketoCostsRouteImport } from './routes/admin.eticketo.costs'
@@ -74,6 +75,7 @@ import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.user
 import { Route as AdminSystemWalletRouteImport } from './routes/admin.system.wallet'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
 import { Route as CheckoutSuccessOrderIdRouteImport } from './routes/checkout.success.$orderId'
+import { Route as CheckoutTransferOrderIdRouteImport } from './routes/checkout.transfer.$orderId'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
 import { Route as OrganizerEventsNewRouteImport } from './routes/organizer.events.new'
 import { Route as OrganizerMarketingIndexRouteImport } from './routes/organizer.marketing.index'
@@ -264,6 +266,12 @@ const AdminEticketoBalancesRoute = AdminEticketoBalancesRouteImport.update({
   path: '/eticketo/balances',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEticketoBankUnmatchedRoute =
+  AdminEticketoBankUnmatchedRouteImport.update({
+    id: '/eticketo/bank-unmatched',
+    path: '/eticketo/bank-unmatched',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminEticketoBillingRoute = AdminEticketoBillingRouteImport.update({
   id: '/eticketo/billing',
   path: '/eticketo/billing',
@@ -426,6 +434,11 @@ const CheckoutSuccessOrderIdRoute = CheckoutSuccessOrderIdRouteImport.update({
   path: '/checkout/success/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutTransferOrderIdRoute = CheckoutTransferOrderIdRouteImport.update({
+  id: '/checkout/transfer/$orderId',
+  path: '/checkout/transfer/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrganizerEventsIndexRoute = OrganizerEventsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -568,6 +581,7 @@ export interface FileRoutesByFullPath {
   '/admin/eticketo/accounting-checks': typeof AdminEticketoAccountingChecksRoute
   '/admin/eticketo/accounting-report': typeof AdminEticketoAccountingReportRoute
   '/admin/eticketo/balances': typeof AdminEticketoBalancesRoute
+  '/admin/eticketo/bank-unmatched': typeof AdminEticketoBankUnmatchedRoute
   '/admin/eticketo/billing': typeof AdminEticketoBillingRoute
   '/admin/eticketo/control': typeof AdminEticketoControlRoute
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
@@ -600,6 +614,7 @@ export interface FileRoutesByFullPath {
   '/admin/system/wallet': typeof AdminSystemWalletRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
+  '/checkout/transfer/$orderId': typeof CheckoutTransferOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashier-sales': typeof OrganizerPosCashierSalesRoute
@@ -651,6 +666,7 @@ export interface FileRoutesByTo {
   '/admin/eticketo/accounting-checks': typeof AdminEticketoAccountingChecksRoute
   '/admin/eticketo/accounting-report': typeof AdminEticketoAccountingReportRoute
   '/admin/eticketo/balances': typeof AdminEticketoBalancesRoute
+  '/admin/eticketo/bank-unmatched': typeof AdminEticketoBankUnmatchedRoute
   '/admin/eticketo/billing': typeof AdminEticketoBillingRoute
   '/admin/eticketo/control': typeof AdminEticketoControlRoute
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
@@ -683,6 +699,7 @@ export interface FileRoutesByTo {
   '/admin/system/wallet': typeof AdminSystemWalletRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
+  '/checkout/transfer/$orderId': typeof CheckoutTransferOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashier-sales': typeof OrganizerPosCashierSalesRoute
@@ -739,6 +756,7 @@ export interface FileRoutesById {
   '/admin/eticketo/accounting-checks': typeof AdminEticketoAccountingChecksRoute
   '/admin/eticketo/accounting-report': typeof AdminEticketoAccountingReportRoute
   '/admin/eticketo/balances': typeof AdminEticketoBalancesRoute
+  '/admin/eticketo/bank-unmatched': typeof AdminEticketoBankUnmatchedRoute
   '/admin/eticketo/billing': typeof AdminEticketoBillingRoute
   '/admin/eticketo/control': typeof AdminEticketoControlRoute
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
@@ -771,6 +789,7 @@ export interface FileRoutesById {
   '/admin/system/wallet': typeof AdminSystemWalletRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
+  '/checkout/transfer/$orderId': typeof CheckoutTransferOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
   '/organizer/marketing/new': typeof OrganizerMarketingNewRoute
   '/organizer/pos/cashier-sales': typeof OrganizerPosCashierSalesRoute
@@ -828,6 +847,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/accounting-checks'
     | '/admin/eticketo/accounting-report'
     | '/admin/eticketo/balances'
+    | '/admin/eticketo/bank-unmatched'
     | '/admin/eticketo/billing'
     | '/admin/eticketo/control'
     | '/admin/eticketo/costs'
@@ -860,6 +880,7 @@ export interface FileRouteTypes {
     | '/admin/system/wallet'
     | '/api/public/seed-demo'
     | '/checkout/success/$orderId'
+    | '/checkout/transfer/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
     | '/organizer/pos/cashier-sales'
@@ -911,6 +932,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/accounting-checks'
     | '/admin/eticketo/accounting-report'
     | '/admin/eticketo/balances'
+    | '/admin/eticketo/bank-unmatched'
     | '/admin/eticketo/billing'
     | '/admin/eticketo/control'
     | '/admin/eticketo/costs'
@@ -943,6 +965,7 @@ export interface FileRouteTypes {
     | '/admin/system/wallet'
     | '/api/public/seed-demo'
     | '/checkout/success/$orderId'
+    | '/checkout/transfer/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
     | '/organizer/pos/cashier-sales'
@@ -998,6 +1021,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/accounting-checks'
     | '/admin/eticketo/accounting-report'
     | '/admin/eticketo/balances'
+    | '/admin/eticketo/bank-unmatched'
     | '/admin/eticketo/billing'
     | '/admin/eticketo/control'
     | '/admin/eticketo/costs'
@@ -1030,6 +1054,7 @@ export interface FileRouteTypes {
     | '/admin/system/wallet'
     | '/api/public/seed-demo'
     | '/checkout/success/$orderId'
+    | '/checkout/transfer/$orderId'
     | '/organizer/events/new'
     | '/organizer/marketing/new'
     | '/organizer/pos/cashier-sales'
@@ -1073,6 +1098,7 @@ export interface RootRouteChildren {
   PSlugRoute: typeof PSlugRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
+  CheckoutTransferOrderIdRoute: typeof CheckoutTransferOrderIdRoute
   ApiPublicEventsByTokenRoute: typeof ApiPublicEventsByTokenRoute
   ApiPublicPaymentsReconcileRoute: typeof ApiPublicPaymentsReconcileRoute
   ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
@@ -1316,6 +1342,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEticketoBalancesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/eticketo/bank-unmatched': {
+      id: '/admin/eticketo/bank-unmatched'
+      path: '/eticketo/bank-unmatched'
+      fullPath: '/admin/eticketo/bank-unmatched'
+      preLoaderRoute: typeof AdminEticketoBankUnmatchedRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/eticketo/billing': {
       id: '/admin/eticketo/billing'
       path: '/eticketo/billing'
@@ -1540,6 +1573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/transfer/$orderId': {
+      id: '/checkout/transfer/$orderId'
+      path: '/checkout/transfer/$orderId'
+      fullPath: '/checkout/transfer/$orderId'
+      preLoaderRoute: typeof CheckoutTransferOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/organizer/events/': {
       id: '/organizer/events/'
       path: '/'
@@ -1707,6 +1747,7 @@ interface AdminRouteChildren {
   AdminEticketoAccountingChecksRoute: typeof AdminEticketoAccountingChecksRoute
   AdminEticketoAccountingReportRoute: typeof AdminEticketoAccountingReportRoute
   AdminEticketoBalancesRoute: typeof AdminEticketoBalancesRoute
+  AdminEticketoBankUnmatchedRoute: typeof AdminEticketoBankUnmatchedRoute
   AdminEticketoBillingRoute: typeof AdminEticketoBillingRoute
   AdminEticketoControlRoute: typeof AdminEticketoControlRoute
   AdminEticketoCostsRoute: typeof AdminEticketoCostsRoute
@@ -1751,6 +1792,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEticketoAccountingChecksRoute: AdminEticketoAccountingChecksRoute,
   AdminEticketoAccountingReportRoute: AdminEticketoAccountingReportRoute,
   AdminEticketoBalancesRoute: AdminEticketoBalancesRoute,
+  AdminEticketoBankUnmatchedRoute: AdminEticketoBankUnmatchedRoute,
   AdminEticketoBillingRoute: AdminEticketoBillingRoute,
   AdminEticketoControlRoute: AdminEticketoControlRoute,
   AdminEticketoCostsRoute: AdminEticketoCostsRoute,
@@ -1874,6 +1916,7 @@ const rootRouteChildren: RootRouteChildren = {
   PSlugRoute: PSlugRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
+  CheckoutTransferOrderIdRoute: CheckoutTransferOrderIdRoute,
   ApiPublicEventsByTokenRoute: ApiPublicEventsByTokenRoute,
   ApiPublicPaymentsReconcileRoute: ApiPublicPaymentsReconcileRoute,
   ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,

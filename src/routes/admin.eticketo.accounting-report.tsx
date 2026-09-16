@@ -113,7 +113,7 @@ function Page() {
               <SelectItem value="all">Všetky účty</SelectItem>
               {(accounts.data ?? []).map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {a.bank_name} · {a.iban.slice(-6)}
+                  {a.bank_name} · {(a.iban ?? a.psp_key ?? "").slice(-6)}
                 </SelectItem>
               ))}
             </SelectContent>

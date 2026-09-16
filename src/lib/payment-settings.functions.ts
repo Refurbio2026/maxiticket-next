@@ -325,3 +325,78 @@ export const savePaymentCredentials = createServerFn({ method: "POST" })
     await ulozPristupy(data.provider, zmeny, context.userId);
     return { ok: true, ulozene: Object.keys(zmeny) };
   });
+
+// --- Platba prevodom na účet -------------------------------------------
+// Nie je to brána, takže nemá prístupy ani test spojenia. Je to účet, na
+// ktorý zákazník pošle peniaze, a lehota, dokedy to má stihnúť.
+
+export type NastaveniePrevoduAdmin = {
+  enabled: boolean;
+  days_to_reminder: number;
+  days_to_cancel: number;
+  seated_allowed: boolean;
+  iban: string | null;
+  holder: string | null;
+  bank_name: string | null;
+};
+
+export const getTransferSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<NastaveniePrevoduAdmin> => {
+    await assertAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("platform_settings")
+      .select(
+        "transfer_enabled, transfer_days_to_reminder, transfer_days_to_cancel, transfer_seated_allowed, transfer_iban, transfer_holder, transfer_bank_name",
+      )
+      .eq("id", true)
+      .maybeSingle();
+    return {
+      enabled: Boolean(data?.transfer_enabled),
+      days_to_reminder: data?.transfer_days_to_reminder ?? 2,
+      days_to_cancel: data?.transfer_days_to_cancel ?? 2,
+      seated_allowed: Boolean(data?.transfer_seated_allowed),
+      iban: data?.transfer_iban ?? null,
+      holder: data?.transfer_holder ?? null,
+      bank_name: data?.transfer_bank_name ?? null,
+    };
+  });
+
+export const updateTransferSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        enabled: z.boolean(),
+        days_to_reminder: z.number().int().min(1).max(30),
+        days_to_cancel: z.number().int().min(1).max(30),
+        seated_allowed: z.boolean(),
+        iban: z.string().max(50).optional().nullable(),
+        holder: z.string().max(200).optional().nullable(),
+        bank_name: z.string().max(200).optional().nullable(),
+      })
+      // Bez účtu nemá zákazník kam poslať peniaze a objednávka by len držala
+      // sedadlá, kým nevyprší. Preto sa kanál bez IBAN-u nedá zapnúť.
+      .refine((d) => !d.enabled || !!d.iban?.trim(), {
+        message: "Platbu prevodom sa nedá zapnúť bez IBAN-u účtu.",
+        path: ["iban"],
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin
+      .from("platform_settings")
+      .update({
+        transfer_enabled: data.enabled,
+        transfer_days_to_reminder: data.days_to_reminder,
+        transfer_days_to_cancel: data.days_to_cancel,
+        transfer_seated_allowed: data.seated_allowed,
+        transfer_iban: data.iban?.replace(/\s+/g, "").toUpperCase() || null,
+        transfer_holder: data.holder?.trim() || null,
+        transfer_bank_name: data.bank_name?.trim() || null,
+      })
+      .eq("id", true);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

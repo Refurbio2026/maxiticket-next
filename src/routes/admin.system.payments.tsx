@@ -8,8 +8,11 @@ import {
   savePaymentCredentials,
   testPaymentGateway,
   updatePaymentGatewaySettings,
+  getTransferSettings,
+  updateTransferSettings,
   type PrehladBrany,
   type PrehladFakturacie,
+  type NastaveniePrevoduAdmin,
 } from "@/lib/payment-settings.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -225,6 +228,16 @@ function PaymentGatewaysPage() {
           />
         ))}
       </div>
+
+      <div>
+        <h2 className="font-display text-xl font-bold tracking-tight mt-6">Platba prevodom</h2>
+        <p className="text-muted-foreground text-sm mt-1">
+          Zákazník dostane variabilný symbol a zaplatí z účtu. Objednávku dokončí až spárovanie
+          bankového výpisu, takže tento kanál dáva zmysel len s naimportovanými pohybmi.
+        </p>
+      </div>
+
+      <TransferCard />
 
       <div>
         <h2 className="font-display text-xl font-bold tracking-tight mt-6">Fakturácia</h2>
@@ -775,5 +788,141 @@ function Adresa({ nazov, hodnota }: { nazov: string; hodnota: string }) {
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Nastavenie platby prevodom.
+ *
+ * Lehoty sú v **pracovných dňoch** a počítajú sa so slovenskými sviatkami —
+ * cez Veľkú noc by inak objednávka vypršala skôr, než banka stihla peniaze
+ * previesť.
+ */
+function TransferCard() {
+  const nacitaj = useServerFn(getTransferSettings);
+  const uloz = useServerFn(updateTransferSettings);
+  const qc = useQueryClient();
+
+  const dotaz = useQuery({
+    queryKey: ["transfer-settings"],
+    queryFn: () => nacitaj({ data: undefined as never }),
+  });
+
+  const [form, setForm] = useState<NastaveniePrevoduAdmin | null>(null);
+  const aktualne = form ?? dotaz.data ?? null;
+
+  const mutacia = useMutation({
+    mutationFn: (v: NastaveniePrevoduAdmin) =>
+      uloz({
+        data: {
+          enabled: v.enabled,
+          days_to_reminder: v.days_to_reminder,
+          days_to_cancel: v.days_to_cancel,
+          seated_allowed: v.seated_allowed,
+          iban: v.iban,
+          holder: v.holder,
+          bank_name: v.bank_name,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transfer-settings"] });
+      toast.success("Nastavenie uložené");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Uloženie zlyhalo"),
+  });
+
+  if (!aktualne) {
+    return (
+      <Card className="bg-card/60 border-border/50 p-5 text-sm text-muted-foreground">
+        Načítavam…
+      </Card>
+    );
+  }
+
+  const uprav = (zmena: Partial<NastaveniePrevoduAdmin>) => setForm({ ...aktualne, ...zmena });
+
+  return (
+    <Card className="bg-card/60 border-border/50 p-5 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Label className="text-sm">Ponúkať platbu prevodom</Label>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+            Bez vyplneného IBAN-u sa kanál zapnúť nedá — zákazník by nemal kam poslať peniaze a
+            objednávka by len držala miesta, kým nevyprší.
+          </p>
+        </div>
+        <Switch checked={aktualne.enabled} onCheckedChange={(v) => uprav({ enabled: v })} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label className="text-sm">IBAN účtu</Label>
+          <Input
+            value={aktualne.iban ?? ""}
+            onChange={(e) => uprav({ iban: e.target.value })}
+            placeholder="SK00 0900 0000 0000 1111 2222"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Majiteľ účtu</Label>
+          <Input
+            value={aktualne.holder ?? ""}
+            onChange={(e) => uprav({ holder: e.target.value })}
+            placeholder="eticketo s.r.o."
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Banka</Label>
+          <Input
+            value={aktualne.bank_name ?? ""}
+            onChange={(e) => uprav({ bank_name: e.target.value })}
+            placeholder="Slovenská sporiteľňa"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label className="text-sm">Pripomienka po (pracovných dňoch)</Label>
+          <Input
+            type="number"
+            min={1}
+            max={30}
+            value={aktualne.days_to_reminder}
+            onChange={(e) => uprav({ days_to_reminder: Number(e.target.value) })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Zrušenie po ďalších (pracovných dňoch)</Label>
+          <Input
+            type="number"
+            min={1}
+            max={30}
+            value={aktualne.days_to_cancel}
+            onChange={(e) => uprav({ days_to_cancel: Number(e.target.value) })}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Label className="text-sm">Povoliť aj pri výbere sedadiel</Label>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+            Objednávka na prevod drží konkrétne sedadlá až do vypršania lehoty, teda niekoľko dní.
+            Pri vypredávaných podujatiach to môže zablokovať predaj — preto je to vypnuté.
+          </p>
+        </div>
+        <Switch
+          checked={aktualne.seated_allowed}
+          onCheckedChange={(v) => uprav({ seated_allowed: v })}
+        />
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => mutacia.mutate(aktualne)} disabled={mutacia.isPending || !form}>
+          Uložiť
+        </Button>
+      </div>
+    </Card>
   );
 }

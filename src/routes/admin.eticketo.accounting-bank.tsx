@@ -24,16 +24,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Landmark, Link2, Link2Off, Loader2, Plus, Trash2, Wand2 } from "lucide-react";
+import { Download, Landmark, Link2, Link2Off, Loader2, Plus, Trash2, Wand2 } from "lucide-react";
 import {
   listBankAccounts,
   upsertBankAccount,
   deleteBankAccount,
   listBankTransactions,
-  autoMatchTransactions,
+  runMatching,
   setTransactionMatch,
   type BankAccountRecord,
 } from "@/lib/bank.functions";
+import {
+  listStatementFormats,
+  importStatementFile,
+  fetchFromSources,
+} from "@/lib/bank-ingest.functions";
 
 export const Route = createFileRoute("/admin/eticketo/accounting-bank")({
   head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · eticketo.eu Admin" }] }),
@@ -68,7 +73,7 @@ function Page() {
   const saveAccount = useServerFn(upsertBankAccount);
   const removeAccount = useServerFn(deleteBankAccount);
   const fetchTransactions = useServerFn(listBankTransactions);
-  const autoMatch = useServerFn(autoMatchTransactions);
+  const autoMatch = useServerFn(runMatching);
   const setMatch = useServerFn(setTransactionMatch);
 
   const [editing, setEditing] = useState<AccountForm | null>(null);
@@ -132,11 +137,17 @@ function Page() {
       autoMatch({ data: { account_id: accountFilter === "all" ? undefined : accountFilter } }),
     onSuccess: (r) => {
       invalidate();
-      toast.success(
-        r.matched > 0
-          ? `Spárovaných ${r.matched} z ${r.checked} pohybov.`
-          : `Žiadny z ${r.checked} pohybov sa nedal spárovať.`,
-      );
+      if (r.spracovanych === 0) {
+        toast.info("Žiadne pohyby nečakali na spárovanie.");
+        return;
+      }
+      const casti = [`spárovaných ${r.sparovanych}`];
+      if (r.dokoncenychObjednavok > 0)
+        casti.push(`dokončených objednávok ${r.dokoncenychObjednavok}`);
+      if (r.naKontrolu > 0) casti.push(`na kontrolu ${r.naKontrolu}`);
+      if (r.zalozenychVrateni > 0) casti.push(`na vrátenie ${r.zalozenychVrateni}`);
+      if (r.chyb > 0) casti.push(`chýb ${r.chyb}`);
+      toast.success(`Z ${r.spracovanych} pohybov: ${casti.join(", ")}.`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Párovanie zlyhalo"),
   });
@@ -162,8 +173,8 @@ function Page() {
             Účtovanie · výpisy z banky
           </h1>
           <p className="text-muted-foreground mt-1">
-            Prijaté platby a ich párovanie s objednávkami. Variabilný symbol je prvých osem znakov
-            čísla objednávky.
+            Prijaté platby a ich párovanie s objednávkami. Variabilný symbol je ten istý, ktorý ide
+            do platobnej brány aj na faktúru.
           </p>
         </div>
         <div className="flex gap-2">
@@ -187,6 +198,8 @@ function Page() {
           </Button>
         </div>
       </div>
+
+      <UploadCard accounts={accountRows} onHotovo={invalidate} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {accounts.isLoading ? (
@@ -230,7 +243,7 @@ function Page() {
                         id: a.id,
                         bank_name: a.bank_name,
                         account_name: a.account_name,
-                        iban: a.iban,
+                        iban: a.iban ?? "",
                         currency: a.currency,
                         balance: String(a.balance),
                         connected: a.connected,
@@ -244,7 +257,7 @@ function Page() {
                     variant="ghost"
                     className="text-destructive hover:text-destructive"
                     onClick={() => {
-                      if (confirm(`Zmazať účet ${a.iban} aj so všetkými pohybmi?`)) {
+                      if (confirm(`Zmazať účet ${a.iban ?? a.psp_key} aj so všetkými pohybmi?`)) {
                         deleteMutation.mutate(a.id);
                       }
                     }}
@@ -267,7 +280,7 @@ function Page() {
             <SelectItem value="all">Všetky účty</SelectItem>
             {accountRows.map((a) => (
               <SelectItem key={a.id} value={a.id}>
-                {a.bank_name} · {a.iban.slice(-6)}
+                {a.bank_name} · {(a.iban ?? a.psp_key ?? "").slice(-6)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -312,7 +325,7 @@ function Page() {
             <tbody>
               {txRows.map((t) => (
                 <tr key={t.id} className="border-b border-border/30 last:border-0">
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{t.booked_on}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{t.booked_at}</td>
                   <td className="px-4 py-3">
                     <div className="truncate max-w-[240px]">{t.counterparty_name || "—"}</div>
                     {t.message && (
@@ -330,7 +343,7 @@ function Page() {
                     {eur(t.amount, t.currency)}
                   </td>
                   <td className="px-4 py-3">
-                    {t.match_status === "matched" ? (
+                    {t.status === "matched" ? (
                       <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                         <Link2 className="size-3.5" />
                         <span className="font-mono text-xs">{t.matched_order_short}</span>
@@ -342,7 +355,7 @@ function Page() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {t.match_status === "matched" && (
+                    {t.status === "matched" && (
                       <div className="flex justify-end">
                         <Button
                           size="sm"
@@ -446,5 +459,161 @@ function Page() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/**
+ * Nahratie mesačného výpisu.
+ *
+ * Formát vyberá účtovník ručne a kontroluje sa obsah, nie prípona názvu —
+ * podstrčený súbor s inou príponou tak parser aj tak neprijme.
+ */
+function UploadCard({
+  accounts,
+  onHotovo,
+}: {
+  accounts: BankAccountRecord[];
+  onHotovo: () => void;
+}) {
+  const nacitajFormaty = useServerFn(listStatementFormats);
+  const nahraj = useServerFn(importStatementFile);
+  const stiahni = useServerFn(fetchFromSources);
+
+  const [ucet, setUcet] = useState<string>("");
+  const [format, setFormat] = useState<string>("");
+  const [subor, setSubor] = useState<File | null>(null);
+
+  const formaty = useQuery({
+    queryKey: ["statement-formats"],
+    queryFn: () => nacitajFormaty({ data: undefined as never }),
+  });
+
+  const nahratie = useMutation({
+    mutationFn: async () => {
+      if (!ucet) throw new Error("Vyber účet, na ktorý výpis patrí.");
+      if (!format) throw new Error("Vyber formát výpisu.");
+      if (!subor) throw new Error("Vyber súbor s výpisom.");
+      const buffer = await subor.arrayBuffer();
+      // Prevod po blokoch — `String.fromCharCode(...pole)` by pri veľkom
+      // súbore prepísal zásobník volaní.
+      const bajty = new Uint8Array(buffer);
+      let binarne = "";
+      for (let i = 0; i < bajty.length; i += 8192) {
+        binarne += String.fromCharCode(...bajty.subarray(i, i + 8192));
+      }
+      return nahraj({
+        data: {
+          account_id: ucet,
+          format,
+          file_name: subor.name,
+          content_base64: btoa(binarne),
+        },
+      });
+    },
+    onSuccess: (r) => {
+      onHotovo();
+      setSubor(null);
+      const casti = [`prečítaných ${r.transakcii}`, `nových ${r.novych}`];
+      if (r.parovanie.dokoncenychObjednavok > 0) {
+        casti.push(`dokončených objednávok ${r.parovanie.dokoncenychObjednavok}`);
+      }
+      if (r.parovanie.naKontrolu > 0) casti.push(`na kontrolu ${r.parovanie.naKontrolu}`);
+      toast.success(`Výpis nahratý: ${casti.join(", ")}.`);
+      if (r.chyb > 0) {
+        toast.warning(`${r.chyb} riadkov sa nepodarilo prečítať: ${r.chyby[0] ?? ""}`);
+      }
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Nahratie zlyhalo"),
+  });
+
+  const stiahnutie = useMutation({
+    mutationFn: () => stiahni({ data: undefined as never }),
+    onSuccess: (r) => {
+      onHotovo();
+      if (r.stiahnute.zdrojov === 0) {
+        toast.info("Nie je nastavený žiadny zdroj so sťahovaním cez API.");
+        return;
+      }
+      toast.success(
+        `Zo ${r.stiahnute.zdrojov} zdrojov pribudlo ${r.stiahnute.novych} pohybov` +
+          (r.stiahnute.chyb > 0 ? `, ${r.stiahnute.chyb} zlyhalo.` : "."),
+      );
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Sťahovanie zlyhalo"),
+  });
+
+  return (
+    <Card className="bg-card/60 border-border/50 p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display font-semibold">Nahrať výpis</h2>
+          <p className="text-muted-foreground text-xs mt-1">
+            Pohyby sa uložia a rovno sa skúsi párovanie. Ten istý súbor sa dá nahrať opakovane —
+            pohyby sa nezdvoja.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => stiahnutie.mutate()}
+          disabled={stiahnutie.isPending}
+        >
+          {stiahnutie.isPending ? (
+            <Loader2 className="size-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="size-4 mr-2" />
+          )}
+          Stiahnuť cez API
+        </Button>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label className="text-sm">Účet</Label>
+          <Select value={ucet} onValueChange={setUcet}>
+            <SelectTrigger>
+              <SelectValue placeholder="Vyber účet" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.bank_name} · {(a.iban ?? a.psp_key ?? "").slice(-6)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Formát</Label>
+          <Select value={format} onValueChange={setFormat}>
+            <SelectTrigger>
+              <SelectValue placeholder="Vyber formát" />
+            </SelectTrigger>
+            <SelectContent>
+              {(formaty.data ?? []).map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  {f.nazov}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Súbor</Label>
+          <Input
+            type="file"
+            accept=".xml,.csv,.txt"
+            onChange={(e) => setSubor(e.target.files?.[0] ?? null)}
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => nahratie.mutate()} disabled={nahratie.isPending}>
+          {nahratie.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+          Nahrať
+        </Button>
+      </div>
+    </Card>
   );
 }
