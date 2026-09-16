@@ -35,6 +35,9 @@ import { toast } from "sonner";
 import { errorMessage } from "@/lib/error-message";
 import { cn } from "@/lib/utils";
 
+/** Hodnota v prepínači platby, ktorá neznamená bránu, ale prevod na účet. */
+const PREVOD = "prevod";
+
 export const Route = createFileRoute("/checkout/$orderId")({
   head: () => ({ meta: [{ title: "Checkout · eticketo.eu" }] }),
   component: CheckoutPage,
@@ -94,6 +97,13 @@ function CheckoutPage() {
   const nacitajBrany = useServerFn(listPaymentGateways);
   const [brany, setBrany] = useState<Array<{ id: string; label: string; hint: string }>>([]);
   const [brana, setBrana] = useState<string | null>(null);
+  // Prevod nie je brána — je to iná splatnosť tej istej objednávky, preto
+  // vlastný stav. Hodnota `PREVOD` v `brana` znamená „platí sa z účtu".
+  const [prevod, setPrevod] = useState<{
+    label: string;
+    hint: string;
+    seatedAllowed: boolean;
+  } | null>(null);
 
   useEffect(() => {
     let zrusene = false;
@@ -101,6 +111,7 @@ function CheckoutPage() {
       .then((r) => {
         if (zrusene) return;
         setBrany(r.gateways);
+        setPrevod(r.transfer ?? null);
         setBrana(r.default ?? r.gateways[0]?.id ?? null);
       })
       .catch(() => {
@@ -146,6 +157,10 @@ function CheckoutPage() {
 
   const payable = order ? Math.max(0, order.total_amount - (coupon?.discount ?? 0)) : 0;
   const vybrana = brany.find((b) => b.id === brana) ?? null;
+  // Sedadlá by objednávka na prevod držala niekoľko dní, preto sa voľba pri
+  // sedadlových podujatiach ponúka len keď to prevádzkovateľ povolil.
+  const maSedadla = (order?.items ?? []).some((it) => !!it.seat_id);
+  const prevodDostupny = !!prevod && (prevod.seatedAllowed || !maSedadla);
 
   const pay = async () => {
     if (!order) return;
@@ -199,8 +214,20 @@ function CheckoutPage() {
           // Sedadlá si tento košík podržal pri výbere; bez relácie by ich
           // objednávka videla ako cudzie a odmietla by sa.
           cart_session: getCartSessionId(),
+          payment_method: brana === PREVOD ? "transfer" : "gateway",
         },
       });
+
+      // Pri prevode sa nikam nepresmerúva — zákazník potrebuje vidieť IBAN
+      // a variabilný symbol, nie bránu.
+      if (brana === PREVOD) {
+        navigate({
+          to: "/checkout/transfer/$orderId",
+          params: { orderId: supabaseOrderId },
+        });
+        return;
+      }
+
       const { payment_url } = await createPayment({
         data: { order_id: supabaseOrderId, provider: brana ?? undefined },
       });
@@ -373,7 +400,7 @@ function CheckoutPage() {
               Šifrované SSL pripojenie{vybrana ? ` · Platbu spracuje ${vybrana.label}` : ""}
             </div>
 
-            {brany.length > 1 && (
+            {(brany.length > 1 || prevodDostupny) && (
               <div className="mb-4 space-y-2">
                 {brany.map((b) => (
                   <label
@@ -399,6 +426,29 @@ function CheckoutPage() {
                     </span>
                   </label>
                 ))}
+                {prevodDostupny && prevod && (
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors",
+                      brana === PREVOD
+                        ? "border-primary bg-primary/5"
+                        : "border-border/40 hover:border-border",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="platobna-brana"
+                      value={PREVOD}
+                      checked={brana === PREVOD}
+                      onChange={() => setBrana(PREVOD)}
+                      className="mt-1 accent-primary"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium">{prevod.label}</span>
+                      <span className="block text-xs text-muted-foreground">{prevod.hint}</span>
+                    </span>
+                  </label>
+                )}
               </div>
             )}
 

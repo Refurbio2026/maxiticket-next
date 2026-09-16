@@ -9,7 +9,16 @@
 
 export type TemplateVars = Record<string, string | number | null | undefined>;
 
-export type TemplateKey = "tickets" | "refund" | "reminder" | "waitlist" | "cancel";
+export type TemplateKey =
+  | "tickets"
+  | "refund"
+  | "reminder"
+  | "waitlist"
+  | "cancel"
+  // Platba prevodom na účet: údaje, pripomienka a oznam o vypršaní lehoty.
+  | "transfer_instructions"
+  | "transfer_reminder"
+  | "transfer_cancel";
 
 export type TemplateDefinition = {
   key: TemplateKey;
@@ -169,6 +178,61 @@ const CANCEL_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',
 <p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
 </div>`;
 
+// --- Platba prevodom ---------------------------------------------------
+// Variabilný symbol je tu to najdôležitejšie: bez neho sa platba nespáruje
+// a zákazník skončí medzi nespárovanými platbami u supportu. Preto je v tele
+// zvýraznený a je aj v predmete, nech sa dá nájsť vyhľadaním v pošte.
+
+const TRANSFER_BOX = `<table style="border-collapse:collapse;margin:16px 0;width:100%;background:#f8fafc;border-radius:8px">
+  <tr><td style="padding:10px 12px;color:#666">IBAN</td><td style="padding:10px 12px;font-weight:700;font-family:ui-monospace,monospace">{{iban}}</td></tr>
+  {{#if holder}}<tr><td style="padding:10px 12px;color:#666">Príjemca</td><td style="padding:10px 12px">{{holder}}</td></tr>{{/if}}
+  {{#if bank_name}}<tr><td style="padding:10px 12px;color:#666">Banka</td><td style="padding:10px 12px">{{bank_name}}</td></tr>{{/if}}
+  <tr><td style="padding:10px 12px;color:#666">Variabilný symbol</td><td style="padding:10px 12px;font-weight:700;font-family:ui-monospace,monospace">{{variable_symbol}}</td></tr>
+  <tr><td style="padding:10px 12px;color:#666">Suma</td><td style="padding:10px 12px;font-weight:700">{{total}} {{currency}}</td></tr>
+</table>`;
+
+const TRANSFER_INSTRUCTIONS_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;color:#111">
+<h2 style="margin:0 0 4px">Zaplaťte prevodom</h2>
+<p style="margin:0 0 16px;color:#555">{{event_title}}</p>
+<p>Dobrý deň {{customer_name}},</p>
+<p>vstupenky sme pre vás odložili. Pošlite prosím platbu na tento účet:</p>
+${TRANSFER_BOX}
+<p><strong>Variabilný symbol nevynechajte</strong> — podľa neho platbu priradíme k vašej objednávke.</p>
+{{#if due_date}}<p>Platba musí doraziť do <strong>{{due_date}}</strong>. Po tomto termíne miesta uvoľníme ďalším záujemcom.</p>{{/if}}
+<p style="margin:0;color:#666;font-size:13px">
+  Vstupenky vám pošleme hneď, ako peniaze prídu na účet — býva to jeden až dva pracovné dni.
+  Objednávka #{{order_short}}{{#if event_date}}, {{event_date}} {{event_time}}, {{venue}}, {{city}}{{/if}}.
+</p>
+<p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
+</div>`;
+
+const TRANSFER_REMINDER_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;color:#111">
+<h2 style="margin:0 0 4px">Platba zatiaľ nedorazila</h2>
+<p style="margin:0 0 16px;color:#555">{{event_title}}</p>
+<p>Dobrý deň {{customer_name}},</p>
+<p>vaše vstupenky stále držíme, ale platbu sme zatiaľ nedostali.</p>
+${TRANSFER_BOX}
+{{#if due_date}}<p>Ak platba nedorazí do <strong>{{due_date}}</strong>, objednávku zrušíme a miesta uvoľníme.</p>{{/if}}
+<p style="margin:0;color:#666;font-size:13px">
+  Ak ste už zaplatili, tento e-mail pokojne ignorujte — platby z banky k nám chodia s malým oneskorením.
+  Objednávka #{{order_short}}.
+</p>
+<p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
+</div>`;
+
+const TRANSFER_CANCEL_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;color:#111">
+<h2 style="margin:0 0 4px">Objednávku sme zrušili</h2>
+<p style="margin:0 0 16px;color:#555">{{event_title}}</p>
+<p>Dobrý deň {{customer_name}},</p>
+<p>platba za objednávku <strong>#{{order_short}}</strong> nedorazila v termíne, takže sme miesta uvoľnili ďalším záujemcom.</p>
+<p>Ak máte o vstupenky stále záujem, objednajte si ich prosím znova: <a href="{{order_url}}">{{order_url}}</a></p>
+<p style="margin:0;color:#666;font-size:13px">
+  Ak ste platbu odoslali a napriek tomu vám prišiel tento e-mail, odpíšte nám — peniaze dohľadáme a buď
+  objednávku obnovíme, alebo platbu vrátime.
+</p>
+<p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
+</div>`;
+
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
   tickets: {
     key: "tickets",
@@ -269,6 +333,103 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
         key: "refund_note",
         label: "Veta o peniazoch podľa toho, ako refund dopadol",
         example: "Sumu 29.00 EUR posielame späť na účet, z ktorého ste platili.",
+      },
+    ],
+  },
+  transfer_instructions: {
+    key: "transfer_instructions",
+    name: "Platba prevodom — údaje",
+    description:
+      "Odchádza hneď po objednaní, keď si zákazník zvolí platbu prevodom. Obsahuje IBAN, " +
+      "variabilný symbol a lehotu.",
+    subject: "Platobné údaje — {{event_title}} (VS {{variable_symbol}})",
+    html: TRANSFER_INSTRUCTIONS_HTML,
+    text:
+      "Zaplaťte prosím {{total}} {{currency}} na účet {{iban}}, variabilný symbol " +
+      "{{variable_symbol}}. Objednávka #{{order_short}}.",
+    variables: [
+      { key: "customer_name", label: "Krstné meno zákazníka", example: "Peter" },
+      { key: "order_short", label: "Skrátené číslo objednávky", example: "A1B2C3D4" },
+      { key: "event_title", label: "Názov podujatia", example: "Symfonický koncert" },
+      { key: "event_date", label: "Dátum konania", example: "16. 9. 2026" },
+      { key: "event_time", label: "Čas začiatku", example: "19:00" },
+      { key: "venue", label: "Miesto konania", example: "Historická budova SND" },
+      { key: "city", label: "Mesto", example: "Bratislava" },
+      { key: "total", label: "Suma na úhradu", example: "25.00" },
+      { key: "currency", label: "Mena", example: "EUR" },
+      { key: "iban", label: "Účet, na ktorý sa platí", example: "SK00 0900 0000 0000 1111 2222" },
+      { key: "holder", label: "Majiteľ účtu (môže chýbať)", example: "eticketo s.r.o." },
+      { key: "bank_name", label: "Názov banky (môže chýbať)", example: "Slovenská sporiteľňa" },
+      { key: "variable_symbol", label: "Variabilný symbol", example: "0015501234" },
+      { key: "due_date", label: "Dokedy má platba doraziť", example: "18. 9. 2026" },
+      {
+        key: "order_url",
+        label: "Odkaz na moje objednávky",
+        example: "https://eticketo.eu/account",
+      },
+    ],
+  },
+  transfer_reminder: {
+    key: "transfer_reminder",
+    name: "Platba prevodom — pripomienka",
+    description: "Odchádza, keď platba nedorazila a do konca lehoty zostáva posledný kus času.",
+    subject: "Pripomienka platby — {{event_title}} (VS {{variable_symbol}})",
+    html: TRANSFER_REMINDER_HTML,
+    text:
+      "Platbu {{total}} {{currency}} sme zatiaľ nedostali. Účet {{iban}}, variabilný symbol " +
+      "{{variable_symbol}}, termín {{due_date}}.",
+    variables: [
+      { key: "customer_name", label: "Krstné meno zákazníka", example: "Peter" },
+      { key: "order_short", label: "Skrátené číslo objednávky", example: "A1B2C3D4" },
+      { key: "event_title", label: "Názov podujatia", example: "Symfonický koncert" },
+      { key: "event_date", label: "Dátum konania", example: "16. 9. 2026" },
+      { key: "event_time", label: "Čas začiatku", example: "19:00" },
+      { key: "venue", label: "Miesto konania", example: "Historická budova SND" },
+      { key: "city", label: "Mesto", example: "Bratislava" },
+      { key: "total", label: "Suma na úhradu", example: "25.00" },
+      { key: "currency", label: "Mena", example: "EUR" },
+      { key: "iban", label: "Účet, na ktorý sa platí", example: "SK00 0900 0000 0000 1111 2222" },
+      { key: "holder", label: "Majiteľ účtu (môže chýbať)", example: "eticketo s.r.o." },
+      { key: "bank_name", label: "Názov banky (môže chýbať)", example: "Slovenská sporiteľňa" },
+      { key: "variable_symbol", label: "Variabilný symbol", example: "0015501234" },
+      { key: "due_date", label: "Dokedy má platba doraziť", example: "18. 9. 2026" },
+      {
+        key: "order_url",
+        label: "Odkaz na moje objednávky",
+        example: "https://eticketo.eu/account",
+      },
+    ],
+  },
+  transfer_cancel: {
+    key: "transfer_cancel",
+    name: "Platba prevodom — zrušenie",
+    description:
+      "Odchádza, keď lehota uplynula a miesta sa uvoľnili. Posiela sa vždy — zákazník sa to " +
+      "nesmie dozvedieť až pri dverách.",
+    subject: "Zrušená objednávka #{{order_short}} — {{event_title}}",
+    html: TRANSFER_CANCEL_HTML,
+    text:
+      "Platba za objednávku #{{order_short}} nedorazila v termíne, objednávku sme zrušili. " +
+      "Objednať znova: {{order_url}}",
+    variables: [
+      { key: "customer_name", label: "Krstné meno zákazníka", example: "Peter" },
+      { key: "order_short", label: "Skrátené číslo objednávky", example: "A1B2C3D4" },
+      { key: "event_title", label: "Názov podujatia", example: "Symfonický koncert" },
+      { key: "event_date", label: "Dátum konania", example: "16. 9. 2026" },
+      { key: "event_time", label: "Čas začiatku", example: "19:00" },
+      { key: "venue", label: "Miesto konania", example: "Historická budova SND" },
+      { key: "city", label: "Mesto", example: "Bratislava" },
+      { key: "total", label: "Suma na úhradu", example: "25.00" },
+      { key: "currency", label: "Mena", example: "EUR" },
+      { key: "iban", label: "Účet, na ktorý sa platí", example: "SK00 0900 0000 0000 1111 2222" },
+      { key: "holder", label: "Majiteľ účtu (môže chýbať)", example: "eticketo s.r.o." },
+      { key: "bank_name", label: "Názov banky (môže chýbať)", example: "Slovenská sporiteľňa" },
+      { key: "variable_symbol", label: "Variabilný symbol", example: "0015501234" },
+      { key: "due_date", label: "Dokedy má platba doraziť", example: "18. 9. 2026" },
+      {
+        key: "order_url",
+        label: "Odkaz na moje objednávky",
+        example: "https://eticketo.eu/account",
       },
     ],
   },

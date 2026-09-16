@@ -8,7 +8,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { branaPodlaId, pripravPristupy } from "./payment-gateways/index.server";
-import type { GatewayId, PaymentState } from "./payment-gateways/types";
+import { jeBrana, type GatewayId, type PaymentState } from "./payment-gateways/types";
 import { fakturacnySystem } from "./invoicing/index.server";
 import { firemneUdaje } from "./invoicing/types";
 import { newSignedTicket } from "./qr-token.server";
@@ -61,11 +61,13 @@ export async function settleOrder(orderId: string, zdroj?: ZdrojStavu): Promise<
   // Brána a referencia platby, ktorej sa toto doúčtovanie týka. Pri overenom
   // návrate sú to údaje tej platby, ktorá sa vrátila — nie tie, čo má práve
   // objednávka. Zákazník totiž mohol medzitým založiť platbu inou bránou.
-  const providerId =
-    zdroj?.provider ??
-    ((order.payment_provider || (order.gopay_payment_id ? "gopay" : null)) as GatewayId | null);
+  const ulozeny = order.payment_provider || (order.gopay_payment_id ? "gopay" : null);
+  const providerId: GatewayId | null = zdroj?.provider ?? (jeBrana(ulozeny) ? ulozeny : null);
   const providerRef = zdroj?.ref ?? order.payment_ref ?? order.gopay_payment_id;
   if (!providerId || !providerRef) {
+    // Sem spadne aj objednávka platená prevodom: brána za ňou žiadna nie je,
+    // takže sa nedá dopytovať na stav. Tú dokončí `dokonciZPrevodu()` na
+    // základe bankového výpisu.
     return { changed: false, status: order.status, reason: "no_payment_id" };
   }
 
@@ -148,22 +150,7 @@ export async function settleOrder(orderId: string, zdroj?: ZdrojStavu): Promise<
       };
     }
 
-    await supabaseAdmin
-      .from("seat_inventory")
-      .update({ status: "sold", reserved_until: null })
-      .eq("order_id", order.id);
-
-    await vydajVstupenky(order);
-    await vystavFakturu(order);
-
-    // Zlyhanie e-mailu nesmie zhodiť doúčtovanie — peniaze sú prijaté
-    // a vstupenky vydané. Opakovanému odoslaniu bráni tickets_emailed_at.
-    try {
-      await sendTicketsEmail(order.id);
-    } catch (e) {
-      console.error("Odoslanie vstupeniek zlyhalo pre objednávku", order.id, e);
-    }
-
+    await dokoncZaplatenu(order);
     return { changed: true, status: "paid" };
   }
 
@@ -194,6 +181,89 @@ export async function settleOrder(orderId: string, zdroj?: ZdrojStavu): Promise<
 }
 
 type Objednavka = { id: string; event_id: string; event_date_id: string } & Record<string, unknown>;
+
+/**
+ * Čo sa stane s objednávkou, ktorá práve prešla na zaplatenú.
+ *
+ * Volá sa **až po** tom, čo `claim_order_paid` vrátila `true` — teda presne
+ * raz, nech sa na objednávku zbehne koľkokoľvek návratov z brány, notifikácií
+ * a behov skenu.
+ *
+ * Je to jediné miesto, kde sa vydávajú vstupenky. Párovanie bankových výpisov
+ * ani nič iné si to nesmie napísať nanovo, inak sa obe vetvy rozídu.
+ */
+async function dokoncZaplatenu(order: Objednavka): Promise<void> {
+  await supabaseAdmin
+    .from("seat_inventory")
+    .update({ status: "sold", reserved_until: null })
+    .eq("order_id", order.id);
+
+  await vydajVstupenky(order);
+  await vystavFakturu(order);
+
+  // Zlyhanie e-mailu nesmie zhodiť doúčtovanie — peniaze sú prijaté
+  // a vstupenky vydané. Opakovanému odoslaniu bráni tickets_emailed_at.
+  try {
+    await sendTicketsEmail(order.id);
+  } catch (e) {
+    console.error("Odoslanie vstupeniek zlyhalo pre objednávku", order.id, e);
+  }
+}
+
+export type VysledokPrevodu = {
+  changed: boolean;
+  status: string;
+  reason?: "uz_zaplatena" | "objednavka_neexistuje";
+};
+
+/**
+ * Dokončí objednávku, ktorej platbu potvrdil bankový výpis.
+ *
+ * Prevod na účet nemá bránu: nedá sa jej dopytovať na stav, takže `settleOrder`
+ * sa použiť nedá. Rozhodnutie, že peniaze prišli v správnej výške, urobil
+ * párovací engine — tu sa už len zapíše platba a objednávka sa dotiahne
+ * **tou istou cestou ako pri bráne**.
+ *
+ * Idempotencia stojí na `claim_order_paid`: kto prehrá, nevydá nič. Preto sa
+ * opakované spárovanie tej istej transakcie nedá zneužiť na druhú sadu
+ * vstupeniek a netreba k tomu žiadny ďalší zámok.
+ */
+export async function dokonciZPrevodu(
+  orderId: string,
+  tx: { id: string; amount: number; currency: string; booked_at: string },
+): Promise<VysledokPrevodu> {
+  const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
+  if (!order) return { changed: false, status: "unknown", reason: "objednavka_neexistuje" };
+
+  // Platba sa zapíše pred preklopením: keby proces spadol medzi tým, ostane
+  // stopa, z ktorej sa dá zistiť, čo prišlo.
+  await supabaseAdmin.from("payments").upsert(
+    {
+      order_id: order.id,
+      provider: "prevod",
+      provider_payment_id: tx.id,
+      amount: tx.amount,
+      currency: tx.currency,
+      status: "paid",
+      raw_response: { zdroj: "bankovy_vypis", booked_at: tx.booked_at } as unknown as Json,
+    },
+    { onConflict: "order_id,provider,provider_payment_id", ignoreDuplicates: false },
+  );
+
+  const { data: vyhral, error } = await supabaseAdmin.rpc("claim_order_paid", {
+    p_order_id: order.id,
+  });
+  if (error) throw new Error(error.message);
+  if (!vyhral) return { changed: false, status: "paid", reason: "uz_zaplatena" };
+
+  await supabaseAdmin
+    .from("orders")
+    .update({ payment_provider: "prevod", payment_method: "transfer" })
+    .eq("id", order.id);
+
+  await dokoncZaplatenu(order);
+  return { changed: true, status: "paid" };
+}
 
 async function vydajVstupenky(order: Objednavka): Promise<number> {
   const { data: items } = await supabaseAdmin

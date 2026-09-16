@@ -5,6 +5,20 @@ import type { Json } from "@/integrations/supabase/types";
 
 export type GatewayId = "gopay" | "gpwebpay" | "tatrapayplus";
 
+export const GATEWAY_IDS: readonly GatewayId[] = ["gopay", "gpwebpay", "tatrapayplus"];
+
+/**
+ * Je tento poskytovateľ platby brána?
+ *
+ * `orders.payment_provider` zahŕňa aj `prevod` — platbu, ktorá prišla na účet
+ * a potvrdil ju bankový výpis. Tá žiadnu bránu nemá: nedá sa jej dopytovať na
+ * stav, nedá sa cez ňu refundovať ani zrušiť zámer. Bez tejto kontroly by sa
+ * `prevod` dostal do `branaPodlaId()` a spadol na neznámej bráne.
+ */
+export function jeBrana(id: string | null | undefined): id is GatewayId {
+  return id != null && (GATEWAY_IDS as readonly string[]).includes(id);
+}
+
 /** Stav platby preložený do reči objednávky. */
 export type PaymentState = "pending" | "paid" | "failed" | "cancelled" | "refunded";
 

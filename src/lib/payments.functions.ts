@@ -14,10 +14,12 @@ import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
 import { pocetVstupeniek } from "./plural";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
+import { jeBrana } from "./payment-gateways/types";
 import { adresaNasehoPdf, dopytajCakajuce, settleOrder } from "./order-settlement.server";
 import { fakturacnySystem } from "./invoicing/index.server";
 import { firemneUdaje } from "./invoicing/types";
 import { sadzbaPodujatia } from "./dph.server";
+import { lehotaPrevodu, nastaveniePrevodu, posliPlatobneUdaje } from "./prevod.server";
 
 /**
  * IP klienta spoza nginxu.
@@ -164,6 +166,10 @@ export const submitOrder = createServerFn({ method: "POST" })
         // Nákupná relácia, ktorá si sedadlá podržala pri výbere. Bez nej by
         // objednávka narazila na vlastné držanie ako na cudzie a odmietla sa.
         cart_session: z.string().min(6).max(80).optional().nullable(),
+        // `transfer` = zákazník zaplatí prevodom na účet. Objednávka vtedy
+        // nejde cez bránu: dostane variabilný symbol, lehotu v pracovných
+        // dňoch a dokončí ju až spárovanie bankového výpisu.
+        payment_method: z.enum(["gateway", "transfer"]).default("gateway"),
       })
       .parse(input),
   )
@@ -394,7 +400,37 @@ export const submitOrder = createServerFn({ method: "POST" })
     }
 
     const total = Math.round((subtotal - discount) * 100) / 100;
-    const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+
+    // --- Platba prevodom ---
+    // Drží sedadlá dni, nie minúty, takže sa kontroluje, či je kanál vôbec
+    // zapnutý a či ho prevádzkovateľ povolil aj pri sedadlových podujatiach.
+    const naPrevod = data.payment_method === "transfer";
+    const prevod = naPrevod ? await nastaveniePrevodu() : null;
+    if (naPrevod) {
+      if (!prevod?.enabled) {
+        if (couponId) await releaseCoupon(couponId, discount);
+        throw new Error("Platba prevodom nie je momentálne dostupná. Zvoľ prosím platbu kartou.");
+      }
+      if (!prevod.povolenePriSedadlach && priced.some((p) => p.seat_id)) {
+        if (couponId) await releaseCoupon(couponId, discount);
+        throw new Error(
+          "Pri podujatiach s výberom sedadiel sa platí kartou — miesta sa nedajú držať niekoľko dní.",
+        );
+      }
+    }
+
+    const expiresAt =
+      naPrevod && prevod
+        ? await lehotaPrevodu(prevod)
+        : new Date(Date.now() + 15 * 60_000).toISOString();
+
+    // Variabilný symbol treba hneď — zákazník ho dostane v e-maile a bez neho
+    // sa platba nedá spárovať. Pri bráne ho prideľuje až `startPaymentForOrder`.
+    let prevodVs: number | null = null;
+    if (naPrevod) {
+      const { data: cislo } = await supabaseAdmin.rpc("next_payment_ref");
+      prevodVs = cislo != null ? Number(cislo) : null;
+    }
 
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
@@ -417,7 +453,12 @@ export const submitOrder = createServerFn({ method: "POST" })
         coupon_id: couponId,
         promo_code: couponId ? data.coupon_code!.trim().toUpperCase() : null,
         currency: "EUR",
-        status: "pending",
+        // Pri prevode niet na čo čakať u brány — objednávka rovno čaká na peniaze.
+        status: naPrevod ? "awaiting_payment" : "pending",
+        payment_method: naPrevod ? "transfer" : undefined,
+        payment_provider: naPrevod ? "prevod" : undefined,
+        payment_vs: prevodVs,
+        transfer_due_at: naPrevod ? expiresAt : null,
         expires_at: expiresAt,
       })
       .select()
@@ -501,7 +542,32 @@ export const submitOrder = createServerFn({ method: "POST" })
       await recordRedemption({ couponId, orderId: order.id, email, discount });
     }
 
-    return { order_id: order.id, total_amount: total, discount_amount: discount };
+    // Platobné údaje odchádzajú až keď je objednávka kompletná — inak by
+    // zákazník dostal variabilný symbol k objednávke, ktorá sa ešte mohla
+    // rozpadnúť na kapacite alebo sedadlách.
+    if (naPrevod && prevod) {
+      await posliPlatobneUdaje(order.id);
+    }
+
+    return {
+      order_id: order.id,
+      total_amount: total,
+      discount_amount: discount,
+      // Pri prevode ich checkout ukáže rovno na stránke — e-mail sa môže
+      // stratiť v spame a bez variabilného symbolu je platba nespárovateľná.
+      transfer:
+        naPrevod && prevod
+          ? {
+              iban: prevod.iban,
+              holder: prevod.majitel,
+              bank_name: prevod.banka,
+              variable_symbol: prevodVs != null ? String(prevodVs).padStart(10, "0") : null,
+              amount: total,
+              currency: "EUR",
+              due_at: expiresAt,
+            }
+          : null,
+    };
   });
 
 // 2) Založenie platby pre existujúcu objednávku — cez ktorúkoľvek bránu.
@@ -552,7 +618,13 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
 
     // Prepnutie brány nesmie nechať dva živé odkazy na zaplatenie tej istej
     // objednávky — zákazník by mohol zaplatiť oba.
-    if (order.payment_provider && order.payment_ref && order.payment_provider !== brana.id) {
+    // `jeBrana` tu nie je formalita: `prevod` je tiež poskytovateľ platby, ale
+    // žiadny zámer u brány nemá, takže niet čo rušiť.
+    if (
+      jeBrana(order.payment_provider) &&
+      order.payment_ref &&
+      order.payment_provider !== brana.id
+    ) {
       await zrusPredoslyZamer(order.id, order.payment_provider, order.payment_ref);
     }
 
@@ -568,6 +640,17 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
     const { data: cislo, error: cisloErr } = await supabaseAdmin.rpc("next_payment_ref");
     if (cisloErr || !cislo) throw new Error("Nepodarilo sa prideliť číslo platby");
     const reference = String(cislo);
+
+    // Starý symbol si objednávka ponechá. Zákazník mohol medzitým odoslať
+    // prevod so symbolom, ktorý mu prišiel v e-maile; bez tohto by platba
+    // dorazila s VS, ktorý už nepatrí nikomu.
+    if (order.payment_vs && Number(order.payment_vs) !== Number(cislo)) {
+      const predosle = [...(order.previous_vs ?? []), Number(order.payment_vs)];
+      await supabaseAdmin
+        .from("orders")
+        .update({ previous_vs: [...new Set(predosle)] })
+        .eq("id", order.id);
+    }
 
     let result;
     try {
@@ -699,11 +782,52 @@ function navratovaAdresa(brana: string, origin: string, orderId: string): string
 /** Brány, ktoré sa dajú zákazníkovi ponúknuť. Bez tajomstiev — ide na klienta. */
 export const listPaymentGateways = createServerFn({ method: "POST" }).handler(async () => {
   const { brany, predvolena } = await branyPreZakaznika();
+  const prevod = await nastaveniePrevodu();
   return {
     gateways: brany.map((b) => ({ id: b.id, label: b.label, hint: b.hint })),
     default: predvolena?.id ?? null,
+    // Prevod nie je brána, preto je zvlášť. Klient sa nedozvie IBAN ani
+    // nastavenie — len to, či si ho môže vybrať a za akých podmienok.
+    transfer: prevod.enabled
+      ? {
+          label: "Prevodom na účet",
+          hint: "Platobné údaje pošleme e-mailom, vstupenky prídu po pripísaní platby.",
+          seatedAllowed: prevod.povolenePriSedadlach,
+        }
+      : null,
   };
 });
+
+/**
+ * Platobné údaje k objednávke na prevod.
+ *
+ * Vracia **iba** to, čo zákazník potrebuje na zadanie príkazu — žiadne meno,
+ * e-mail ani telefón. Prístup k PII vyžaduje podpísaný token (`getOrderSummary`)
+ * a tu by bol zbytočný: IBAN a variabilný symbol nie sú tajomstvo, sú to údaje,
+ * ktoré aj tak odchádzajú e-mailom.
+ */
+export const getTransferDetails = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ order_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, status, payment_method, payment_vs, total_amount, currency, transfer_due_at")
+      .eq("id", data.order_id)
+      .maybeSingle();
+    if (!order || order.payment_method !== "transfer") return null;
+
+    const prevod = await nastaveniePrevodu();
+    return {
+      status: order.status,
+      iban: prevod.iban,
+      holder: prevod.majitel,
+      bank_name: prevod.banka,
+      variable_symbol: order.payment_vs ? String(order.payment_vs).padStart(10, "0") : null,
+      amount: Number(order.total_amount),
+      currency: order.currency || "EUR",
+      due_at: order.transfer_due_at,
+    };
+  });
 
 // Vnútorný pomocník — doúčtovanie žije v order-settlement.server.ts, aby ho
 // vedeli použiť aj návratové routy jednotlivých brán.
