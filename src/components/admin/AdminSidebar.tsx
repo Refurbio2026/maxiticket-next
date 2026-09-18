@@ -41,6 +41,7 @@ import {
   Flame,
   Megaphone,
   HelpCircle,
+  History,
 } from "lucide-react";
 import {
   Sidebar,
@@ -102,6 +103,7 @@ const groups: Group[] = [
       { title: "Vstupenky organizátorov", url: "/admin/eticketo/tickets", icon: Ticket },
       { title: "Kontrola zostavy", url: "/admin/eticketo/control", icon: ShieldCheck },
       { title: "Zariadenia / čítačky", url: "/admin/eticketo/devices", icon: Scan },
+      { title: "Starý systém", url: "/admin/eticketo/om-predaj", icon: History },
       {
         title: "Účtovanie / výpisy z banky",
         url: "/admin/eticketo/accounting-bank",

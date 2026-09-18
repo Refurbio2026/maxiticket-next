@@ -2715,6 +2715,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      om_event_map: {
+        Row: {
+          confidence: number | null;
+          confirmed_at: string | null;
+          confirmed_by: string | null;
+          created_at: string;
+          event_date_id: string | null;
+          event_id: string | null;
+          id_plan: number;
+          matched_by: string;
+          note: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          confidence?: number | null;
+          confirmed_at?: string | null;
+          confirmed_by?: string | null;
+          created_at?: string;
+          event_date_id?: string | null;
+          event_id?: string | null;
+          id_plan: number;
+          matched_by: string;
+          note?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          confidence?: number | null;
+          confirmed_at?: string | null;
+          confirmed_by?: string | null;
+          created_at?: string;
+          event_date_id?: string | null;
+          event_id?: string | null;
+          id_plan?: number;
+          matched_by?: string;
+          note?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       om_ticket_scans: {
         Row: {
           barcode: number | null;
@@ -2759,9 +2801,39 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      om_predaj_prehlad: {
+        Row: {
+          datum: string | null;
+          drama_name: string | null;
+          event_date_id: string | null;
+          event_id: string | null;
+          hall_name: string | null;
+          ico: string | null;
+          id_plan: number | null;
+          id_promoter: number | null;
+          mapovanie: string | null;
+          naskenovanych: number | null;
+          permanentiek: number | null;
+          podozrivych: number | null;
+          predanych: number | null;
+          promoter: string | null;
+          rezervovanych: number | null;
+          start_time: string | null;
+          trzba_s_dph: number | null;
+          vat_rate: number | null;
+          nase_podujatie: string | null;
+          nas_datum: string | null;
+          nas_cas: string | null;
+          confidence: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
+      om_navrhni_mapovanie: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
       om_najdi_vstupenku: {
         Args: { p_barcode: number; p_event_id: string };
         Returns: {

@@ -47,6 +47,7 @@ import { Route as AdminEticketoBillingRouteImport } from './routes/admin.eticket
 import { Route as AdminEticketoControlRouteImport } from './routes/admin.eticketo.control'
 import { Route as AdminEticketoCostsRouteImport } from './routes/admin.eticketo.costs'
 import { Route as AdminEticketoDevicesRouteImport } from './routes/admin.eticketo.devices'
+import { Route as AdminEticketoOmPredajRouteImport } from './routes/admin.eticketo.om-predaj'
 import { Route as AdminEticketoOrganizersRouteImport } from './routes/admin.eticketo.organizers'
 import { Route as AdminEticketoPaymentsRouteImport } from './routes/admin.eticketo.payments'
 import { Route as AdminEticketoProtocolsRouteImport } from './routes/admin.eticketo.protocols'
@@ -290,6 +291,11 @@ const AdminEticketoCostsRoute = AdminEticketoCostsRouteImport.update({
 const AdminEticketoDevicesRoute = AdminEticketoDevicesRouteImport.update({
   id: '/eticketo/devices',
   path: '/eticketo/devices',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEticketoOmPredajRoute = AdminEticketoOmPredajRouteImport.update({
+  id: '/eticketo/om-predaj',
+  path: '/eticketo/om-predaj',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminEticketoOrganizersRoute = AdminEticketoOrganizersRouteImport.update({
@@ -586,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/admin/eticketo/control': typeof AdminEticketoControlRoute
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
   '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
+  '/admin/eticketo/om-predaj': typeof AdminEticketoOmPredajRoute
   '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
   '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
   '/admin/eticketo/protocols': typeof AdminEticketoProtocolsRoute
@@ -671,6 +678,7 @@ export interface FileRoutesByTo {
   '/admin/eticketo/control': typeof AdminEticketoControlRoute
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
   '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
+  '/admin/eticketo/om-predaj': typeof AdminEticketoOmPredajRoute
   '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
   '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
   '/admin/eticketo/protocols': typeof AdminEticketoProtocolsRoute
@@ -761,6 +769,7 @@ export interface FileRoutesById {
   '/admin/eticketo/control': typeof AdminEticketoControlRoute
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
   '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
+  '/admin/eticketo/om-predaj': typeof AdminEticketoOmPredajRoute
   '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
   '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
   '/admin/eticketo/protocols': typeof AdminEticketoProtocolsRoute
@@ -852,6 +861,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/control'
     | '/admin/eticketo/costs'
     | '/admin/eticketo/devices'
+    | '/admin/eticketo/om-predaj'
     | '/admin/eticketo/organizers'
     | '/admin/eticketo/payments'
     | '/admin/eticketo/protocols'
@@ -937,6 +947,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/control'
     | '/admin/eticketo/costs'
     | '/admin/eticketo/devices'
+    | '/admin/eticketo/om-predaj'
     | '/admin/eticketo/organizers'
     | '/admin/eticketo/payments'
     | '/admin/eticketo/protocols'
@@ -1026,6 +1037,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/control'
     | '/admin/eticketo/costs'
     | '/admin/eticketo/devices'
+    | '/admin/eticketo/om-predaj'
     | '/admin/eticketo/organizers'
     | '/admin/eticketo/payments'
     | '/admin/eticketo/protocols'
@@ -1375,6 +1387,13 @@ declare module '@tanstack/react-router' {
       path: '/eticketo/devices'
       fullPath: '/admin/eticketo/devices'
       preLoaderRoute: typeof AdminEticketoDevicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/om-predaj': {
+      id: '/admin/eticketo/om-predaj'
+      path: '/eticketo/om-predaj'
+      fullPath: '/admin/eticketo/om-predaj'
+      preLoaderRoute: typeof AdminEticketoOmPredajRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/eticketo/organizers': {
@@ -1752,6 +1771,7 @@ interface AdminRouteChildren {
   AdminEticketoControlRoute: typeof AdminEticketoControlRoute
   AdminEticketoCostsRoute: typeof AdminEticketoCostsRoute
   AdminEticketoDevicesRoute: typeof AdminEticketoDevicesRoute
+  AdminEticketoOmPredajRoute: typeof AdminEticketoOmPredajRoute
   AdminEticketoOrganizersRoute: typeof AdminEticketoOrganizersRoute
   AdminEticketoPaymentsRoute: typeof AdminEticketoPaymentsRoute
   AdminEticketoProtocolsRoute: typeof AdminEticketoProtocolsRoute
@@ -1797,6 +1817,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEticketoControlRoute: AdminEticketoControlRoute,
   AdminEticketoCostsRoute: AdminEticketoCostsRoute,
   AdminEticketoDevicesRoute: AdminEticketoDevicesRoute,
+  AdminEticketoOmPredajRoute: AdminEticketoOmPredajRoute,
   AdminEticketoOrganizersRoute: AdminEticketoOrganizersRoute,
   AdminEticketoPaymentsRoute: AdminEticketoPaymentsRoute,
   AdminEticketoProtocolsRoute: AdminEticketoProtocolsRoute,
