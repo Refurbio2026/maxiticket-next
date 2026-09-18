@@ -5,6 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { verifyTicket } from "@/lib/qr-token.server";
+import { skenujOmVstupenku } from "@/lib/om-scan.server";
 import { loadEventInfo } from "@/lib/event-info.server";
 
 type ScanResult = "valid" | "duplicate" | "invalid" | "reentry" | "refunded";
@@ -99,6 +100,44 @@ export const Route = createFileRoute("/api/public/tickets/scan")({
           : await query.eq("qr_code", token).maybeSingle();
 
         if (!ticket) {
+          // Vstupenka zo starého systému. Skúša sa až tu, keď kód nesedí na
+          // nič naše: staré vstupenky majú číselný čiarový kód, nie podpísaný
+          // `MT2.<uuid>.<hmac>`, takže sa tie dve vetvy nemôžu pomýliť.
+          // Hľadá sa výhradne v rámci tohto podujatia a len cez potvrdenú
+          // väzbu — podrobnosti v `om-scan.server.ts`.
+          if (eventId) {
+            try {
+              const om = await skenujOmVstupenku({
+                token,
+                eventId,
+                allowReentry,
+                scannedBy,
+                scannerName,
+                userAgent: ua,
+              });
+              if (om) {
+                // Sken starej vstupenky si vedie vlastnú tabuľku
+                // (`om_ticket_scans`), lebo `ticket_scans.ticket_id` je uuid
+                // našej vstupenky. Do prehľadu prevádzky sa preto zapisuje
+                // aj sem, bez `ticket_id`.
+                await logScan({
+                  ticket_id: null,
+                  event_id: eventId,
+                  qr_token: token.slice(0, 200),
+                  result: om.result,
+                  scanned_by: scannedBy,
+                  scanner_name: scannerName,
+                  user_agent: ua,
+                });
+                return Response.json(om);
+              }
+            } catch (e) {
+              // Zlyhanie tejto vetvy nesmie zhodiť sken — odpovie sa pôvodnou
+              // hláškou o neplatnej vstupenke.
+              console.error("om sken zlyhal", e);
+            }
+          }
+
           await logScan({
             ticket_id: null,
             event_id: eventId,

@@ -2715,11 +2715,69 @@ export type Database = {
         };
         Relationships: [];
       };
+      om_ticket_scans: {
+        Row: {
+          barcode: number | null;
+          event_date_id: string | null;
+          event_id: string | null;
+          id: string;
+          id_plan: number;
+          id_seat: number;
+          result: string;
+          scanned_at: string;
+          scanned_by: string | null;
+          scanner_name: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          barcode?: number | null;
+          event_date_id?: string | null;
+          event_id?: string | null;
+          id?: string;
+          id_plan: number;
+          id_seat: number;
+          result: string;
+          scanned_at?: string;
+          scanned_by?: string | null;
+          scanner_name?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          barcode?: number | null;
+          event_date_id?: string | null;
+          event_id?: string | null;
+          id?: string;
+          id_plan?: number;
+          id_seat?: number;
+          result?: string;
+          scanned_at?: string;
+          scanned_by?: string | null;
+          scanner_name?: string | null;
+          user_agent?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      om_najdi_vstupenku: {
+        Args: { p_barcode: number; p_event_id: string };
+        Returns: {
+          id_seat: number;
+          id_plan: number;
+          event_date_id: string | null;
+          category: string;
+          suspicious: boolean;
+          vanished_at: string | null;
+          seat_label: string | null;
+          price: number | null;
+          uz_skenovana_v_om: boolean;
+          skenovana_u_nas_at: string | null;
+          refundovana: boolean;
+        }[];
+      };
       add_business_days: {
         Args: { p_days: number; p_from: string };
         Returns: string;
