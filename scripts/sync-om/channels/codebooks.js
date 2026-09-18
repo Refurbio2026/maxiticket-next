@@ -10,7 +10,7 @@
 // neznámy stav dostane `category = 'other'`, `category_source = 'auto'`
 // a warning do logu — je to fronta na ručné zaradenie, nie tichá zmena.
 
-import { dotaz, naCislo, naText } from "../lib/source.js";
+import { dotaz, naCislo, naText, naIso } from "../lib/source.js";
 import { upsert, ciel, ulozKurzor } from "../lib/target.js";
 
 export const kanal = "codebooks";
@@ -129,14 +129,61 @@ async function obnovNazvyPodujati({ dryRun, log }) {
   return { planov: riadky.length, znamych: nase.size, obnovenych: zmenenych };
 }
 
+/**
+ * Organizátori starého systému.
+ *
+ * `promoter` má na rozdiel od `drama` a `hall_desc` stĺpec `modified`, takže by
+ * sa dal ťahať inkrementálne. Pri 437 riadkoch to nemá zmysel — celý refresh
+ * je jeden dotaz a jeden upsert.
+ *
+ * `iban` ani `swift` sa neprenášajú: na prehľad nie sú potrebné a nemať ich tu
+ * je lacnejšie než ich strážiť.
+ */
+async function obnovPromoterov({ dryRun, log }) {
+  const riadky = await dotaz(
+    `SELECT p.id_promoter, p.name, p.event_promoter, p.ico, p.dic, p.ic_dph,
+            p.contact_name, p.email, p.tel, p.city, p.country_code,
+            p.vat_rate, p.hold_percentage, p.active, p.visible, p.modified
+       FROM promoter p`,
+  );
+
+  const zapisane = await upsert(
+    "om_promoters",
+    riadky.map((r) => ({
+      id_promoter: naCislo(r.id_promoter),
+      name: naText(r.name),
+      event_promoter: naText(r.event_promoter),
+      ico: naText(r.ico),
+      dic: naText(r.dic),
+      ic_dph: naText(r.ic_dph),
+      contact_name: naText(r.contact_name),
+      email: naText(r.email),
+      tel: naText(r.tel),
+      city: naText(r.city),
+      country_code: naText(r.country_code),
+      vat_rate: r.vat_rate == null ? null : Number(r.vat_rate),
+      hold_percentage: r.hold_percentage == null ? null : Number(r.hold_percentage),
+      active: naCislo(r.active) === 1,
+      visible: naCislo(r.visible) === 1,
+      modified_at: naIso(r.modified),
+      raw: Object.fromEntries(Object.entries(r).map(([k, v]) => [k, naText(v)])),
+    })),
+    "id_promoter",
+    { dryRun, log },
+  );
+
+  return { promoterov: riadky.length, zapisanych: zapisane };
+}
+
 export async function spusti({ dryRun = false, log }) {
   const stavy = await obnovStavy({ dryRun, log });
+  const promoteri = await obnovPromoterov({ dryRun, log });
   const nazvy = await obnovNazvyPodujati({ dryRun, log });
   await ulozKurzor(kanal, {
     hodnota: { refreshed_at: new Date().toISOString() },
-    riadkov: stavy.stavov + nazvy.obnovenych,
+    riadkov: stavy.stavov + promoteri.promoterov + nazvy.obnovenych,
     dryRun,
   });
-  log.info("hotovo", { stavy, nazvy });
-  return { stavy, nazvy };
+  log.info("hotovo", { stavy, promoteri, nazvy });
+  return { stavy, promoteri, nazvy };
 }

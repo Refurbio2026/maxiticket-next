@@ -29,7 +29,8 @@ const STLPCE = `
   p.allow_remote, p.allow_export, p.require_access_code, p.abo_mask,
   p.ticket_limit, p.VAT AS vat, p.tickets_with_places,
   p.created, p.modified,
-  d.name AS drama_name, h.name AS hall_name`;
+  d.name AS drama_name, h.name AS hall_name,
+  COALESCE(NULLIF(TRIM(pr.event_promoter), ''), pr.name) AS promoter_name`;
 
 export function zmapuj(r) {
   return {
@@ -64,6 +65,7 @@ export function zmapuj(r) {
     modified_at: naIso(r.modified),
     drama_name: naText(r.drama_name),
     hall_name: naText(r.hall_name),
+    promoter_name: naText(r.promoter_name),
     raw: Object.fromEntries(Object.entries(r).map(([k, v]) => [k, naText(v)])),
   };
 }
@@ -92,6 +94,7 @@ export async function spusti({ dryRun = false, full = false, since, log, maxDavo
          FROM plan p
          LEFT JOIN drama d ON d.id_drama = p.id_drama
          LEFT JOIN hall_desc h ON h.id_hall_desc = p.id_hall_desc
+         LEFT JOIN promoter pr ON pr.id_promoter = p.id_promoter
         WHERE ((COALESCE(p.modified, p.created) > ?)
             OR (COALESCE(p.modified, p.created) = ? AND p.id_plan > ?))
           ${odDatumu ? "AND p.datum >= ?" : ""}
