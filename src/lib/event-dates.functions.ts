@@ -258,7 +258,29 @@ export const upsertEventDate = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
-      const { error } = await supabaseAdmin.from("event_dates").update(row).eq("id", data.id);
+      // Prístup sa vyššie overil na `data.event_id` — teda na podujatí, ktoré
+      // poslal klient. Samo to nestačí: bez kontroly, že upravovaný termín k
+      // tomu podujatiu naozaj patrí, by stačilo poslať `id` cudzieho termínu
+      // a vlastné `event_id`. Kontrola by prešla na vlastnom podujatí a zápis
+      // by prepísal riadok iného organizátora — vrátane presunu pod seba a
+      // zrušenia termínu, po ktorom jeho vstupenky pri dverách neprejdú.
+      const { data: existing } = await supabaseAdmin
+        .from("event_dates")
+        .select("id, event_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (!existing) throw new Error("Termín sa nenašiel");
+      if (existing.event_id !== data.event_id) {
+        throw new Error("Termín patrí inému podujatiu.");
+      }
+
+      // Filter na `event_id` je druhý zámok: aj keby sa riadok medzitým zmenil,
+      // zápis sa nemá kam minúť.
+      const { error } = await supabaseAdmin
+        .from("event_dates")
+        .update(row)
+        .eq("id", data.id)
+        .eq("event_id", data.event_id);
       if (error) throw new Error(friendly(error.message));
       return { id: data.id };
     }
