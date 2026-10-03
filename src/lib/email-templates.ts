@@ -18,7 +18,9 @@ export type TemplateKey =
   // Platba prevodom na účet: údaje, pripomienka a oznam o vypršaní lehoty.
   | "transfer_instructions"
   | "transfer_reminder"
-  | "transfer_cancel";
+  | "transfer_cancel"
+  // Pozvánka organizátorovi: odkaz, na ktorom si nastaví vlastné heslo.
+  | "organizer_invite";
 
 export type TemplateDefinition = {
   key: TemplateKey;
@@ -233,6 +235,29 @@ const TRANSFER_CANCEL_HTML = `<div style="font-family:system-ui,-apple-system,'S
 <p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
 </div>`;
 
+const ORGANIZER_INVITE_HTML = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;color:#111">
+<h2 style="margin:0 0 4px">Vitajte v eticketo.eu</h2>
+<p style="margin:0 0 16px;color:#555">Konto organizátora je pripravené</p>
+<p>Dobrý deň {{organizer_name}},</p>
+<p>založili sme vám konto organizátora. Heslo si nastavíte sami — my ho nevidíme a nikde ho neposielame:</p>
+<p style="margin:0 0 20px">
+  <a href="{{set_password_url}}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:600;">
+    Nastaviť heslo
+  </a>
+</p>
+<p style="margin:0 0 16px;color:#666;font-size:13px">
+  Odkaz je jednorazový a po nastavení hesla sa prihlásite na <a href="{{login_url}}">{{login_url}}</a>.
+</p>
+<table style="border-collapse:collapse;margin:0 0 20px">
+  <tr><td style="padding:4px 12px 4px 0;color:#666">Vaša správa podujatí:</td><td><a href="{{organizer_url}}">{{organizer_url}}</a></td></tr>
+  {{#if subdomain_url}}<tr><td style="padding:4px 12px 4px 0;color:#666">Vaša adresa predaja:</td><td><a href="{{subdomain_url}}">{{subdomain_url}}</a></td></tr>{{/if}}
+</table>
+<p style="margin:0;color:#666;font-size:13px">
+  Ak ste o konto nežiadali, tento e-mail ignorujte — bez nastavenia hesla sa doň nikto nedostane.
+</p>
+<p style="color:#888;font-size:12px;margin-top:24px">eticketo.eu</p>
+</div>`;
+
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
   tickets: {
     key: "tickets",
@@ -430,6 +455,36 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDefinition> = {
         key: "order_url",
         label: "Odkaz na moje objednávky",
         example: "https://eticketo.eu/account",
+      },
+    ],
+  },
+  organizer_invite: {
+    key: "organizer_invite",
+    name: "Pozvánka organizátorovi",
+    description:
+      "Odchádza po založení konta organizátora. Obsahuje jednorazový odkaz, na ktorom si nastaví vlastné heslo — admin heslo nevidí.",
+    subject: "Konto organizátora na eticketo.eu je pripravené",
+    html: ORGANIZER_INVITE_HTML,
+    text:
+      "Dobrý deň {{organizer_name}}, založili sme vám konto organizátora. Heslo si nastavte tu: " +
+      "{{set_password_url}} — potom sa prihlásite na {{login_url}}. Správa podujatí: {{organizer_url}}",
+    variables: [
+      { key: "organizer_name", label: "Oslovenie organizátora", example: "Peter" },
+      {
+        key: "set_password_url",
+        label: "Jednorazový odkaz na nastavenie hesla",
+        example: "https://eticketo.eu/…",
+      },
+      { key: "login_url", label: "Odkaz na prihlásenie", example: "https://eticketo.eu/login" },
+      {
+        key: "organizer_url",
+        label: "Správa podujatí organizátora",
+        example: "https://eticketo.eu/organizer",
+      },
+      {
+        key: "subdomain_url",
+        label: "Vlastná adresa predaja (môže chýbať)",
+        example: "https://bbd.eticketo.eu",
       },
     ],
   },

@@ -15,6 +15,7 @@ import {
   type EventInputData,
 } from "@/lib/events.functions";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubdomena } from "@/hooks/use-subdomena";
 
 export type { EventRecord };
 
@@ -29,12 +30,24 @@ export function useEvents(opts?: { scope?: "public" | "mine" | "all" }) {
   const scope = opts?.scope ?? "public";
   const { user } = useAuth();
   const fn = useServerFn(listEvents);
+  // Na subdoméne organizátora je verejný katalóg zúžený na jeho podujatia.
+  // Čaká sa, kým je kontext známy — inak by na `bbd.eticketo.eu` najprv blikol
+  // celý katalóg a až potom sa zúžil. Neznáma subdoména sa chová ako hlavná
+  // adresa, nie ako prázdny obchod.
+  const subdomena = useSubdomena();
+  const organizerZoSubdomeny = subdomena.data?.organizer_id ?? null;
 
   return useQuery({
-    queryKey: [...KEY, scope, user?.id ?? null, user?.role ?? null],
-    enabled: scope === "public" || !!user,
+    queryKey: [...KEY, scope, user?.id ?? null, user?.role ?? null, organizerZoSubdomeny],
+    enabled: scope === "public" ? !subdomena.isLoading : !!user,
     queryFn: async (): Promise<EventRecord[]> => {
-      if (scope === "public") return fn({ data: { status: "published" } });
+      if (scope === "public") {
+        return fn({
+          data: organizerZoSubdomeny
+            ? { status: "published", organizer_id: organizerZoSubdomeny }
+            : { status: "published" },
+        });
+      }
       if (scope === "all" || user?.role === "admin") return fn({ data: { status: "all" } });
       return fn({ data: { status: "all", organizer_id: user!.id } });
     },

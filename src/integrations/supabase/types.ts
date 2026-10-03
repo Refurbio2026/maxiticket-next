@@ -506,6 +506,7 @@ export type Database = {
           id: string;
           payout_iban: string | null;
           phone: string | null;
+          subdomain: string | null;
           updated_at: string;
         };
         Insert: {
@@ -520,6 +521,7 @@ export type Database = {
           id: string;
           payout_iban?: string | null;
           phone?: string | null;
+          subdomain?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -534,6 +536,7 @@ export type Database = {
           id?: string;
           payout_iban?: string | null;
           phone?: string | null;
+          subdomain?: string | null;
           updated_at?: string;
         };
         Relationships: [];
