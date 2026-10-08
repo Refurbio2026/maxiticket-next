@@ -2987,6 +2987,8 @@ export type Database = {
           p_bucket: string;
           p_limit: number;
           p_window_seconds: number;
+          /** Koľko sa zaráta; pri držaní sedadiel počet sedadiel. Predvolene 1. */
+          p_weight?: number;
         };
         Returns: boolean;
       };

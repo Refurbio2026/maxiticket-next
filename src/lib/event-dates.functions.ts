@@ -5,6 +5,48 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cachuj, zabudni } from "./cache.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { clientIp } from "./client-ip.server";
+
+/**
+ * Strop na držanie sedadiel z jednej IP.
+ *
+ * Účtujú sa **sedadlá, nie volania** — jedno volanie drží až 20 miest, takže
+ * strop na volania by útočníkovi stačil na zablokovanie celej sály. Poctivý
+ * kupujúci si do košíka nedá viac, než smie kúpiť (strop objednávky je 20),
+ * takže ho 200 sedadiel za 15 minút neobmedzí ani keď si výber niekoľkokrát
+ * premyslí.
+ *
+ * Hodnoty sa dajú povoliť premennou prostredia bez nasadenia — keby pri
+ * spustení predaja zakopol niekto za operátorským NAT-om, kde za jednou IP
+ * sedí viac skutočných kupujúcich.
+ *
+ * POZOR: toto ohraničuje **jednu IP**. Proti útoku z mnohých adries to
+ * nepomôže; na to treba WAF pred aplikáciou, nie zmenu v kóde.
+ */
+const STROP_SEDADIEL = Number(process.env.HOLD_SEAT_LIMIT || 200);
+const OKNO_SEDADIEL = Number(process.env.HOLD_SEAT_WINDOW || 900);
+
+/**
+ * Zaráta držanie a povie, či sa smie. Pri chybe počítadla požiadavku pustíme —
+ * brzda je ochrana, nie kritická cesta, a výpadok `rate_limits` nesmie zastaviť
+ * predaj. Rovnako to robí `payments.functions.ts`.
+ */
+async function pustiDrzanie(vaha: number): Promise<boolean> {
+  const { data: allowed, error } = await supabaseAdmin.rpc("hit_rate_limit", {
+    p_bucket: `hold:ip:${clientIp()}`,
+    p_limit: STROP_SEDADIEL,
+    p_window_seconds: OKNO_SEDADIEL,
+    p_weight: vaha,
+  });
+  if (error) {
+    console.error("brzda držania sedadiel zlyhala", error.message);
+    return true;
+  }
+  return allowed !== false;
+}
+
+const SPRAVA_STROPU =
+  "Priveľa pokusov o podržanie sedadiel z tejto adresy. Skús to prosím o pár minút.";
 
 export type EventDateRecord = {
   id: string;
@@ -452,6 +494,8 @@ export const holdSeats = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ held: string[] }> => {
+    if (!(await pustiDrzanie(data.seats.length))) throw new Error(SPRAVA_STROPU);
+
     const until = new Date(Date.now() + data.minutes * 60_000).toISOString();
     const { data: rows, error } = await supabaseAdmin.rpc("hold_seats", {
       p_event_id: data.event_id,
@@ -501,6 +545,10 @@ export const extendHolds = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ extended: number }> => {
+    // Predlžovanie je držanie v čase: bez stropu by sa raz podržaná sála
+    // obnovovala donekonečna za jedno volanie.
+    if (!(await pustiDrzanie(1))) throw new Error(SPRAVA_STROPU);
+
     const { data: pocet, error } = await supabaseAdmin.rpc("extend_holds", {
       p_event_date_id: data.event_date_id,
       p_session: data.session,
