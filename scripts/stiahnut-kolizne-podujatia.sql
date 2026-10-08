@@ -46,6 +46,17 @@ select e.id,
         and t.vanished_at is null
  where e.status = 'published'
    and e.event_date >= current_date
+   -- Darčekové poukazy sú vedené ako podujatie (kategória `divadlo`, sála
+   -- bábkového divadla, 330 „miest", cena = hodnota poukazu), takže do výberu
+   -- padnú tiež. Pri poukaze ale nejde o konkrétne sedadlo — nikto si naň
+   -- nesadne — a pri 330 miestach a 108 predaných v OM nehrozí ani vyčerpanie
+   -- kapacity. Stiahnutím by sa teda len zastavil predaj poukazov, bez toho,
+   -- aby sa čomukoľvek zabránilo.
+   --
+   -- Zhoda na texte je krehká, ale iná sa nedá: poukazy nemajú žiadny znak,
+   -- ktorý by ich odlíšil od skutočných predstavení. Keby raz pribudli poukazy
+   -- s iným názvom, treba to tu doplniť.
+   and e.title not ilike '%darčekový poukaz%'
  group by e.id, e.title, e.event_date, e.sale_type, e.venue;
 
 \echo ''
@@ -102,12 +113,14 @@ select count(*) filter (where status = 'published') as publikovaných,
   from public.events;
 
 \echo ''
-\echo '--- kontrola: ostalo v predaji niečo, na čom OM už predal? (má byť 0) ---'
+\echo '--- kontrola: ostalo v predaji predstavenie, na ktorom OM už predal? (má byť 0) ---'
+\echo '    Darčekové poukazy sa nepočítajú — tie zostávajú v predaji zámerne.'
 select count(*) as ohrozených_stále_v_predaji
   from public.om_event_map m
   join public.events e on e.id = m.event_id
  where e.status = 'published'
    and e.event_date >= current_date
+   and e.title not ilike '%darčekový poukaz%'
    and exists (
      select 1 from public.om_tickets t
       where t.id_plan = m.id_plan

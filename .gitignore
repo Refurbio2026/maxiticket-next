@@ -39,3 +39,7 @@ dist-ssr
 
 # Supabase CLI scratch
 supabase/.temp/
+
+# Pracovné stromy asistenta — nikdy ich nepridávaj do commitu.
+# `git add -A` ich inak zaberie ako vnorený repozitár.
+.claude/
