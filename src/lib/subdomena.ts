@@ -71,10 +71,7 @@ export function chybaSubdomeny(subdomena: string): string | null {
 
 /** Návrh subdomény z názvu organizátora — diakritika preč, medzery na spojovník. */
 export function navrhSubdomeny(nazov: string): string {
-  const bezDiakritiky = nazov
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+  const bezDiakritiky = nazov.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const slug = bezDiakritiky
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")

@@ -17,12 +17,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { siteUrl } from "./site-url.server";
 import { renderEmail } from "./email-templates.server";
 import { sendMail, isMailConfigured } from "./mailer.server";
-import {
-  REZERVOVANE_SUBDOMENY,
-  TVAR_SUBDOMENY,
-  chybaSubdomeny,
-  zakladnaDomena,
-} from "./subdomena";
+import { REZERVOVANE_SUBDOMENY, TVAR_SUBDOMENY, chybaSubdomeny, zakladnaDomena } from "./subdomena";
 
 async function assertAdmin(userId: string) {
   const { data } = await supabaseAdmin
