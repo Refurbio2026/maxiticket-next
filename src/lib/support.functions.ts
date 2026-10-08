@@ -1,23 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { askSupportBot, type BotResult } from "./support-bot.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-/** IP spoza nginxu — `X-Real-IP` prepisuje nginx, takže sa nedá podvrhnúť. */
-function clientIp(): string {
-  try {
-    const h = getRequest()?.headers;
-    const real = h?.get("x-real-ip");
-    if (real) return real.trim();
-    const fwd = h?.get("x-forwarded-for");
-    if (fwd) return fwd.split(",").pop()!.trim();
-  } catch {
-    /* mimo requestu */
-  }
-  return "unknown";
-}
+import { ipBucket } from "./client-ip.server";
 
 // Server function backing the support chat widget. Basic abuse guards: bounded
 // message length and history size. The AI call itself lives in the .server.ts
@@ -42,9 +28,11 @@ export const askSupport = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<BotResult> => {
     // Endpoint je verejný a každé volanie stojí kredit u poskytovateľa AI.
     // Bez stropu vie ktokoľvek minúť účet, preto limit 30 správ za hodinu na IP.
+    const kluceIp = ipBucket("support:ip:");
     const { data: allowed, error } = await supabaseAdmin.rpc("hit_rate_limit", {
-      p_bucket: `support:ip:${clientIp()}`,
-      p_limit: 30,
+      // Bez použiteľnej adresy spoločný, voľnejší strop — pozri `ipBucket`.
+      p_bucket: kluceIp ?? "support:spolocne",
+      p_limit: kluceIp ? 30 : 300,
       p_window_seconds: 3600,
     });
     if (error) {

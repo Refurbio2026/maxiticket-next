@@ -6,21 +6,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ipBucket } from "./client-ip.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getRequest } from "@tanstack/react-start/server";
-
-/** IP klienta spoza nginxu — `X-Forwarded-For` prvá položka sa dá podvrhnúť. */
-function clientIp(): string {
-  const h = getRequest()?.headers;
-  const real = h?.get("x-real-ip");
-  if (real) return real.trim();
-  const fwd = h?.get("x-forwarded-for");
-  if (fwd) {
-    const parts = fwd.split(",").map((s) => s.trim());
-    return parts[parts.length - 1] || "unknown";
-  }
-  return "unknown";
-}
 
 async function limituj(bucket: string, limit: number, sekundy: number, sprava: string) {
   const { data: allowed, error } = await supabaseAdmin.rpc("hit_rate_limit", {
@@ -48,9 +35,11 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ ok: true; uzZapisany: boolean }> => {
+    // Bez použiteľnej adresy spoločný, voľnejší strop — pozri `ipBucket`.
+    const kluceIp = ipBucket("waitlist:ip:");
     await limituj(
-      `waitlist:ip:${clientIp()}`,
-      20,
+      kluceIp ?? "waitlist:spolocne",
+      kluceIp ? 20 : 300,
       3600,
       "Príliš veľa pokusov. Skús to prosím o chvíľu.",
     );

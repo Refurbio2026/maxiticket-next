@@ -1,25 +1,11 @@
 // Zľavové kupóny — správa v admine a overenie pri nákupe.
 // Drž tento súbor tenký: samotné uplatnenie je v `coupons.server.ts`.
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ipBucket } from "./client-ip.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { checkCoupon, couponErrorMessage } from "./coupons.server";
-
-/** IP spoza nginxu — `X-Real-IP` prepisuje nginx, takže sa nedá podvrhnúť. */
-function clientIp(): string {
-  try {
-    const h = getRequest()?.headers;
-    const real = h?.get("x-real-ip");
-    if (real) return real.trim();
-    const fwd = h?.get("x-forwarded-for");
-    if (fwd) return fwd.split(",").pop()!.trim();
-  } catch {
-    /* mimo requestu */
-  }
-  return "unknown";
-}
 
 export type CouponRecord = {
   id: string;
@@ -328,9 +314,14 @@ export const previewCoupon = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<CouponPreview> => {
     // Endpoint je verejný a odpovedá na otázku „existuje tento kód?". Bez
     // stropu by sa dali kupóny jednoducho uhádnuť skriptom.
+    // Keď adresa rozlišuje volajúcich, brzdíme na nej. Keď nie (perimeter
+    // prepisuje zdrojovú adresu, zistené 8. 10. 2026), ostáva spoločný strop —
+    // voľnejší, aby si poctiví držitelia kupónov neblokovali pokladňu
+    // navzájom, ale stále taký, že skúšanie kódov skriptom nie je zadarmo.
+    const kluceIp = ipBucket("coupon:ip:");
     const { data: allowed, error: limitErr } = await supabaseAdmin.rpc("hit_rate_limit", {
-      p_bucket: `coupon:ip:${clientIp()}`,
-      p_limit: 30,
+      p_bucket: kluceIp ?? "coupon:spolocne",
+      p_limit: kluceIp ? 30 : 600,
       p_window_seconds: 600,
     });
     if (limitErr) {

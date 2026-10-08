@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { clientIp, ipBucket } from "./client-ip.server";
 import { zabudni } from "./cache.server";
 import { siteUrl } from "./site-url.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -10,7 +11,6 @@ import { signOrderAccess, verifyOrderAccess } from "./order-access.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { checkCoupon, couponErrorMessage, releaseCoupon, recordRedemption } from "./coupons.server";
 import { loadSeatPricing } from "./seat-pricing.server";
-import { getRequest } from "@tanstack/react-start/server";
 import { errorMessage } from "./error-message";
 import { pocetVstupeniek } from "./plural";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
@@ -20,30 +20,6 @@ import { fakturacnySystem } from "./invoicing/index.server";
 import { firemneUdaje } from "./invoicing/types";
 import { sadzbaPodujatia } from "./dph.server";
 import { lehotaPrevodu, nastaveniePrevodu, posliPlatobneUdaje } from "./prevod.server";
-
-/**
- * IP klienta spoza nginxu.
- *
- * Berieme `X-Real-IP`, ktorý nginx nastavuje na `$remote_addr` a teda prepíše
- * čokoľvek, čo poslal klient. `X-Forwarded-For` je zoznam, do ktorého nginx len
- * pripája — jeho *prvá* položka pochádza od klienta a dá sa podvrhnúť, preto
- * z neho berieme poslednú.
- */
-function clientIp(): string {
-  try {
-    const h = getRequest()?.headers;
-    const real = h?.get("x-real-ip");
-    if (real) return real.trim();
-    const fwd = h?.get("x-forwarded-for");
-    if (fwd) {
-      const parts = fwd.split(",");
-      return parts[parts.length - 1].trim();
-    }
-  } catch {
-    /* mimo requestu (napr. cron) — limit sa potom viaže na "unknown" */
-  }
-  return "unknown";
-}
 
 /** Zaráta pokus; pri prekročení limitu vyhodí zrozumiteľnú chybu. */
 async function enforceRateLimit(
@@ -182,13 +158,21 @@ export const submitOrder = createServerFn({ method: "POST" })
     // Rezervácia drží sedadlá 15 minút, takže bez limitu vie skript udržať celú
     // sálu obsadenú donekonečna. Limitujeme podľa IP aj e-mailu — samotný e-mail
     // by útočník menil, samotná IP by potrestala celú firemnú sieť za NAT-om.
+    // Brzda na IP sa použije len vtedy, keď adresa vôbec rozlišuje volajúcich.
+    // Kým perimeter prepisuje zdrojovú adresu (zistené 8. 10. 2026), bol by
+    // z tohto limitu „20 objednávok za hodinu pre celý web" — pri spustení
+    // predaja by 21. kupujúci dostal chybu. Strop na e-mail nižšie platí vždy
+    // a práve ten rieši opakovaného útočníka.
     const email = data.customer.email.toLowerCase();
-    await enforceRateLimit(
-      `order:ip:${clientIp()}`,
-      20,
-      3600,
-      "Príliš veľa pokusov o objednávku. Skús to prosím o chvíľu.",
-    );
+    const kluceIp = ipBucket("order:ip:");
+    if (kluceIp) {
+      await enforceRateLimit(
+        kluceIp,
+        20,
+        3600,
+        "Príliš veľa pokusov o objednávku. Skús to prosím o chvíľu.",
+      );
+    }
     await enforceRateLimit(
       `order:email:${email}`,
       10,
@@ -673,6 +657,9 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
         })),
         returnUrl: navratovaAdresa(brana.id, origin, order.id),
         notifyUrl: `${origin}/api/public/payments/${brana.id}/webhook?orderId=${order.id}`,
+        // Bránam ide IP platiteľa (používajú ju na vyhodnocovanie rizika).
+        // Kým perimeter prepisuje zdrojovú adresu, dostanú `192.168.1.1` —
+        // nie je to chyba tohto kódu, ale stojí to za opravu perimetra.
         clientIp: clientIp(),
         lang: "sk",
       });

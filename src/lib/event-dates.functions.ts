@@ -5,48 +5,70 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cachuj, zabudni } from "./cache.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { clientIp } from "./client-ip.server";
+import { ipBucket } from "./client-ip.server";
 
 /**
- * Strop na držanie sedadiel z jednej IP.
+ * Stropy na držanie sedadiel.
  *
  * Účtujú sa **sedadlá, nie volania** — jedno volanie drží až 20 miest, takže
- * strop na volania by útočníkovi stačil na zablokovanie celej sály. Poctivý
- * kupujúci si do košíka nedá viac, než smie kúpiť (strop objednávky je 20),
- * takže ho 200 sedadiel za 15 minút neobmedzí ani keď si výber niekoľkokrát
- * premyslí.
+ * strop na volania by útočníkovi stačil. Poctivý kupujúci si do košíka nedá
+ * viac, než smie kúpiť (strop objednávky je 20); aj kto si 15 minút rozmýšľa,
+ * spotrebuje okolo 35 vrátane predlžovaní.
  *
- * Hodnoty sa dajú povoliť premennou prostredia bez nasadenia — keby pri
- * spustení predaja zakopol niekto za operátorským NAT-om, kde za jednou IP
- * sedí viac skutočných kupujúcich.
+ * Brzdí sa na dvoch veciach a každá rieši niečo iné:
  *
- * POZOR: toto ohraničuje **jednu IP**. Proti útoku z mnohých adries to
- * nepomôže; na to treba WAF pred aplikáciou, nie zmenu v kóde.
+ *  - **relácia** — rozlišuje jedného kupujúceho od druhého vždy, aj keď nám
+ *    perimeter zlieva adresy. Reláciu si ale posiela volajúci, takže si ju vie
+ *    meniť: je to strop na poctivého, nie na útočníka.
+ *  - **IP** — to je skutočná ochrana proti skriptu, ale použije sa len vtedy,
+ *    keď adresa vôbec rozlišuje volajúcich. Dnes nerozlišuje (OPNsense
+ *    prepisuje zdrojovú adresu, nginx vidí `192.168.1.1`), takže je vypnutá
+ *    sama a zapne sa, keď sa perimeter opraví. Keby sa použila teraz, bol by
+ *    z nej strop na celý web.
+ *
+ * Hodnoty sa dajú povoliť premennými prostredia bez nasadenia.
+ *
+ * POZOR: ani s opraveným perimetrom to neohraničí útok z mnohých adries. Na to
+ * treba WAF pred aplikáciou, nie zmenu v kóde.
  */
 const STROP_SEDADIEL = Number(process.env.HOLD_SEAT_LIMIT || 200);
+const STROP_RELACIE = Number(process.env.HOLD_SESSION_LIMIT || 60);
 const OKNO_SEDADIEL = Number(process.env.HOLD_SEAT_WINDOW || 900);
 
 /**
- * Zaráta držanie a povie, či sa smie. Pri chybe počítadla požiadavku pustíme —
- * brzda je ochrana, nie kritická cesta, a výpadok `rate_limits` nesmie zastaviť
- * predaj. Rovnako to robí `payments.functions.ts`.
+ * Zaráta do jedného kľúča. Pri chybe počítadla požiadavku pustíme — brzda je
+ * ochrana, nie kritická cesta, a výpadok `rate_limits` nesmie zastaviť predaj.
+ * Rovnako to robí `payments.functions.ts`.
  */
-async function pustiDrzanie(vaha: number): Promise<boolean> {
+async function zarataj(kluc: string, strop: number, vaha: number): Promise<boolean> {
   const { data: allowed, error } = await supabaseAdmin.rpc("hit_rate_limit", {
-    p_bucket: `hold:ip:${clientIp()}`,
-    p_limit: STROP_SEDADIEL,
+    p_bucket: kluc,
+    p_limit: strop,
     p_window_seconds: OKNO_SEDADIEL,
     p_weight: vaha,
   });
   if (error) {
-    console.error("brzda držania sedadiel zlyhala", error.message);
+    console.error("brzda držania sedadiel zlyhala", kluc, error.message);
     return true;
   }
   return allowed !== false;
 }
 
-const SPRAVA_STROPU =
-  "Priveľa pokusov o podržanie sedadiel z tejto adresy. Skús to prosím o pár minút.";
+/**
+ * Smie táto požiadavka podržať `vaha` sedadiel? Obidve kontroly idú súbežne,
+ * aby držanie neplatilo dvoma cestami do databázy namiesto jednej — je to
+ * horúca cesta, pri spustení predaja po nej ide tisíc ľudí.
+ */
+async function pustiDrzanie(session: string, vaha: number): Promise<boolean> {
+  const kluceIp = ipBucket("hold:ip:");
+  const vysledky = await Promise.all([
+    zarataj(`hold:ses:${session}`, STROP_RELACIE, vaha),
+    kluceIp ? zarataj(kluceIp, STROP_SEDADIEL, vaha) : Promise.resolve(true),
+  ]);
+  return vysledky.every(Boolean);
+}
+
+const SPRAVA_STROPU = "Priveľa pokusov o podržanie sedadiel. Skús to prosím o pár minút.";
 
 export type EventDateRecord = {
   id: string;
@@ -494,7 +516,7 @@ export const holdSeats = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ held: string[] }> => {
-    if (!(await pustiDrzanie(data.seats.length))) throw new Error(SPRAVA_STROPU);
+    if (!(await pustiDrzanie(data.session, data.seats.length))) throw new Error(SPRAVA_STROPU);
 
     const until = new Date(Date.now() + data.minutes * 60_000).toISOString();
     const { data: rows, error } = await supabaseAdmin.rpc("hold_seats", {
@@ -547,7 +569,7 @@ export const extendHolds = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ extended: number }> => {
     // Predlžovanie je držanie v čase: bez stropu by sa raz podržaná sála
     // obnovovala donekonečna za jedno volanie.
-    if (!(await pustiDrzanie(1))) throw new Error(SPRAVA_STROPU);
+    if (!(await pustiDrzanie(data.session, 1))) throw new Error(SPRAVA_STROPU);
 
     const { data: pocet, error } = await supabaseAdmin.rpc("extend_holds", {
       p_event_date_id: data.event_date_id,
