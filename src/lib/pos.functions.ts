@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { hashPin, pinMatches } from "./pos-pin.server";
 import { zabudni } from "./cache.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { newSignedTicket } from "./qr-token.server";
@@ -74,28 +75,6 @@ export type PosSaleRecord = {
   items: { label: string; quantity: number; unit_price: number }[];
   tickets: { id: string; seat_label: string; qr_code: string }[];
 };
-
-// --- PIN --------------------------------------------------------------
-// Štvorciferný PIN má 10 000 možností, takže obyčajný SHA-256 by sa dal
-// prelúskať hotovou tabuľkou. Preto ho podpisujeme tajomstvom aplikácie
-// (rovnaké, akým sa podpisujú QR vstupenky) a overujeme v konštantnom čase.
-
-function pinSecret(): string {
-  const secret = process.env.TICKET_QR_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) throw new Error("Chýba TICKET_QR_SECRET — PIN sa nedá bezpečne uložiť.");
-  return secret;
-}
-
-function hashPin(cashierId: string, pin: string): string {
-  // Do hashu ide aj id pokladníka, takže dvaja s rovnakým PIN-om majú iný hash.
-  return crypto.createHmac("sha256", pinSecret()).update(`${cashierId}:${pin}`).digest("hex");
-}
-
-function pinMatches(cashierId: string, pin: string, hash: string): boolean {
-  const candidate = Buffer.from(hashPin(cashierId, pin));
-  const stored = Buffer.from(hash);
-  return candidate.length === stored.length && crypto.timingSafeEqual(candidate, stored);
-}
 
 // --- Spoločné ---------------------------------------------------------
 

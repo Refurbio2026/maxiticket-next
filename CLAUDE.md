@@ -36,10 +36,15 @@ a bez neho spadne na predvolený `cloudflare-module`. Taký `.output/server/inde
 naštartuje, ale **na žiadnom porte nepočúva**, takže web je mŕtvy bez jedinej chyby v logu.
 Po builde skontroluj `grep preset .output/nitro.json`.
 
-**Halda:** bez `--max-old-space-size` build na tomto stroji (3,9 GB RAM) padne na
-`JavaScript heap out of memory`. Zákerné je, že vtedy už stihol **zmazať `.output`**, takže
-aplikácia po najbližšom reštarte nenaštartuje — web je dole, kým build nezbehne celý. Preto
-build nikdy nespúšťaj súbežne s `tsc` ani s headless prehliadačom.
+**Halda:** stroj má **7,9 GB RAM** (overené 8. 10. 2026; staršia verzia tohto textu
+tvrdila 3,9 GB, čo už neplatí) a build s presetom zbehne za ~21 s. `--max-old-space-size`
+nechávaj v príkaze — na menšej mašine bez neho build padal na `JavaScript heap out of
+memory` a nie je dôvod to skúšať znova.
+
+**Starý build neodmazávaj, odlož ho:** `mv .output .output.predchadzajuci`. Keď build
+z akéhokoľvek dôvodu spadne, vrátiš sa jedným `mv`; pri `rm -rf .output` by web ostal
+dole, kým nezbehne celý nový build (to bol incident 16. 9. 2026). Po úspešnom nasadení
+a kontrole odloženú kópiu zmaž.
 
 ## Stack
 
