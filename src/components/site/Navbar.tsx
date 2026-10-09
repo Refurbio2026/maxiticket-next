@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/hooks/use-i18n";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CartButton } from "@/components/site/CartButton";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Wordmark } from "@/components/site/Wordmark";
 
@@ -66,6 +67,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <LanguageSwitcher className="rounded-xl" />
             <ThemeToggle className="rounded-xl" />
+            <CartButton />
             {user ? (
               <>
                 <Button

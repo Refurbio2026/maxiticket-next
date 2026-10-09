@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEvent, type EventRecord } from "@/hooks/use-events";
 import { verejnaAdresa } from "@/lib/site-url.server";
@@ -12,6 +12,7 @@ import {
   releaseHolds,
   extendHolds,
 } from "@/lib/event-dates.functions";
+import { getCart } from "@/lib/cart.functions";
 import { listEventZonePrices } from "@/lib/price-categories.functions";
 import { listEventPerformers } from "@/lib/performers.functions";
 import { useLayout, useLayouts } from "@/hooks/use-layouts";
@@ -185,6 +186,21 @@ function strukturovaneUdaje(e: EventRecord, origin: string) {
 }
 
 type Selected = { seat_id: string; label: string; price: number; is_vip: boolean };
+
+/**
+ * Ako dlho sa sedadlo drží počas prezerania.
+ *
+ * Bývali to dve minúty, obnovované každú minútu — kým bol výber vidieť len na
+ * tejto stránke, stačilo to a sálu to blokovalo minimálne. Odkedy je košík
+ * v hlavičke a má prežiť prechod na inú stránku, dve minúty sú málo: košík by
+ * zmizol skôr, než sa človek vráti. Desať minút je bežné rezervačné okno
+ * a zodpovedá aj držaniu pri platení.
+ *
+ * Cena za to: opustený výber blokuje miesta desať minút namiesto dvoch. Pri
+ * dnešnej obsadenosti to nie je problém a odpočet v košíku to kupujúcemu
+ * povie na rovinu.
+ */
+const DRZANIE_MINUT = 10;
 
 const dayNames = ["nedeľa", "pondelok", "utorok", "streda", "štvrtok", "piatok", "sobota"];
 const monthNames = [
@@ -465,7 +481,7 @@ function EventDetail() {
           data: { event_date_id: activeDate.id, session: getCartSessionId(), seat_id: s.seat_id },
         });
       } catch {
-        /* Neuvoľnené sedadlo si o dve minúty vypýta platnosť samo. */
+        /* Neuvoľnené sedadlo si po vypršaní platnosti vypýta uvoľnenie samo. */
       }
       availability.refetch();
       return;
@@ -477,7 +493,7 @@ function EventDetail() {
           event_date_id: activeDate.id,
           session: getCartSessionId(),
           seats: [{ seat_id: s.seat_id, price: s.price, label: s.label, is_vip: s.is_vip }],
-          minutes: 2,
+          minutes: DRZANIE_MINUT,
         },
       });
       if (!held.includes(s.seat_id)) {
@@ -498,8 +514,55 @@ function EventDetail() {
   const drzanieRef = useRef({ predlzDrzanie, uvolniSedadla });
   drzanieRef.current = { predlzDrzanie, uvolniSedadla };
 
-  // Kým má človek košík otvorený, držanie sa každú minútu predlžuje; keď
-  // odíde bez nákupu, sedadlá pustíme.
+  const qc = useQueryClient();
+  const nacitajKosik = useServerFn(getCart);
+  const obnovene = useRef<string | null>(null);
+
+  // Návrat na stránku: výber obnovíme z toho, čo databáza drží pod našou
+  // reláciou. Bez toho by človek prišiel z košíka v hlavičke a videl prázdnu
+  // sálu, hoci miesta má podržané — výber totiž žije len v stave komponenty.
+  //
+  // Obnovuje sa raz na termín a len do prázdneho výberu, aby to nepreperalo to,
+  // čo práve klikol.
+  useEffect(() => {
+    if (!isMap || !activeDate) return;
+    if (obnovene.current === activeDate.id) return;
+    obnovene.current = activeDate.id;
+    const sid = getCartSessionId();
+    if (sid === "ssr" || sid === "anon") return;
+    void (async () => {
+      try {
+        const kosik = await nacitajKosik({ data: { session: sid } });
+        const skupina = kosik.groups.find((g) => g.event_date_id === activeDate.id);
+        if (!skupina || skupina.seats.length === 0) return;
+        setSelected((prev) =>
+          prev.length > 0
+            ? prev
+            : skupina.seats.map((x) => ({
+                seat_id: x.seat_id,
+                label: x.label ?? x.seat_id,
+                price: x.price,
+                is_vip: x.is_vip,
+              })),
+        );
+      } catch {
+        /* Košík je pomôcka, nie kritická cesta — stránka funguje ďalej. */
+      }
+    })();
+  }, [isMap, activeDate, nacitajKosik]);
+
+  // Keď sa výber zmení, počítadlo pri ikonke košíka musí ísť s ním.
+  useEffect(() => {
+    void qc.invalidateQueries({ queryKey: ["cart"] });
+  }, [selected.length, qc]);
+
+  // Kým je stránka otvorená, držanie sa každú minútu predlžuje.
+  //
+  // Pri odchode zo stránky sa sedadlá **už neuvoľňujú.** Predtým sa uvoľňovali
+  // v `beforeunload`, čo bolo správne, kým bol výber vidieť len tu — ale košík
+  // v hlavičke má prežiť prechod na inú stránku, a uvoľnenie by ho zmazalo
+  // v okamihu, keď sa naň človek chce pozrieť. Teraz držanie vyprší samo po
+  // `DRZANIE_MINUT` a kupujúci vidí odpočet; vyhodiť sa dá z košíka.
   useEffect(() => {
     if (!activeDate || selected.length === 0) return;
     const held = activeDate.id;
@@ -507,21 +570,11 @@ function EventDetail() {
     const t = setInterval(
       () =>
         void drzanieRef.current.predlzDrzanie({
-          data: { event_date_id: held, session: sid, minutes: 2 },
+          data: { event_date_id: held, session: sid, minutes: DRZANIE_MINUT },
         }),
       60_000,
     );
-    // Pri zatváraní okna sa už čakať nedá — pošleme to a necháme tak. Keby to
-    // nedošlo, sedadlo uvoľní vypršanie platnosti do dvoch minút.
-    const onUnload = () =>
-      void drzanieRef.current.uvolniSedadla({ data: { event_date_id: held, session: sid } });
-    window.addEventListener("beforeunload", onUnload);
-    window.addEventListener("pagehide", onUnload);
-    return () => {
-      clearInterval(t);
-      window.removeEventListener("beforeunload", onUnload);
-      window.removeEventListener("pagehide", onUnload);
-    };
+    return () => clearInterval(t);
   }, [activeDate, selected.length]);
 
   const total = isMap ? selected.reduce((sum, s) => sum + s.price, 0) : qty * basePrice;
