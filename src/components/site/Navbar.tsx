@@ -98,14 +98,6 @@ export function Navbar() {
               </Link>
             </Button>
             <Button
-              asChild
-              className="hidden sm:inline-flex rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 shadow-glow"
-            >
-              <Link to="/login" search={{ section: "organizer" }}>
-                {t("common.addEvent")}
-              </Link>
-            </Button>
-            <Button
               variant="ghost"
               size="icon"
               className="lg:hidden rounded-xl"
@@ -182,14 +174,6 @@ export function Navbar() {
                 className="px-3 py-2.5 rounded-lg text-sm hover:bg-muted/40 flex items-center gap-2"
               >
                 <ScanLine className="size-4" /> {t("common.scannerQR")}
-              </Link>
-              <Link
-                to="/login"
-                search={{ section: "organizer" }}
-                onClick={() => setOpen(false)}
-                className="mt-2 px-3 py-2.5 rounded-lg text-sm text-center bg-gradient-flame text-primary-foreground shadow-glow"
-              >
-                {t("common.addEvent")}
               </Link>
             </motion.div>
           )}
