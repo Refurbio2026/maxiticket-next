@@ -10,8 +10,10 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-.output
-.output.bak-*
+# Všetky podoby buildu vrátane odložených kópií pred nasadením.
+# Predtým tu bolo len `.output` a `.output.bak-*`, takže `.output.predchadzajuci`
+# sa dalo omylom zabrať do commitu cez `git add -A`.
+.output*
 .vinxi
 .tanstack/**
 .nitro
