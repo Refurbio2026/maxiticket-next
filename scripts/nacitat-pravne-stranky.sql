@@ -6,7 +6,8 @@
 --
 -- Texty sú prevzaté z Všeobecných obchodných podmienok MaxiTicketu
 -- (https://vstupenky.maxiticket.sk/vseobecne.obchodne.podmienky, účinné od
--- 1. 7. 2022) — prevádzkovateľom oboch systémov je tá istá spoločnosť,
+-- 1. 7. 2022; naša verzia je účinná od 1. 10. 2026) — prevádzkovateľom oboch
+-- systémov je tá istá spoločnosť,
 -- MaxiTicket s.r.o. Pôvodný dokument mal deväť článkov vrátane reklamačného
 -- poriadku (čl. 6) a ochrany osobných údajov (čl. 8); tu sú rozdelené na tri
 -- samostatné stránky s krížovými odkazmi.
@@ -36,7 +37,7 @@ select slug, published, length(body) as znakov from public.site_pages order by s
 update public.site_pages
    set title = 'Všeobecné obchodné podmienky',
        meta_description = 'Podmienky predaja vstupeniek na eticketo.eu — platba, dodanie, práva a povinnosti.',
-       body = $telo$Účinné od 1. 7. 2022. Tieto podmienky prevzalo eticketo.eu z predchádzajúceho systému MaxiTicket; prevádzkovateľom oboch je tá istá spoločnosť.
+       body = $telo$Účinné od 1. 10. 2026. Tieto podmienky prevzalo eticketo.eu z predchádzajúceho systému MaxiTicket; prevádzkovateľom oboch je tá istá spoločnosť.
 
 Spoločnosť MaxiTicket s.r.o., so sídlom Drevárska 23, 902 01 Pezinok, IČO 53251580, zapísaná v obchodnom registri Okresného súdu Bratislava I, oddiel Sro, vložka č. 14844, prevádzkuje systém eticketo na adrese eticketo.eu. Tam, kde sa ďalej hovorí o MaxiTicket, ide o túto spoločnosť.
 
@@ -145,7 +146,7 @@ $telo$,
 update public.site_pages
    set title = 'Reklamačný poriadok',
        meta_description = 'Ako reklamovať vstupenku kúpenú na eticketo.eu a kam sa obrátiť.',
-       body = $telo$Účinné od 1. 7. 2022. Tento reklamačný poriadok bol vyčlenený z článku 6 Všeobecných obchodných podmienok: eticketo.eu/p/obchodne-podmienky
+       body = $telo$Účinné od 1. 10. 2026. Tento reklamačný poriadok bol vyčlenený z článku 6 Všeobecných obchodných podmienok: eticketo.eu/p/obchodne-podmienky
 
 6.1 V prípade, ak zakúpená vstupenka obsahuje vady (t.j. sú na nej uvedené chybné údaje alebo niektoré údaje chýbajú, je vystavená na iné ako majiteľom vstupenky objednané podujatie a pod.), je majiteľ vstupenky povinný bez zbytočného odkladu po jej obdržaní tieto vady u spoločnosti MaxiTicket alebo u usporiadateľa reklamovať. Reklamáciu môže vykonať zaslaním e-mailovej správy na adresu podpora@eticketo.eu, písomnej reklamácie formou poštovej zásielky na adresu usporiadateľa alebo osobne na predajnom mieste usporiadateľa, na ktorom bola vstupenka zakúpená.
 
@@ -162,7 +163,7 @@ $telo$,
 update public.site_pages
    set title = 'Ochrana osobných údajov',
        meta_description = 'Aké osobné údaje spracúvame pri predaji vstupeniek, na akom základe a aké máš práva.',
-       body = $telo$Účinné od 1. 7. 2022. Tento dokument bol vyčlenený z článku 8 Všeobecných obchodných podmienok: eticketo.eu/p/obchodne-podmienky
+       body = $telo$Účinné od 1. 10. 2026. Tento dokument bol vyčlenený z článku 8 Všeobecných obchodných podmienok: eticketo.eu/p/obchodne-podmienky
 
 8.1 MaxiTicket ako prevádzkovateľ internetovej stránky eticketo.eu a systému eticketo spracúva osobné údaje fyzických osôb - používateľov internetovej stránky/záujemcov o Podujatie a/alebo Majiteľov vstupenky (ďalej len „dotknuté osoby“) ako prevádzkovateľ v zmysle článku 4 ods. 7 Nariadenia GDPR.
 
