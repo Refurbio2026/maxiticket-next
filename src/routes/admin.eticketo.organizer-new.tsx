@@ -4,7 +4,7 @@
 // obsluha tak vidí, čo všetko konto potrebuje, a nedá sa prejsť do stavu,
 // v akom dnes stojí deväť z desiatich organizátorov — bez firmy, bez IBAN-u
 // a s platformovou províziou, o ktorej nikto nerozhodol.
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -13,18 +13,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, UserPlus, Globe, Mail, Check, AlertTriangle, Copy, Inbox } from "lucide-react";
-import {
-  createOrganizer,
-  checkSubdomain,
-  listOrganizerRequests,
-  approveOrganizerRequest,
-  rejectOrganizerRequest,
-  type StavSubdomeny,
-  type ZiadostOrganizatora,
-} from "@/lib/organizers.functions";
+import { createOrganizer, checkSubdomain, type StavSubdomeny } from "@/lib/organizers.functions";
 import { getPlatformSettings } from "@/lib/settlements.functions";
 import { chybaSubdomeny, navrhSubdomeny } from "@/lib/subdomena";
 
@@ -65,9 +56,6 @@ const prazdny: Form = {
   poslat_pozvanku: true,
 };
 
-const fmtDatum = (s: string) =>
-  new Date(s).toLocaleDateString("sk-SK", { day: "numeric", month: "short", year: "numeric" });
-
 function Page() {
   const qc = useQueryClient();
   const [form, setForm] = useState<Form>(prazdny);
@@ -75,19 +63,11 @@ function Page() {
 
   const zaloz = useServerFn(createOrganizer);
   const over = useServerFn(checkSubdomain);
-  const nacitajZiadosti = useServerFn(listOrganizerRequests);
-  const schval = useServerFn(approveOrganizerRequest);
-  const zamietni = useServerFn(rejectOrganizerRequest);
   const nacitajNastavenia = useServerFn(getPlatformSettings);
 
   const nastavenia = useQuery({
     queryKey: ["platform-settings"],
     queryFn: () => nacitajNastavenia({ data: undefined as never }),
-  });
-
-  const ziadosti = useQuery({
-    queryKey: ["organizer-requests"],
-    queryFn: () => nacitajZiadosti({ data: undefined as never }),
   });
 
   // Subdoména sa navrhne z názvu, ale len kým do nej obsluha nezasiahla.
@@ -139,25 +119,6 @@ function Page() {
       setSubdomenaRucne(false);
       qc.invalidateQueries({ queryKey: ["organizer-accounts"] });
       qc.invalidateQueries({ queryKey: ["admin-users"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const schvalenie = useMutation({
-    mutationFn: (z: ZiadostOrganizatora) => schval({ data: { id: z.id } }),
-    onSuccess: () => {
-      toast.success("Žiadosť schválená — rola organizátora pridelená");
-      qc.invalidateQueries({ queryKey: ["organizer-requests"] });
-      qc.invalidateQueries({ queryKey: ["organizer-accounts"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const zamietnutie = useMutation({
-    mutationFn: (z: ZiadostOrganizatora) => zamietni({ data: { id: z.id } }),
-    onSuccess: () => {
-      toast.success("Žiadosť zamietnutá");
-      qc.invalidateQueries({ queryKey: ["organizer-requests"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -422,60 +383,23 @@ function Page() {
         </div>
       </Card>
 
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Inbox className="h-4 w-4" /> Žiadosti z registrácie
-          {(ziadosti.data?.length ?? 0) > 0 && (
-            <Badge variant="secondary">{ziadosti.data?.length}</Badge>
-          )}
+      {/* Žiadosti z verejnej registrácie majú vlastnú frontu: od sprievodcu na
+          `/onboarding` je k nim logo, popis, siete, storno podmienky aj IBAN,
+          a to sa do zoznamu s dvoma tlačidlami nevojde. */}
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-6">
+        <div className="flex items-start gap-2">
+          <Inbox className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div>
+            <div className="text-sm font-semibold">Žiadosti z registrácie</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Kto sa prihlásil sám na <span className="font-mono">/register</span> a prešiel
+              sprievodcom. Rolu dostane až schválením — samoregistráciou si ju nikto nepridelí.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Kto sa na <span className="font-mono">/register</span> prihlásil ako organizátor. Rolu
-          dostane až tu — samoregistráciou si ju nikto nepridelí.
-        </p>
-
-        {ziadosti.isLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Načítavam…
-          </div>
-        ) : (ziadosti.data?.length ?? 0) === 0 ? (
-          <p className="text-sm text-muted-foreground">Žiadne čakajúce žiadosti.</p>
-        ) : (
-          <div className="space-y-2">
-            {ziadosti.data?.map((z) => (
-              <div
-                key={z.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/50 p-3"
-              >
-                <div className="text-sm">
-                  <div className="font-medium">{z.full_name || z.email}</div>
-                  <div className="text-muted-foreground text-xs">
-                    {z.email}
-                    {z.company_name ? ` · ${z.company_name}` : ""}
-                    {z.ico ? ` · IČO ${z.ico}` : ""} · {fmtDatum(z.vznik)}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => schvalenie.mutate(z)}
-                    disabled={schvalenie.isPending}
-                  >
-                    Schváliť
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => zamietnutie.mutate(z)}
-                    disabled={zamietnutie.isPending}
-                  >
-                    Zamietnuť
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <Button asChild variant="outline" size="sm">
+          <Link to="/admin/eticketo/organizer-approvals">Otvoriť frontu žiadostí</Link>
+        </Button>
       </Card>
     </div>
   );

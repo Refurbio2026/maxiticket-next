@@ -17,6 +17,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MarketingRouteImport } from './routes/marketing'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -29,9 +30,11 @@ import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as OSubdomenaRouteImport } from './routes/o.$subdomena'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
 import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
+import { Route as OrganizerProfileRouteImport } from './routes/organizer.profile'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
@@ -48,6 +51,7 @@ import { Route as AdminEticketoControlRouteImport } from './routes/admin.eticket
 import { Route as AdminEticketoCostsRouteImport } from './routes/admin.eticketo.costs'
 import { Route as AdminEticketoDevicesRouteImport } from './routes/admin.eticketo.devices'
 import { Route as AdminEticketoOmPredajRouteImport } from './routes/admin.eticketo.om-predaj'
+import { Route as AdminEticketoOrganizerApprovalsRouteImport } from './routes/admin.eticketo.organizer-approvals'
 import { Route as AdminEticketoOrganizerNewRouteImport } from './routes/admin.eticketo.organizer-new'
 import { Route as AdminEticketoOrganizersRouteImport } from './routes/admin.eticketo.organizers'
 import { Route as AdminEticketoPaymentsRouteImport } from './routes/admin.eticketo.payments'
@@ -139,6 +143,11 @@ const MarketingRoute = MarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrganizerRoute = OrganizerRouteImport.update({
   id: '/organizer',
   path: '/organizer',
@@ -199,6 +208,11 @@ const EventsIdRoute = EventsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => EventsRoute,
 } as any)
+const OSubdomenaRoute = OSubdomenaRouteImport.update({
+  id: '/o/$subdomena',
+  path: '/o/$subdomena',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -212,6 +226,11 @@ const OrganizerEventsRoute = OrganizerEventsRouteImport.update({
 const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerProfileRoute = OrganizerProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const PSlugRoute = PSlugRouteImport.update({
@@ -299,6 +318,12 @@ const AdminEticketoOmPredajRoute = AdminEticketoOmPredajRouteImport.update({
   path: '/eticketo/om-predaj',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEticketoOrganizerApprovalsRoute =
+  AdminEticketoOrganizerApprovalsRouteImport.update({
+    id: '/eticketo/organizer-approvals',
+    path: '/eticketo/organizer-approvals',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminEticketoOrganizerNewRoute =
   AdminEticketoOrganizerNewRouteImport.update({
     id: '/eticketo/organizer-new',
@@ -569,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/marketing': typeof MarketingRoute
+  '/onboarding': typeof OnboardingRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
@@ -580,8 +606,10 @@ export interface FileRoutesByFullPath {
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
+  '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
+  '/organizer/profile': typeof OrganizerProfileRoute
   '/p/$slug': typeof PSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -600,6 +628,7 @@ export interface FileRoutesByFullPath {
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
   '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
   '/admin/eticketo/om-predaj': typeof AdminEticketoOmPredajRoute
+  '/admin/eticketo/organizer-approvals': typeof AdminEticketoOrganizerApprovalsRoute
   '/admin/eticketo/organizer-new': typeof AdminEticketoOrganizerNewRoute
   '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
   '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
@@ -659,6 +688,7 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/marketing': typeof MarketingRoute
+  '/onboarding': typeof OnboardingRoute
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -669,6 +699,8 @@ export interface FileRoutesByTo {
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
+  '/o/$subdomena': typeof OSubdomenaRoute
+  '/organizer/profile': typeof OrganizerProfileRoute
   '/p/$slug': typeof PSlugRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -687,6 +719,7 @@ export interface FileRoutesByTo {
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
   '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
   '/admin/eticketo/om-predaj': typeof AdminEticketoOmPredajRoute
+  '/admin/eticketo/organizer-approvals': typeof AdminEticketoOrganizerApprovalsRoute
   '/admin/eticketo/organizer-new': typeof AdminEticketoOrganizerNewRoute
   '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
   '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
@@ -748,6 +781,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/marketing': typeof MarketingRoute
+  '/onboarding': typeof OnboardingRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
@@ -759,8 +793,10 @@ export interface FileRoutesById {
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
+  '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
+  '/organizer/profile': typeof OrganizerProfileRoute
   '/p/$slug': typeof PSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -779,6 +815,7 @@ export interface FileRoutesById {
   '/admin/eticketo/costs': typeof AdminEticketoCostsRoute
   '/admin/eticketo/devices': typeof AdminEticketoDevicesRoute
   '/admin/eticketo/om-predaj': typeof AdminEticketoOmPredajRoute
+  '/admin/eticketo/organizer-approvals': typeof AdminEticketoOrganizerApprovalsRoute
   '/admin/eticketo/organizer-new': typeof AdminEticketoOrganizerNewRoute
   '/admin/eticketo/organizers': typeof AdminEticketoOrganizersRoute
   '/admin/eticketo/payments': typeof AdminEticketoPaymentsRoute
@@ -841,6 +878,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/login'
     | '/marketing'
+    | '/onboarding'
     | '/organizer'
     | '/partners'
     | '/register'
@@ -852,8 +890,10 @@ export interface FileRouteTypes {
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
+    | '/o/$subdomena'
     | '/organizer/events'
     | '/organizer/marketing'
+    | '/organizer/profile'
     | '/p/$slug'
     | '/admin/'
     | '/organizer/'
@@ -872,6 +912,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/costs'
     | '/admin/eticketo/devices'
     | '/admin/eticketo/om-predaj'
+    | '/admin/eticketo/organizer-approvals'
     | '/admin/eticketo/organizer-new'
     | '/admin/eticketo/organizers'
     | '/admin/eticketo/payments'
@@ -931,6 +972,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/login'
     | '/marketing'
+    | '/onboarding'
     | '/partners'
     | '/register'
     | '/robots.txt'
@@ -941,6 +983,8 @@ export interface FileRouteTypes {
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
+    | '/o/$subdomena'
+    | '/organizer/profile'
     | '/p/$slug'
     | '/admin'
     | '/organizer'
@@ -959,6 +1003,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/costs'
     | '/admin/eticketo/devices'
     | '/admin/eticketo/om-predaj'
+    | '/admin/eticketo/organizer-approvals'
     | '/admin/eticketo/organizer-new'
     | '/admin/eticketo/organizers'
     | '/admin/eticketo/payments'
@@ -1019,6 +1064,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/login'
     | '/marketing'
+    | '/onboarding'
     | '/organizer'
     | '/partners'
     | '/register'
@@ -1030,8 +1076,10 @@ export interface FileRouteTypes {
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
+    | '/o/$subdomena'
     | '/organizer/events'
     | '/organizer/marketing'
+    | '/organizer/profile'
     | '/p/$slug'
     | '/admin/'
     | '/organizer/'
@@ -1050,6 +1098,7 @@ export interface FileRouteTypes {
     | '/admin/eticketo/costs'
     | '/admin/eticketo/devices'
     | '/admin/eticketo/om-predaj'
+    | '/admin/eticketo/organizer-approvals'
     | '/admin/eticketo/organizer-new'
     | '/admin/eticketo/organizers'
     | '/admin/eticketo/payments'
@@ -1111,6 +1160,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
   MarketingRoute: typeof MarketingRoute
+  OnboardingRoute: typeof OnboardingRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
   PartnersRoute: typeof PartnersRoute
   RegisterRoute: typeof RegisterRoute
@@ -1120,6 +1170,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
+  OSubdomenaRoute: typeof OSubdomenaRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
@@ -1190,6 +1241,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing'
       fullPath: '/marketing'
       preLoaderRoute: typeof MarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizer': {
@@ -1276,6 +1334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof EventsRoute
     }
+    '/o/$subdomena': {
+      id: '/o/$subdomena'
+      path: '/o/$subdomena'
+      fullPath: '/o/$subdomena'
+      preLoaderRoute: typeof OSubdomenaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/organizer/': {
       id: '/organizer/'
       path: '/'
@@ -1295,6 +1360,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing'
       fullPath: '/organizer/marketing'
       preLoaderRoute: typeof OrganizerMarketingRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/profile': {
+      id: '/organizer/profile'
+      path: '/profile'
+      fullPath: '/organizer/profile'
+      preLoaderRoute: typeof OrganizerProfileRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/p/$slug': {
@@ -1407,6 +1479,13 @@ declare module '@tanstack/react-router' {
       path: '/eticketo/om-predaj'
       fullPath: '/admin/eticketo/om-predaj'
       preLoaderRoute: typeof AdminEticketoOmPredajRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eticketo/organizer-approvals': {
+      id: '/admin/eticketo/organizer-approvals'
+      path: '/eticketo/organizer-approvals'
+      fullPath: '/admin/eticketo/organizer-approvals'
+      preLoaderRoute: typeof AdminEticketoOrganizerApprovalsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/eticketo/organizer-new': {
@@ -1792,6 +1871,7 @@ interface AdminRouteChildren {
   AdminEticketoCostsRoute: typeof AdminEticketoCostsRoute
   AdminEticketoDevicesRoute: typeof AdminEticketoDevicesRoute
   AdminEticketoOmPredajRoute: typeof AdminEticketoOmPredajRoute
+  AdminEticketoOrganizerApprovalsRoute: typeof AdminEticketoOrganizerApprovalsRoute
   AdminEticketoOrganizerNewRoute: typeof AdminEticketoOrganizerNewRoute
   AdminEticketoOrganizersRoute: typeof AdminEticketoOrganizersRoute
   AdminEticketoPaymentsRoute: typeof AdminEticketoPaymentsRoute
@@ -1839,6 +1919,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEticketoCostsRoute: AdminEticketoCostsRoute,
   AdminEticketoDevicesRoute: AdminEticketoDevicesRoute,
   AdminEticketoOmPredajRoute: AdminEticketoOmPredajRoute,
+  AdminEticketoOrganizerApprovalsRoute: AdminEticketoOrganizerApprovalsRoute,
   AdminEticketoOrganizerNewRoute: AdminEticketoOrganizerNewRoute,
   AdminEticketoOrganizersRoute: AdminEticketoOrganizersRoute,
   AdminEticketoPaymentsRoute: AdminEticketoPaymentsRoute,
@@ -1911,6 +1992,7 @@ const OrganizerMarketingRouteWithChildren =
 interface OrganizerRouteChildren {
   OrganizerEventsRoute: typeof OrganizerEventsRouteWithChildren
   OrganizerMarketingRoute: typeof OrganizerMarketingRouteWithChildren
+  OrganizerProfileRoute: typeof OrganizerProfileRoute
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerPosCashierSalesRoute: typeof OrganizerPosCashierSalesRoute
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
@@ -1924,6 +2006,7 @@ interface OrganizerRouteChildren {
 const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerEventsRoute: OrganizerEventsRouteWithChildren,
   OrganizerMarketingRoute: OrganizerMarketingRouteWithChildren,
+  OrganizerProfileRoute: OrganizerProfileRoute,
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerPosCashierSalesRoute: OrganizerPosCashierSalesRoute,
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
@@ -1947,6 +2030,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
   MarketingRoute: MarketingRoute,
+  OnboardingRoute: OnboardingRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
   PartnersRoute: PartnersRoute,
   RegisterRoute: RegisterRoute,
@@ -1956,6 +2040,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
+  OSubdomenaRoute: OSubdomenaRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
@@ -1973,13 +2058,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

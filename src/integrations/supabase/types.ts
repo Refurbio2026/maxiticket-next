@@ -507,6 +507,26 @@ export type Database = {
           payout_iban: string | null;
           phone: string | null;
           subdomain: string | null;
+          display_name: string | null;
+          bio: string | null;
+          logo_url: string | null;
+          cover_url: string | null;
+          website: string | null;
+          city: string | null;
+          vat_payer: boolean;
+          listed_in_catalog: boolean;
+          cancellation_policy: string | null;
+          complaint_contact: string | null;
+          payout_frequency: string | null;
+          onboarding_step: number;
+          onboarding_completed_at: string | null;
+          organizer_status: Database["public"]["Enums"]["organizer_status"];
+          organizer_requested_at: string | null;
+          organizer_approved_at: string | null;
+          organizer_approved_by: string | null;
+          organizer_review_note: string | null;
+          terms_accepted_at: string | null;
+          terms_version: string | null;
           updated_at: string;
         };
         Insert: {
@@ -522,6 +542,26 @@ export type Database = {
           payout_iban?: string | null;
           phone?: string | null;
           subdomain?: string | null;
+          display_name?: string | null;
+          bio?: string | null;
+          logo_url?: string | null;
+          cover_url?: string | null;
+          website?: string | null;
+          city?: string | null;
+          vat_payer?: boolean;
+          listed_in_catalog?: boolean;
+          cancellation_policy?: string | null;
+          complaint_contact?: string | null;
+          payout_frequency?: string | null;
+          onboarding_step?: number;
+          onboarding_completed_at?: string | null;
+          organizer_status?: Database["public"]["Enums"]["organizer_status"];
+          organizer_requested_at?: string | null;
+          organizer_approved_at?: string | null;
+          organizer_approved_by?: string | null;
+          organizer_review_note?: string | null;
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -537,6 +577,26 @@ export type Database = {
           payout_iban?: string | null;
           phone?: string | null;
           subdomain?: string | null;
+          display_name?: string | null;
+          bio?: string | null;
+          logo_url?: string | null;
+          cover_url?: string | null;
+          website?: string | null;
+          city?: string | null;
+          vat_payer?: boolean;
+          listed_in_catalog?: boolean;
+          cancellation_policy?: string | null;
+          complaint_contact?: string | null;
+          payout_frequency?: string | null;
+          onboarding_step?: number;
+          onboarding_completed_at?: string | null;
+          organizer_status?: Database["public"]["Enums"]["organizer_status"];
+          organizer_requested_at?: string | null;
+          organizer_approved_at?: string | null;
+          organizer_approved_by?: string | null;
+          organizer_review_note?: string | null;
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -2802,8 +2862,52 @@ export type Database = {
         };
         Relationships: [];
       };
+      organizer_links: {
+        Row: {
+          id: string;
+          organizer_id: string;
+          platform: string;
+          url: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organizer_id: string;
+          platform: string;
+          url: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organizer_id?: string;
+          platform?: string;
+          url?: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
+      public_organizers: {
+        Row: {
+          id: string | null;
+          subdomain: string | null;
+          display_name: string | null;
+          company_name: string | null;
+          ico: string | null;
+          bio: string | null;
+          logo_url: string | null;
+          cover_url: string | null;
+          website: string | null;
+          city: string | null;
+          cancellation_policy: string | null;
+          complaint_contact: string | null;
+        };
+        Relationships: [];
+      };
       om_predaj_prehlad: {
         Row: {
           datum: string | null;
@@ -2868,6 +2972,10 @@ export type Database = {
       finish_job_run: {
         Args: { p_error?: string | null; p_id: string; p_stats?: Json | null; p_status: string };
         Returns: undefined;
+      };
+      slugify: {
+        Args: { txt: string };
+        Returns: string;
       };
       has_role: {
         Args: {
@@ -2996,6 +3104,7 @@ export type Database = {
     Enums: {
       settlement_status: "draft" | "approved" | "paid";
       app_role: "user" | "organizer" | "admin";
+      organizer_status: "none" | "onboarding" | "pending" | "approved" | "rejected" | "suspended";
       event_status: "draft" | "published" | "cancelled";
       order_status:
         "pending" | "awaiting_payment" | "paid" | "failed" | "cancelled" | "refunded" | "expired";
@@ -3127,6 +3236,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "organizer", "admin"],
+      organizer_status: ["none", "onboarding", "pending", "approved", "rejected", "suspended"],
       event_status: ["draft", "published", "cancelled"],
       order_status: [
         "pending",

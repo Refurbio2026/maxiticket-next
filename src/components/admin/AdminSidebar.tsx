@@ -43,6 +43,7 @@ import {
   HelpCircle,
   History,
   UserPlus,
+  UserCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -101,6 +102,11 @@ const groups: Group[] = [
       { title: "Náklady organizátorov", url: "/admin/eticketo/costs", icon: Wallet },
       { title: "Organizátori", url: "/admin/eticketo/organizers", icon: Users },
       { title: "Nový organizátor", url: "/admin/eticketo/organizer-new", icon: UserPlus },
+      {
+        title: "Žiadosti organizátorov",
+        url: "/admin/eticketo/organizer-approvals",
+        icon: UserCheck,
+      },
       { title: "Platby organizátorom", url: "/admin/eticketo/payments", icon: CreditCard },
       { title: "Vstupenky organizátorov", url: "/admin/eticketo/tickets", icon: Ticket },
       { title: "Kontrola zostavy", url: "/admin/eticketo/control", icon: ShieldCheck },

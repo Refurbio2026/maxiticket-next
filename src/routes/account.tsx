@@ -8,8 +8,11 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { User, Ticket, LogOut, Calendar, MapPin, Download, Mail } from "lucide-react";
+import { User, Ticket, LogOut, Calendar, MapPin, Download, Mail, Store } from "lucide-react";
 import { getMyTickets } from "@/lib/account.functions";
+import { getMyOnboarding } from "@/lib/organizer-onboarding.functions";
+import { ORGANIZER_STATUS_LABEL } from "@/lib/organizer-profile";
+import { useQuery } from "@tanstack/react-query";
 import type { IssuedTicket } from "@/lib/ticketing-db";
 import {
   AppleWalletButton,
@@ -36,6 +39,15 @@ function AccountPage() {
   const fetchMine = useServerFn(getMyTickets);
   const [rows, setRows] = useState<Row[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState(true);
+  const fetchOnboarding = useServerFn(getMyOnboarding);
+
+  // Stav organizátorského účtu — kvôli tomu, aby sa rozpracovaná registrácia
+  // dala dokončiť odtiaľ. Kto o účet nežiadal, uvidí len pozvánku.
+  const organizator = useQuery({
+    queryKey: ["onboarding"],
+    queryFn: () => fetchOnboarding({ data: undefined as never }),
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -91,6 +103,40 @@ function AccountPage() {
             <LogOut className="size-4 mr-2" /> {t("account.signOut")}
           </Button>
         </div>
+
+        {/* Organizátorský účet */}
+        {(() => {
+          const stav = organizator.data?.profile.organizer_status;
+          if (!stav || stav === "approved") return null;
+          const pozvanie = stav === "none";
+          return (
+            <Card className="mb-10 flex flex-wrap items-center justify-between gap-4 border-primary/30 bg-primary/5 p-6">
+              <div className="flex items-start gap-3">
+                <Store className="mt-0.5 size-6 text-primary" />
+                <div>
+                  <div className="font-semibold">
+                    {pozvanie ? "Organizuješ podujatia?" : "Organizátorský účet"}
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {pozvanie
+                      ? "Predávaj vstupenky pod vlastnou adresou. Nastavenie zaberie pár minút."
+                      : `Stav: ${ORGANIZER_STATUS_LABEL[stav]}.` +
+                        (stav === "onboarding"
+                          ? " Registrácia je rozpracovaná — môžeš ju dokončiť."
+                          : stav === "rejected"
+                            ? " Údaje sa dajú opraviť a požiadať znova."
+                            : " Ozveme sa e-mailom.")}
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
+                <Link to="/onboarding">
+                  {pozvanie ? "Založiť účet organizátora" : "Otvoriť sprievodcu"}
+                </Link>
+              </Button>
+            </Card>
+          );
+        })()}
 
         {/* Stats tiles */}
         <div className="grid sm:grid-cols-3 gap-4 mb-10">

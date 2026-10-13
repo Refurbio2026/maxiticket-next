@@ -26,12 +26,6 @@ function RegisterPage() {
     email: "",
     password: "",
     confirm: "",
-    company_name: "",
-    ico: "",
-    dic: "",
-    ic_dph: "",
-    billing_address: "",
-    phone: "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -47,10 +41,6 @@ function RegisterPage() {
       toast.error("Heslá sa nezhodujú");
       return;
     }
-    if (accountType === "organizer" && !form.company_name.trim()) {
-      toast.error("Vyplňte názov spoločnosti");
-      return;
-    }
     setBusy(true);
     const res = await signUp({
       email: form.email,
@@ -58,12 +48,6 @@ function RegisterPage() {
       first_name: form.first_name,
       last_name: form.last_name,
       role: accountType,
-      company_name: form.company_name || undefined,
-      ico: form.ico || undefined,
-      dic: form.dic || undefined,
-      ic_dph: form.ic_dph || undefined,
-      billing_address: form.billing_address || undefined,
-      phone: form.phone || undefined,
     });
     setBusy(false);
     if (!res.ok) {
@@ -71,7 +55,9 @@ function RegisterPage() {
       return;
     }
     toast.success("Účet vytvorený");
-    navigate({ to: accountType === "organizer" ? "/organizer" : "/account" });
+    // Organizátora vedieme rovno do sprievodcu — rolu dostane až po schválení,
+    // takže do `/organizer` by ho stráž pustiť nemohla.
+    navigate({ to: accountType === "organizer" ? "/onboarding" : "/account" });
   };
 
   return (
@@ -88,7 +74,7 @@ function RegisterPage() {
         </Link>
         <h1 className="font-display text-2xl font-bold mb-1">Vytvor si účet</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Pridaj sa k eticketo.eu v pár sekundách.
+          Stačí e-mail a heslo. Organizátora potom prevedieme nastavením účtu.
         </p>
 
         <div className="mb-6">
@@ -111,7 +97,7 @@ function RegisterPage() {
                 <div className="text-xs mt-1 opacity-80">
                   {t === "user"
                     ? "Nákup vstupeniek a správa účtu."
-                    : "Pridávanie a správa podujatí."}
+                    : "Predaj vstupeniek, vlastná adresa profilu."}
                 </div>
               </button>
             ))}
@@ -175,51 +161,16 @@ function RegisterPage() {
           </div>
 
           {accountType === "organizer" && (
-            <div className="space-y-4 p-4 rounded-xl border border-border/50 bg-muted/10">
-              <div className="font-semibold text-sm">Fakturačné údaje organizátora</div>
-              <div className="space-y-2">
-                <Label htmlFor="company_name">Názov spoločnosti</Label>
-                <Input
-                  id="company_name"
-                  required
-                  value={form.company_name}
-                  onChange={(e) => upd("company_name", e.target.value)}
-                />
-              </div>
-              <div className="grid sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ico">IČO</Label>
-                  <Input id="ico" value={form.ico} onChange={(e) => upd("ico", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dic">DIČ</Label>
-                  <Input id="dic" value={form.dic} onChange={(e) => upd("dic", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ic_dph">IČ DPH</Label>
-                  <Input
-                    id="ic_dph"
-                    value={form.ic_dph}
-                    onChange={(e) => upd("ic_dph", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="billing_address">Fakturačná adresa</Label>
-                <Input
-                  id="billing_address"
-                  value={form.billing_address}
-                  onChange={(e) => upd("billing_address", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefón</Label>
-                <Input
-                  id="phone"
-                  value={form.phone}
-                  onChange={(e) => upd("phone", e.target.value)}
-                />
-              </div>
+            <div className="space-y-2 rounded-xl border border-border/50 bg-muted/10 p-4 text-sm">
+              <div className="font-semibold">Čo bude po registrácii</div>
+              <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+                <li>Prevedieme ťa nastavením profilu — názov, logo, vlastná adresa, siete.</li>
+                <li>Doplníš fakturačné údaje a číslo účtu na výplatu tržby.</li>
+                <li>Žiadosť si pozrieme a účet schválime; ozveme sa e-mailom.</li>
+              </ol>
+              <p className="text-xs text-muted-foreground">
+                Rozpracované sa ukladá, takže to nemusíš stihnúť naraz.
+              </p>
             </div>
           )}
 

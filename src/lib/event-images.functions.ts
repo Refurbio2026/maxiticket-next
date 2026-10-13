@@ -38,13 +38,30 @@ export const uploadEventImage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ url: string }> => {
     // Obrázky smie nahrávať len ten, kto zakladá podujatia. Bez tejto kontroly
     // by hociktorý prihlásený návštevník mal zadarmo úložisko.
-    const { data: role } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .in("role", ["organizer", "admin"])
-      .maybeSingle();
-    if (!role) throw new Error("Forbidden: vyžaduje sa rola organizátor alebo admin");
+    //
+    // Rolu `organizer` pridelí až admin pri schválení, ale logo si organizátor
+    // nahráva už v sprievodcovi registráciou — inak by si ho musel niekam
+    // nahrať sám a vložiť odkaz. Preto prechádza aj rozpracovaná a odoslaná
+    // žiadosť; obyčajný kupujúci (stav 'none') sa k úložisku nedostane.
+    const [{ data: role }, { data: profil }] = await Promise.all([
+      supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", context.userId)
+        .in("role", ["organizer", "admin"])
+        .maybeSingle(),
+      supabaseAdmin
+        .from("profiles")
+        .select("organizer_status")
+        .eq("id", context.userId)
+        .maybeSingle(),
+    ]);
+    const ziadaOUcet = ["onboarding", "pending", "approved"].includes(
+      profil?.organizer_status ?? "none",
+    );
+    if (!role && !ziadaOUcet) {
+      throw new Error("Forbidden: vyžaduje sa rola organizátor alebo admin");
+    }
 
     const ext = EXTENSIONS[data.content_type];
     if (!ext) throw new Error("Podporujeme JPG, PNG, WEBP, GIF a AVIF.");

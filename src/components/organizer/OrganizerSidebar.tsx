@@ -9,6 +9,7 @@ import {
   Users,
   Cpu,
   Flame,
+  Globe,
   ShieldCheck,
   Megaphone,
   UserCog,
@@ -38,7 +39,10 @@ type Group = { label: string; items: Item[] };
 const groups: Group[] = [
   {
     label: "orgNav.groupOverview",
-    items: [{ title: "orgNav.dashboard", url: "/organizer", icon: LayoutDashboard, exact: true }],
+    items: [
+      { title: "orgNav.dashboard", url: "/organizer", icon: LayoutDashboard, exact: true },
+      { title: "orgNav.publicProfile", url: "/organizer/profile", icon: Globe },
+    ],
   },
   {
     label: "orgNav.groupEvents",

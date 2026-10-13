@@ -19,14 +19,18 @@ import { renderEmail } from "./email-templates.server";
 import { sendMail, isMailConfigured } from "./mailer.server";
 import { REZERVOVANE_SUBDOMENY, TVAR_SUBDOMENY, chybaSubdomeny, zakladnaDomena } from "./subdomena";
 
-async function assertAdmin(userId: string) {
+async function jeAdmin(userId: string): Promise<boolean> {
   const { data } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  if (!data) throw new Error("Forbidden: vyžaduje sa rola admin");
+  return !!data;
+}
+
+async function assertAdmin(userId: string) {
+  if (!(await jeAdmin(userId))) throw new Error("Forbidden: vyžaduje sa rola admin");
 }
 
 /** Zápis do auditu. Zakladanie účtov sa dosiaľ nikde neevidovalo. */
@@ -123,11 +127,20 @@ export const createOrganizer = createServerFn({ method: "POST" })
     const userId = odkaz.user.id;
 
     // `handle_new_user()` profil aj rolu `user` založí sám; dopĺňame zvyšok.
+    //
+    // Stav píšeme výslovne, hoci ho trigger z `invited_as` nastaví tiež:
+    // organizátora, ktorého zakladá admin, schválil tým, že ho zakladá, a do
+    // frontu žiadostí nepatrí. Keby sa raz zmenili metadáta pozvánky, tento
+    // zápis to udrží v poriadku.
     const { error: chybaProfilu } = await supabaseAdmin.from("profiles").upsert(
       {
         id: userId,
         full_name,
         subdomain: subdomain ?? null,
+        organizer_status: "approved" as const,
+        organizer_approved_at: new Date().toISOString(),
+        organizer_approved_by: context.userId,
+        onboarding_step: 99,
         ...fakturacia,
       },
       { onConflict: "id" },
@@ -204,7 +217,8 @@ async function poslatPozvanku(vstup: {
   return vysledok.ok ? "odoslana" : "neodoslana";
 }
 
-async function jeSubdomenaObsadena(subdomena: string, okremId?: string): Promise<boolean> {
+/** Má túto adresu už niekto iný? Používa to aj sprievodca registráciou. */
+export async function jeSubdomenaObsadena(subdomena: string, okremId?: string): Promise<boolean> {
   let q = supabaseAdmin.from("profiles").select("id").ilike("subdomain", subdomena).limit(1);
   if (okremId) q = q.neq("id", okremId);
   const { data } = await q;
@@ -242,7 +256,12 @@ export const checkSubdomain = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<StavSubdomeny> => {
-    await assertAdmin(context.userId);
+    // Adresu si v sprievodcovi vyberá sám žiadateľ, ktorý rolu organizátora
+    // ešte nemá — preto tu nestačí admin. Kto nie je admin, overuje vždy len
+    // „je voľná pre mňa": cudzie `okrem_id` mu zahodíme, aby sa cez túto
+    // funkciu nedalo zisťovať, čí je ktorá adresa.
+    const admin = await jeAdmin(context.userId);
+    const okremId = admin ? data.okrem_id : context.userId;
 
     const adresa = siteUrl();
     const domena = zakladnaDomena(adresa);
@@ -262,7 +281,7 @@ export const checkSubdomain = createServerFn({ method: "POST" })
       };
     }
 
-    const obsadena = await jeSubdomenaObsadena(data.subdomain, data.okrem_id);
+    const obsadena = await jeSubdomenaObsadena(data.subdomain, okremId);
     if (obsadena) {
       return {
         subdomena: data.subdomain,
@@ -357,140 +376,8 @@ export const setOrganizerSubdomain = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-export type ZiadostOrganizatora = {
-  id: string;
-  email: string;
-  full_name: string | null;
-  company_name: string | null;
-  ico: string | null;
-  phone: string | null;
-  vznik: string;
-};
-
-/**
- * Žiadosti z verejnej registrácie.
- *
- * `/register` má prepínač „Organizátor" a želanú rolu odkladá do metadát ako
- * `requested_role`. Rolu z klienta zámerne nikto nepreberá — `handle_new_user()`
- * dá vždy `user`. Doteraz to ale znamenalo, že žiadosť nikto nikdy neuvidel:
- * `requested_role` sa v celom zdroji nečítalo ani raz. Toto je to chýbajúce
- * miesto, kde sa dá schváliť.
- */
-export const listOrganizerRequests = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<ZiadostOrganizatora[]> => {
-    await assertAdmin(context.userId);
-
-    const { data: ucty, error } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    });
-    if (error) throw new Error(error.message);
-
-    const ziadatelia = ucty.users.filter((u) => {
-      const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-      // `invited_as` majú účty, ktoré sme založili sami — tie nie sú žiadosť.
-      return meta.requested_role === "organizer" && !meta.invited_as;
-    });
-    if (ziadatelia.length === 0) return [];
-
-    const ids = ziadatelia.map((u) => u.id);
-    const [{ data: roly }, { data: profily }] = await Promise.all([
-      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
-      supabaseAdmin
-        .from("profiles")
-        .select("id, full_name, company_name, ico, phone")
-        .in("id", ids),
-    ]);
-
-    const jeOrganizator = new Set(
-      (roly ?? []).filter((r) => r.role === "organizer").map((r) => r.user_id),
-    );
-    const profil = new Map((profily ?? []).map((p) => [p.id, p]));
-
-    return ziadatelia
-      .filter((u) => !jeOrganizator.has(u.id))
-      .map((u) => ({
-        id: u.id,
-        email: u.email ?? "",
-        full_name: profil.get(u.id)?.full_name ?? null,
-        company_name: profil.get(u.id)?.company_name ?? null,
-        ico: profil.get(u.id)?.ico ?? null,
-        phone: profil.get(u.id)?.phone ?? null,
-        vznik: u.created_at,
-      }))
-      .sort((a, b) => b.vznik.localeCompare(a.vznik));
-  });
-
-/** Schválenie žiadosti: pridá rolu, prípadne doplní províziu a subdoménu. */
-export const approveOrganizerRequest = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z
-      .object({
-        id: z.string().uuid(),
-        commission_rate: z.number().min(0).max(100).optional().nullable(),
-        subdomain: Subdomena.optional().nullable(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
-
-    if (data.subdomain && (await jeSubdomenaObsadena(data.subdomain, data.id))) {
-      throw new Error(`Subdoménu „${data.subdomain}" už má iný organizátor.`);
-    }
-
-    const { error: chybaRoly } = await supabaseAdmin
-      .from("user_roles")
-      .upsert({ user_id: data.id, role: "organizer" }, { onConflict: "user_id,role" });
-    if (chybaRoly) throw new Error(chybaRoly.message);
-
-    if (data.commission_rate != null || data.subdomain != null) {
-      const zmena: Record<string, unknown> = { updated_at: new Date().toISOString() };
-      if (data.commission_rate != null) zmena.commission_rate = data.commission_rate;
-      if (data.subdomain != null) zmena.subdomain = data.subdomain;
-      const { error } = await supabaseAdmin
-        .from("profiles")
-        .update(zmena as never)
-        .eq("id", data.id);
-      if (error) throw new Error(error.message);
-    }
-
-    await zapisAudit(context.userId, "organizer.request_approved", data.id, {
-      commission_rate: data.commission_rate ?? null,
-      subdomain: data.subdomain ?? null,
-    });
-    return { ok: true as const };
-  });
-
-/** Zamietnutie žiadosti: rolu nedá a z metadát odstráni želanie, nech zoznam nerastie. */
-export const rejectOrganizerRequest = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid(), reason: z.string().trim().max(500).optional() }).parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
-
-    const { data: ucet, error: chybaCitania } = await supabaseAdmin.auth.admin.getUserById(data.id);
-    if (chybaCitania || !ucet?.user) throw new Error(chybaCitania?.message ?? "Účet sa nenašiel");
-
-    const meta = { ...(ucet.user.user_metadata ?? {}) } as Record<string, unknown>;
-    meta.requested_role = null;
-    meta.organizer_request_rejected_at = new Date().toISOString();
-
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.id, {
-      user_metadata: meta,
-    });
-    if (error) throw new Error(error.message);
-
-    await zapisAudit(
-      context.userId,
-      "organizer.request_rejected",
-      data.id,
-      { email: ucet.user.email ?? null },
-      data.reason,
-    );
-    return { ok: true as const };
-  });
+// Fronta žiadostí o organizátorský účet tu bývala postavená nad metadátami
+// účtu (`requested_role`). Od migrácie `20261005100000` je stav účtu stĺpec
+// `profiles.organizer_status`, takže sa dá filtrovať, auditovať a opierať
+// o neho podmienku v databáze — a fronta je jedna, v
+// `organizer-approvals.functions.ts` a na `/admin/eticketo/organizer-approvals`.
