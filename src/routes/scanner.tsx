@@ -1,5 +1,5 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Scanner, type IDetectedBarcode } from "@yudiel/react-qr-scanner";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useServerFn } from "@tanstack/react-start";
 import { listScannerDevicesForEvent, type ScannerDeviceOption } from "@/lib/devices.functions";
+import { jeZasobaStara, klucKodu, rozhodniOffline, type OfflineZasoba } from "@/lib/offline-scan";
 
 type ScanResult = "valid" | "duplicate" | "invalid" | "reentry" | "refunded";
 /**
@@ -113,10 +114,22 @@ export const Route = createFileRoute("/scanner")({
     e: typeof s.e === "string" ? s.e : undefined,
   }),
   component: ScannerPage,
+  // Manifest je pripojený **len tu**, nie na celom webe: inštalovať sa má
+  // čítačka, nie obchod. Kupujúci si appku na plochu nedáva.
   head: () => ({
     meta: [
       { title: "Čítačka QR vstupeniek — eticketo.eu" },
       { name: "description", content: "Skenovanie a validácia QR vstupeniek na vstupe." },
+      { name: "theme-color", content: "#fe6a00" },
+      // Bez tohto iOS otvorí appku v Safari s panelmi namiesto na celú obrazovku.
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Čítačka" },
+    ],
+    links: [
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      // iOS si z manifestu ikonu nevezme, potrebuje vlastný odkaz.
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
 });
@@ -125,6 +138,10 @@ function ScannerPage() {
   const search = useSearch({ from: "/scanner" });
   const initialToken = (search.t || search.e || "").trim();
   const [eventToken, setEventToken] = useState<string>(initialToken);
+  // Zoznam platných vstupeniek podujatia, stiahnutý dopredu, a čo sme od
+  // výpadku naskenovali my. Bez tohto offline režim nič neoverí.
+  const [zasoba, setZasoba] = useState<OfflineZasoba | null>(null);
+  const [zasobaStav, setZasobaStav] = useState<"ziadna" | "stahujem" | "mam" | "chyba">("ziadna");
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(false);
   const [tokenInput, setTokenInput] = useState("");
@@ -260,6 +277,52 @@ function ScannerPage() {
     return () => window.removeEventListener("online", replay);
   }, []);
 
+  // Service worker — bez neho sa čítačka bez siete ani nenaštartuje. Registruje
+  // sa len z tejto stránky, takže zvyšok webu ostáva bez cache.
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* Bez SW čítačka funguje online; nie je to dôvod na chybu pre obsluhu. */
+    });
+  }, []);
+
+  // Zoznam vstupeniek na offline rozhodovanie. Ťaháme ho po načítaní podujatia
+  // a po návrate siete; v `localStorage` prežije zatvorenie čítačky.
+  const stiahniZasobu = useCallback(async (token: string) => {
+    if (!token) return;
+    setZasobaStav("stahujem");
+    try {
+      const r = await fetch(`/api/public/tickets/codes?event_token=${encodeURIComponent(token)}`);
+      if (!r.ok) throw new Error(String(r.status));
+      const z: OfflineZasoba = await r.json();
+      setZasoba(z);
+      setZasobaStav("mam");
+      localStorage.setItem(`mt_zasoba_${token}`, JSON.stringify(z));
+    } catch {
+      setZasobaStav("chyba");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!eventToken) {
+      setZasoba(null);
+      setZasobaStav("ziadna");
+      return;
+    }
+    // Najprv to, čo máme na zariadení — čítačka musí byť použiteľná aj keď sa
+    // zapne bez siete.
+    try {
+      const ulozene = localStorage.getItem(`mt_zasoba_${eventToken}`);
+      if (ulozene) {
+        setZasoba(JSON.parse(ulozene) as OfflineZasoba);
+        setZasobaStav("mam");
+      }
+    } catch {
+      /* pokazený záznam nie je dôvod nespustiť čítačku */
+    }
+    if (navigator.onLine) void stiahniZasobu(eventToken);
+  }, [eventToken, stiahniZasobu]);
+
   async function submitScan(ticketToken: string, opts?: { allowReentry?: boolean }) {
     if (!eventToken || !event) return;
     lastTokenRef.current = ticketToken;
@@ -275,15 +338,38 @@ function ScannerPage() {
     };
     try {
       if (!navigator.onLine) {
-        const q: QueuedScan[] = JSON.parse(localStorage.getItem("mt_scan_queue") || "[]");
-        q.push(payload);
-        localStorage.setItem("mt_scan_queue", JSON.stringify(q));
-        setLast({
-          ok: true,
-          result: "valid",
-          message: "Offline — bude synchronizované",
-          ticket: { seat_label: "Offline" },
+        // Offline rozhodujeme zo stiahnutého zoznamu. Predtým sa tu vracalo
+        // „valid" na čokoľvek, takže dovnútra prešiel aj vymyslený kód.
+        const pouzite: string[] = JSON.parse(
+          localStorage.getItem(`mt_pouzite_${eventToken}`) || "[]",
+        );
+        const r = rozhodniOffline({
+          kod: ticketToken,
+          zasoba,
+          pouzite,
+          povolitOpakovanyVstup: opts?.allowReentry || false,
         });
+
+        // Do frontu ide len to, čo sme pustili — neplatný kód nemá čo
+        // synchronizovať a server by ho aj tak odmietol.
+        if (r.result === "valid" || r.result === "reentry") {
+          const q: QueuedScan[] = JSON.parse(localStorage.getItem("mt_scan_queue") || "[]");
+          q.push(payload);
+          localStorage.setItem("mt_scan_queue", JSON.stringify(q));
+          if (r.kluc && !pouzite.includes(r.kluc)) {
+            localStorage.setItem(`mt_pouzite_${eventToken}`, JSON.stringify([...pouzite, r.kluc]));
+          }
+        }
+
+        setLast({
+          ok: r.result === "valid" || r.result === "reentry",
+          result: r.result,
+          message: `${r.message} (offline)`,
+          ticket: { seat_label: klucKodu(ticketToken).slice(0, 8) },
+        });
+        if (navigator.vibrate) {
+          navigator.vibrate(r.result === "valid" || r.result === "reentry" ? 80 : [60, 40, 60]);
+        }
       } else {
         const r = await fetch("/api/public/tickets/scan", {
           method: "POST",
@@ -538,6 +624,40 @@ function ScannerPage() {
               <Stat label="Použité" value={stats.used} tone="emerald" />
               <Stat label="Zostáva" value={stats.remaining} tone="amber" />
             </div>
+
+            {/* Obsluha musí vedieť PRED výpadkom, či čítačka offline rozhodne.
+                Bez stiahnutého zoznamu neprejde nikto — a to je lepšie než
+                pustiť každého, ako to robila predtým. */}
+            <Card
+              className={`flex items-center justify-between gap-3 p-3 ${
+                zasoba ? "border-border/50" : "border-amber-500/40 bg-amber-500/5"
+              }`}
+            >
+              <div className="min-w-0 text-xs">
+                <div className="font-medium">
+                  {zasoba
+                    ? `Offline pripravené — ${zasoba.pocet ?? zasoba.ids.length + zasoba.kody.length + zasoba.pouzite.length} vstupeniek`
+                    : "Offline NEPRIPRAVENÉ"}
+                </div>
+                <div className="mt-0.5 text-muted-foreground">
+                  {zasobaStav === "stahujem"
+                    ? "Stahujem zoznam…"
+                    : zasoba
+                      ? jeZasobaStara(zasoba)
+                        ? "Zoznam je starší než 12 h — obnov ho pred podujatím."
+                        : `Stiahnuté ${new Date(zasoba.stiahnute).toLocaleString("sk-SK")}`
+                      : "Bez siete neprejde žiadna vstupenka. Stiahni zoznam."}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant={zasoba ? "outline" : "default"}
+                disabled={zasobaStav === "stahujem" || !eventToken}
+                onClick={() => void stiahniZasobu(eventToken)}
+              >
+                {zasoba ? "Obnoviť" : "Stiahnuť"}
+              </Button>
+            </Card>
 
             <AnimatePresence mode="wait">
               {last && (
