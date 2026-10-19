@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/site/PageShell";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { posliKontaktnuSpravu } from "@/lib/kontakt.functions";
 import { PREVADZKOVATEL, mapaUrl } from "@/lib/kontakt";
+import { getCartSessionId } from "@/lib/ticketing-db";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -30,16 +31,20 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ meno: "", email: "", tema: "", sprava: "" });
+  const [form, setForm] = useState({ meno: "", email: "", tema: "", sprava: "", web: "" });
   const posli = useServerFn(posliKontaktnuSpravu);
+  // Tá istá relácia, akou sa držia sedadlá. V `sessionStorage`, čiže na
+  // serveri neexistuje — preto až v `useEffect`, inak by SSR nesúhlasilo.
+  const [sid, setSid] = useState<string | null>(null);
+  useEffect(() => setSid(getCartSessionId()), []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      const v = await posli({ data: form });
+      const v = await posli({ data: { ...form, session: sid ?? undefined } });
       if (v.ok) {
-        setForm({ meno: "", email: "", tema: "", sprava: "" });
+        setForm({ meno: "", email: "", tema: "", sprava: "", web: "" });
         toast.success("Správa odoslaná. Ozveme sa do 24 hodín.");
       } else {
         // Radšej nech zákazník vie, že má napísať priamo, ako aby čakal na ticho.
@@ -114,6 +119,22 @@ function ContactPage() {
                 onChange={(e) => setForm({ ...form, sprava: e.target.value })}
               />
             </div>
+            {/* Pasca na roboty. Odsunutá mimo obrazovky a nie `display:none` —
+                na ten si časť robotov dáva pozor. Človek sa k nej nedostane
+                ani tabulátorom, takže ju nevyplní. */}
+            <div className="absolute left-[-9999px] top-auto size-px overflow-hidden" aria-hidden>
+              <label htmlFor="web">Webová stránka</label>
+              <input
+                id="web"
+                name="web"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.web}
+                onChange={(e) => setForm({ ...form, web: e.target.value })}
+              />
+            </div>
+
             <div className="sm:col-span-2">
               <Button
                 type="submit"

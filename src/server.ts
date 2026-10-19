@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { jeOdpojenyKlient } from "./lib/odpojeny-klient";
+import { pridajBezpecnostneHlavicky } from "./lib/bezpecnostne-hlavicky";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -43,7 +44,9 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      // Hlavičky sa pridávajú tu, na jedinom mieste, kadiaľ prejde každá
+      // odpoveď aplikácie — vrátane chybových stránok nižšie.
+      return pridajBezpecnostneHlavicky(await normalizeCatastrophicSsrResponse(response), request);
     } catch (error) {
       if (jeOdpojenyKlient(error)) {
         // Odpovedať sa nekomu — klient je dávno inde. 499 je nginxov zvyk pre
@@ -52,10 +55,13 @@ export default {
         return new Response(null, { status: 499 });
       }
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return pridajBezpecnostneHlavicky(
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+        request,
+      );
     }
   },
 };
