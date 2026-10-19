@@ -9,6 +9,7 @@
 // Kľúč `fk_test_…` je testovací režim (faktúry sa reálne neodosielajú),
 // `fk_live_…` ostrý.
 import type { Json } from "@/integrations/supabase/types";
+import { teloFaktury, teloOdberatela } from "./faktero-telo";
 import { hodnota, polozka } from "../pristupy.server";
 import type { PolozkaKonfiguracie, TestBrany } from "../payment-gateways/types";
 import type { FakturacnySystem, FakturaVstup, FakturaVysledok } from "./types";
@@ -109,26 +110,11 @@ export const fakteroSystem: FakturacnySystem = {
   async vystav(input: FakturaVstup): Promise<FakturaVysledok> {
     // 1) Odberateľ. Faktero chce na faktúre `customer_id`, takže ho treba
     //    založiť; `external_id` drží väzbu na našu objednávku.
-    const firma = input.customer.company;
+    const odberatelTelo = teloOdberatela(input.customer, input.orderId);
     const odberatel = await posliSNadstavbou(
       "/customers",
-      {
-        // Na faktúre je odberateľom firma, ak ju kupujúci uviedol.
-        name: firma?.name || input.customer.name || "Zákazník",
-        email: input.customer.email || "",
-        ...(firma?.ico ? { ico: firma.ico } : {}),
-        ...(firma?.ic_dph ? { ic_dph: firma.ic_dph } : {}),
-        ...(firma?.street ? { street: firma.street } : {}),
-        ...(firma?.city ? { city: firma.city } : {}),
-        ...(firma?.zip ? { zip: firma.zip } : {}),
-        ...(firma?.country ? { country: firma.country } : {}),
-      },
-      {
-        ...(input.customer.phone ? { phone: input.customer.phone } : {}),
-        ...(firma?.dic ? { dic: firma.dic } : {}),
-        ...(firma ? { contact_person: input.customer.name } : {}),
-        external_id: input.orderId,
-      },
+      odberatelTelo.zaklad,
+      odberatelTelo.navyse,
     );
     if (odberatel.status < 200 || odberatel.status >= 300) {
       throw new Error(
@@ -142,30 +128,15 @@ export const fakteroSystem: FakturacnySystem = {
 
     // 2) Faktúra. Zaplatené vstupenky majú splatnosť dnes, provízia
     //    organizátorovi štrnásť dní.
+    // Používa sa aj nižšie pri označení faktúry za uhradenú.
     const zaplatene = input.alreadyPaid !== false;
-    const faktura = await posliSNadstavbou(
-      "/invoices",
-      {
-        customer_id: customerId,
-        issue_date: dnes(),
-        due_date: zaplatene ? dnes() : oDni(14),
-        currency: "EUR",
-        items: input.items.map((it) => ({
-          name: it.name,
-          quantity: it.quantity,
-          unit: "ks",
-          unit_price: it.unit_price,
-          vat_rate: it.tax,
-        })),
-      },
-      {
-        variable_symbol: input.variableSymbol,
-        order_number: input.variableSymbol,
-        external_id: input.orderId,
-        payment_method: input.paymentType || "card",
-        notes: input.name || `Vstupenky – objednávka ${input.variableSymbol}`,
-      },
-    );
+    const fakturaTelo = teloFaktury({
+      customerId,
+      input,
+      dnes: dnes(),
+      splatnostNezaplatene: oDni(14),
+    });
+    const faktura = await posliSNadstavbou("/invoices", fakturaTelo.zaklad, fakturaTelo.navyse);
     if (faktura.status < 200 || faktura.status >= 300) {
       throw new Error(
         `Faktero: faktúru sa nepodarilo vystaviť (${faktura.status}): ${chybaZOdpovede(faktura)}`,
