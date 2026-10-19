@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Building2, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Building2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { posliKontaktnuSpravu } from "@/lib/kontakt.functions";
@@ -138,6 +138,18 @@ function ContactPage() {
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {PREVADZKOVATEL.email}
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Phone className="size-5 text-primary mt-0.5" />
+                <div>
+                  <div className="font-display font-bold">Telefón</div>
+                  <a
+                    href={`tel:${PREVADZKOVATEL.telefonLink}`}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {PREVADZKOVATEL.telefon}
                   </a>
                 </div>
               </div>

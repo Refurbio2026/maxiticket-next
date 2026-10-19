@@ -32,11 +32,10 @@ export const PREVADZKOVATEL = {
   /** Adresa, na ktorú chodia dopyty zákazníkov. Rovnaká je v právnych stránkach. */
   email: "podpora@eticketo.eu",
 
-  /**
-   * Telefón sa zámerne nezverejňuje: číslo, ktoré tu bolo predtým
-   * (+421 2 22 333 444), neexistuje. Doplniť až so skutočným číslom.
-   */
-  telefon: null as string | null,
+  /** Skutočné číslo (doplnené 19. 10. 2026). Predtým tu bolo vymyslené +421 2 22 333 444. */
+  telefon: "+421 907 702 422",
+  /** To isté bez mezier — do odkazu `tel:`. */
+  telefonLink: "+421907702422",
 
   web: "eticketo.eu",
 
