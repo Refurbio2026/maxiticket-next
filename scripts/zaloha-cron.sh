@@ -31,4 +31,10 @@ fi
     echo "$(date -Is) [zaloha-cron] ZLYHALO s kódom $kod"
     exit "$kod"
   fi
+
+  # Kópia mimo stroja. Zlyhanie sa zapíše, ale beh neruší: lokálna záloha už
+  # existuje a tá je dôležitejšia než jej kópia.
+  if ! "$NODE" "$KOREN/app/scripts/zaloha-mimo.mjs"; then
+    echo "$(date -Is) [zaloha-cron] POZOR: kópia mimo stroja zlyhala"
+  fi
 } >>"$LOG" 2>&1

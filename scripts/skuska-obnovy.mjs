@@ -172,6 +172,51 @@ async function main() {
       tabuliek += 1;
     }
 
+    // Cudzie kľúče. `create temp table ... like` ich nekopíruje, takže ich
+    // overujeme sami: pre každý jednostĺpcový FK medzi zazálohovanými
+    // tabuľkami hľadáme hodnotu dieťaťa, ktorá v rodičovi nie je. Keby
+    // záloha chytila nekonzistentný obraz, vypadne to tu.
+    const { rows: fk } = await c.query(`
+      select con.conname as nazov,
+             dieta.relname as dieta, att_d.attname as stlpec,
+             rodic.relname as rodic, att_r.attname as rodic_stlpec
+        from pg_constraint con
+        join pg_class dieta on dieta.oid = con.conrelid
+        join pg_class rodic on rodic.oid = con.confrelid
+        join pg_namespace n on n.oid = dieta.relnamespace
+        join pg_attribute att_d on att_d.attrelid = con.conrelid and att_d.attnum = con.conkey[1]
+        join pg_attribute att_r on att_r.attrelid = con.confrelid and att_r.attnum = con.confkey[1]
+       where con.contype = 'f' and n.nspname = 'public'
+         and array_length(con.conkey, 1) = 1
+       order by 2, 1`);
+
+    const vZalohe = new Set(manifest.poradie_vkladania);
+    let overenych = 0;
+    let preskocenych = 0;
+    for (const v of fk) {
+      if (!vZalohe.has(v.dieta) || !vZalohe.has(v.rodic)) {
+        preskocenych += 1;
+        continue;
+      }
+      const { rows: osirele } = await c.query(
+        `select count(*)::int as n
+           from "o_${v.dieta}" d
+          where d."${v.stlpec}" is not null
+            and not exists (
+              select 1 from "o_${v.rodic}" r where r."${v.rodic_stlpec}" = d."${v.stlpec}"
+            )`,
+      );
+      if (osirele[0].n > 0) {
+        nesulady.push(
+          `${v.dieta}.${v.stlpec} → ${v.rodic}.${v.rodic_stlpec}: ${osirele[0].n} osirelých (${v.nazov})`,
+        );
+      }
+      overenych += 1;
+    }
+    console.log(
+      `\nCudzie kľúče: ${overenych} overených, ${preskocenych} preskočených (mieria na tabuľku mimo zálohy)`,
+    );
+
     // Vzorka po poliach: jeden skutočný záznam z každej kľúčovej tabuľky.
     console.log("\nKontrola vzorky po poliach:");
     for (const tabulka of ["orders", "tickets", "profiles", "events"]) {

@@ -166,6 +166,53 @@ async function zalohujTabulku(c, tabulka, kam) {
   return { tabulka, riadkov: vypisanych, bajtov: velkost };
 }
 
+/**
+ * Metadáta účtov z `auth.users` — zámerne BEZ hashov hesiel a bez tokenov.
+ *
+ * Doteraz v zálohe nebolo o účtoch nič, takže po strate projektu by sa
+ * nevedelo ani to, kto účet mal. Takto sa účty dajú znova vytvoriť cez
+ * Admin API a ľudia si heslo nastavia resetom. Hashy tu nechceme — to bol
+ * pôvodný dôvod, prečo sa `auth.users` nezálohovala vôbec.
+ */
+async function zalohujUcty(c, kam) {
+  const STLPCE = [
+    "id",
+    "aud",
+    "role",
+    "email",
+    "phone",
+    "email_confirmed_at",
+    "phone_confirmed_at",
+    "confirmed_at",
+    "invited_at",
+    "last_sign_in_at",
+    "banned_until",
+    "deleted_at",
+    "is_sso_user",
+    "is_anonymous",
+    "raw_app_meta_data",
+    "raw_user_meta_data",
+    "created_at",
+    "updated_at",
+  ];
+  const cesta = path.join(kam, "auth_users_metadata.jsonl.gz");
+  const { rows } = await c.query(
+    `select ${STLPCE.map((x) => `"${x}"`).join(", ")} from auth.users order by created_at`,
+  );
+
+  const gzip = zlib.createGzip({ level: 6 });
+  const hotovo = pipeline(gzip, fs.createWriteStream(cesta, { mode: 0o600 }));
+  for (const r of rows) {
+    if (!gzip.write(`${JSON.stringify(r)}\n`)) {
+      await new Promise((res) => gzip.once("drain", res));
+    }
+  }
+  gzip.end();
+  await hotovo;
+
+  return { tabulka: "auth.users (metadáta)", riadkov: rows.length, bajtov: fs.statSync(cesta).size };
+}
+
 function uprav(kam) {
   const behy = fs
     .readdirSync(kam, { withFileTypes: true })
@@ -204,6 +251,10 @@ try {
   const vysledky = [];
   for (const t of tabulky) vysledky.push(await zalohujTabulku(c, t, kam));
 
+  // V tej istej transakcii, nech účty zodpovedajú tomu istému okamihu.
+  const ucty = await zalohujUcty(c, kam);
+  log(`účty: ${ucty.riadkov} metadát (bez hashov hesiel)`);
+
   const { rows: migracie } = await c.query(
     "select version from supabase_migrations.schema_migrations order by version desc limit 1",
   );
@@ -217,11 +268,15 @@ try {
     posledna_migracia: migracie[0]?.version ?? null,
     velkost_databazy_mb: Math.round(Number(velkost[0].b) / (1024 * 1024)),
     preskocene_tabulky: [...PRESKOCIT],
-    neobsahuje: ["schému (je v git: supabase/migrations)", "auth.users"],
+    neobsahuje: [
+      "schému (je v git: supabase/migrations)",
+      "hashe hesiel z auth.users — účty sa obnovia cez Admin API a reset hesla",
+    ],
+    ucty: ucty,
     poradie_vkladania: vysledky.map((v) => v.tabulka),
     tabulky: vysledky,
     riadkov_spolu: vysledky.reduce((s, v) => s + v.riadkov, 0),
-    bajtov_spolu: vysledky.reduce((s, v) => s + v.bajtov, 0),
+    bajtov_spolu: vysledky.reduce((s, v) => s + v.bajtov, 0) + ucty.bajtov,
     trvalo_s: Math.round((Date.now() - zacatok) / 1000),
   };
   fs.writeFileSync(path.join(kam, "manifest.json"), JSON.stringify(manifest, null, 1), {
