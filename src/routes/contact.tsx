@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/site/PageShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, Twitter, Send } from "lucide-react";
+import { Mail, MapPin, Building2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { posliKontaktnuSpravu } from "@/lib/kontakt.functions";
+import { PREVADZKOVATEL, mapaUrl } from "@/lib/kontakt";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -16,7 +19,7 @@ export const Route = createFileRoute("/contact")({
       { title: "Kontakt · eticketo.eu" },
       {
         name: "description",
-        content: "Kontaktujte tím eticketo.eu – e-mail, telefón, adresa a sociálne siete.",
+        content: "Kontaktujte tím eticketo.eu – e-mail, adresa a údaje prevádzkovateľa.",
       },
       { property: "og:title", content: "Kontakt · eticketo.eu" },
       { property: "og:description", content: "Spojte sa s nami." },
@@ -27,16 +30,30 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", topic: "", message: "" });
-  const submit = (e: React.FormEvent) => {
+  const [form, setForm] = useState({ meno: "", email: "", tema: "", sprava: "" });
+  const posli = useServerFn(posliKontaktnuSpravu);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    setTimeout(() => {
+    try {
+      const v = await posli({ data: form });
+      if (v.ok) {
+        setForm({ meno: "", email: "", tema: "", sprava: "" });
+        toast.success("Správa odoslaná. Ozveme sa do 24 hodín.");
+      } else {
+        // Radšej nech zákazník vie, že má napísať priamo, ako aby čakal na ticho.
+        toast.error(
+          `Formulár je momentálne mimo prevádzky. Napíšte nám prosím na ${PREVADZKOVATEL.email}.`,
+        );
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Správu sa nepodarilo odoslať.");
+    } finally {
       setBusy(false);
-      setForm({ name: "", email: "", topic: "", message: "" });
-      toast.success("Správa odoslaná. Ozveme sa do 24 hodín.");
-    }, 600);
+    }
   };
+
   return (
     <PageShell
       eyebrow="Kontakt"
@@ -45,7 +62,7 @@ function ContactPage() {
           Povedzte nám, ako <span className="text-gradient-flame">vám pomôcť</span>
         </>
       }
-      description="Sme tu pre kupujúcich, organizátorov aj partnerov. Vyberte si formu kontaktu, ktorá vám vyhovuje."
+      description="Sme tu pre kupujúcich, organizátorov aj partnerov. Napíšte nám a ozveme sa."
     >
       <Toaster />
       <div className="grid lg:grid-cols-3 gap-6">
@@ -60,8 +77,9 @@ function ContactPage() {
               <Input
                 id="name"
                 required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                minLength={2}
+                value={form.meno}
+                onChange={(e) => setForm({ ...form, meno: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -79,9 +97,10 @@ function ContactPage() {
               <Input
                 id="topic"
                 required
+                minLength={2}
                 placeholder="napr. Refundácia objednávky #12345"
-                value={form.topic}
-                onChange={(e) => setForm({ ...form, topic: e.target.value })}
+                value={form.tema}
+                onChange={(e) => setForm({ ...form, tema: e.target.value })}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
@@ -89,9 +108,10 @@ function ContactPage() {
               <Textarea
                 id="message"
                 required
+                minLength={10}
                 rows={6}
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                value={form.sprava}
+                onChange={(e) => setForm({ ...form, sprava: e.target.value })}
               />
             </div>
             <div className="sm:col-span-2">
@@ -114,22 +134,10 @@ function ContactPage() {
                 <div>
                   <div className="font-display font-bold">E-mail</div>
                   <a
-                    href="mailto:hello@eticketo.eu"
+                    href={`mailto:${PREVADZKOVATEL.email}`}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    hello@eticketo.eu
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Phone className="size-5 text-primary mt-0.5" />
-                <div>
-                  <div className="font-display font-bold">Telefón</div>
-                  <a
-                    href="tel:+421222333444"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    +421 2 22 333 444
+                    {PREVADZKOVATEL.email}
                   </a>
                 </div>
               </div>
@@ -138,43 +146,32 @@ function ContactPage() {
                 <div>
                   <div className="font-display font-bold">Adresa</div>
                   <div className="text-muted-foreground">
-                    eticketo.eu s.r.o.
+                    {PREVADZKOVATEL.nazov}
                     <br />
-                    Mlynské nivy 5<br />
-                    821 09 Bratislava
+                    {PREVADZKOVATEL.ulica}
+                    <br />
+                    {PREVADZKOVATEL.psc} {PREVADZKOVATEL.mesto}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Building2 className="size-5 text-primary mt-0.5" />
+                <div>
+                  <div className="font-display font-bold">Prevádzkovateľ</div>
+                  <div className="text-muted-foreground">
+                    IČO {PREVADZKOVATEL.ico}
+                    <br />
+                    {PREVADZKOVATEL.registracia}
                   </div>
                 </div>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 bg-card/60 border-border/60">
-            <div className="font-display font-bold mb-3">Sociálne siete</div>
-            <div className="flex gap-2">
-              {[
-                { Icon: Instagram, href: "https://instagram.com/vstupenky", label: "Instagram" },
-                { Icon: Facebook, href: "https://facebook.com/vstupenky", label: "Facebook" },
-                { Icon: Youtube, href: "https://youtube.com/@vstupenky", label: "YouTube" },
-                { Icon: Twitter, href: "https://twitter.com/vstupenky", label: "Twitter" },
-              ].map(({ Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="size-10 rounded-xl glass grid place-items-center hover:text-primary transition-colors"
-                >
-                  <Icon className="size-4" />
-                </a>
-              ))}
-            </div>
-          </Card>
-
           <Card className="overflow-hidden bg-card/60 border-border/60">
             <iframe
-              title="eticketo.eu sídlo"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=17.135%2C48.140%2C17.165%2C48.155&layer=mapnik&marker=48.1475%2C17.150"
+              title={`${PREVADZKOVATEL.nazov} – sídlo`}
+              src={mapaUrl()}
               className="w-full h-56 border-0"
               loading="lazy"
             />

@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Instagram, Facebook, Youtube, Twitter } from "lucide-react";
 import { listFooterPages } from "@/lib/site-pages.functions";
 import { useI18n } from "@/hooks/use-i18n";
 import { Wordmark } from "@/components/site/Wordmark";
+import { identifikaciaJedenRiadok } from "@/lib/kontakt";
 
 type Col = { titleKey: string; l: { labelKey: string; to: string }[] };
 
@@ -35,13 +35,6 @@ const cols: Col[] = [
   },
 ];
 
-const socials: { Icon: typeof Instagram; href: string; label: string }[] = [
-  { Icon: Instagram, href: "https://instagram.com/vstupenky", label: "Instagram" },
-  { Icon: Facebook, href: "https://facebook.com/vstupenky", label: "Facebook" },
-  { Icon: Youtube, href: "https://youtube.com/@vstupenky", label: "YouTube" },
-  { Icon: Twitter, href: "https://twitter.com/vstupenky", label: "Twitter" },
-];
-
 export function Footer() {
   const { t } = useI18n();
 
@@ -63,20 +56,6 @@ export function Footer() {
             </Link>
 
             <p className="mt-5 text-sm text-muted-foreground max-w-sm">{t("footer.tagline")}</p>
-            <div className="mt-6 flex gap-2">
-              {socials.map(({ Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="size-10 rounded-xl glass grid place-items-center hover:text-primary transition-colors"
-                >
-                  <Icon className="size-4" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {cols.map((c) => (
@@ -110,6 +89,8 @@ export function Footer() {
 
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between gap-4 text-xs text-muted-foreground">
           <div>{t("footer.rights")}</div>
+          {/* Identifikácia prevádzkovateľa patrí na každú stránku, nielen do podmienok. */}
+          <div>{identifikaciaJedenRiadok()}</div>
           <div>{t("footer.builtWith")}</div>
         </div>
       </div>
