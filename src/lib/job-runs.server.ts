@@ -76,3 +76,39 @@ export async function poslednéBehy(limit = 50) {
     .limit(limit);
   return data ?? [];
 }
+
+/**
+ * Zmaže staré záznamy prevádzkových logov.
+ *
+ * Ani `job_runs`, ani `om_reconcile_log` nikto nemazal: k 19. 10. 2026 mali
+ * 146 tisíc a 116 tisíc riadkov (56 MB + 61 MB) a rástli o ~5 160 riadkov
+ * denne. Databáza stúpla z 205 MB (29. 9.) na 290 MB. Limit je 4 000 MB, takže
+ * nehorelo — ale je to rast bez konca a nafukuje zálohy.
+ *
+ * Lehoty sú krátke zámerne: obe tabuľky sú **prevádzkový log**, nie účtovný
+ * záznam. Čo bolo pred dvoma týždňami, nikto nerieši; aktuálny stav vidno
+ * v `system_heartbeats` a v súborových logoch.
+ *
+ * POZOR: mazanie riadkov neuvolní miesto operačnému systému — autovacuum ho
+ * nechá na ďalší zápis. Tabuľky teda hneď nezmenšia, len prestanú rásť.
+ */
+export async function upracLogy(
+  dniJobRuns = 14,
+  dniOmLog = 7,
+): Promise<{ job_runs: number; om_reconcile_log: number }> {
+  const hranica = (dni: number) => new Date(Date.now() - dni * 86_400_000).toISOString();
+
+  const { count: jobRuns, error: ch1 } = await supabaseAdmin
+    .from("job_runs")
+    .delete({ count: "exact" })
+    .lt("started_at", hranica(dniJobRuns));
+  if (ch1) throw new Error(`job_runs: ${ch1.message}`);
+
+  const { count: omLog, error: ch2 } = await supabaseAdmin
+    .from("om_reconcile_log")
+    .delete({ count: "exact" })
+    .lt("checked_at", hranica(dniOmLog));
+  if (ch2) throw new Error(`om_reconcile_log: ${ch2.message}`);
+
+  return { job_runs: jobRuns ?? 0, om_reconcile_log: omLog ?? 0 };
+}

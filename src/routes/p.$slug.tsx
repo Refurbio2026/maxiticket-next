@@ -1,14 +1,27 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { getSitePage } from "@/lib/site-pages.functions";
 import { PageShell } from "@/components/site/PageShell";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, FileQuestion } from "lucide-react";
 
 export const Route = createFileRoute("/p/$slug")({
-  head: () => ({ meta: [{ title: "eticketo.eu" }] }),
+  // Obsah ťahá loader, nie dopyt v prehliadači. Dve veci sa tým získali:
+  // neexistujúca stránka vracia skutočnú **404** namiesto 200 so správou (čo si
+  // vyhľadávač zaindexoval ako platnú stránku), a text obchodných podmienok je
+  // v HTML, takže ho robot vôbec vidí.
+  loader: async ({ params }) => {
+    const page = await getSitePage({ data: { slug: params.slug } });
+    // Nepublikovaná stránka sa tvári, že neexistuje — to rozhoduje server.
+    if (!page) throw notFound();
+    return { page };
+  },
+  head: ({ loaderData }) => ({
+    meta: [
+      { title: loaderData?.page ? `${loaderData.page.title} · eticketo.eu` : "eticketo.eu" },
+      ...(loaderData?.page?.meta_description
+        ? [{ name: "description", content: loaderData.page.meta_description }]
+        : []),
+    ],
+  }),
   component: Page,
 });
 
@@ -51,45 +64,8 @@ function renderBody(body: string) {
 }
 
 function Page() {
-  const { slug } = Route.useParams();
-  const fetchPage = useServerFn(getSitePage);
+  const { page } = Route.useLoaderData();
 
-  const q = useQuery({
-    queryKey: ["site-page", slug],
-    queryFn: () => fetchPage({ data: { slug } }),
-  });
-
-  if (q.isLoading) {
-    return (
-      <PageShell eyebrow="eticketo.eu" title="Načítavam…" description="">
-        <div className="py-16 text-center">
-          <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" />
-        </div>
-      </PageShell>
-    );
-  }
-
-  if (!q.data) {
-    return (
-      <PageShell
-        eyebrow="eticketo.eu"
-        title="Stránka sa nenašla"
-        description="Táto adresa neexistuje alebo stránka ešte nie je zverejnená."
-      >
-        <Card className="p-12 text-center bg-card/60 border-dashed border-border/60">
-          <FileQuestion className="mx-auto size-7 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">
-            Skúste to o chvíľu znova, alebo sa pozrite na ponuku podujatí.
-          </p>
-          <Button asChild className="mt-5 bg-gradient-flame text-primary-foreground shadow-glow">
-            <Link to="/events">Pozrieť podujatia</Link>
-          </Button>
-        </Card>
-      </PageShell>
-    );
-  }
-
-  const page = q.data;
   return (
     <PageShell eyebrow="eticketo.eu" title={page.title} description={page.meta_description ?? ""}>
       <Card className="p-6 sm:p-10 bg-card/60 border-border/60 max-w-3xl">

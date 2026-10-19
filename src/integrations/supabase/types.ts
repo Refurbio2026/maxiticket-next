@@ -2820,6 +2820,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      om_reconcile_log: {
+        Row: {
+          id: number;
+          id_plan: number;
+          checked_at: string;
+          status: string | null;
+          source_counts: Json | null;
+          target_counts: Json | null;
+          diff: Json | null;
+          rows_refetched: number | null;
+          repaired_at: string | null;
+          error: string | null;
+        };
+        Insert: {
+          id?: number;
+          id_plan: number;
+          checked_at?: string;
+          status?: string | null;
+          source_counts?: Json | null;
+          target_counts?: Json | null;
+          diff?: Json | null;
+          rows_refetched?: number | null;
+          repaired_at?: string | null;
+          error?: string | null;
+        };
+        Update: {
+          id?: number;
+          id_plan?: number;
+          checked_at?: string;
+          status?: string | null;
+          source_counts?: Json | null;
+          target_counts?: Json | null;
+          diff?: Json | null;
+          rows_refetched?: number | null;
+          repaired_at?: string | null;
+          error?: string | null;
+        };
+        Relationships: [];
+      };
       om_ticket_scans: {
         Row: {
           barcode: number | null;

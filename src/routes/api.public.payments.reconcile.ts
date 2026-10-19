@@ -21,7 +21,7 @@ import { upovedomCakajucich } from "@/lib/waitlist.server";
 import { vybavLehotyPrevodov } from "@/lib/prevod.server";
 import { sparujTransakcie } from "@/lib/bank/matching.server";
 import { stiahniZoZdrojov, upracOriginaly } from "@/lib/bank/ingest/index.server";
-import { spustiUlohu } from "@/lib/job-runs.server";
+import { spustiUlohu, upracLogy } from "@/lib/job-runs.server";
 import { errorMessage } from "@/lib/error-message";
 
 /** Ako dlho sa drží surový obsah zo zdroja, kým ho retencia zmaže. */
@@ -70,8 +70,10 @@ async function handler({ request }: { request: Request }) {
   const pripomienky = await spustiUlohu("pripomienky", () => posliPripomienky(1));
   const cakacka = await spustiUlohu("cakacka", () => upovedomCakajucich());
   const retencia = await spustiUlohu("banka-retencia", () => upracOriginaly(RETENCIA_DNI));
+  // Prevádzkové logy nikto nemazal a rástli o ~5 160 riadkov denne.
+  const logy = await spustiUlohu("retencia-logov", () => upracLogy());
 
-  const odpoved = { banka, parovanie, sken, prevody, pripomienky, cakacka, retencia };
+  const odpoved = { banka, parovanie, sken, prevody, pripomienky, cakacka, retencia, logy };
 
   // Odtlačok behu — podľa neho prehľad prevádzky pozná, či cron vôbec beží.
   try {

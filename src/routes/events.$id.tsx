@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { notFound, createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -63,15 +63,22 @@ export const Route = createFileRoute("/events/$id")({
   // Podujatie načítame už na serveri, aby mal titulok, popis aj náhľad pri
   // zdieľaní skutočné údaje. Bez toho vidí Google aj Facebook len „Podujatie".
   loader: async ({ params }) => {
+    let event: Awaited<ReturnType<typeof getEventById>> | null = null;
+    let origin = "";
     try {
-      const event = await getEventById({ data: { id: params.id } });
+      event = await getEventById({ data: { id: params.id } });
       // Adresu webu berieme zo servera — schema.org chce absolútne odkazy
       // a `head` beží aj v prehliadači, kde by sme ju už nezistili.
-      return { event, origin: await verejnaAdresa() };
+      origin = await verejnaAdresa();
     } catch {
-      // Nedostupné podujatie nesmie zhodiť stránku — komponent si poradí sám.
+      // Výpadok servera nie je to isté ako „neexistuje" — stránka si poradí
+      // sama a vráti 200, aby sa pri krátkom zlyhaní podujatie nevypadlo
+      // z indexu vyhľadávača ako neexistujúce.
       return { event: null, origin: "" };
     }
+    // Zámerne mimo `try`, inak by `catch` zhltol aj `notFound()`.
+    if (!event) throw notFound();
+    return { event, origin };
   },
   head: ({ loaderData }) => {
     const e = loaderData?.event ?? null;

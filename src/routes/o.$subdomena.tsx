@@ -8,77 +8,47 @@
 //
 // Neschválený ani skrytý organizátor tu neexistuje: server ho nevráti (pozri
 // pohľad `public_organizers`), takže sa nedá nájsť ani uhádnutím adresy.
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  Calendar,
-  ExternalLink,
-  Globe,
-  Loader2,
-  MapPin,
-  ShieldQuestion,
-  UserX,
-} from "lucide-react";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { Calendar, ExternalLink, Globe, MapPin, ShieldQuestion } from "lucide-react";
 
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Card } from "@/components/ui/card";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getPublicOrganizer } from "@/lib/organizers-public.functions";
 import { LINK_PLATFORMS } from "@/lib/organizer-profile";
 
 export const Route = createFileRoute("/o/$subdomena")({
-  head: () => ({ meta: [{ title: "Organizátor · eticketo.eu" }] }),
+  // Profil ťahá loader, nie dopyt v prehliadači: neexistujúci alebo neschválený
+  // organizátor tak vracia skutočnú **404** namiesto 200 so správou, a jeho
+  // podujatia sú v HTML, takže ich vyhľadávač vidí.
+  loader: async ({ params }) => {
+    const data = await getPublicOrganizer({ data: { subdomena: params.subdomena } });
+    // Neschválený ani skrytý organizátor tu neexistuje — rozhoduje pohľad
+    // `public_organizers`, nie táto stránka.
+    if (!data) throw notFound();
+    return data;
+  },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData?.organizer
+          ? `${loaderData.organizer.display_name} · eticketo.eu`
+          : "Organizátor · eticketo.eu",
+      },
+      ...(loaderData?.organizer?.bio
+        ? [{ name: "description", content: loaderData.organizer.bio.slice(0, 300) }]
+        : []),
+    ],
+  }),
   component: Page,
 });
 
 const NAZOV_PLATFORMY = new Map(LINK_PLATFORMS.map((p) => [p.key as string, p.label]));
 
 function Page() {
-  const { subdomena } = Route.useParams();
-  const fetchProfil = useServerFn(getPublicOrganizer);
-
-  const q = useQuery({
-    queryKey: ["public-organizer", subdomena],
-    queryFn: () => fetchProfil({ data: { subdomena } }),
-  });
-
-  if (q.isLoading) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
-        <div className="grid h-[60vh] place-items-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!q.data) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
-        <main className="mx-auto max-w-3xl px-4 pt-40 pb-20">
-          <Card className="p-12 text-center bg-card/60 border-dashed border-border/60">
-            <UserX className="mx-auto mb-3 size-7 text-muted-foreground" />
-            <h1 className="font-display text-2xl font-bold">Organizátor sa nenašiel</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Táto adresa neexistuje alebo profil ešte nie je zverejnený.
-            </p>
-            <Button asChild className="mt-6 bg-gradient-flame text-primary-foreground shadow-glow">
-              <Link to="/events">Pozrieť všetky podujatia</Link>
-            </Button>
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  const { organizer: o, links, upcoming, past_count } = q.data;
+  const { organizer: o, links, upcoming, past_count } = Route.useLoaderData();
 
   return (
     <div className="min-h-screen bg-background text-foreground">

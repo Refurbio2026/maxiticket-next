@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { jeOdpojenyKlient } from "./lib/odpojeny-klient";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -44,6 +45,12 @@ export default {
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
+      if (jeOdpojenyKlient(error)) {
+        // Odpovedať sa nekomu — klient je dávno inde. 499 je nginxov zvyk pre
+        // „spojenie zavrel klient", takže to bude vidieť v access logu
+        // a nie medzi chybami aplikácie.
+        return new Response(null, { status: 499 });
+      }
       console.error(error);
       return new Response(renderErrorPage(), {
         status: 500,
