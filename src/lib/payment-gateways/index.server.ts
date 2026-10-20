@@ -9,6 +9,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { goPayGateway } from "./gopay.gateway.server";
 import { gpWebpayGateway } from "./gpwebpay.server";
 import { tatraPayPlusGateway } from "./tatrapayplus.server";
+import { stripeGateway } from "./stripe.gateway.server";
 import { pripravPristupy } from "../pristupy.server";
 import type { GatewayId, PaymentGateway } from "./types";
 
@@ -16,6 +17,7 @@ const BRANY: Record<GatewayId, PaymentGateway> = {
   gopay: goPayGateway,
   gpwebpay: gpWebpayGateway,
   tatrapayplus: tatraPayPlusGateway,
+  stripe: stripeGateway,
 };
 
 export function vsetkyBrany(): PaymentGateway[] {
@@ -45,7 +47,7 @@ export type NastaveniaBran = {
  */
 export async function nacitajNastaveniaBran(): Promise<NastaveniaBran> {
   const predvolene: NastaveniaBran = {
-    zapnute: { gopay: true, gpwebpay: true, tatrapayplus: true },
+    zapnute: { gopay: true, gpwebpay: true, tatrapayplus: true, stripe: true },
     predvolena: null,
     updated_at: null,
   };
@@ -61,6 +63,9 @@ export async function nacitajNastaveniaBran(): Promise<NastaveniaBran> {
         gopay: data.gopay_enabled,
         gpwebpay: data.gpwebpay_enabled,
         tatrapayplus: data.tatrapayplus_enabled,
+        // `?? true` drží web v chode, kým nie je prehraná migrácia so stĺpcom
+        // `stripe_enabled` — brána sa aj tak neponúkne, kým nemá kľúče.
+        stripe: data.stripe_enabled ?? true,
       },
       predvolena: (data.default_provider as GatewayId | null) ?? null,
       updated_at: data.updated_at,

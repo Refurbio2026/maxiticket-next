@@ -233,6 +233,8 @@ export type Database = {
           payment_ref: string | null;
           payment_url: string | null;
           payment_vs: number | null;
+          application_fee_cents: number | null;
+          transfer_destination: string | null;
           id: string;
           paid_at: string | null;
           status: Database["public"]["Enums"]["order_status"];
@@ -286,6 +288,8 @@ export type Database = {
           payment_ref?: string | null;
           payment_url?: string | null;
           payment_vs?: number | null;
+          application_fee_cents?: number | null;
+          transfer_destination?: string | null;
           id?: string;
           paid_at?: string | null;
           status?: Database["public"]["Enums"]["order_status"];
@@ -339,6 +343,8 @@ export type Database = {
           payment_ref?: string | null;
           payment_url?: string | null;
           payment_vs?: number | null;
+          application_fee_cents?: number | null;
+          transfer_destination?: string | null;
           id?: string;
           paid_at?: string | null;
           status?: Database["public"]["Enums"]["order_status"];
@@ -497,6 +503,12 @@ export type Database = {
         Row: {
           billing_address: string | null;
           commission_rate: number | null;
+          stripe_account_id: string | null;
+          stripe_charges_enabled: boolean;
+          stripe_payouts_enabled: boolean;
+          stripe_details_submitted: boolean;
+          stripe_requirements: Json | null;
+          stripe_account_updated_at: string | null;
           company_name: string | null;
           created_at: string;
           dic: string | null;
@@ -532,6 +544,12 @@ export type Database = {
         Insert: {
           billing_address?: string | null;
           commission_rate?: number | null;
+          stripe_account_id?: string | null;
+          stripe_charges_enabled?: boolean;
+          stripe_payouts_enabled?: boolean;
+          stripe_details_submitted?: boolean;
+          stripe_requirements?: Json | null;
+          stripe_account_updated_at?: string | null;
           company_name?: string | null;
           created_at?: string;
           dic?: string | null;
@@ -567,6 +585,12 @@ export type Database = {
         Update: {
           billing_address?: string | null;
           commission_rate?: number | null;
+          stripe_account_id?: string | null;
+          stripe_charges_enabled?: boolean;
+          stripe_payouts_enabled?: boolean;
+          stripe_details_submitted?: boolean;
+          stripe_requirements?: Json | null;
+          stripe_account_updated_at?: string | null;
           company_name?: string | null;
           created_at?: string;
           dic?: string | null;
@@ -1563,6 +1587,7 @@ export type Database = {
           gpwebpay_enabled: boolean;
           id: boolean;
           tatrapayplus_enabled: boolean;
+          stripe_enabled: boolean;
           updated_at: string;
           updated_by: string | null;
         };
@@ -1573,6 +1598,7 @@ export type Database = {
           gpwebpay_enabled?: boolean;
           id?: boolean;
           tatrapayplus_enabled?: boolean;
+          stripe_enabled?: boolean;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -1583,6 +1609,7 @@ export type Database = {
           gpwebpay_enabled?: boolean;
           id?: boolean;
           tatrapayplus_enabled?: boolean;
+          stripe_enabled?: boolean;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -3147,7 +3174,7 @@ export type Database = {
       event_status: "draft" | "published" | "cancelled";
       order_status:
         "pending" | "awaiting_payment" | "paid" | "failed" | "cancelled" | "refunded" | "expired";
-      payment_provider: "gopay" | "gpwebpay" | "tatrapayplus" | "prevod";
+      payment_provider: "gopay" | "gpwebpay" | "tatrapayplus" | "prevod" | "stripe";
       payment_status: "pending" | "authorized" | "paid" | "failed" | "cancelled" | "refunded";
       sale_type: "standing" | "seating" | "seating_map";
       seat_status: "available" | "reserved" | "sold";
@@ -3286,7 +3313,7 @@ export const Constants = {
         "refunded",
         "expired",
       ],
-      payment_provider: ["gopay", "gpwebpay", "tatrapayplus", "prevod"],
+      payment_provider: ["gopay", "gpwebpay", "tatrapayplus", "prevod", "stripe"],
       payment_status: ["pending", "authorized", "paid", "failed", "cancelled", "refunded"],
       sale_type: ["standing", "seating", "seating_map"],
       seat_status: ["available", "reserved", "sold"],

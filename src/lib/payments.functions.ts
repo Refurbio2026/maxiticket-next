@@ -14,7 +14,7 @@ import { loadSeatPricing } from "./seat-pricing.server";
 import { errorMessage } from "./error-message";
 import { pocetVstupeniek } from "./plural";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
-import { jeBrana } from "./payment-gateways/types";
+import { jeBrana, type GatewayId } from "./payment-gateways/types";
 import { adresaNasehoPdf, dopytajCakajuce, settleOrder } from "./order-settlement.server";
 import { fakturacnySystem } from "./invoicing/index.server";
 import { firemneUdaje } from "./invoicing/types";
@@ -724,7 +724,8 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
  */
 async function zrusPredoslyZamer(
   orderId: string,
-  provider: "gopay" | "gpwebpay" | "tatrapayplus",
+  // `GatewayId` a nie ručný zoznam: pri pridaní brány sa tu inak zabudne.
+  provider: GatewayId,
   ref: string,
 ): Promise<void> {
   let zruseny = false;

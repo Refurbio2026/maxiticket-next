@@ -9,53 +9,52 @@
 import { describe, it, expect, vi } from "vitest";
 import { widgetJs } from "./widget-script";
 
-type Prvok = {
-  tag: string;
-  className: string;
-  textContent: string;
+/**
+ * Atrapa jedného prvku. Trieda a nie objektový literál: `textContent` je
+ * getter nad vnútorným poľom a v literále by `this` zostalo bez typu.
+ */
+class Prvok {
+  className = "";
+  deti: Prvok[] = [];
+  dataset: Record<string, string> = {};
   href?: string;
   target?: string;
   rel?: string;
   src?: string;
   alt?: string;
   loading?: string;
-  deti: Prvok[];
-  dataset: Record<string, string>;
-  attachShadow: () => Prvok;
-  appendChild: (d: Prvok) => Prvok;
-  insertBefore: (d: Prvok) => Prvok;
-};
+  private text = "";
 
-function prvok(tag: string): Prvok {
-  const el: Prvok = {
-    tag,
-    className: "",
-    deti: [],
-    dataset: {},
-    get textContent() {
-      return this._text ?? "";
-    },
-    set textContent(v: string) {
-      // Priradenie prázdneho reťazca je v skripte „vyprázdni ma".
-      this._text = v;
-      if (v === "") this.deti = [];
-    },
-    attachShadow: () => {
-      const koren = prvok("#shadow");
-      el.deti.push(koren);
-      return koren;
-    },
-    appendChild(d: Prvok) {
-      this.deti.push(d);
-      return d;
-    },
-    insertBefore(d: Prvok) {
-      this.deti.push(d);
-      return d;
-    },
-  } as unknown as Prvok;
-  return el;
+  constructor(readonly tag: string) {}
+
+  get textContent(): string {
+    return this.text;
+  }
+
+  set textContent(v: string) {
+    this.text = v;
+    // Priradenie prázdneho reťazca je v skripte „vyprázdni ma".
+    if (v === "") this.deti = [];
+  }
+
+  attachShadow(): Prvok {
+    const koren = new Prvok("#shadow");
+    this.deti.push(koren);
+    return koren;
+  }
+
+  appendChild(d: Prvok): Prvok {
+    this.deti.push(d);
+    return d;
+  }
+
+  insertBefore(d: Prvok): Prvok {
+    this.deti.push(d);
+    return d;
+  }
 }
+
+const prvok = (tag: string): Prvok => new Prvok(tag);
 
 /** Všetky prvky v podstrome, aby sa v nich dalo hľadať. */
 function vsetky(p: Prvok): Prvok[] {

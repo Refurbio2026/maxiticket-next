@@ -3,9 +3,9 @@
 // a (niekedy) vrátiť peniaze.
 import type { Json } from "@/integrations/supabase/types";
 
-export type GatewayId = "gopay" | "gpwebpay" | "tatrapayplus";
+export type GatewayId = "gopay" | "gpwebpay" | "tatrapayplus" | "stripe";
 
-export const GATEWAY_IDS: readonly GatewayId[] = ["gopay", "gpwebpay", "tatrapayplus"];
+export const GATEWAY_IDS: readonly GatewayId[] = ["gopay", "gpwebpay", "tatrapayplus", "stripe"];
 
 /**
  * Je tento poskytovateľ platby brána?
@@ -91,6 +91,14 @@ export interface PaymentGateway {
   konfiguracia(): PolozkaKonfiguracie[];
   /** Adresa, s ktorou sa bude komunikovať. Podľa nej sa pozná testovacia prevádzka. */
   endpoint(): string;
+  /**
+   * Keď sa testovacia prevádzka z adresy poznať nedá, povie to brána sama.
+   *
+   * Stripe má pre test aj ostro tú istú adresu (`api.stripe.com`) a rozhoduje
+   * predpona kľúča (`sk_test_` oproti `sk_live_`). Bez tohto by admin pri
+   * Stripe ukazoval „neznáma" a nikto by si nevšimol, že sa predáva do piesku.
+   */
+  rezim?(): "test" | "ostrá" | "neznáma";
   /** Skúsi sa spojiť s bránou. Nezakladá platbu. */
   test(): Promise<TestBrany>;
 }

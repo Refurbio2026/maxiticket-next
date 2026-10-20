@@ -14,6 +14,7 @@ import {
   Megaphone,
   UserCog,
   Code2,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -62,6 +63,7 @@ const groups: Group[] = [
       { title: "orgNav.cashiers", url: "/organizer/pos/cashiers", icon: Users },
       { title: "orgNav.devices", url: "/organizer/pos/devices", icon: Cpu },
       { title: "orgNav.fiscal", url: "/organizer/pos/fiscal", icon: ShieldCheck },
+      { title: "orgNav.payouts", url: "/organizer/payouts", icon: Wallet },
     ],
   },
   {

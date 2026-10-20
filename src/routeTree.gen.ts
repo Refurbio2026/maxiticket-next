@@ -36,6 +36,7 @@ import { Route as OSubdomenaRouteImport } from './routes/o.$subdomena'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
 import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
+import { Route as OrganizerPayoutsRouteImport } from './routes/organizer.payouts'
 import { Route as OrganizerProfileRouteImport } from './routes/organizer.profile'
 import { Route as OrganizerWidgetRouteImport } from './routes/organizer.widget'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
@@ -105,6 +106,7 @@ import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.t
 import { Route as ApiPublicInvoicesOrderIdPdfRouteImport } from './routes/api.public.invoices.$orderId.pdf'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as ApiPublicPaymentsGpwebpayReturnRouteImport } from './routes/api.public.payments.gpwebpay.return'
+import { Route as ApiPublicPaymentsStripeWebhookRouteImport } from './routes/api.public.payments.stripe.webhook'
 import { Route as ApiPublicPaymentsTatrapayplusReturnRouteImport } from './routes/api.public.payments.tatrapayplus.return'
 import { Route as AdminDataCategoriesCategoryIdEventsNewRouteImport } from './routes/admin.data.categories.$categoryId.events.new'
 
@@ -241,6 +243,11 @@ const OrganizerEventsRoute = OrganizerEventsRouteImport.update({
 const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerPayoutsRoute = OrganizerPayoutsRouteImport.update({
+  id: '/payouts',
+  path: '/payouts',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerProfileRoute = OrganizerProfileRouteImport.update({
@@ -602,6 +609,12 @@ const ApiPublicPaymentsGpwebpayReturnRoute =
     path: '/api/public/payments/gpwebpay/return',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsStripeWebhookRoute =
+  ApiPublicPaymentsStripeWebhookRouteImport.update({
+    id: '/api/public/payments/stripe/webhook',
+    path: '/api/public/payments/stripe/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsTatrapayplusReturnRoute =
   ApiPublicPaymentsTatrapayplusReturnRouteImport.update({
     id: '/api/public/payments/tatrapayplus/return',
@@ -641,6 +654,7 @@ export interface FileRoutesByFullPath {
   '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
+  '/organizer/payouts': typeof OrganizerPayoutsRoute
   '/organizer/profile': typeof OrganizerProfileRoute
   '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
@@ -712,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
+  '/api/public/payments/stripe/webhook': typeof ApiPublicPaymentsStripeWebhookRoute
   '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -737,6 +752,7 @@ export interface FileRoutesByTo {
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
   '/o/$subdomena': typeof OSubdomenaRoute
+  '/organizer/payouts': typeof OrganizerPayoutsRoute
   '/organizer/profile': typeof OrganizerProfileRoute
   '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
@@ -808,6 +824,7 @@ export interface FileRoutesByTo {
   '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
+  '/api/public/payments/stripe/webhook': typeof ApiPublicPaymentsStripeWebhookRoute
   '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -838,6 +855,7 @@ export interface FileRoutesById {
   '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
+  '/organizer/payouts': typeof OrganizerPayoutsRoute
   '/organizer/profile': typeof OrganizerProfileRoute
   '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
@@ -909,6 +927,7 @@ export interface FileRoutesById {
   '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
+  '/api/public/payments/stripe/webhook': typeof ApiPublicPaymentsStripeWebhookRoute
   '/api/public/payments/tatrapayplus/return': typeof ApiPublicPaymentsTatrapayplusReturnRoute
   '/admin/data/categories/$categoryId/events/new': typeof AdminDataCategoriesCategoryIdEventsNewRoute
 }
@@ -940,6 +959,7 @@ export interface FileRouteTypes {
     | '/o/$subdomena'
     | '/organizer/events'
     | '/organizer/marketing'
+    | '/organizer/payouts'
     | '/organizer/profile'
     | '/organizer/widget'
     | '/p/$slug'
@@ -1011,6 +1031,7 @@ export interface FileRouteTypes {
     | '/api/public/invoices/$orderId/pdf'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
+    | '/api/public/payments/stripe/webhook'
     | '/api/public/payments/tatrapayplus/return'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesByTo: FileRoutesByTo
@@ -1036,6 +1057,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/events/$id'
     | '/o/$subdomena'
+    | '/organizer/payouts'
     | '/organizer/profile'
     | '/organizer/widget'
     | '/p/$slug'
@@ -1107,6 +1129,7 @@ export interface FileRouteTypes {
     | '/api/public/invoices/$orderId/pdf'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
+    | '/api/public/payments/stripe/webhook'
     | '/api/public/payments/tatrapayplus/return'
     | '/admin/data/categories/$categoryId/events/new'
   id:
@@ -1136,6 +1159,7 @@ export interface FileRouteTypes {
     | '/o/$subdomena'
     | '/organizer/events'
     | '/organizer/marketing'
+    | '/organizer/payouts'
     | '/organizer/profile'
     | '/organizer/widget'
     | '/p/$slug'
@@ -1207,6 +1231,7 @@ export interface FileRouteTypes {
     | '/api/public/invoices/$orderId/pdf'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
+    | '/api/public/payments/stripe/webhook'
     | '/api/public/payments/tatrapayplus/return'
     | '/admin/data/categories/$categoryId/events/new'
   fileRoutesById: FileRoutesById
@@ -1246,6 +1271,7 @@ export interface RootRouteChildren {
   ApiPublicInvoicesOrderIdPdfRoute: typeof ApiPublicInvoicesOrderIdPdfRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
   ApiPublicPaymentsGpwebpayReturnRoute: typeof ApiPublicPaymentsGpwebpayReturnRoute
+  ApiPublicPaymentsStripeWebhookRoute: typeof ApiPublicPaymentsStripeWebhookRoute
   ApiPublicPaymentsTatrapayplusReturnRoute: typeof ApiPublicPaymentsTatrapayplusReturnRoute
 }
 
@@ -1438,6 +1464,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing'
       fullPath: '/organizer/marketing'
       preLoaderRoute: typeof OrganizerMarketingRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/payouts': {
+      id: '/organizer/payouts'
+      path: '/payouts'
+      fullPath: '/organizer/payouts'
+      preLoaderRoute: typeof OrganizerPayoutsRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/organizer/profile': {
@@ -1923,6 +1956,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsGpwebpayReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/stripe/webhook': {
+      id: '/api/public/payments/stripe/webhook'
+      path: '/api/public/payments/stripe/webhook'
+      fullPath: '/api/public/payments/stripe/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/tatrapayplus/return': {
       id: '/api/public/payments/tatrapayplus/return'
       path: '/api/public/payments/tatrapayplus/return'
@@ -2091,6 +2131,7 @@ const OrganizerMarketingRouteWithChildren =
 interface OrganizerRouteChildren {
   OrganizerEventsRoute: typeof OrganizerEventsRouteWithChildren
   OrganizerMarketingRoute: typeof OrganizerMarketingRouteWithChildren
+  OrganizerPayoutsRoute: typeof OrganizerPayoutsRoute
   OrganizerProfileRoute: typeof OrganizerProfileRoute
   OrganizerWidgetRoute: typeof OrganizerWidgetRoute
   OrganizerIndexRoute: typeof OrganizerIndexRoute
@@ -2106,6 +2147,7 @@ interface OrganizerRouteChildren {
 const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerEventsRoute: OrganizerEventsRouteWithChildren,
   OrganizerMarketingRoute: OrganizerMarketingRouteWithChildren,
+  OrganizerPayoutsRoute: OrganizerPayoutsRoute,
   OrganizerProfileRoute: OrganizerProfileRoute,
   OrganizerWidgetRoute: OrganizerWidgetRoute,
   OrganizerIndexRoute: OrganizerIndexRoute,
@@ -2157,6 +2199,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicInvoicesOrderIdPdfRoute: ApiPublicInvoicesOrderIdPdfRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,
   ApiPublicPaymentsGpwebpayReturnRoute: ApiPublicPaymentsGpwebpayReturnRoute,
+  ApiPublicPaymentsStripeWebhookRoute: ApiPublicPaymentsStripeWebhookRoute,
   ApiPublicPaymentsTatrapayplusReturnRoute:
     ApiPublicPaymentsTatrapayplusReturnRoute,
 }
