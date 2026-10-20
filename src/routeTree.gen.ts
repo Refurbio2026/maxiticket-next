@@ -26,6 +26,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as WidgetDotjsRouteImport } from './routes/widget[.]js'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
@@ -36,6 +37,7 @@ import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
 import { Route as OrganizerMarketingRouteImport } from './routes/organizer.marketing'
 import { Route as OrganizerProfileRouteImport } from './routes/organizer.profile'
+import { Route as OrganizerWidgetRouteImport } from './routes/organizer.widget'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
@@ -81,6 +83,7 @@ import { Route as AdminSystemPaymentsRouteImport } from './routes/admin.system.p
 import { Route as AdminSystemUsersRouteImport } from './routes/admin.system.users'
 import { Route as AdminSystemWalletRouteImport } from './routes/admin.system.wallet'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api.public.seed-demo'
+import { Route as ApiWidgetEventsRouteImport } from './routes/api.widget.events'
 import { Route as CheckoutSuccessOrderIdRouteImport } from './routes/checkout.success.$orderId'
 import { Route as CheckoutTransferOrderIdRouteImport } from './routes/checkout.transfer.$orderId'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer.events.index'
@@ -190,6 +193,11 @@ const SupportRoute = SupportRouteImport.update({
   path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WidgetDotjsRoute = WidgetDotjsRouteImport.update({
+  id: '/widget.js',
+  path: '/widget.js',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -238,6 +246,11 @@ const OrganizerMarketingRoute = OrganizerMarketingRouteImport.update({
 const OrganizerProfileRoute = OrganizerProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerWidgetRoute = OrganizerWidgetRouteImport.update({
+  id: '/widget',
+  path: '/widget',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const PSlugRoute = PSlugRouteImport.update({
@@ -474,6 +487,11 @@ const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
   path: '/api/public/seed-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWidgetEventsRoute = ApiWidgetEventsRouteImport.update({
+  id: '/api/widget/events',
+  path: '/api/widget/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutSuccessOrderIdRoute = CheckoutSuccessOrderIdRouteImport.update({
   id: '/checkout/success/$orderId',
   path: '/checkout/success/$orderId',
@@ -615,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/scanner': typeof ScannerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/widget.js': typeof WidgetDotjsRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -623,6 +642,7 @@ export interface FileRoutesByFullPath {
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
   '/organizer/profile': typeof OrganizerProfileRoute
+  '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -670,6 +690,7 @@ export interface FileRoutesByFullPath {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/admin/system/wallet': typeof AdminSystemWalletRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/api/widget/events': typeof ApiWidgetEventsRoute
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/checkout/transfer/$orderId': typeof CheckoutTransferOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
@@ -710,12 +731,14 @@ export interface FileRoutesByTo {
   '/scanner': typeof ScannerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/widget.js': typeof WidgetDotjsRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
   '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/profile': typeof OrganizerProfileRoute
+  '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -763,6 +786,7 @@ export interface FileRoutesByTo {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/admin/system/wallet': typeof AdminSystemWalletRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/api/widget/events': typeof ApiWidgetEventsRoute
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/checkout/transfer/$orderId': typeof CheckoutTransferOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
@@ -806,6 +830,7 @@ export interface FileRoutesById {
   '/scanner': typeof ScannerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/widget.js': typeof WidgetDotjsRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -814,6 +839,7 @@ export interface FileRoutesById {
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
   '/organizer/profile': typeof OrganizerProfileRoute
+  '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -861,6 +887,7 @@ export interface FileRoutesById {
   '/admin/system/users': typeof AdminSystemUsersRoute
   '/admin/system/wallet': typeof AdminSystemWalletRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
+  '/api/widget/events': typeof ApiWidgetEventsRoute
   '/checkout/success/$orderId': typeof CheckoutSuccessOrderIdRoute
   '/checkout/transfer/$orderId': typeof CheckoutTransferOrderIdRoute
   '/organizer/events/new': typeof OrganizerEventsNewRoute
@@ -905,6 +932,7 @@ export interface FileRouteTypes {
     | '/scanner'
     | '/sitemap.xml'
     | '/support'
+    | '/widget.js'
     | '/admin/marketing'
     | '/checkout/$orderId'
     | '/checkout/return'
@@ -913,6 +941,7 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/profile'
+    | '/organizer/widget'
     | '/p/$slug'
     | '/admin/'
     | '/organizer/'
@@ -960,6 +989,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/admin/system/wallet'
     | '/api/public/seed-demo'
+    | '/api/widget/events'
     | '/checkout/success/$orderId'
     | '/checkout/transfer/$orderId'
     | '/organizer/events/new'
@@ -1000,12 +1030,14 @@ export interface FileRouteTypes {
     | '/scanner'
     | '/sitemap.xml'
     | '/support'
+    | '/widget.js'
     | '/admin/marketing'
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
     | '/o/$subdomena'
     | '/organizer/profile'
+    | '/organizer/widget'
     | '/p/$slug'
     | '/admin'
     | '/organizer'
@@ -1053,6 +1085,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/admin/system/wallet'
     | '/api/public/seed-demo'
+    | '/api/widget/events'
     | '/checkout/success/$orderId'
     | '/checkout/transfer/$orderId'
     | '/organizer/events/new'
@@ -1095,6 +1128,7 @@ export interface FileRouteTypes {
     | '/scanner'
     | '/sitemap.xml'
     | '/support'
+    | '/widget.js'
     | '/admin/marketing'
     | '/checkout/$orderId'
     | '/checkout/return'
@@ -1103,6 +1137,7 @@ export interface FileRouteTypes {
     | '/organizer/events'
     | '/organizer/marketing'
     | '/organizer/profile'
+    | '/organizer/widget'
     | '/p/$slug'
     | '/admin/'
     | '/organizer/'
@@ -1150,6 +1185,7 @@ export interface FileRouteTypes {
     | '/admin/system/users'
     | '/admin/system/wallet'
     | '/api/public/seed-demo'
+    | '/api/widget/events'
     | '/checkout/success/$orderId'
     | '/checkout/transfer/$orderId'
     | '/organizer/events/new'
@@ -1193,11 +1229,13 @@ export interface RootRouteChildren {
   ScannerRoute: typeof ScannerRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
+  WidgetDotjsRoute: typeof WidgetDotjsRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   OSubdomenaRoute: typeof OSubdomenaRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
+  ApiWidgetEventsRoute: typeof ApiWidgetEventsRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
   CheckoutTransferOrderIdRoute: typeof CheckoutTransferOrderIdRoute
   ApiPublicEventsByTokenRoute: typeof ApiPublicEventsByTokenRoute
@@ -1332,6 +1370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/widget.js': {
+      id: '/widget.js'
+      path: '/widget.js'
+      fullPath: '/widget.js'
+      preLoaderRoute: typeof WidgetDotjsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -1400,6 +1445,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/organizer/profile'
       preLoaderRoute: typeof OrganizerProfileRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/widget': {
+      id: '/organizer/widget'
+      path: '/widget'
+      fullPath: '/organizer/widget'
+      preLoaderRoute: typeof OrganizerWidgetRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/p/$slug': {
@@ -1715,6 +1767,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/seed-demo'
       fullPath: '/api/public/seed-demo'
       preLoaderRoute: typeof ApiPublicSeedDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/widget/events': {
+      id: '/api/widget/events'
+      path: '/api/widget/events'
+      fullPath: '/api/widget/events'
+      preLoaderRoute: typeof ApiWidgetEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/success/$orderId': {
@@ -2033,6 +2092,7 @@ interface OrganizerRouteChildren {
   OrganizerEventsRoute: typeof OrganizerEventsRouteWithChildren
   OrganizerMarketingRoute: typeof OrganizerMarketingRouteWithChildren
   OrganizerProfileRoute: typeof OrganizerProfileRoute
+  OrganizerWidgetRoute: typeof OrganizerWidgetRoute
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerPosCashierSalesRoute: typeof OrganizerPosCashierSalesRoute
   OrganizerPosCashiersRoute: typeof OrganizerPosCashiersRoute
@@ -2047,6 +2107,7 @@ const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerEventsRoute: OrganizerEventsRouteWithChildren,
   OrganizerMarketingRoute: OrganizerMarketingRouteWithChildren,
   OrganizerProfileRoute: OrganizerProfileRoute,
+  OrganizerWidgetRoute: OrganizerWidgetRoute,
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerPosCashierSalesRoute: OrganizerPosCashierSalesRoute,
   OrganizerPosCashiersRoute: OrganizerPosCashiersRoute,
@@ -2079,11 +2140,13 @@ const rootRouteChildren: RootRouteChildren = {
   ScannerRoute: ScannerRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
+  WidgetDotjsRoute: WidgetDotjsRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   OSubdomenaRoute: OSubdomenaRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
+  ApiWidgetEventsRoute: ApiWidgetEventsRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
   CheckoutTransferOrderIdRoute: CheckoutTransferOrderIdRoute,
   ApiPublicEventsByTokenRoute: ApiPublicEventsByTokenRoute,

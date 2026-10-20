@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Megaphone,
   UserCog,
+  Code2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -73,6 +74,7 @@ const groups: Group[] = [
         exact: true,
       },
       { title: "orgNav.launchAd", url: "/organizer/marketing/new", icon: Plus },
+      { title: "orgNav.widget", url: "/organizer/widget", icon: Code2 },
     ],
   },
 ];
