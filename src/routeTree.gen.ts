@@ -104,6 +104,7 @@ import { Route as ApiPublicTicketsCodesRouteImport } from './routes/api.public.t
 import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
 import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
 import { Route as ApiPublicInvoicesOrderIdPdfRouteImport } from './routes/api.public.invoices.$orderId.pdf'
+import { Route as ApiPublicPaymentsComgateNotifyRouteImport } from './routes/api.public.payments.comgate.notify'
 import { Route as ApiPublicPaymentsGopayWebhookRouteImport } from './routes/api.public.payments.gopay.webhook'
 import { Route as ApiPublicPaymentsGpwebpayReturnRouteImport } from './routes/api.public.payments.gpwebpay.return'
 import { Route as ApiPublicPaymentsStripeWebhookRouteImport } from './routes/api.public.payments.stripe.webhook'
@@ -597,6 +598,12 @@ const ApiPublicInvoicesOrderIdPdfRoute =
     path: '/api/public/invoices/$orderId/pdf',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsComgateNotifyRoute =
+  ApiPublicPaymentsComgateNotifyRouteImport.update({
+    id: '/api/public/payments/comgate/notify',
+    path: '/api/public/payments/comgate/notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsGopayWebhookRoute =
   ApiPublicPaymentsGopayWebhookRouteImport.update({
     id: '/api/public/payments/gopay/webhook',
@@ -724,6 +731,7 @@ export interface FileRoutesByFullPath {
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
+  '/api/public/payments/comgate/notify': typeof ApiPublicPaymentsComgateNotifyRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
   '/api/public/payments/stripe/webhook': typeof ApiPublicPaymentsStripeWebhookRoute
@@ -822,6 +830,7 @@ export interface FileRoutesByTo {
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
+  '/api/public/payments/comgate/notify': typeof ApiPublicPaymentsComgateNotifyRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
   '/api/public/payments/stripe/webhook': typeof ApiPublicPaymentsStripeWebhookRoute
@@ -925,6 +934,7 @@ export interface FileRoutesById {
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
   '/api/public/invoices/$orderId/pdf': typeof ApiPublicInvoicesOrderIdPdfRoute
+  '/api/public/payments/comgate/notify': typeof ApiPublicPaymentsComgateNotifyRoute
   '/api/public/payments/gopay/webhook': typeof ApiPublicPaymentsGopayWebhookRoute
   '/api/public/payments/gpwebpay/return': typeof ApiPublicPaymentsGpwebpayReturnRoute
   '/api/public/payments/stripe/webhook': typeof ApiPublicPaymentsStripeWebhookRoute
@@ -1029,6 +1039,7 @@ export interface FileRouteTypes {
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/invoices/$orderId/pdf'
+    | '/api/public/payments/comgate/notify'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
     | '/api/public/payments/stripe/webhook'
@@ -1127,6 +1138,7 @@ export interface FileRouteTypes {
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/invoices/$orderId/pdf'
+    | '/api/public/payments/comgate/notify'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
     | '/api/public/payments/stripe/webhook'
@@ -1229,6 +1241,7 @@ export interface FileRouteTypes {
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
     | '/api/public/invoices/$orderId/pdf'
+    | '/api/public/payments/comgate/notify'
     | '/api/public/payments/gopay/webhook'
     | '/api/public/payments/gpwebpay/return'
     | '/api/public/payments/stripe/webhook'
@@ -1269,6 +1282,7 @@ export interface RootRouteChildren {
   ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
   ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
   ApiPublicInvoicesOrderIdPdfRoute: typeof ApiPublicInvoicesOrderIdPdfRoute
+  ApiPublicPaymentsComgateNotifyRoute: typeof ApiPublicPaymentsComgateNotifyRoute
   ApiPublicPaymentsGopayWebhookRoute: typeof ApiPublicPaymentsGopayWebhookRoute
   ApiPublicPaymentsGpwebpayReturnRoute: typeof ApiPublicPaymentsGpwebpayReturnRoute
   ApiPublicPaymentsStripeWebhookRoute: typeof ApiPublicPaymentsStripeWebhookRoute
@@ -1942,6 +1956,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicInvoicesOrderIdPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/comgate/notify': {
+      id: '/api/public/payments/comgate/notify'
+      path: '/api/public/payments/comgate/notify'
+      fullPath: '/api/public/payments/comgate/notify'
+      preLoaderRoute: typeof ApiPublicPaymentsComgateNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/gopay/webhook': {
       id: '/api/public/payments/gopay/webhook'
       path: '/api/public/payments/gopay/webhook'
@@ -2197,6 +2218,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
   ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,
   ApiPublicInvoicesOrderIdPdfRoute: ApiPublicInvoicesOrderIdPdfRoute,
+  ApiPublicPaymentsComgateNotifyRoute: ApiPublicPaymentsComgateNotifyRoute,
   ApiPublicPaymentsGopayWebhookRoute: ApiPublicPaymentsGopayWebhookRoute,
   ApiPublicPaymentsGpwebpayReturnRoute: ApiPublicPaymentsGpwebpayReturnRoute,
   ApiPublicPaymentsStripeWebhookRoute: ApiPublicPaymentsStripeWebhookRoute,

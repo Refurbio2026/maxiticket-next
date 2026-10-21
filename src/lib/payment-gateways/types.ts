@@ -3,7 +3,7 @@
 // a (niekedy) vrátiť peniaze.
 import type { Json } from "@/integrations/supabase/types";
 
-export type GatewayId = "gopay" | "gpwebpay" | "tatrapayplus" | "stripe";
+export type GatewayId = "gopay" | "gpwebpay" | "tatrapayplus" | "stripe" | "comgate";
 
 export const GATEWAY_IDS: readonly GatewayId[] = ["gopay", "gpwebpay", "tatrapayplus", "stripe"];
 

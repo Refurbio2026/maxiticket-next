@@ -1588,6 +1588,7 @@ export type Database = {
           id: boolean;
           tatrapayplus_enabled: boolean;
           stripe_enabled: boolean;
+          comgate_enabled: boolean;
           updated_at: string;
           updated_by: string | null;
         };
@@ -1599,6 +1600,7 @@ export type Database = {
           id?: boolean;
           tatrapayplus_enabled?: boolean;
           stripe_enabled?: boolean;
+          comgate_enabled?: boolean;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -1610,6 +1612,7 @@ export type Database = {
           id?: boolean;
           tatrapayplus_enabled?: boolean;
           stripe_enabled?: boolean;
+          comgate_enabled?: boolean;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -3174,7 +3177,7 @@ export type Database = {
       event_status: "draft" | "published" | "cancelled";
       order_status:
         "pending" | "awaiting_payment" | "paid" | "failed" | "cancelled" | "refunded" | "expired";
-      payment_provider: "gopay" | "gpwebpay" | "tatrapayplus" | "prevod" | "stripe";
+      payment_provider: "gopay" | "gpwebpay" | "tatrapayplus" | "prevod" | "stripe" | "comgate";
       payment_status: "pending" | "authorized" | "paid" | "failed" | "cancelled" | "refunded";
       sale_type: "standing" | "seating" | "seating_map";
       seat_status: "available" | "reserved" | "sold";
@@ -3313,7 +3316,7 @@ export const Constants = {
         "refunded",
         "expired",
       ],
-      payment_provider: ["gopay", "gpwebpay", "tatrapayplus", "prevod", "stripe"],
+      payment_provider: ["gopay", "gpwebpay", "tatrapayplus", "prevod", "stripe", "comgate"],
       payment_status: ["pending", "authorized", "paid", "failed", "cancelled", "refunded"],
       sale_type: ["standing", "seating", "seating_map"],
       seat_status: ["available", "reserved", "sold"],
