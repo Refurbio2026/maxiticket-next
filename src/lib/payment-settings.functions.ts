@@ -15,13 +15,20 @@ import {
   vsetkyBrany,
 } from "./payment-gateways/index.server";
 import { ulozPristupy } from "./pristupy.server";
-import { rezimZAdresy, type PolozkaKonfiguracie } from "./payment-gateways/types";
+import {
+  GATEWAY_IDS,
+  rezimZAdresy,
+  type GatewayId,
+  type PolozkaKonfiguracie,
+} from "./payment-gateways/types";
 import { systemPodlaId, vsetkyFakturacneSystemy } from "./invoicing/index.server";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
 import { jePovolenaSadzba, predvolenaSadzba, zabudniSadzbu } from "./dph.server";
 
-const ID_BRANY = z.enum(["gopay", "gpwebpay", "tatrapayplus"]);
+// Z `GATEWAY_IDS`, nie ručný zoznam: pri pridaní brány sa tu inak zabudne
+// a nedá sa nastaviť ako predvolená.
+const ID_BRANY = z.enum(GATEWAY_IDS as unknown as [GatewayId, ...GatewayId[]]);
 const ID_FAKTURACIE = z.enum(["superfaktura", "faktero"]);
 const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE]);
 
@@ -237,6 +244,9 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
         gopay_enabled: z.boolean(),
         gpwebpay_enabled: z.boolean(),
         tatrapayplus_enabled: z.boolean(),
+        // Voliteľné, nech staršia verzia klienta po nasadení nespadne.
+        stripe_enabled: z.boolean().optional(),
+        comgate_enabled: z.boolean().optional(),
         default_provider: ID_BRANY.nullable(),
         invoice_provider: ID_FAKTURACIE.nullable(),
         default_vat_rate: z.number().nonnegative().max(100),
@@ -250,13 +260,17 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
     // Predvolená brána, ktorá je vypnutá alebo bez prístupov, by znamenala
     // checkout bez možnosti zaplatiť. Radšej to odmietneme hneď.
     if (data.default_provider) {
-      const zapnuta = {
+      const zapnute: Record<GatewayId, boolean> = {
         gopay: data.gopay_enabled,
         gpwebpay: data.gpwebpay_enabled,
         tatrapayplus: data.tatrapayplus_enabled,
-      }[data.default_provider];
+        stripe: data.stripe_enabled ?? true,
+        comgate: data.comgate_enabled ?? true,
+      };
       const brana = branaPodlaId(data.default_provider);
-      if (!zapnuta) throw new Error(`${brana.label} nemôže byť predvolená, keď je vypnutá.`);
+      if (!zapnute[data.default_provider]) {
+        throw new Error(`${brana.label} nemôže byť predvolená, keď je vypnutá.`);
+      }
       if (!brana.isConfigured()) {
         throw new Error(`${brana.label} nemá vyplnené prístupy, nedá sa nastaviť ako predvolená.`);
       }
@@ -284,6 +298,23 @@ export const updatePaymentGatewaySettings = createServerFn({ method: "POST" })
       })
       .eq("id", true);
     if (error) throw new Error(error.message);
+
+    // Prepínače nových brán zvlášť: kým nie sú prehrané ich migrácie, tie
+    // stĺpce neexistujú a jeden spoločný update by zhodil ukladanie všetkého
+    // ostatného. Brána sa bez prístupov aj tak neponúkne.
+    const { error: chybaNovych } = await supabaseAdmin
+      .from("payment_settings")
+      .update({
+        stripe_enabled: data.stripe_enabled ?? true,
+        comgate_enabled: data.comgate_enabled ?? true,
+      })
+      .eq("id", true);
+    if (chybaNovych) {
+      console.error(
+        "Prepínače Stripe/ComGate sa neuložili — prehraj ich migrácie:",
+        chybaNovych.message,
+      );
+    }
     return { ok: true };
   });
 

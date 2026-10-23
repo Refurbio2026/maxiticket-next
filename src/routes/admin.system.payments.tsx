@@ -14,6 +14,7 @@ import {
   type PrehladFakturacie,
   type NastaveniePrevoduAdmin,
 } from "@/lib/payment-settings.functions";
+import type { GatewayId } from "@/lib/payment-gateways/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,14 +53,15 @@ export const Route = createFileRoute("/admin/system/payments")({
   component: PaymentGatewaysPage,
 });
 
-type IdBrany = "gopay" | "gpwebpay" | "tatrapayplus";
+// Zo zoznamu brán, nie ručne — inak sa nová brána nedá zapnúť ani
+// nastaviť ako predvolená a prepínač by ju ukazoval ako vypnutú.
+type IdBrany = GatewayId;
 
 type IdFakturacie = "superfaktura" | "faktero";
 
 type Form = {
-  gopay_enabled: boolean;
-  gpwebpay_enabled: boolean;
-  tatrapayplus_enabled: boolean;
+  [K in `${GatewayId}_enabled`]: boolean;
+} & {
   default_provider: IdBrany | null;
   invoice_provider: IdFakturacie | null;
   default_vat_rate: number;
@@ -88,6 +90,8 @@ function PaymentGatewaysPage() {
       gopay_enabled: najdi("gopay"),
       gpwebpay_enabled: najdi("gpwebpay"),
       tatrapayplus_enabled: najdi("tatrapayplus"),
+      stripe_enabled: najdi("stripe"),
+      comgate_enabled: najdi("comgate"),
       default_provider: (prehlad.data.predvolena as IdBrany | null) ?? null,
       invoice_provider: (prehlad.data.fakturacnySystem as IdFakturacie | null) ?? null,
       default_vat_rate: prehlad.data.sadzbaDph,
