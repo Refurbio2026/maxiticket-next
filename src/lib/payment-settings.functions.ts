@@ -95,22 +95,43 @@ async function assertAdmin(userId: string) {
 /** Adresy sa dajú poskladať len vtedy, keď je nastavená adresa webu. */
 function adresyBrany(id: string, origin: string | null) {
   if (!origin) return { navratovaAdresa: "", notifikacnaAdresa: null };
-  if (id === "gpwebpay") {
-    return {
-      navratovaAdresa: `${origin}/api/public/payments/gpwebpay/return`,
-      notifikacnaAdresa: null,
-    };
+
+  // Vypisuje sa adminovi na prepísanie do portálu brány, takže tu nesmie byť
+  // odhad: každá brána výslovne. Predtým tu bola spoločná vetva s adresou
+  // GoPay a pri Stripe aj ComGate by sa do ich portálu vložila adresa, na
+  // ktorej ich notifikáciu nikto nespracuje.
+  switch (id) {
+    case "gpwebpay":
+      return {
+        navratovaAdresa: `${origin}/api/public/payments/gpwebpay/return`,
+        notifikacnaAdresa: null,
+      };
+    case "tatrapayplus":
+      return {
+        navratovaAdresa: `${origin}/api/public/payments/tatrapayplus/return`,
+        notifikacnaAdresa: null,
+      };
+    case "stripe":
+      return {
+        // Stripe návratovú adresu berie z každej platby zvlášť; v jeho
+        // nastaveniach sa nezadáva.
+        navratovaAdresa: `${origin}/checkout/return`,
+        notifikacnaAdresa: `${origin}/api/public/payments/stripe/webhook`,
+      };
+    case "comgate":
+      return {
+        navratovaAdresa: `${origin}/checkout/return`,
+        notifikacnaAdresa: `${origin}/api/public/payments/comgate/notify`,
+      };
+    case "gopay":
+      return {
+        navratovaAdresa: `${origin}/checkout/return`,
+        notifikacnaAdresa: `${origin}/api/public/payments/gopay/webhook`,
+      };
+    default:
+      // Nová brána bez zápisu tu: radšej nič než cudzia adresa.
+      return { navratovaAdresa: `${origin}/checkout/return`, notifikacnaAdresa: null };
   }
-  if (id === "tatrapayplus") {
-    return {
-      navratovaAdresa: `${origin}/api/public/payments/tatrapayplus/return`,
-      notifikacnaAdresa: null,
-    };
-  }
-  return {
-    navratovaAdresa: `${origin}/checkout/return`,
-    notifikacnaAdresa: `${origin}/api/public/payments/gopay/webhook`,
-  };
 }
 
 export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
