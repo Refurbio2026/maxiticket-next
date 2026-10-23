@@ -5,7 +5,13 @@ import type { Json } from "@/integrations/supabase/types";
 
 export type GatewayId = "gopay" | "gpwebpay" | "tatrapayplus" | "stripe" | "comgate";
 
-export const GATEWAY_IDS: readonly GatewayId[] = ["gopay", "gpwebpay", "tatrapayplus", "stripe"];
+export const GATEWAY_IDS: readonly GatewayId[] = [
+  "gopay",
+  "gpwebpay",
+  "tatrapayplus",
+  "stripe",
+  "comgate",
+];
 
 /**
  * Je tento poskytovateľ platby brána?
