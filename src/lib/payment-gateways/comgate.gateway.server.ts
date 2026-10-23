@@ -100,13 +100,23 @@ export async function volajComgate(
   return { status: r.status, data, text };
 }
 
-/** Vyhodí chybu, keď volanie nedopadlo dobre — či už HTTP kódom, alebo kódom v tele. */
+/**
+ * Vyhodí chybu, keď volanie nedopadlo dobre — či už HTTP kódom, alebo kódom
+ * v tele.
+ *
+ * POZOR NA CHÝBAJÚCI `code`: väčšina endpointov ho vracia aj pri úspechu
+ * (`code: 0`), ale **`/v2.0/method.json` nie** — pri úspechu vráti len
+ * `methods`. Chýbajúci `code` pri 2xx preto nie je chyba. Kým to tu bolo
+ * opačne, tlačidlo „Otestovať" hlásilo „ComGate -1" na úplne správne
+ * nastavenú bránu.
+ */
 export function overKod(o: ComgateOdpoved): void {
   const { kod, sprava } = precitajOdpoved(o.data);
-  if (o.status >= 300 && kod === -1) {
+  // Výslovná chyba v tele má prednosť — je konkrétnejšia než HTTP kód.
+  if (kod !== -1 && kod !== 0) throw new Error(popisKodu(kod, sprava));
+  if (o.status >= 300) {
     throw new Error(`ComGate HTTP ${o.status}: ${o.text.slice(0, 160)}`);
   }
-  if (kod !== 0) throw new Error(popisKodu(kod, sprava));
 }
 
 export const comgateGateway: PaymentGateway = {
