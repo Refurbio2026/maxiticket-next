@@ -3,8 +3,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Wallet, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateApplePass } from "@/lib/wallet-db";
-import { getGoogleWalletSaveLink } from "@/lib/wallet.functions";
+import { getApplePassLink, getGoogleWalletSaveLink } from "@/lib/wallet.functions";
 import type { IssuedTicket } from "@/lib/ticketing-db";
 
 // Optional event context so the wallet pass shows title / date / venue.
@@ -26,14 +25,20 @@ type Props = {
 
 export function AppleWalletButton({ ticket, size = "default", compact }: Props) {
   const [loading, setLoading] = useState(false);
+  const ziadajOdkaz = useServerFn(getApplePassLink);
+
   const click = async () => {
     setLoading(true);
-    const res = await generateApplePass(ticket);
-    setLoading(false);
-    if (res.ok) {
-      window.location.href = res.url;
-    } else {
-      toast.info(res.message);
+    try {
+      // Posielame len QR kód vstupenky — server si podľa neho dohľadá
+      // objednávku aj podujatie a `.pkpass` podpíše sám.
+      const res = await ziadajOdkaz({ data: { qrValue: ticket.qr_code } });
+      if (res.ok) window.location.href = res.url;
+      else toast.info(res.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Pass sa nepodarilo pripraviť.");
+    } finally {
+      setLoading(false);
     }
   };
   return (

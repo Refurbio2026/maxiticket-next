@@ -100,6 +100,7 @@ import { Route as OrganizerPosFiscalRouteImport } from './routes/organizer.pos.f
 import { Route as OrganizerPosSalesRouteImport } from './routes/organizer.pos.sales'
 import { Route as ApiPublicEventsByTokenRouteImport } from './routes/api.public.events.by-token'
 import { Route as ApiPublicPaymentsReconcileRouteImport } from './routes/api.public.payments.reconcile'
+import { Route as ApiPublicTicketsTicketIdDotpkpassRouteImport } from './routes/api.public.tickets.$ticketId[.]pkpass'
 import { Route as ApiPublicTicketsCodesRouteImport } from './routes/api.public.tickets.codes'
 import { Route as ApiPublicTicketsScanRouteImport } from './routes/api.public.tickets.scan'
 import { Route as ApiPublicTicketsStatsRouteImport } from './routes/api.public.tickets.stats'
@@ -577,6 +578,12 @@ const ApiPublicPaymentsReconcileRoute =
     path: '/api/public/payments/reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTicketsTicketIdDotpkpassRoute =
+  ApiPublicTicketsTicketIdDotpkpassRouteImport.update({
+    id: '/api/public/tickets/$ticketId.pkpass',
+    path: '/api/public/tickets/$ticketId.pkpass',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTicketsCodesRoute = ApiPublicTicketsCodesRouteImport.update({
   id: '/api/public/tickets/codes',
   path: '/api/public/tickets/codes',
@@ -727,6 +734,7 @@ export interface FileRoutesByFullPath {
   '/organizer/pos/': typeof OrganizerPosIndexRoute
   '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
   '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
+  '/api/public/tickets/$ticketId.pkpass': typeof ApiPublicTicketsTicketIdDotpkpassRoute
   '/api/public/tickets/codes': typeof ApiPublicTicketsCodesRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
@@ -826,6 +834,7 @@ export interface FileRoutesByTo {
   '/organizer/pos': typeof OrganizerPosIndexRoute
   '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
   '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
+  '/api/public/tickets/$ticketId.pkpass': typeof ApiPublicTicketsTicketIdDotpkpassRoute
   '/api/public/tickets/codes': typeof ApiPublicTicketsCodesRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
@@ -930,6 +939,7 @@ export interface FileRoutesById {
   '/organizer/pos/': typeof OrganizerPosIndexRoute
   '/api/public/events/by-token': typeof ApiPublicEventsByTokenRoute
   '/api/public/payments/reconcile': typeof ApiPublicPaymentsReconcileRoute
+  '/api/public/tickets/$ticketId.pkpass': typeof ApiPublicTicketsTicketIdDotpkpassRoute
   '/api/public/tickets/codes': typeof ApiPublicTicketsCodesRoute
   '/api/public/tickets/scan': typeof ApiPublicTicketsScanRoute
   '/api/public/tickets/stats': typeof ApiPublicTicketsStatsRoute
@@ -1035,6 +1045,7 @@ export interface FileRouteTypes {
     | '/organizer/pos/'
     | '/api/public/events/by-token'
     | '/api/public/payments/reconcile'
+    | '/api/public/tickets/$ticketId.pkpass'
     | '/api/public/tickets/codes'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
@@ -1134,6 +1145,7 @@ export interface FileRouteTypes {
     | '/organizer/pos'
     | '/api/public/events/by-token'
     | '/api/public/payments/reconcile'
+    | '/api/public/tickets/$ticketId.pkpass'
     | '/api/public/tickets/codes'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
@@ -1237,6 +1249,7 @@ export interface FileRouteTypes {
     | '/organizer/pos/'
     | '/api/public/events/by-token'
     | '/api/public/payments/reconcile'
+    | '/api/public/tickets/$ticketId.pkpass'
     | '/api/public/tickets/codes'
     | '/api/public/tickets/scan'
     | '/api/public/tickets/stats'
@@ -1278,6 +1291,7 @@ export interface RootRouteChildren {
   CheckoutTransferOrderIdRoute: typeof CheckoutTransferOrderIdRoute
   ApiPublicEventsByTokenRoute: typeof ApiPublicEventsByTokenRoute
   ApiPublicPaymentsReconcileRoute: typeof ApiPublicPaymentsReconcileRoute
+  ApiPublicTicketsTicketIdDotpkpassRoute: typeof ApiPublicTicketsTicketIdDotpkpassRoute
   ApiPublicTicketsCodesRoute: typeof ApiPublicTicketsCodesRoute
   ApiPublicTicketsScanRoute: typeof ApiPublicTicketsScanRoute
   ApiPublicTicketsStatsRoute: typeof ApiPublicTicketsStatsRoute
@@ -1928,6 +1942,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/tickets/$ticketId.pkpass': {
+      id: '/api/public/tickets/$ticketId.pkpass'
+      path: '/api/public/tickets/$ticketId.pkpass'
+      fullPath: '/api/public/tickets/$ticketId.pkpass'
+      preLoaderRoute: typeof ApiPublicTicketsTicketIdDotpkpassRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/tickets/codes': {
       id: '/api/public/tickets/codes'
       path: '/api/public/tickets/codes'
@@ -2214,6 +2235,8 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutTransferOrderIdRoute: CheckoutTransferOrderIdRoute,
   ApiPublicEventsByTokenRoute: ApiPublicEventsByTokenRoute,
   ApiPublicPaymentsReconcileRoute: ApiPublicPaymentsReconcileRoute,
+  ApiPublicTicketsTicketIdDotpkpassRoute:
+    ApiPublicTicketsTicketIdDotpkpassRoute,
   ApiPublicTicketsCodesRoute: ApiPublicTicketsCodesRoute,
   ApiPublicTicketsScanRoute: ApiPublicTicketsScanRoute,
   ApiPublicTicketsStatsRoute: ApiPublicTicketsStatsRoute,

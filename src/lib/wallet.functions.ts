@@ -65,3 +65,53 @@ export const getGoogleWalletSaveLink = createServerFn({ method: "POST" })
       originUrl: data.originUrl,
     });
   });
+
+// Server function: odkaz na stiahnutie `.pkpass` pre Apple Wallet.
+//
+// Autorizácia je rovnaká ako pri Google Wallet — volajúci musí poznať podpísaný
+// QR token vstupenky. Samotný súbor vydáva routa
+// `/api/public/tickets/<id>.pkpass`, ktorá si prístup overuje ešte raz
+// podpísaným tokenom objednávky; tu ho len vyrobíme.
+export const getApplePassLink = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ qrValue: z.string().min(1).max(200) }))
+  .handler(async ({ data }): Promise<WalletLinkResult> => {
+    const { verifyTicket: over } = await import("./qr-token.server");
+    const ticketId = over(data.qrValue);
+    if (!ticketId) {
+      return { ok: false, reason: "error", message: "Neplatný kód vstupenky." };
+    }
+
+    const { data: ticket } = await supabaseAdmin
+      .from("tickets")
+      .select("id, order_id, refunded_at")
+      .eq("id", ticketId)
+      .maybeSingle();
+    if (!ticket?.order_id) {
+      return { ok: false, reason: "error", message: "Vstupenka sa nenašla." };
+    }
+    if (ticket.refunded_at) {
+      return { ok: false, reason: "error", message: "Vstupenka bola refundovaná." };
+    }
+
+    const { coChybaAppleWallet, jeAppleNastavene } = await import("./wallet/apple-wallet.server");
+    const { pripravPristupy } = await import("./pristupy.server");
+    await pripravPristupy();
+    if (!(await jeAppleNastavene())) {
+      // Čo presne chýba, patrí do logu pre admina — nie zákazníkovi.
+      console.error("Apple Wallet nie je nastavený:", (await coChybaAppleWallet()).join(" "));
+      return {
+        ok: false,
+        reason: "not_configured",
+        message:
+          "Pridanie do Apple Wallet zatiaľ nie je zapnuté. Vstupenku máš v e-maile aj v PDF.",
+      };
+    }
+
+    const { signOrderAccess } = await import("./order-access.server");
+    const { siteUrl } = await import("./site-url.server");
+    const zaklad = siteUrl().replace(/\/$/, "");
+    return {
+      ok: true,
+      url: `${zaklad}/api/public/tickets/${ticket.id}.pkpass?t=${signOrderAccess(ticket.order_id)}`,
+    };
+  });
