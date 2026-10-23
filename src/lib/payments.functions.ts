@@ -14,7 +14,7 @@ import { loadSeatPricing } from "./seat-pricing.server";
 import { errorMessage } from "./error-message";
 import { pocetVstupeniek } from "./plural";
 import { branaPodlaId, branyPreZakaznika } from "./payment-gateways/index.server";
-import { jeBrana, type GatewayId } from "./payment-gateways/types";
+import { GATEWAY_IDS, jeBrana, type GatewayId } from "./payment-gateways/types";
 import { adresaNasehoPdf, dopytajCakajuce, settleOrder } from "./order-settlement.server";
 import { fakturacnySystem } from "./invoicing/index.server";
 import { firemneUdaje } from "./invoicing/types";
@@ -560,7 +560,10 @@ export const startPaymentForOrder = createServerFn({ method: "POST" })
     z
       .object({
         order_id: z.string().uuid(),
-        provider: z.enum(["gopay", "gpwebpay", "tatrapayplus"]).optional(),
+        // Zo zoznamu brán, nie ručne: pri `comgate` to inak zod odmietol ešte
+        // pred handlerom, takže v logu nebola ani stopa a zákazníkovi sa po
+        // kliknutí na Zaplatiť nestalo nič.
+        provider: z.enum(GATEWAY_IDS as unknown as [GatewayId, ...GatewayId[]]).optional(),
       })
       .parse(input),
   )

@@ -8,6 +8,7 @@
 // Celé je to idempotentné: refund už vrátenej objednávky sa preskočí, takže
 // opakované spustenie po výpadku dorobí len zvyšok.
 import { createServerFn } from "@tanstack/react-start";
+import type { GatewayId } from "./payment-gateways/types";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -171,7 +172,7 @@ export const cancelEvent = createServerFn({ method: "POST" })
           console.error("Refund pri zrušení podujatia zlyhal", o.id, dovod);
           await supabaseAdmin.from("payment_logs").insert({
             order_id: o.id,
-            provider: (o.payment_provider ?? "gopay") as "gopay" | "gpwebpay" | "tatrapayplus",
+            provider: (o.payment_provider ?? "gopay") as GatewayId,
             endpoint: "zrusenie_podujatia",
             status: "error",
             error_message: dovod,

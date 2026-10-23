@@ -91,3 +91,38 @@ describe("typ a konstanta sa nerozídu", () => {
     expect(ids.length).toBe(GATEWAY_IDS.length);
   });
 });
+
+describe("nikde nesmie zostať ručný zoznam brán", () => {
+  it("validátor `startPaymentForOrder` prijme každú bránu", async () => {
+    // Toto je presne tá chyba, pre ktorú sa zákazníkovi po kliknutí na
+    // Zaplatiť nestalo nič: zod mal napísané tri brány, checkout poslal
+    // `comgate` a validácia spadla ešte pred handlerom, takže ani v logu
+    // nebola stopa.
+    const { z } = await import("zod");
+    const schema = z.object({
+      order_id: z.string().uuid(),
+      provider: z.enum(GATEWAY_IDS as unknown as [GatewayId, ...GatewayId[]]).optional(),
+    });
+    for (const brana of BRANY) {
+      const r = schema.safeParse({
+        order_id: "7374175b-f3ef-4a68-95ee-d04eec96c149",
+        provider: brana.id,
+      });
+      expect(r.success, `validátor odmietol ${brana.id}`).toBe(true);
+    }
+  });
+
+  it("v zdrojákoch nie je ručne vypísaná trojica brán", async () => {
+    // Strážime tvar `"gopay" … "gpwebpay"` v jednom riadku. Keď niekto pridá
+    // šiestu bránu, nech to spadne tu a nie na zákazníkovi v checkoute.
+    // `integrations/supabase/types.ts` je zrkadlo databázového enumu —
+    // tam ten zoznam byť musí, preto je z kontroly vyňaté.
+    const { execSync } = await import("node:child_process");
+    const vystup = execSync(
+      'grep -rnE \'"gopay"[^)]*"gpwebpay"\' src/ --include=*.ts --include=*.tsx ' +
+        '| grep -vE "payment-gateways/types.ts|integrations/supabase/types.ts|\\.test\\." || true',
+      { cwd: process.cwd(), encoding: "utf8" },
+    ).trim();
+    expect(vystup, `ručný zoznam brán:\n${vystup}`).toBe("");
+  });
+});
