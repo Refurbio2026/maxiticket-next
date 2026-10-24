@@ -3,12 +3,17 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { getWalletSettings, updateWalletSettings } from "@/lib/wallet-settings.functions";
+import {
+  getWalletSettings,
+  saveWalletCredentials,
+  updateWalletSettings,
+} from "@/lib/wallet-settings.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Smartphone, Wallet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
@@ -31,7 +36,17 @@ function WalletSettingsPage() {
   const qc = useQueryClient();
   const fetchSettings = useServerFn(getWalletSettings);
   const save = useServerFn(updateWalletSettings);
+  const saveCreds = useServerFn(saveWalletCredentials);
   const [form, setForm] = useState<Form | null>(null);
+
+  // Certifikáty sú mimo `form`: uložené hodnoty sa zo servera nevracajú,
+  // takže prázdne pole znamená „nechať, čo tam je", nie „zmazať".
+  const [tajne, setTajne] = useState({
+    apple_cert: "",
+    apple_wwdr: "",
+    apple_passphrase: "",
+    google_service_account: "",
+  });
 
   const settings = useQuery({
     queryKey: ["wallet-settings"],
@@ -61,6 +76,23 @@ function WalletSettingsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Uloženie zlyhalo"),
   });
 
+  const credsMutation = useMutation({
+    mutationFn: () => saveCreds({ data: tajne }),
+    onSuccess: (r) => {
+      setTajne({
+        apple_cert: "",
+        apple_wwdr: "",
+        apple_passphrase: "",
+        google_service_account: "",
+      });
+      qc.invalidateQueries({ queryKey: ["wallet-settings"] });
+      toast.success(r.ulozene.length ? `Uložené: ${r.ulozene.join(", ")}` : "Nebolo čo uložiť");
+    },
+    // Chyba zo servera je konkrétna („Toto vyzerá na súbor .p12…"), preto ju
+    // ukazujeme celú a necháme pole vyplnené, nech sa nemusí vkladať znova.
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Uloženie zlyhalo"),
+  });
+
   if (settings.isLoading || !form) {
     return (
       <div className="p-10 text-center">
@@ -70,6 +102,8 @@ function WalletSettingsPage() {
   }
 
   const appleCert = settings.data?.apple.cert_configured ?? false;
+  const appleWwdr = settings.data?.apple.wwdr_configured ?? false;
+  const appleChyba = settings.data?.apple.chyba ?? [];
   const googleSa = settings.data?.google.service_account_configured ?? false;
 
   return (
@@ -115,10 +149,56 @@ function WalletSettingsPage() {
           </Field>
         </div>
 
+        <div className="grid gap-4">
+          <Field label="Podpisový certifikát (PEM: certifikát + privátny kľúč)">
+            <Textarea
+              rows={3}
+              spellCheck={false}
+              placeholder={
+                appleCert
+                  ? "Uložené. Vlož nový len vtedy, keď ho chceš vymeniť."
+                  : "-----BEGIN CERTIFICATE----- …"
+              }
+              value={tajne.apple_cert}
+              onChange={(e) => setTajne({ ...tajne, apple_cert: e.target.value })}
+              className="font-mono text-xs"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Zo súboru .p12 z Apple Developer:{" "}
+              <code>openssl pkcs12 -in cert.p12 -out cert.pem -nodes -legacy</code>
+            </p>
+          </Field>
+
+          <Field label="Apple WWDR (medzičlánok)">
+            <Textarea
+              rows={2}
+              spellCheck={false}
+              placeholder={appleWwdr ? "Uložené." : "-----BEGIN CERTIFICATE----- …"}
+              value={tajne.apple_wwdr}
+              onChange={(e) => setTajne({ ...tajne, apple_wwdr: e.target.value })}
+              className="font-mono text-xs"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Z Apple stiahni WWDR certifikát a preveď:{" "}
+              <code>openssl x509 -inform der -in AppleWWDRCAG4.cer -out wwdr.pem</code>
+            </p>
+          </Field>
+
+          <Field label="Heslo k certifikátu (nepovinné)">
+            <Input
+              type="password"
+              autoComplete="new-password"
+              placeholder="Zadaj len ak je kľúč zašifrovaný heslom"
+              value={tajne.apple_passphrase}
+              onChange={(e) => setTajne({ ...tajne, apple_passphrase: e.target.value })}
+            />
+          </Field>
+        </div>
+
         <StatusLine
-          ok={appleCert}
-          okText="Podpisový certifikát je na serveri."
-          missingText="Podpisový certifikát (.p12) na serveri nie je — passy sa nedajú podpísať. Patrí do secrets, nie sem."
+          ok={appleChyba.length === 0}
+          okText="Apple Wallet je nastavený — passy sa dajú podpísať."
+          missingText={`Ešte chýba: ${appleChyba.join(" ")}`}
         />
       </Card>
 
@@ -149,16 +229,44 @@ function WalletSettingsPage() {
           </Field>
         </div>
 
+        <Field label="Servisný účet (JSON)">
+          <Textarea
+            rows={3}
+            spellCheck={false}
+            placeholder={
+              googleSa
+                ? "Uložené. Vlož nový len vtedy, keď ho chceš vymeniť."
+                : '{"type":"service_account", …}'
+            }
+            value={tajne.google_service_account}
+            onChange={(e) => setTajne({ ...tajne, google_service_account: e.target.value })}
+            className="font-mono text-xs"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Celý obsah súboru JSON, ktorý stiahneš pri vytvorení servisného účtu v Google Cloud.
+          </p>
+        </Field>
+
         <StatusLine
-          ok={googleSa}
-          okText="Servisný účet je na serveri."
-          missingText="Servisný účet (JSON) na serveri nie je — passy sa nevygenerujú. Doplň ho do secrets ako GOOGLE_WALLET_SERVICE_ACCOUNT_JSON."
+          ok={googleSa && !!form.google_issuer_id}
+          okText="Google Wallet je nastavený."
+          missingText={
+            googleSa ? "Chýba Issuer ID." : "Chýba servisný účet — passy sa nevygenerujú."
+          }
         />
       </Card>
 
       <Separator />
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-3">
+        <Button
+          variant="outline"
+          onClick={() => credsMutation.mutate()}
+          disabled={credsMutation.isPending || !Object.values(tajne).some((v) => v.trim())}
+        >
+          {credsMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+          Uložiť certifikáty
+        </Button>
         <Button
           onClick={() => saveMutation.mutate(form)}
           disabled={saveMutation.isPending}

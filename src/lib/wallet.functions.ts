@@ -4,6 +4,7 @@ import { z } from "zod";
 import { buildGoogleWalletSaveLink, type WalletLinkResult } from "./google-wallet.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { verifyTicket } from "./qr-token.server";
+import { pripravPristupy } from "./pristupy.server";
 
 // Server function: postaví podpísaný odkaz „Pridať do Google Wallet" pre jednu
 // vstupenku. Samotné podpisovanie (RS256) žije v google-wallet.server.ts, aby
@@ -23,6 +24,9 @@ export const getGoogleWalletSaveLink = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }): Promise<WalletLinkResult> => {
+    // Issuer ID a servisný účet sú v šifrovaných prístupoch; bez tohto by
+    // `hodnota()` čítala z prázdnej cache a wallet by vyzeral ako nenastavený.
+    await pripravPristupy();
     const ticketId = verifyTicket(data.qrValue);
     if (!ticketId) {
       return { ok: false, reason: "error", message: "Neplatný kód vstupenky." };
@@ -94,7 +98,6 @@ export const getApplePassLink = createServerFn({ method: "POST" })
     }
 
     const { coChybaAppleWallet, jeAppleNastavene } = await import("./wallet/apple-wallet.server");
-    const { pripravPristupy } = await import("./pristupy.server");
     await pripravPristupy();
     if (!(await jeAppleNastavene())) {
       // Čo presne chýba, patrí do logu pre admina — nie zákazníkovi.

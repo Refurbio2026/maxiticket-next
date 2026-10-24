@@ -6,11 +6,12 @@
 // in the JWT payload, so Google creates/updates them when the user taps the
 // link. This keeps the flow fully self-contained and testable.
 //
-// Activation: set two secrets in Lovable Cloud (Project → Settings → Secrets):
-//   GOOGLE_WALLET_ISSUER_ID              e.g. 3388000000022123456
-//   GOOGLE_WALLET_SERVICE_ACCOUNT_JSON   the full service-account JSON (one line)
-// Optional:
-//   GOOGLE_WALLET_ISSUER_NAME            display name (default "Eticketo.sk")
+// Aktivácia: Issuer ID sa zadáva v admine (Nastavenia → Wallet), servisný účet
+// tiež — uloží sa šifrovane medzi prístupy pod `google-wallet`. Premenné
+// prostredia zostávajú ako záloha, keď je výhodnejšie dať kľúč na server:
+//   GOOGLE_WALLET_ISSUER_ID              napr. 3388000000022123456
+//   GOOGLE_WALLET_SERVICE_ACCOUNT_JSON   celý JSON servisného účtu
+//   GOOGLE_WALLET_ISSUER_NAME            zobrazovaný názov (predvolene "eticketo.eu")
 //
 // Until both secrets exist, buildGoogleWalletSaveLink() returns a graceful
 // { ok: false, reason: "not_configured" } result and the UI shows a toast
@@ -20,6 +21,7 @@
 // the client bundle.
 
 import crypto from "node:crypto";
+import { hodnota } from "@/lib/pristupy.server";
 
 export type GoogleWalletTicketInput = {
   ticketId: string;
@@ -47,8 +49,9 @@ type GoogleConfig = {
 // process.env at module scope). Returns null when not configured; throws only
 // when the provided credentials are malformed.
 function readGoogleConfig(): GoogleConfig | null {
-  const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID;
-  const saJson = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON;
+  // Admin má prednosť pred prostredím — rovnako ako platobné brány.
+  const issuerId = hodnota("google-wallet", "GOOGLE_WALLET_ISSUER_ID");
+  const saJson = hodnota("google-wallet", "GOOGLE_WALLET_SERVICE_ACCOUNT_JSON");
   if (!issuerId || !saJson) return null;
 
   let sa: { client_email?: string; private_key?: string };
@@ -66,7 +69,7 @@ function readGoogleConfig(): GoogleConfig | null {
     issuerId,
     clientEmail: sa.client_email,
     privateKey,
-    issuerName: process.env.GOOGLE_WALLET_ISSUER_NAME || "Eticketo.sk",
+    issuerName: hodnota("google-wallet", "GOOGLE_WALLET_ISSUER_NAME") || "eticketo.eu",
   };
 }
 
