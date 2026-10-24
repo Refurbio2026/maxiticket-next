@@ -32,6 +32,26 @@ const ZAPISAT = process.argv[2] === "zapis";
 // nie súhrnné zúčtovanie karty.
 const FAKTERO_UCET = "7c9a8242-5b05-4ab6-bc25-f543cf62079b";
 
+/**
+ * Banka podľa kódu v IBAN-e.
+ *
+ * Stĺpec `provider` na účte hovorí, v ktorej banke účet je — nie odkiaľ
+ * berieme pohyby. Databáza má na to zoznam povolených hodnôt, takže
+ * „faktero" tam nepatrí; to je zdroj a ten sa ukladá o tabuľku ďalej.
+ */
+const BANKY = {
+  "0200": "vub",
+  "0900": "slsp",
+  1100: "tatrabanka",
+  7500: "csob",
+  8330: "fio",
+};
+
+function bankaZIbanu(iban) {
+  const kod = iban.slice(4, 8);
+  return BANKY[kod] ?? "other";
+}
+
 const { data: nastavenia } = await db
   .from("platform_settings")
   .select("transfer_iban, transfer_holder, transfer_bank_name")
@@ -82,7 +102,7 @@ if (!accountId) {
       iban,
       currency: "EUR",
       kind: "bank",
-      provider: "faktero",
+      provider: bankaZIbanu(iban),
       connected: true,
     })
     .select("id")
