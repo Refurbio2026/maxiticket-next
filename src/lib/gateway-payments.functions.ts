@@ -30,6 +30,12 @@ export type PlatbaRiadok = {
   event_title: string | null;
   /** Dá sa z tohto riadku vrátiť? Rozhoduje brána aj stav objednávky. */
   refundovatelna: boolean;
+  /**
+   * Prečo sa vrátiť nedá. Tlačidlo sa nikdy neskrýva — schované tlačidlo
+   * vyzerá, akoby brána refund nevedela, a človek potom hľadá chybu tam,
+   * kde nie je.
+   */
+  refund_dovod: string | null;
 };
 
 async function assertAdmin(userId: string) {
@@ -105,6 +111,19 @@ export const listGatewayPayments = createServerFn({ method: "POST" })
       const e = podujatia.find((x) => x.id === o?.event_id);
       const suma = Number(p.amount);
       const vratene = Number(o?.refunded_amount ?? 0);
+      const dovod = ((): string | null => {
+        if (suma <= 0) return "Toto je už vrátenie, nie platba.";
+        if (!p.order_id) return "Platba nie je napojená na objednávku.";
+        if (!(vieRefundovat.get(p.provider) ?? false)) {
+          return `Brána ${p.provider} nevie vrátiť peniaze cez API — sprav to v jej portáli.`;
+        }
+        if (o?.status !== "paid") {
+          return `Objednávka nie je zaplatená (stav „${o?.status ?? "neznámy"}“) — nie je čo vracať.`;
+        }
+        if (vratene + 0.01 >= Number(o?.total_amount ?? 0)) return "Objednávka je už vrátená celá.";
+        return null;
+      })();
+
       return {
         id: p.id,
         created_at: p.created_at,
@@ -120,12 +139,8 @@ export const listGatewayPayments = createServerFn({ method: "POST" })
         customer_name: o?.customer_name ?? null,
         customer_email: o?.customer_email ?? null,
         event_title: e?.title ?? null,
-        refundovatelna:
-          suma > 0 &&
-          !!p.order_id &&
-          o?.status === "paid" &&
-          vratene + 0.01 < Number(o?.total_amount ?? 0) &&
-          (vieRefundovat.get(p.provider) ?? false),
+        refundovatelna: dovod === null,
+        refund_dovod: dovod,
       };
     });
   });

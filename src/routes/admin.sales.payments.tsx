@@ -233,20 +233,25 @@ function Page() {
                             <RefreshCw className="size-4" />
                           )}
                         </Button>
-                        {p.refundovatelna && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => {
-                              setRefundFor(p);
-                              setSuma("");
-                              setDovod("");
-                            }}
-                          >
-                            <RotateCcw className="size-4 mr-1" /> Vrátiť
-                          </Button>
-                        )}
+                        {/*
+                          Tlačidlo sa nikdy neskrýva. Schované vyzerá, akoby
+                          brána refund nevedela — a človek hľadá chybu tam,
+                          kde nie je. Keď sa použiť nedá, povie prečo.
+                        */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          disabled={!p.refundovatelna}
+                          title={p.refund_dovod ?? "Vrátiť peniaze"}
+                          onClick={() => {
+                            setRefundFor(p);
+                            setSuma("");
+                            setDovod("");
+                          }}
+                        >
+                          <RotateCcw className="size-4 mr-1" /> Vrátiť
+                        </Button>
                         {p.order_id && (
                           <Button variant="ghost" size="sm" asChild>
                             <Link to="/admin/sales/sales">Objednávka</Link>
