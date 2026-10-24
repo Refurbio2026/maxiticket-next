@@ -51,6 +51,9 @@ const schovat = (vsetky ?? []).filter((e) => {
     e.title.startsWith("Herogame") ||
     e.title.startsWith("TEST – nekupovať") ||
     e.title.startsWith("SKÚŠKA predaja") ||
+    // Zdvojená položka z prenosu starého systému: vedľa nej existuje tá istá
+    // bez prípony „- stare". Má predané vstupenky, preto sa LEN schováva.
+    e.title.includes("- stare") ||
     organizator === "y4"
   );
 });
