@@ -14,6 +14,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ArtistsRouteImport } from './routes/artists'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as DopravaAPlatbaRouteImport } from './routes/doprava-a-platba'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
@@ -134,6 +135,11 @@ const ArtistsRoute = ArtistsRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DopravaAPlatbaRoute = DopravaAPlatbaRouteImport.update({
+  id: '/doprava-a-platba',
+  path: '/doprava-a-platba',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsRoute = EventsRouteImport.update({
@@ -642,6 +648,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/artists': typeof ArtistsRoute
   '/contact': typeof ContactRoute
+  '/doprava-a-platba': typeof DopravaAPlatbaRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -744,6 +751,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/artists': typeof ArtistsRoute
   '/contact': typeof ContactRoute
+  '/doprava-a-platba': typeof DopravaAPlatbaRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -845,6 +853,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/artists': typeof ArtistsRoute
   '/contact': typeof ContactRoute
+  '/doprava-a-platba': typeof DopravaAPlatbaRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
@@ -950,6 +959,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/artists'
     | '/contact'
+    | '/doprava-a-platba'
     | '/events'
     | '/login'
     | '/manifest.webmanifest'
@@ -1052,6 +1062,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/artists'
     | '/contact'
+    | '/doprava-a-platba'
     | '/events'
     | '/login'
     | '/manifest.webmanifest'
@@ -1152,6 +1163,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/artists'
     | '/contact'
+    | '/doprava-a-platba'
     | '/events'
     | '/login'
     | '/manifest.webmanifest'
@@ -1256,6 +1268,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   ArtistsRoute: typeof ArtistsRoute
   ContactRoute: typeof ContactRoute
+  DopravaAPlatbaRoute: typeof DopravaAPlatbaRoute
   EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
@@ -1325,6 +1338,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/doprava-a-platba': {
+      id: '/doprava-a-platba'
+      path: '/doprava-a-platba'
+      fullPath: '/doprava-a-platba'
+      preLoaderRoute: typeof DopravaAPlatbaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events': {
@@ -2192,6 +2212,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   ArtistsRoute: ArtistsRoute,
   ContactRoute: ContactRoute,
+  DopravaAPlatbaRoute: DopravaAPlatbaRoute,
   EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,

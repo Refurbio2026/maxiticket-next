@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listFooterPages } from "@/lib/site-pages.functions";
 import { useI18n } from "@/hooks/use-i18n";
 import { Wordmark } from "@/components/site/Wordmark";
-import { identifikaciaJedenRiadok } from "@/lib/kontakt";
+import { PREVADZKOVATEL, identifikaciaJedenRiadok } from "@/lib/kontakt";
 
 type Col = { titleKey: string; l: { labelKey: string; to: string }[] };
 
@@ -23,6 +23,7 @@ const cols: Col[] = [
     l: [
       { labelKey: "nav.contact", to: "/contact" },
       { labelKey: "nav.support", to: "/support" },
+      { labelKey: "footer.payments", to: "/doprava-a-platba" },
     ],
   },
   {
@@ -87,11 +88,31 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between gap-4 text-xs text-muted-foreground">
-          <div>{t("footer.rights")}</div>
-          {/* Identifikácia prevádzkovateľa patrí na každú stránku, nielen do podmienok. */}
-          <div>{identifikaciaJedenRiadok()}</div>
-          <div>{t("footer.builtWith")}</div>
+        {/*
+          Identifikácia prevádzkovateľa vrátane kontaktov patrí na každú
+          stránku, nielen do podmienok — vyžaduje to aj platobná brána pri
+          schvaľovaní platby kartou.
+        */}
+        <div className="mt-16 pt-8 border-t border-border space-y-3 text-xs text-muted-foreground">
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
+            <span>
+              {t("footer.operator")}: {identifikaciaJedenRiadok()}
+            </span>
+            <span className="hidden md:inline">·</span>
+            <span className="flex flex-wrap gap-x-2">
+              <a className="hover:text-foreground" href={`mailto:${PREVADZKOVATEL.email}`}>
+                {PREVADZKOVATEL.email}
+              </a>
+              <span>·</span>
+              <a className="hover:text-foreground" href={`tel:${PREVADZKOVATEL.telefonLink}`}>
+                {PREVADZKOVATEL.telefon}
+              </a>
+            </span>
+          </div>
+          <div className="flex flex-col md:flex-row justify-between gap-2">
+            <div>{t("footer.rights")}</div>
+            <div>{t("footer.builtWith")}</div>
+          </div>
         </div>
       </div>
     </footer>
