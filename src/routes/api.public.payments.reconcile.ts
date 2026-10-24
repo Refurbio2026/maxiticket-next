@@ -24,6 +24,7 @@ import { stiahniZoZdrojov, upracOriginaly } from "@/lib/bank/ingest/index.server
 import { spustiUlohu, upracLogy } from "@/lib/job-runs.server";
 import { skontrolujRefundy } from "@/lib/refund-check.server";
 import { oznacMimoVstupeniek } from "@/lib/bank/mimo-vstupenky.server";
+import { zrkadliPlatbyBran } from "@/lib/bank/brana-zrkadlenie.server";
 import { errorMessage } from "@/lib/error-message";
 
 /** Ako dlho sa drží surový obsah zo zdroja, kým ho retencia zmaže. */
@@ -66,6 +67,9 @@ async function handler({ request }: { request: Request }) {
   // presuny medzi vlastnými účtami, platby zo starého systému), sa odloží
   // bokom, nech zoznam na riešenie obsahuje len to, čo naozaj treba riešiť.
   const triedenie = await spustiUlohu("banka-triedenie", () => oznacMimoVstupeniek());
+  // Platby kartou cez bankový účet samostatne neprejdú; do účtovného pohľadu
+  // sa zapíšu ako kniha platieb brány na jej vlastnom účte.
+  const brana = await spustiUlohu("brana-zrkadlenie", () => zrkadliPlatbyBran());
 
   // Dopytovací sken rieši peniaze cez brány — najdôležitejší krok.
   const sken = await spustiUlohu("dopytovaci-sken", () => dopytajCakajuce(okno), {
@@ -87,6 +91,7 @@ async function handler({ request }: { request: Request }) {
     banka,
     parovanie,
     triedenie,
+    brana,
     sken,
     prevody,
     pripomienky,
