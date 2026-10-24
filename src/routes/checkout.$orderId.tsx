@@ -31,6 +31,7 @@ import {
   QrCode,
   Check,
 } from "lucide-react";
+import { VyhladajFirmu } from "@/components/checkout/VyhladajFirmu";
 import { toast } from "sonner";
 import { errorMessage } from "@/lib/error-message";
 import { cn } from "@/lib/utils";
@@ -329,6 +330,24 @@ function CheckoutPage() {
               <Checkbox checked={naFirmu} onCheckedChange={(v) => setNaFirmu(!!v)} />
               <span className="text-muted-foreground">Kupujem na firmu — chcem faktúru s IČO</span>
             </label>
+
+            {naFirmu && (
+              <VyhladajFirmu
+                onVybrana={(u) =>
+                  // Doplní sa len to, čo register vie; čo zákazník už napísal,
+                  // sa neprepíše prázdnym.
+                  setFirma((f) => ({
+                    name: u.name || f.name,
+                    ico: u.ico || f.ico,
+                    dic: u.dic || f.dic,
+                    ic_dph: u.ic_dph || f.ic_dph,
+                    street: u.street || f.street,
+                    city: u.city || f.city,
+                    zip: u.zip || f.zip,
+                  }))
+                }
+              />
+            )}
 
             {naFirmu && (
               <div className="grid sm:grid-cols-2 gap-4 mt-4">
