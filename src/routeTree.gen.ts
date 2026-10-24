@@ -17,7 +17,6 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
-import { Route as MarketingRouteImport } from './routes/marketing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as PartnersRouteImport } from './routes/partners'
@@ -150,11 +149,6 @@ const LoginRoute = LoginRouteImport.update({
 const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
   id: '/manifest.webmanifest',
   path: '/manifest.webmanifest',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MarketingRoute = MarketingRouteImport.update({
-  id: '/marketing',
-  path: '/marketing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -651,7 +645,6 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
-  '/marketing': typeof MarketingRoute
   '/onboarding': typeof OnboardingRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
@@ -754,7 +747,6 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
-  '/marketing': typeof MarketingRoute
   '/onboarding': typeof OnboardingRoute
   '/partners': typeof PartnersRoute
   '/register': typeof RegisterRoute
@@ -856,7 +848,6 @@ export interface FileRoutesById {
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
-  '/marketing': typeof MarketingRoute
   '/onboarding': typeof OnboardingRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/partners': typeof PartnersRoute
@@ -962,7 +953,6 @@ export interface FileRouteTypes {
     | '/events'
     | '/login'
     | '/manifest.webmanifest'
-    | '/marketing'
     | '/onboarding'
     | '/organizer'
     | '/partners'
@@ -1065,7 +1055,6 @@ export interface FileRouteTypes {
     | '/events'
     | '/login'
     | '/manifest.webmanifest'
-    | '/marketing'
     | '/onboarding'
     | '/partners'
     | '/register'
@@ -1166,7 +1155,6 @@ export interface FileRouteTypes {
     | '/events'
     | '/login'
     | '/manifest.webmanifest'
-    | '/marketing'
     | '/onboarding'
     | '/organizer'
     | '/partners'
@@ -1271,7 +1259,6 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
-  MarketingRoute: typeof MarketingRoute
   OnboardingRoute: typeof OnboardingRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
   PartnersRoute: typeof PartnersRoute
@@ -1359,13 +1346,6 @@ declare module '@tanstack/react-router' {
       path: '/manifest.webmanifest'
       fullPath: '/manifest.webmanifest'
       preLoaderRoute: typeof ManifestDotwebmanifestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/marketing': {
-      id: '/marketing'
-      path: '/marketing'
-      fullPath: '/marketing'
-      preLoaderRoute: typeof MarketingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -2215,7 +2195,6 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
-  MarketingRoute: MarketingRoute,
   OnboardingRoute: OnboardingRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
   PartnersRoute: PartnersRoute,

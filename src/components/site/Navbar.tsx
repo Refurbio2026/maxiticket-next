@@ -14,7 +14,6 @@ const NAV_LINKS: { key: string; to: string }[] = [
   { key: "nav.events", to: "/events" },
   { key: "nav.cities", to: "/#cities" },
   { key: "nav.artists", to: "/artists" },
-  { key: "nav.marketing", to: "/marketing" },
   { key: "nav.support", to: "/support" },
   { key: "nav.partners", to: "/partners" },
   { key: "nav.contact", to: "/contact" },

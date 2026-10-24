@@ -20,6 +20,7 @@ import {
   AMBER,
   DANGER,
 } from "./pdf-base.server";
+import { PREVADZKOVATEL } from "@/lib/kontakt";
 
 export type PdfTicket = {
   seat_label: string;
@@ -216,7 +217,7 @@ async function drawTicketBody(
     278,
   );
   doc.text("Vstupenka platí na jeden vstup. Kopírovaním nevzniká nárok na ďalší vstup.", M, 282);
-  doc.text("Reklamácie: support@eticketo.eu · www.eticketo.eu", M, 286);
+  doc.text(`Reklamácie: ${PREVADZKOVATEL.email} · www.${PREVADZKOVATEL.web}`, M, 286);
   setText(doc, INK);
 }
 

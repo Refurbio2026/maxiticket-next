@@ -39,7 +39,6 @@ const sk: Dict = {
   "nav.events": "Podujatia",
   "nav.cities": "Mestá",
   "nav.artists": "Umelci",
-  "nav.marketing": "Marketing",
   "nav.support": "Podpora",
   "nav.partners": "Spolupráca",
   "nav.contact": "Kontakt",
@@ -54,9 +53,9 @@ const sk: Dict = {
   "footer.register": "Registrácia",
   "footer.myAccount": "Môj účet",
   "footer.tagline":
-    "Najmodernejšia ticketing platforma na Slovensku. Predávame zážitky od roku 2025.",
-  "footer.rights": "© 2026 eticketo.eu s.r.o. — Všetky práva vyhradené.",
-  "footer.builtWith": "Postavené s vášňou v Bratislave 🇸🇰",
+    "Slovenská platforma na predaj vstupeniek. Vstupenka s QR kódom ti príde e-mailom hneď po zaplatení.",
+  "footer.rights": "© 2026 eticketo.eu — Všetky práva vyhradené.",
+  "footer.builtWith": "Postavené s vášňou na Slovensku 🇸🇰",
   // support chat
   "support.title": "Podpora",
   "support.subtitle": "Virtuálny asistent · odpovie hneď",
@@ -81,7 +80,6 @@ const en: Dict = {
   "nav.events": "Events",
   "nav.cities": "Cities",
   "nav.artists": "Artists",
-  "nav.marketing": "Marketing",
   "nav.support": "Support",
   "nav.partners": "Partnership",
   "nav.contact": "Contact",
@@ -95,9 +93,9 @@ const en: Dict = {
   "footer.register": "Sign up",
   "footer.myAccount": "My account",
   "footer.tagline":
-    "The most modern ticketing platform in Slovakia. Selling experiences since 2025.",
-  "footer.rights": "© 2026 eticketo.eu s.r.o. — All rights reserved.",
-  "footer.builtWith": "Built with passion in Bratislava 🇸🇰",
+    "A Slovak ticketing platform. Your ticket with a QR code arrives by e-mail right after payment.",
+  "footer.rights": "© 2026 eticketo.eu — All rights reserved.",
+  "footer.builtWith": "Built with passion in Slovakia 🇸🇰",
   "support.title": "Support",
   "support.subtitle": "Virtual assistant · instant replies",
   "support.greeting":
@@ -121,7 +119,6 @@ const de: Dict = {
   "nav.events": "Veranstaltungen",
   "nav.cities": "Städte",
   "nav.artists": "Künstler",
-  "nav.marketing": "Marketing",
   "nav.support": "Support",
   "nav.partners": "Partnerschaft",
   "nav.contact": "Kontakt",
@@ -135,9 +132,9 @@ const de: Dict = {
   "footer.register": "Registrierung",
   "footer.myAccount": "Mein Konto",
   "footer.tagline":
-    "Die modernste Ticketing-Plattform der Slowakei. Wir verkaufen Erlebnisse seit 2025.",
-  "footer.rights": "© 2026 eticketo.eu s.r.o. — Alle Rechte vorbehalten.",
-  "footer.builtWith": "Mit Leidenschaft in Bratislava gebaut 🇸🇰",
+    "Eine slowakische Ticketing-Plattform. Das Ticket mit QR-Code kommt direkt nach der Zahlung per E-Mail.",
+  "footer.rights": "© 2026 eticketo.eu — Alle Rechte vorbehalten.",
+  "footer.builtWith": "Mit Leidenschaft in der Slowakei gebaut 🇸🇰",
   "support.title": "Support",
   "support.subtitle": "Virtueller Assistent · sofortige Antwort",
   "support.greeting":
@@ -162,7 +159,6 @@ const hu: Dict = {
   "nav.events": "Események",
   "nav.cities": "Városok",
   "nav.artists": "Előadók",
-  "nav.marketing": "Marketing",
   "nav.support": "Támogatás",
   "nav.partners": "Együttműködés",
   "nav.contact": "Kapcsolat",
@@ -176,9 +172,9 @@ const hu: Dict = {
   "footer.register": "Regisztráció",
   "footer.myAccount": "Fiókom",
   "footer.tagline":
-    "Szlovákia legmodernebb jegyértékesítő platformja. 2025 óta élményeket árulunk.",
-  "footer.rights": "© 2026 eticketo.eu s.r.o. — Minden jog fenntartva.",
-  "footer.builtWith": "Szenvedéllyel készült Pozsonyban 🇸🇰",
+    "Szlovák jegyértékesítő platform. A QR-kódos jegy fizetés után azonnal megérkezik e-mailben.",
+  "footer.rights": "© 2026 eticketo.eu — Minden jog fenntartva.",
+  "footer.builtWith": "Szenvedéllyel készült Szlovákiában 🇸🇰",
   "support.title": "Támogatás",
   "support.subtitle": "Virtuális asszisztens · azonnali válasz",
   "support.greeting":

@@ -23,6 +23,7 @@ import {
   DANGER,
   OK,
 } from "./pdf-base.server";
+import { PREVADZKOVATEL } from "@/lib/kontakt";
 
 export type ClosingPdfData = {
   id: string;
@@ -260,7 +261,7 @@ export function generateClosingPdfBase64(d: ClosingPdfData): string {
 
   pageFooter(doc, [
     "Uzávierka je zmrazený doklad — neskorší predaj ani storno ju už nemenia.",
-    "eticketo.eu · support@eticketo.eu",
+    `${PREVADZKOVATEL.web} · ${PREVADZKOVATEL.email}`,
   ]);
 
   return toBase64(doc);

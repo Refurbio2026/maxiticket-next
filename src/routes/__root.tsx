@@ -85,13 +85,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
+          "Slovenská platforma na predaj vstupeniek. Koncerty, festivaly, divadlo a kultúra — vstupenku máš e-mailom hneď po zaplatení.",
       },
       { property: "og:title", content: "eticketo.eu" },
       {
         property: "og:description",
         content:
-          "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
+          "Slovenská platforma na predaj vstupeniek. Koncerty, festivaly, divadlo a kultúra — vstupenku máš e-mailom hneď po zaplatení.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -99,7 +99,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
+          "Slovenská platforma na predaj vstupeniek. Koncerty, festivaly, divadlo a kultúra — vstupenku máš e-mailom hneď po zaplatení.",
       },
       // Náhľad pri zdieľaní. Predtým to bol screenshot starého webu na cudzom
       // CDN — bola na ňom značka „maxiticket", takže každý zdieľaný odkaz

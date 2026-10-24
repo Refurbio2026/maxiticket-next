@@ -1,16 +1,32 @@
+// Sekcia pre organizátorov na titulke.
+//
+// Všetky štyri dlaždice musia byť funkcie, ktoré v aplikácii naozaj sú.
+// Predtým tu stáli „Okamžité výplaty — peniaze na účte do 48 hodín" (výplaty
+// cez Stripe Connect ešte nie sú spustené) a „Marketing tooling: promo kódy,
+// affiliate, newsletter, retargeting" — affiliate ani newsletter neexistujú.
+// Provízia bola uvedená ako 4 %, pričom v `platform_settings` je 10 %.
 import { motion } from "framer-motion";
-import { BarChart3, QrCode, CreditCard, Megaphone, ArrowRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { BarChart3, QrCode, Store, Code2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const features = [
   {
     icon: BarChart3,
-    t: "Realtime analytika",
-    d: "Predaje, konverzie a publikum v jednom dashboarde.",
+    t: "Prehľad predaja",
+    d: "Predané vstupenky, tržby a vyúčtovanie priebežne počas predaja.",
   },
-  { icon: QrCode, t: "QR check-in", d: "Validuj vstupenky pri vchode jediným skenom." },
-  { icon: CreditCard, t: "Okamžité výplaty", d: "Peniaze na účte do 48 hodín po podujatí." },
-  { icon: Megaphone, t: "Marketing tooling", d: "Promo kódy, affiliate, newsletter, retargeting." },
+  { icon: QrCode, t: "QR check-in", d: "Vstupenky overíš pri vchode skenom v telefóne." },
+  {
+    icon: Store,
+    t: "Pokladňa na mieste",
+    d: "Predaj pri vchode aj v hotovosti, so zmenami a uzávierkou.",
+  },
+  {
+    icon: Code2,
+    t: "Predaj na vlastnom webe",
+    d: "Vlož na svoju stránku jeden riadok kódu a predávaj priamo tam.",
+  },
 ];
 
 export function Organizers() {
@@ -30,16 +46,21 @@ export function Organizers() {
               <span className="text-gradient-flame">Stresuj menej.</span>
             </h2>
             <p className="mt-5 text-muted-foreground text-lg max-w-md">
-              Komplexný systém na predaj, marketing a manažment vstupeniek. Spusti predaj za 5 minút
-              — bez záväzkov, len 4% z transakcie.
+              Predaj vstupeniek, pokladňa, check-in a vyúčtovanie na jednom mieste. Bez mesačných
+              poplatkov — platíš 10 % z predanej vstupenky. Pri väčšom objeme sa dohodneme.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 h-12 px-6 shadow-glow">
-                Vytvoriť podujatie
-                <ArrowRight className="size-4" />
+              <Button
+                asChild
+                className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 h-12 px-6 shadow-glow"
+              >
+                <Link to="/onboarding">
+                  Chcem predávať vstupenky
+                  <ArrowRight className="size-4" />
+                </Link>
               </Button>
-              <Button variant="outline" className="rounded-xl h-12 px-6 border-border">
-                Pozrieť demo
+              <Button asChild variant="outline" className="rounded-xl h-12 px-6 border-border">
+                <Link to="/contact">Mám otázku</Link>
               </Button>
             </div>
           </motion.div>

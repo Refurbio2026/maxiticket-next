@@ -1,8 +1,19 @@
+// Spolupráca.
+//
+// Čo tu bolo predtým a prečo to je dole: affiliate program („až 8 % provízia,
+// mesačné výplaty, dedikovaný manažér") — nič z toho neexistuje, ani
+// sledovanie odkazov; sponzoring a mediálne kampane — nemáme ich v ponuke;
+// a štyri čísla v rámčeku („450+ organizátorov, 8 200+ podujatí ročne,
+// 1,2 M+ vstupeniek, 98 % spokojnosť partnerov"), ktoré boli vymyslené.
+//
+// Stránka teraz ponúka dve veci, ktoré naozaj vieme: predaj vstupeniek pre
+// organizátorov a rozhovor o čomkoľvek ďalšom. Keď pribudne program so
+// skutočnými podmienkami, pribudne sem s nimi.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell, FeatureGrid } from "@/components/site/PageShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Building2, Users, Handshake, Trophy, Tv2, BadgePercent, ArrowRight } from "lucide-react";
+import { Building2, Code2, Store, QrCode, Handshake, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/partners")({
   head: () => ({
@@ -11,10 +22,10 @@ export const Route = createFileRoute("/partners")({
       {
         name: "description",
         content:
-          "Pre organizátorov, partnerov, affiliate program, sponzoring a mediálnu spoluprácu.",
+          "Predaj vstupeniek pre organizátorov podujatí — pokladňa, check-in a vyúčtovanie. Alebo nám napíšte s návrhom na spoluprácu.",
       },
       { property: "og:title", content: "Spolupráca · eticketo.eu" },
-      { property: "og:description", content: "Staňte sa partnerom eticketo.eu." },
+      { property: "og:description", content: "Predávajte vstupenky cez eticketo.eu." },
     ],
   }),
   component: PartnersPage,
@@ -26,21 +37,19 @@ function PartnersPage() {
       eyebrow="Spolupráca"
       title={
         <>
-          Rastieme <span className="text-gradient-flame">spoločne</span>
+          Predávajte vstupenky <span className="text-gradient-flame">s nami</span>
         </>
       }
-      description="Pridajte sa k eticketo.eu ekosystému – organizátori, partneri, affiliate tvorcovia, sponzori a mediálne značky. Profitujeme všetci."
+      description="Sme slovenská platforma na predaj vstupeniek. Organizátorom dáme predaj online aj na mieste, check-in pri vchode a vyúčtovanie po podujatí."
       cta={
         <>
           <Button asChild className="bg-gradient-flame text-primary-foreground shadow-glow">
-            <Link to="/contact">
-              Stať sa partnerom <ArrowRight className="size-4 ml-1.5" />
+            <Link to="/onboarding">
+              Chcem predávať vstupenky <ArrowRight className="size-4 ml-1.5" />
             </Link>
           </Button>
           <Button asChild variant="outline" className="border-border/60">
-            <Link to="/login" search={{ section: "organizer" }}>
-              Som organizátor
-            </Link>
+            <Link to="/contact">Napísať nám</Link>
           </Button>
         </>
       }
@@ -49,80 +58,48 @@ function PartnersPage() {
         items={[
           {
             icon: Building2,
-            title: "Pre organizátorov",
-            description: "Kompletný nástroj na predaj vstupeniek, marketing, POS a vyúčtovanie.",
+            title: "Predaj online",
+            description:
+              "Podujatie, cenové kategórie aj rozsadenie si nastavíš sám. Vstupenka s QR kódom odchádza kupujúcemu okamžite po zaplatení.",
           },
           {
-            icon: Handshake,
-            title: "Pre partnerov",
-            description: "Integrácie, B2B ponuky a dlhodobá spolupráca s ticketing lídrom.",
+            icon: Store,
+            title: "Pokladňa na mieste",
+            description:
+              "Predaj pri vchode aj v hotovosti, s pokladníkmi, prehľadom predaja a uzávierkou zmeny.",
           },
           {
-            icon: BadgePercent,
-            title: "Affiliate program",
-            description: "Zarábajte províziu z každej predanej vstupenky cez váš odkaz alebo kód.",
+            icon: QrCode,
+            title: "Check-in pri vchode",
+            description:
+              "Vstupenky overíš skenom v telefóne, aj keď na mieste vypadne signál. Dvojité použitie kódu systém nepustí.",
           },
           {
-            icon: Trophy,
-            title: "Sponzoring",
-            description: "Brandujte podujatia, festivaly a aktivity podľa svojej cieľovej skupiny.",
-          },
-          {
-            icon: Tv2,
-            title: "Mediálni partneri",
-            description: "Cross-promo, výmena dosahu a exkluzívne mediálne kampane.",
-          },
-          {
-            icon: Users,
-            title: "Komunita",
-            description: "Spoločné eventy, networking a školenia pre celý ekosystém.",
+            icon: Code2,
+            title: "Predaj na vlastnom webe",
+            description:
+              "Vlož na svoju stránku jeden riadok kódu a predávaj priamo tam. Okrem toho dostaneš vlastnú verejnú stránku so všetkými svojimi podujatiami.",
           },
         ]}
       />
 
-      <Card className="p-8 md:p-12 bg-card/60 border-border/60 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-flame opacity-5" />
-        <div className="relative grid md:grid-cols-4 gap-6 text-center">
-          {[
-            { n: "450+", l: "aktívnych organizátorov" },
-            { n: "8 200+", l: "podujatí ročne" },
-            { n: "1,2 M+", l: "predaných vstupeniek" },
-            { n: "98 %", l: "spokojnosť partnerov" },
-          ].map((s) => (
-            <div key={s.l}>
-              <div className="font-display text-4xl font-bold text-gradient-flame">{s.n}</div>
-              <div className="text-sm text-muted-foreground mt-1">{s.l}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
       <Card className="p-8 bg-card/60 border-border/60">
-        <h2 className="font-display text-2xl font-bold mb-2">Affiliate program</h2>
-        <p className="text-muted-foreground max-w-2xl">
-          Zdieľajte podujatia a získajte províziu z každej predanej vstupenky. Sledovanie v reálnom
-          čase, mesačné výplaty a podpora vlastných promo kódov.
-        </p>
-        <ul className="grid sm:grid-cols-3 gap-3 mt-5 text-sm">
-          {[
-            "Až 8 % provízia",
-            "Real-time dashboard",
-            "Vlastný promo kód",
-            "Marketingové materiály",
-            "Mesačné výplaty",
-            "Dedikovaný manažér",
-          ].map((t) => (
-            <li
-              key={t}
-              className="flex items-center gap-2 p-3 rounded-lg bg-background/40 border border-border/40"
-            >
-              <span className="size-1.5 rounded-full bg-primary" /> {t}
-            </li>
-          ))}
-        </ul>
-        <Button asChild className="mt-6 bg-gradient-flame text-primary-foreground shadow-glow">
-          <Link to="/contact">Prihlásiť sa do affiliate programu</Link>
-        </Button>
+        <div className="flex items-start gap-4">
+          <div className="size-11 rounded-xl bg-gradient-flame grid place-items-center shadow-glow shrink-0">
+            <Handshake className="size-5 text-primary-foreground" />
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-bold">Máte iný návrh?</h2>
+            <p className="text-muted-foreground max-w-2xl mt-2">
+              Zastupujete kultúrne centrum, sieť podujatí alebo chcete vstupenky prepojiť s vlastným
+              systémom? Napíšte nám, čo potrebujete — ozveme sa a povieme priamo, čo z toho vieme
+              dnes a čo nie.
+            </p>
+            <Button asChild className="mt-5 bg-gradient-flame text-primary-foreground shadow-glow">
+              <Link to="/contact">Napísať nám</Link>
+            </Button>
+          </div>
+        </div>
       </Card>
     </PageShell>
   );

@@ -7,6 +7,8 @@
 // Zámerne to nie je šablónovací jazyk: podporujeme `{{kľúč}}` a `{{#if kľúč}}
 // … {{/if}}`. Viac na e-mail netreba a menej sa toho pokazí.
 
+import { PREVADZKOVATEL } from "@/lib/kontakt";
+
 export type TemplateVars = Record<string, string | number | null | undefined>;
 
 export type TemplateKey =
@@ -101,7 +103,7 @@ const TICKETS_HTML = `<!doctype html>
       {{/if}}
       <p style="margin:20px 0 0;font-size:13px;color:#64748b;line-height:1.5;">
         Pri vstupe stačí ukázať QR kód z mobilu alebo vytlačenú vstupenku.
-        Otázky? Napíš na <a href="mailto:support@eticketo.eu" style="color:#2563eb;">support@eticketo.eu</a>.
+        Otázky? Napíš na <a href="mailto:${PREVADZKOVATEL.email}" style="color:#2563eb;">${PREVADZKOVATEL.email}</a>.
       </p>
     </div>
   </div>

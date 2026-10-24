@@ -1,69 +1,55 @@
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getPublicStats } from "@/lib/public-stats.functions";
 import { Link } from "@tanstack/react-router";
 import { Music, Mic2, Trophy, Theater, Drama, Users, Lightbulb, Disc3 } from "lucide-react";
 
-const cats = [
-  {
-    icon: Music,
-    label: "Koncerty",
-    slug: "koncerty",
-    count: 1240,
-    hue: "from-orange-500/20 to-amber-500/10",
-  },
-  {
-    icon: Disc3,
-    label: "Festivaly",
-    slug: "festivaly",
-    count: 86,
-    hue: "from-pink-500/20 to-orange-500/10",
-  },
-  {
-    icon: Trophy,
-    label: "Šport",
-    slug: "sport",
-    count: 412,
-    hue: "from-blue-500/20 to-cyan-500/10",
-  },
-  {
-    icon: Theater,
-    label: "Divadlo",
-    slug: "divadlo",
-    count: 318,
-    hue: "from-purple-500/20 to-pink-500/10",
-  },
-  {
-    icon: Mic2,
-    label: "Stand-up",
-    slug: "stand-up",
-    count: 95,
-    hue: "from-amber-500/20 to-orange-500/10",
-  },
-  {
-    icon: Users,
-    label: "Konferencie",
-    slug: "konferencie",
-    count: 64,
-    hue: "from-emerald-500/20 to-cyan-500/10",
-  },
-  {
-    icon: Lightbulb,
-    label: "Workshopy",
-    slug: "workshopy",
-    count: 142,
-    hue: "from-yellow-500/20 to-amber-500/10",
-  },
-  {
-    icon: Drama,
-    label: "Kluby",
-    slug: "kluby",
-    count: 287,
-    hue: "from-fuchsia-500/20 to-purple-500/10",
-  },
-];
+/**
+ * Ako sa kategória z databázy zobrazí. Počty **nie sú** tu — berú sa
+ * z databázy a kategória bez podujatí sa nezobrazí vôbec.
+ *
+ * Predtým tu bol zoznam ôsmich kategórií s vymyslenými počtami (koncerty
+ * 1 240), z ktorých päť nemalo ani jedno podujatie — klik viedol na prázdno.
+ */
+const POPIS: Record<string, { label: string; icon: typeof Music; hue: string }> = {
+  koncert: { label: "Koncerty", icon: Music, hue: "from-orange-500/20 to-amber-500/10" },
+  festival: { label: "Festivaly", icon: Disc3, hue: "from-pink-500/20 to-orange-500/10" },
+  sport: { label: "Šport", icon: Trophy, hue: "from-emerald-500/20 to-teal-500/10" },
+  divadlo: { label: "Divadlo", icon: Theater, hue: "from-violet-500/20 to-fuchsia-500/10" },
+  "stand-up": { label: "Stand-up", icon: Mic2, hue: "from-amber-500/20 to-yellow-500/10" },
+  konferencia: { label: "Konferencie", icon: Users, hue: "from-sky-500/20 to-blue-500/10" },
+  workshop: { label: "Workshopy", icon: Lightbulb, hue: "from-lime-500/20 to-green-500/10" },
+  kultura: { label: "Kultúra", icon: Drama, hue: "from-rose-500/20 to-orange-500/10" },
+};
+
+/** Kategória, ktorú ešte nepoznáme podľa názvu — nech sa aj tak zobrazí. */
+const NAHRADNY = { icon: Drama, hue: "from-slate-500/20 to-slate-500/5" };
 
 const MotionLink = motion(Link);
 
 export function Categories() {
+  const fetchStats = useServerFn(getPublicStats);
+  const { data } = useQuery({
+    queryKey: ["public-stats"],
+    queryFn: () => fetchStats(),
+    staleTime: 5 * 60_000,
+  });
+
+  const kategorie = (data?.kategorie ?? []).map((k) => {
+    const popis = POPIS[k.slug];
+    return {
+      slug: k.slug,
+      pocet: k.pocet,
+      // Neznámu kategóriu zobrazíme pod jej vlastným názvom s veľkým písmenom.
+      label: popis?.label ?? k.slug.charAt(0).toUpperCase() + k.slug.slice(1),
+      icon: popis?.icon ?? NAHRADNY.icon,
+      hue: popis?.hue ?? NAHRADNY.hue,
+    };
+  });
+
+  if (kategorie.length === 0) return null;
+
   return (
     <section className="relative py-24 bg-surface/40">
       <div className="mx-auto max-w-7xl px-4">
@@ -72,15 +58,16 @@ export function Categories() {
             Vyber si <span className="text-gradient-flame">vibe</span>
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Od intímnych klubových koncertov až po vypredané štadióny — všetko na jednom mieste.
+            Koncerty, divadlo, festivaly aj kultúra v tvojom okolí — na jednom mieste.
           </p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {cats.map((c, i) => (
+          {kategorie.map((c, i) => (
             <MotionLink
-              key={c.label}
+              key={c.slug}
               to="/events"
+              search={{ category: c.slug } as never}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -97,7 +84,7 @@ export function Categories() {
                   />
                 </div>
                 <div className="font-display text-lg font-semibold">{c.label}</div>
-                <div className="text-xs text-muted-foreground mt-1">{c.count} podujatí</div>
+                <div className="text-xs text-muted-foreground mt-1">{popisPoctu(c.pocet)}</div>
               </div>
             </MotionLink>
           ))}
@@ -105,4 +92,11 @@ export function Categories() {
       </div>
     </section>
   );
+}
+
+/** 1 podujatie, 2–4 podujatia, 5+ podujatí. */
+function popisPoctu(n: number): string {
+  if (n === 1) return "1 podujatie";
+  if (n >= 2 && n <= 4) return `${n} podujatia`;
+  return `${n} podujatí`;
 }

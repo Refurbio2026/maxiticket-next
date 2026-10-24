@@ -18,14 +18,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { useEvents } from "@/hooks/use-events";
 import { getLiveBuyersCount } from "@/lib/live-stats.functions";
+import { cislo, getPublicStats } from "@/lib/public-stats.functions";
 import { HeroKolaz } from "@/components/site/HeroKolaz";
 import hero from "@/assets/hero-concert.jpg";
-
-const stats = [
-  { v: "1.2M+", l: "predaných vstupeniek" },
-  { v: "8 400", l: "podujatí ročne" },
-  { v: "120+", l: "miest na Slovensku" },
-];
 
 /**
  * Od koľkých kupujúcich sa odznak „Práve teraz" vôbec zobrazí.
@@ -49,6 +44,23 @@ export function Hero() {
   });
   const kupujucich = live?.count ?? 0;
 
+  // Čísla pod vyhľadávaním sú z databázy. Predtým tu boli napísané naprdlo
+  // („1.2M+ predaných vstupeniek") a nesedeli s realitou ani o jeden rád.
+  const fetchStats = useServerFn(getPublicStats);
+  const { data: statistiky } = useQuery({
+    queryKey: ["public-stats"],
+    queryFn: () => fetchStats(),
+    staleTime: 5 * 60_000,
+  });
+  const cisla = useMemo(() => {
+    if (!statistiky) return [];
+    return [
+      { v: cislo(statistiky.vstupeniek), l: "vydaných vstupeniek" },
+      { v: cislo(statistiky.vPredaji), l: "podujatí v predaji" },
+      { v: cislo(statistiky.mesta.length), l: statistiky.mesta.length === 1 ? "mesto" : "miest" },
+    ].filter((x) => x.v !== "0");
+  }, [statistiky]);
+
   // Ponuka miest vo vyhľadávaní aj koláž vychádzajú z publikovaných podujatí.
   const { data: publishedEvents = [] } = useEvents();
   const cities = useMemo(
@@ -68,6 +80,9 @@ export function Hero() {
       4,
     );
   }, [publishedEvents]);
+
+  // Prvé tri najbližšie podujatia do štítkov pod vyhľadávaním.
+  const najblizsie = useMemo(() => doKolaze.slice(0, 3), [doKolaze]);
 
   const submit = () => {
     const search: Record<string, string> = {};
@@ -104,7 +119,7 @@ export function Hero() {
           >
             <div className="mb-6 inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs text-muted-foreground">
               <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-              Najmodernejšia ticketing platforma na Slovensku
+              Vstupenka s QR kódom e-mailom hneď po zaplatení
             </div>
 
             {/*
@@ -213,33 +228,40 @@ export function Hero() {
                 </PopoverContent>
               </Popover>
             </div>
-
-            <div className="mt-4 flex flex-wrap gap-2 text-xs">
-              <span className="mr-1 text-muted-foreground">Trending:</span>
-              {["Pohoda 2026", "Calypso Bratislava", "HC Slovan", "Lúčnica", "Iné Kafe"].map(
-                (t) => (
+            {/*
+              Štítky sú skutočné najbližšie podujatia. Predtým tu boli napísané
+              naprdlo názvy („Pohoda 2026", „HC Slovan"), ktoré sme nepredávali —
+              klik na ne viedol na prázdne vyhľadávanie.
+            */}
+            {najblizsie.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                <span className="mr-1 text-muted-foreground">Najbližšie:</span>
+                {najblizsie.map((e) => (
                   <button
-                    key={t}
-                    onClick={() => navigate({ to: "/events", search: { q: t } })}
-                    className="rounded-full border border-border px-3 py-1 transition-colors hover:border-primary hover:text-primary"
+                    key={e.id}
+                    onClick={() => navigate({ to: "/events/$id", params: { id: e.id } })}
+                    className="max-w-[16rem] truncate rounded-full border border-border px-3 py-1 transition-colors hover:border-primary hover:text-primary"
+                    title={e.title}
                   >
-                    {t}
+                    {e.title}
                   </button>
-                ),
-              )}
-            </div>
+                ))}
+              </div>
+            )}
 
-            {/* Čísla sú podradené nadpisu: bez gradientu a bez tučného rezu. */}
-            <div className="mt-20 grid max-w-xl grid-cols-3 gap-6 border-t border-black/5 pt-8 dark:border-white/10">
-              {stats.map((s) => (
-                <div key={s.l}>
-                  <div className="font-display text-4xl font-semibold tracking-tight text-foreground/90">
-                    {s.v}
+            {/* Čísla sú podradené nadpisu a sú z databázy; nulu nezobrazujeme. */}
+            {cisla.length > 0 && (
+              <div className="mt-20 grid max-w-xl grid-cols-3 gap-6 border-t border-black/5 pt-8 dark:border-white/10">
+                {cisla.map((x) => (
+                  <div key={x.l}>
+                    <div className="font-display text-4xl font-semibold tracking-tight text-foreground/90">
+                      {x.v}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{x.l}</div>
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">{s.l}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           {/* --- koláž --- */}

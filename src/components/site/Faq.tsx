@@ -5,26 +5,44 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+/**
+ * Časté otázky.
+ *
+ * KAŽDÁ ODPOVEĎ MUSÍ BYŤ PRAVDA DNES. Predtým tu stálo, že vstupenku
+ * dostaneš do Apple/Google peňaženky (certifikát ešte nie je nasadený), že ju
+ * „jedným klikom pošleš kamarátovi a QR sa preregistruje" (taká funkcia
+ * neexistuje), že provízia je 4 % (v `platform_settings` je 10 %) a že pri
+ * zrušení vraciame peniaze automaticky do 5 dní — čo si protirečí s bodom
+ * 3.7 obchodných podmienok. Keď niečo pribudne, pribudne aj tu; nie naopak.
+ */
 const faqs = [
   {
     q: "Ako rýchlo dostanem vstupenku?",
-    a: "Vstupenku s QR kódom dostaneš okamžite na email, do Apple/Google Walletky a do svojho účtu.",
+    a: "Okamžite po zaplatení. Vstupenku s QR kódom pošleme na email a nájdeš ju aj vo svojom účte v sekcii Moje vstupenky. Stačí ju mať pri vchode v telefóne, tlačiť ju netreba.",
   },
   {
-    q: "Sú vstupenky prenosné?",
-    a: "Áno. Vstupenku môžeš jedným klikom poslať kamarátovi — QR kód sa automaticky preregistruje.",
+    q: "Čo ak na podujatie nemôžem prísť?",
+    a: "Vstupenku môžeš poslať ďalej — pri vchode platí QR kód, nie meno, takže ju využije ten, komu ju pošleš. Pri vstupenkách vydaných na konkrétne meno to treba dohodnúť s usporiadateľom. Peniaze za nevyužitú vstupenku vrátiť nedokážeme, nákup vstupenky nie je zo zákona možné stornovať ako bežný e-shopový tovar.",
   },
   {
     q: "Aké sú poplatky pre organizátorov?",
-    a: "Iba 4% z predanej vstupenky. Žiadne mesačné poplatky, žiadne skryté náklady.",
+    a: "Štandardne 10 % z ceny predanej vstupenky. Žiadne mesačné poplatky ani platba za zriadenie. Pri väčšom objeme sa dohodneme individuálne — napíš nám.",
   },
   {
     q: "Čo ak sa podujatie zruší?",
-    a: "Plnú sumu vraciame automaticky na tvoju kartu do 5 pracovných dní.",
+    a: "Dáme ti vedieť emailom a zverejníme postup vrátenia vstupného vrátane kontaktu, cez ktorý bude prebiehať. Podrobne to popisuje bod 3.7 obchodných podmienok.",
+  },
+  {
+    q: "Akými spôsobmi sa dá zaplatiť?",
+    a: "Platobnou kartou alebo bankovým prevodom cez platobnú bránu. Pri prevode je vstupenka vydaná až po pripísaní platby, takže kartou ju máš hneď.",
+  },
+  {
+    q: "Dostanem faktúru?",
+    a: "Pri nákupe na firmu áno — stačí v objednávke zadať firemné údaje (IČO si vieme dotiahnuť z registra) a faktúru pošleme emailom. Fyzickým osobám faktúru nevystavujeme, dokladom je potvrdenie objednávky.",
   },
   {
     q: "Funguje to aj v zahraničí?",
-    a: "Predávame vstupenky po celom Slovensku a postupne rozširujeme na CEE región.",
+    a: "Vstupenky kúpiš odkiaľkoľvek. Podujatia, ktoré teraz predávame, sú na Slovensku.",
   },
 ];
 

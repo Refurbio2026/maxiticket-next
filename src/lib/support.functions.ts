@@ -4,6 +4,7 @@ import { z } from "zod";
 import { askSupportBot, type BotResult } from "./support-bot.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ipBucket } from "./client-ip.server";
+import { PREVADZKOVATEL } from "@/lib/kontakt";
 
 // Server function backing the support chat widget. Basic abuse guards: bounded
 // message length and history size. The AI call itself lives in the .server.ts
@@ -42,8 +43,7 @@ export const askSupport = createServerFn({ method: "POST" })
       return {
         ok: false,
         reason: "error",
-        message:
-          "Priveľa správ za krátky čas. Skús to prosím o chvíľu, alebo napíš na support@eticketo.eu.",
+        message: `Priveľa správ za krátky čas. Skús to prosím o chvíľu, alebo napíš na ${PREVADZKOVATEL.email}.`,
       };
     }
     return askSupportBot(data.messages, data.lang || "sk");

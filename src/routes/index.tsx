@@ -1,3 +1,10 @@
+// Titulka.
+//
+// Sekcie „Hovoria o nás" a „Newsletter" sú zámerne odstránené: prvá mala
+// vymyslené referencie (jedna z nich pripísaná Pohoda Festivalu, ktorý u nás
+// nikdy nič nepredával), druhá formulár, ktorý e-mail nikam neukladal a
+// sľuboval zľavové kódy a early access, ktoré neexistujú. Vrátiť ich možno
+// vtedy, keď bude čo zobraziť a kam adresu uložiť.
 import { createFileRoute } from "@tanstack/react-router";
 import { Navbar } from "@/components/site/Navbar";
 import { Hero } from "@/components/site/Hero";
@@ -5,24 +12,22 @@ import { Trending } from "@/components/site/Trending";
 import { Categories } from "@/components/site/Categories";
 import { Cities } from "@/components/site/Cities";
 import { Organizers } from "@/components/site/Organizers";
-import { Testimonials } from "@/components/site/Testimonials";
 import { Faq } from "@/components/site/Faq";
-import { Newsletter } from "@/components/site/Newsletter";
 import { Footer } from "@/components/site/Footer";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "eticketo.eu — Vstupenky na koncerty, festivaly a šport" },
+      { title: "eticketo.eu — Vstupenky na koncerty, festivaly a kultúru" },
       {
         name: "description",
         content:
-          "Najmodernejšia ticketing platforma na Slovensku. Koncerty, festivaly, šport, divadlo a stand-up — kupuj vstupenky bezpečne a okamžite.",
+          "Slovenská platforma na predaj vstupeniek. Koncerty, festivaly, divadlo a kultúra — kúp vstupenku a máš ju okamžite v e-maile aj v účte.",
       },
       { property: "og:title", content: "eticketo.eu — Každý zážitok má svoj vstup" },
       {
         property: "og:description",
-        content: "Vstupenky na koncerty, festivaly, šport a kultúru. Bez skrytých poplatkov.",
+        content: "Vstupenky na koncerty, festivaly, divadlo a kultúru. Cena vstupenky je konečná.",
       },
     ],
   }),
@@ -39,9 +44,7 @@ function Index() {
         <Categories />
         <Cities />
         <Organizers />
-        <Testimonials />
         <Faq />
-        <Newsletter />
       </main>
       <Footer />
     </div>

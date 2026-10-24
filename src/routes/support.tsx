@@ -17,8 +17,9 @@ import {
   ShieldQuestion,
   CreditCard,
   LifeBuoy,
-  MessageCircle,
+  Phone,
 } from "lucide-react";
+import { PREVADZKOVATEL } from "@/lib/kontakt";
 
 export const Route = createFileRoute("/support")({
   head: () => ({
@@ -35,36 +36,51 @@ export const Route = createFileRoute("/support")({
   component: SupportPage,
 });
 
+/**
+ * Odpovede pre kupujúcich.
+ *
+ * Predtým tu stálo, že v účte je tlačidlo „Požiadať o refundáciu" (nie je),
+ * že pri zrušení chodí automatické 100 % vrátenie (podmienky, bod 3.7, to
+ * popisujú inak), že berieme Apple Pay / Google Pay / Tatra Pay (nasadená je
+ * brána ComGate — karta a bankový prevod) a mailovalo sa na
+ * `support@eticketo.eu`, čo nie je naša adresa. Správna je
+ * `PREVADZKOVATEL.email`.
+ */
 const FAQ = [
   {
     cat: "Vstupenky",
     q: "Ako dostanem vstupenku po nákupe?",
-    a: "Vstupenka vám príde okamžite e-mailom v PDF formáte aj s QR kódom. Nájdete ju aj vo svojom účte v sekcii Moje vstupenky.",
-  },
-  {
-    cat: "Refundácie",
-    q: "Ako požiadam o refundáciu?",
-    a: "V účte otvorte detail objednávky a kliknite na 'Požiadať o refundáciu'. Spracovanie trvá 3–5 pracovných dní.",
-  },
-  {
-    cat: "Reklamácie",
-    q: "Podujatie bolo zrušené, čo teraz?",
-    a: "Pri zrušení podujatia organizátorom dostanete automatický e-mail a 100 % vrátenie peňazí na pôvodný spôsob platby.",
-  },
-  {
-    cat: "Platba",
-    q: "Aké spôsoby platby podporujete?",
-    a: "Akceptujeme platobné karty (Visa, Mastercard), Apple Pay, Google Pay, Tatra Pay a bankový prevod.",
+    a: "Hneď po zaplatení vám príde e-mailom vstupenka s QR kódom. Nájdete ju aj vo svojom účte v sekcii Moje vstupenky. Pri vchode stačí ukázať QR kód v telefóne.",
   },
   {
     cat: "Vstupenky",
     q: "Môžem vstupenku preniesť na inú osobu?",
-    a: "Áno, vstupenku môžete preposlať e-mailom – QR kód je platný pre prvého návštevníka, ktorý ho použije.",
+    a: "Áno, stačí ju preposlať — pri vchode platí QR kód, nie meno, a platný je pre toho, kto ho použije prvý. Pri vstupenkách vydaných na konkrétne meno to treba dohodnúť s usporiadateľom.",
+  },
+  {
+    cat: "Platba",
+    q: "Aké spôsoby platby podporujete?",
+    a: "Platobnou kartou (Visa, Mastercard) a bankovým prevodom cez platobnú bránu. Pri prevode vydáme vstupenku až po pripísaní platby, kartou ju máte okamžite.",
+  },
+  {
+    cat: "Refundácie",
+    q: "Môžem vstupenku vrátiť, keď nemôžem prísť?",
+    a: "Nákup vstupenky na podujatie nie je možné stornovať ako bežný tovar z e-shopu (§ 7 ods. 6 zákona č. 102/2014 Z. z. — služby v rámci voľného času na dohodnutý termín), takže peniaze za nevyužitú vstupenku vrátiť nedokážeme. Vstupenku ale môžete poslať ďalej, pozri otázku o prenose.",
+  },
+  {
+    cat: "Reklamácie",
+    q: "Podujatie bolo zrušené, čo teraz?",
+    a: "Dáme vám vedieť e-mailom a zverejníme postup vrátenia vstupného vrátane kontaktu, cez ktorý bude prebiehať. Presne to popisuje bod 3.7 obchodných podmienok.",
+  },
+  {
+    cat: "Vstupenky",
+    q: "Dostanem faktúru?",
+    a: "Pri nákupe na firmu áno — v objednávke zadajte firemné údaje a faktúru pošleme e-mailom. Fyzickým osobám faktúru nevystavujeme, dokladom je potvrdenie objednávky.",
   },
   {
     cat: "Technické",
     q: "Nefunguje mi QR kód pri vstupe.",
-    a: "Kontaktujte personál na vstupe alebo nás napíšte na support@eticketo.eu – overíme vás podľa e-mailu objednávky.",
+    a: `Oslovte personál na vstupe alebo nám napíšte na ${PREVADZKOVATEL.email} — overíme vás podľa e-mailu z objednávky.`,
   },
 ];
 
@@ -104,9 +120,9 @@ function SupportPage() {
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { icon: Ticket, t: "Vstupenky", d: "Doručenie, prenos, formát" },
-          { icon: RefreshCcw, t: "Refundácie", d: "Žiadosti a stav spracovania" },
+          { icon: RefreshCcw, t: "Refundácie", d: "Kedy vraciame vstupné" },
           { icon: ShieldQuestion, t: "Reklamácie", d: "Zrušené a presunuté podujatia" },
-          { icon: CreditCard, t: "Platby", d: "Karty, Apple Pay, prevod" },
+          { icon: CreditCard, t: "Platby", d: "Karta a bankový prevod" },
         ].map((c) => {
           const Icon = c.icon;
           return (
@@ -155,30 +171,33 @@ function SupportPage() {
             <LifeBuoy className="size-5 text-primary-foreground" />
           </div>
           <div>
-            <div className="font-display font-bold">Technická podpora</div>
+            <div className="font-display font-bold">Napíšte nám</div>
             <p className="text-sm text-muted-foreground mt-1">
-              Po–Pi 9:00–18:00, víkendy 12:00–22:00 počas podujatí.
+              Odpovedáme v pracovných dňoch. Priložte prosím e-mail z objednávky.
             </p>
             <a
-              href="mailto:support@eticketo.eu"
+              href={`mailto:${PREVADZKOVATEL.email}`}
               className="text-primary text-sm font-semibold hover:underline mt-2 inline-block"
             >
-              support@eticketo.eu
+              {PREVADZKOVATEL.email}
             </a>
           </div>
         </Card>
         <Card className="p-6 bg-card/60 border-border/60 flex items-start gap-4">
           <div className="size-11 rounded-xl bg-gradient-flame grid place-items-center shadow-glow shrink-0">
-            <MessageCircle className="size-5 text-primary-foreground" />
+            <Phone className="size-5 text-primary-foreground" />
           </div>
           <div>
-            <div className="font-display font-bold">Live chat</div>
+            <div className="font-display font-bold">Zavolajte</div>
             <p className="text-sm text-muted-foreground mt-1">
-              Odpovedáme do 5 minút v pracovných hodinách.
+              Keď to potrebujete vyriešiť hneď — napríklad pri vstupe na podujatie.
             </p>
-            <Button asChild variant="link" className="p-0 h-auto text-primary font-semibold mt-2">
-              <Link to="/contact">Otvoriť chat →</Link>
-            </Button>
+            <a
+              href={`tel:${PREVADZKOVATEL.telefonLink}`}
+              className="text-primary text-sm font-semibold hover:underline mt-2 inline-block"
+            >
+              {PREVADZKOVATEL.telefon}
+            </a>
           </div>
         </Card>
       </div>
