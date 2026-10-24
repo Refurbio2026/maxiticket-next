@@ -311,6 +311,21 @@ function PaymentGatewaysPage() {
         ))}
       </div>
 
+      <div>
+        <h2 className="font-display text-xl font-bold tracking-tight mt-6">Asistent na webe</h2>
+        <p className="text-muted-foreground text-sm mt-1">
+          Bublina s otázkami pre návštevníkov. Bez kľúča odpovedá z vlastnej znalostnej bázy —
+          zvládne bežné otázky (kde mám vstupenku, ako zaplatiť, zrušené podujatie), ale nerozumie
+          voľne položenej otázke.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {data.asistent.map((a) => (
+          <RegisterKarta key={a.id} register={a} onUlozPristupy={(v) => ulozPristupy(a.id, v)} />
+        ))}
+      </div>
+
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
           {data.predvolenaZPremennej

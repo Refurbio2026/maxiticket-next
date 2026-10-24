@@ -23,6 +23,7 @@ import {
 } from "./payment-gateways/types";
 import { systemPodlaId, vsetkyFakturacneSystemy } from "./invoicing/index.server";
 import { finstatKonfiguracia, finstatStav } from "./firmy/firmy.server";
+import { asistentKonfiguracia, asistentStav } from "./asistent/klient.server";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
 import { jePovolenaSadzba, predvolenaSadzba, zabudniSadzbu } from "./dph.server";
@@ -34,7 +35,30 @@ const ID_FAKTURACIE = z.enum(["superfaktura", "faktero"]);
 // Registre firiem nie sú brána ani fakturácia, ale prístupy sa im ukladajú
 // tým istým spôsobom.
 const ID_REGISTRA = z.enum(["finstat"]);
-const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE, ID_REGISTRA]);
+// Asistent na webe. Nie je to brána, ale kľúč k modelu sa ukladá rovnako.
+const ID_ASISTENTA = z.enum(["asistent"]);
+const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE, ID_REGISTRA, ID_ASISTENTA]);
+
+/**
+ * Polia, ktoré smie daný systém dostať.
+ *
+ * Bez tohto sa `savePaymentCredentials` pýtala na `branaPodlaId`, ktorá
+ * o registri ani o asistentovi nevie — uloženie kľúčov k FinStatu preto
+ * končilo chybou „Neznáma platobná brána 'finstat'".
+ */
+function systemNaUlozenie(provider: string): { label: string; kluce: Set<string> } {
+  if (provider === "finstat") {
+    return { label: "FinStat", kluce: new Set(finstatKonfiguracia().map((k) => k.premenna)) };
+  }
+  if (provider === "asistent") {
+    return {
+      label: "Asistent na webe",
+      kluce: new Set(asistentKonfiguracia().map((k) => k.premenna)),
+    };
+  }
+  const system = jeFakturacia(provider) ? systemPodlaId(provider) : branaPodlaId(provider);
+  return { label: system.label, kluce: new Set(system.konfiguracia().map((k) => k.premenna)) };
+}
 
 export type PrehladBrany = {
   id: string;
@@ -85,6 +109,8 @@ export type PrehladPlatobnychBran = {
   brany: PrehladBrany[];
   fakturacia: PrehladFakturacie[];
   registre: PrehladRegistra[];
+  /** Asistent na webe — tá istá karta, iný druh systému. */
+  asistent: PrehladRegistra[];
   /** Systém, ktorý práve vystavuje faktúry. */
   fakturacnySystem: string | null;
   /** Predvolená sadzba DPH v percentách. */
@@ -244,6 +270,22 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
           .map((k) => k.premenna),
       },
     ];
+    const stavAsistenta = asistentStav();
+    const konfiguraciaAsistenta = asistentKonfiguracia();
+    const asistent: PrehladRegistra[] = [
+      {
+        id: "asistent",
+        label: "Asistent na webe (Claude)",
+        hint: "Bublina s otázkami na verejnom webe. Bez kľúča odpovedá z vlastnej znalostnej bázy — rozumie bežným otázkam, ale nie voľne položenej.",
+        nakonfigurovana: stavAsistenta.pripravene,
+        stav: stavAsistenta.detail,
+        konfiguracia: konfiguraciaAsistenta,
+        chybaju: konfiguraciaAsistenta
+          .filter((k) => k.povinna && !k.vyplnena)
+          .map((k) => k.premenna),
+      },
+    ];
+
     const pouzivaSa =
       fakturacia.find((f) => f.id === zvolenaFakturacia && f.nakonfigurovana)?.id ??
       fakturacia.find((f) => f.nakonfigurovana)?.id ??
@@ -259,6 +301,7 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
       brany,
       fakturacia,
       registre,
+      asistent,
       fakturacnySystem: pouzivaSa,
       sadzbaDph: await predvolenaSadzba(),
       adresaWebu,
@@ -358,6 +401,11 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean; detail: string }> => {
     await assertAdmin(context.userId);
     await pripravPristupy();
+    if (data.provider === "finstat" || data.provider === "asistent") {
+      // Tieto nemajú „skúšobné spojenie" — stav vidno priamo na karte.
+      const stav = data.provider === "finstat" ? finstatStav() : asistentStav();
+      return { ok: stav.pripravene, detail: stav.detail };
+    }
     const brana = jeFakturacia(data.provider)
       ? systemPodlaId(data.provider)
       : branaPodlaId(data.provider);
@@ -396,15 +444,12 @@ export const savePaymentCredentials = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     await pripravPristupy();
 
-    const brana = jeFakturacia(data.provider)
-      ? systemPodlaId(data.provider)
-      : branaPodlaId(data.provider);
-    // Prijmeme len kľúče, o ktorých brána naozaj vie. Inak by sa do tabuľky
+    const system = systemNaUlozenie(data.provider);
+    // Prijmeme len kľúče, o ktorých systém naozaj vie. Inak by sa do tabuľky
     // dalo napchať čokoľvek.
-    const povolene = new Set(brana.konfiguracia().map((k) => k.premenna));
     const zmeny: Record<string, string | null> = {};
     for (const [kluc, v] of Object.entries(data.values)) {
-      if (!povolene.has(kluc)) throw new Error(`Brána ${brana.label} nepozná pole '${kluc}'.`);
+      if (!system.kluce.has(kluc)) throw new Error(`${system.label} nepozná pole '${kluc}'.`);
       zmeny[kluc] = v;
     }
 

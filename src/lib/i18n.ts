@@ -58,13 +58,13 @@ const sk: Dict = {
   "footer.builtWith": "Postavené s vášňou na Slovensku 🇸🇰",
   // support chat
   "support.title": "Podpora",
-  "support.subtitle": "Virtuálny asistent · odpovie hneď",
+  "support.subtitle": "Asistent · odpovie hneď",
   "support.greeting":
-    "Ahoj! 👋 Som virtuálny asistent eticketo.eu. Ako ti pomôžem — nákup, vstupenky, platby alebo reklamácie?",
+    "Ahoj! 👋 Poradím s nákupom, platbou, vstupenkami aj so vstupom na podujatie. S konkrétnou objednávkou ti pomôže kolega na kontakte — ja do nej nevidím.",
   "support.placeholder": "Napíš svoju otázku…",
   "support.send": "Odoslať",
   "support.thinking": "Píšem…",
-  "support.disabled": "Chat podpora momentálne nie je dostupná. Napíš nám prosím cez Kontakt.",
+  "support.disabled": "Na toto ti odpovie kolega — napíš nám prosím cez Kontakt.",
   "support.error": "Prepáč, niečo sa pokazilo. Skús to prosím znova.",
   "support.contactCta": "Kontaktovať ľudskú podporu",
 };
@@ -97,13 +97,13 @@ const en: Dict = {
   "footer.rights": "© 2026 eticketo.eu — All rights reserved.",
   "footer.builtWith": "Built with passion in Slovakia 🇸🇰",
   "support.title": "Support",
-  "support.subtitle": "Virtual assistant · instant replies",
+  "support.subtitle": "Assistant · instant replies",
   "support.greeting":
-    "Hi! 👋 I'm the eticketo.eu virtual assistant. How can I help — buying, tickets, payments or refunds?",
+    "Hi! 👋 I can help with buying, payment, tickets and getting in at the door. For a specific order a colleague on the contact page will help — I cannot see into it.",
   "support.placeholder": "Type your question…",
   "support.send": "Send",
   "support.thinking": "Typing…",
-  "support.disabled": "Chat support is currently unavailable. Please reach us via Contact.",
+  "support.disabled": "A colleague will answer this one — please reach us via Contact.",
   "support.error": "Sorry, something went wrong. Please try again.",
   "support.contactCta": "Contact human support",
 };
@@ -136,14 +136,14 @@ const de: Dict = {
   "footer.rights": "© 2026 eticketo.eu — Alle Rechte vorbehalten.",
   "footer.builtWith": "Mit Leidenschaft in der Slowakei gebaut 🇸🇰",
   "support.title": "Support",
-  "support.subtitle": "Virtueller Assistent · sofortige Antwort",
+  "support.subtitle": "Assistent · sofortige Antwort",
   "support.greeting":
-    "Hallo! 👋 Ich bin der virtuelle Assistent von eticketo.eu. Wie kann ich helfen — Kauf, Tickets, Zahlungen oder Rückerstattungen?",
+    "Hallo! 👋 Ich helfe beim Kauf, bei der Zahlung, bei Tickets und beim Einlass. Zu einer konkreten Bestellung hilft eine Kollegin oder ein Kollege über die Kontaktseite — ich sehe nicht hinein.",
   "support.placeholder": "Schreib deine Frage…",
   "support.send": "Senden",
   "support.thinking": "Schreibt…",
   "support.disabled":
-    "Der Chat-Support ist derzeit nicht verfügbar. Bitte kontaktiere uns über Kontakt.",
+    "Das beantwortet dir am besten eine Kollegin oder ein Kollege — bitte über Kontakt melden.",
   "support.error": "Entschuldigung, etwas ist schiefgelaufen. Bitte versuche es erneut.",
   "support.contactCta": "Menschlichen Support kontaktieren",
 };
@@ -176,14 +176,13 @@ const hu: Dict = {
   "footer.rights": "© 2026 eticketo.eu — Minden jog fenntartva.",
   "footer.builtWith": "Szenvedéllyel készült Szlovákiában 🇸🇰",
   "support.title": "Támogatás",
-  "support.subtitle": "Virtuális asszisztens · azonnali válasz",
+  "support.subtitle": "Asszisztens · azonnali válasz",
   "support.greeting":
-    "Szia! 👋 A eticketo.eu virtuális asszisztense vagyok. Miben segíthetek — vásárlás, jegyek, fizetés vagy visszatérítés?",
+    "Szia! 👋 Segítek a vásárlásban, a fizetésben, a jegyekkel és a belépéssel. Konkrét rendelésben a kapcsolat oldalon érhető el kolléga — abba én nem látok bele.",
   "support.placeholder": "Írd be a kérdésed…",
   "support.send": "Küldés",
   "support.thinking": "Gépel…",
-  "support.disabled":
-    "A chat támogatás jelenleg nem elérhető. Kérjük, írj nekünk a Kapcsolat oldalon.",
+  "support.disabled": "Erre egy kolléga tud válaszolni — kérjük, írj nekünk a Kapcsolat oldalon.",
   "support.error": "Elnézést, valami elromlott. Kérjük, próbáld újra.",
   "support.contactCta": "Emberi ügyfélszolgálat",
 };
