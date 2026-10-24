@@ -139,5 +139,21 @@ export async function zrkadliPlatbyBran(limit = 500): Promise<VysledokZrkadlenia
     return v;
   }
   v.novych = vlozene?.length ?? 0;
+
+  // Účet brány žiadny „skutočný" zostatok nemá — je to súčet toho, čo brána
+  // potvrdila a ešte nevyplatila plus to, čo už vyplatila. Dlaždica by inak
+  // navždy ukazovala nulu.
+  for (const [, accountId] of ucty) {
+    const { data: vsetky } = await supabaseAdmin
+      .from("bank_transactions")
+      .select("amount")
+      .eq("account_id", accountId);
+    const suma = (vsetky ?? []).reduce((s, t) => s + Number(t.amount), 0);
+    await supabaseAdmin
+      .from("bank_accounts")
+      .update({ balance: Math.round(suma * 100) / 100, last_sync_at: new Date().toISOString() })
+      .eq("id", accountId);
+  }
+
   return v;
 }

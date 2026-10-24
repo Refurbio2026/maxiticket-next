@@ -236,6 +236,22 @@ export async function stiahniZoZdrojov(): Promise<VysledokStahovania> {
       });
 
       const ulozene = await ulozVysledok(z.account_id, z.id, vysledok, { ukladajOriginal: true });
+
+      // Zostatok rovno z poskytovateľa — dopočítavať ho z pohybov sa nedá,
+      // lebo okno je len pár dní a počiatočný stav nepoznáme.
+      if (z.provider === "faktero") {
+        const iban = (z.config as { iban?: string } | null)?.iban;
+        if (iban) {
+          const { zistiZostatok } = await import("./faktero");
+          const zostatok = await zistiZostatok(tajomstvo, iban).catch(() => null);
+          if (zostatok) {
+            await supabaseAdmin
+              .from("bank_accounts")
+              .update({ balance: zostatok.suma, last_sync_at: zostatok.kedy })
+              .eq("id", z.account_id);
+          }
+        }
+      }
       v.novych += ulozene.novych;
       v.detail.push({ zdroj: z.name, novych: ulozene.novych });
 

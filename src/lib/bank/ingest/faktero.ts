@@ -100,6 +100,7 @@ export type FakteroUcet = {
   currency?: string | null;
   active?: boolean;
   balance?: number | null;
+  balance_at?: string | null;
 };
 
 /** IBAN na porovnanie: bez medzier a veľkými písmenami. */
@@ -215,6 +216,24 @@ async function zoznamUctov(kluc: string): Promise<unknown> {
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Zostatok účtu podľa Faktera.
+ *
+ * Dlaždica účtu v admine dovtedy ukazovala nulu, lebo stĺpec `balance` nikto
+ * nenapĺňal. Faktero zostatok vracia, takže ho pri každom sťahovaní obnovíme.
+ */
+export async function zistiZostatok(
+  kluc: string,
+  iban: string,
+): Promise<{ suma: number; kedy: string } | null> {
+  const u = najdiPodlaIbanu(await zoznamUctov(kluc), iban);
+  if (!u || typeof u.balance !== "number") return null;
+  return {
+    suma: u.balance,
+    kedy: typeof u.balance_at === "string" ? u.balance_at : new Date().toISOString(),
+  };
 }
 
 export const fakteroApi: ApiZdroj = {
