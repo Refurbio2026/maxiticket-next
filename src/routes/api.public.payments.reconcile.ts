@@ -25,6 +25,7 @@ import { spustiUlohu, upracLogy } from "@/lib/job-runs.server";
 import { skontrolujRefundy } from "@/lib/refund-check.server";
 import { oznacMimoVstupeniek } from "@/lib/bank/mimo-vstupenky.server";
 import { zrkadliPlatbyBran } from "@/lib/bank/brana-zrkadlenie.server";
+import { odsuhlasVyplaty } from "@/lib/bank/vyplaty-bran.server";
 import { errorMessage } from "@/lib/error-message";
 
 /** Ako dlho sa drží surový obsah zo zdroja, kým ho retencia zmaže. */
@@ -70,6 +71,12 @@ async function handler({ request }: { request: Request }) {
   // Platby kartou cez bankový účet samostatne neprejdú; do účtovného pohľadu
   // sa zapíšu ako kniha platieb brány na jej vlastnom účte.
   const brana = await spustiUlohu("brana-zrkadlenie", () => zrkadliPlatbyBran());
+  // Súhrnná výplata z brány sa porovná s knihou platieb, z ktorých sa skladá.
+  // Beží raz za hodinu — výplaty chodia nanajvýš denne a každý beh je
+  // niekoľko volaní na bránu.
+  const vyplaty = await spustiUlohu("brana-vyplaty", () => odsuhlasVyplaty(14), {
+    ttlMinut: 60,
+  });
 
   // Dopytovací sken rieši peniaze cez brány — najdôležitejší krok.
   const sken = await spustiUlohu("dopytovaci-sken", () => dopytajCakajuce(okno), {
@@ -92,6 +99,7 @@ async function handler({ request }: { request: Request }) {
     parovanie,
     triedenie,
     brana,
+    vyplaty,
     sken,
     prevody,
     pripomienky,
