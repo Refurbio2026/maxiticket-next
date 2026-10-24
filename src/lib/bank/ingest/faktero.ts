@@ -93,6 +93,38 @@ export function prevedOdpoved(json: unknown): VysledokParsovania {
   return vysledok;
 }
 
+export type FakteroUcet = {
+  id?: string;
+  iban?: string | null;
+  bank_name?: string | null;
+  currency?: string | null;
+  active?: boolean;
+  balance?: number | null;
+};
+
+/** IBAN na porovnanie: bez medzier a veľkými písmenami. */
+export function cistyIban(x: string | null | undefined): string {
+  return (x ?? "").replace(/[\s-]/g, "").toUpperCase();
+}
+
+/**
+ * Účet podľa IBAN-u zo zoznamu, ktorý vracia `/bank-accounts`.
+ *
+ * Prečo podľa IBAN-u a nie podľa uuid: uuid nikde nevidno a opisuje sa ručne,
+ * takže sa raz zle trafí — čo sa nám presne stalo. IBAN je na faktúre aj
+ * v nastavení prevodov, takže sa dá overiť.
+ */
+export function najdiPodlaIbanu(data: unknown, iban: string): FakteroUcet | null {
+  const zoznam = (data as { data?: unknown[] })?.data;
+  if (!Array.isArray(zoznam)) return null;
+  const hladany = cistyIban(iban);
+  for (const x of zoznam) {
+    const u = (x ?? {}) as FakteroUcet;
+    if (cistyIban(u.iban) === hladany) return u;
+  }
+  return null;
+}
+
 type Dotaz = { kluc: string; ucet?: string; od: Date; do: Date };
 
 async function volaj({ kluc, ucet, od, do: doDatumu }: Dotaz): Promise<unknown> {
@@ -161,12 +193,48 @@ async function stiahniOkno(dotaz: Dotaz, hlbka = 0): Promise<VysledokParsovania>
   };
 }
 
+/** Zoznam účtov sa mení zriedka; v rámci behu stačí raz. */
+const cacheUctov = new Map<string, { data: unknown; nacitane: number }>();
+const PLATNOST_UCTOV_MS = 5 * 60_000;
+
+async function zoznamUctov(kluc: string): Promise<unknown> {
+  const z = cacheUctov.get(kluc);
+  if (z && Date.now() - z.nacitane < PLATNOST_UCTOV_MS) return z.data;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CAS_LIMIT_MS);
+  try {
+    const res = await fetch(`${ZAKLAD}/bank-accounts`, {
+      headers: { accept: "application/json", Authorization: `Bearer ${kluc}` },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`Faktero: zoznam účtov odpovedal ${res.status}`);
+    const data = await res.json();
+    cacheUctov.set(kluc, { data, nacitane: Date.now() });
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const fakteroApi: ApiZdroj = {
   id: "faktero_api",
   async stiahni({ tajomstvo, config, od, do: doDatumu }) {
-    // Bez `bank_account_id` vráti Faktero pohyby zo všetkých účtov; keď je
-    // účtov viac, je to takmer vždy chyba v nastavení zdroja.
-    const ucet = typeof config.bank_account_id === "string" ? config.bank_account_id : undefined;
+    // Prednosť má IBAN: ten je na faktúre aj v nastavení prevodov, takže sa
+    // dá overiť. `bank_account_id` zostáva ako možnosť, keby IBAN nestačil.
+    const iban = typeof config.iban === "string" ? config.iban : undefined;
+    let ucet = typeof config.bank_account_id === "string" ? config.bank_account_id : undefined;
+
+    if (iban) {
+      const najdeny = najdiPodlaIbanu(await zoznamUctov(tajomstvo), iban);
+      if (!najdeny?.id) {
+        throw new Error(`Faktero nepozná účet s IBAN ${cistyIban(iban)} — je vo Fakere pripojený?`);
+      }
+      ucet = najdeny.id;
+    }
+
+    // Bez zúženia by Faktero vrátilo pohyby zo všetkých účtov firmy; pri deviatich
+    // účtoch je to takmer vždy chyba v nastavení zdroja, nie zámer.
     return stiahniOkno({ kluc: tajomstvo, ucet, od, do: doDatumu });
   },
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { prevedOdpoved, prevedPohyb } from "./faktero";
+import { cistyIban, najdiPodlaIbanu, prevedOdpoved, prevedPohyb } from "./faktero";
 
 // Tvar odpovede je odpísaný zo skutočného volania (24. 10. 2026), nie z hlavy.
 const POHYB = {
@@ -88,5 +88,60 @@ describe("preklad celej odpovede", () => {
     const v = prevedOdpoved({ data: [] });
     expect(v.transakcie).toHaveLength(0);
     expect(v.chyby).toHaveLength(0);
+  });
+});
+
+// Tvar zoznamu účtov je odpísaný zo skutočnej odpovede (24. 10. 2026).
+const UCTY = {
+  data: [
+    {
+      id: "7c9a8242-5b05-4ab6-bc25-f543cf62079b",
+      iban: "SK7709000000005174850550",
+      bank_name: "Slovenská sporiteľňa, a.s.",
+      currency: "EUR",
+      active: true,
+      balance: 1903.83,
+    },
+    {
+      id: "f3d167db-6367-42dd-81bc-756359362437",
+      iban: "SK2902000000007307806959",
+      bank_name: "Všeobecná úverová banka, a.s.",
+      currency: "EUR",
+      active: true,
+      balance: 45870.99,
+    },
+  ],
+};
+
+describe("hľadanie účtu podľa IBAN", () => {
+  it("nájde ten správny", () => {
+    // Práve toto rozlíšenie sme predtým netrafili: dva slovenské eurové účty
+    // tej istej firmy, líšia sa len IBAN-om.
+    expect(najdiPodlaIbanu(UCTY, "SK2902000000007307806959")?.id).toBe(
+      "f3d167db-6367-42dd-81bc-756359362437",
+    );
+    expect(najdiPodlaIbanu(UCTY, "SK7709000000005174850550")?.id).toBe(
+      "7c9a8242-5b05-4ab6-bc25-f543cf62079b",
+    );
+  });
+
+  it("nevadia medzery ani malé písmená", () => {
+    expect(najdiPodlaIbanu(UCTY, "sk29 0200 0000 0073 0780 6959")?.id).toBe(
+      "f3d167db-6367-42dd-81bc-756359362437",
+    );
+  });
+
+  it("neznámy IBAN vráti null, nie prvý v poradí", () => {
+    expect(najdiPodlaIbanu(UCTY, "SK1111000000000000000000")).toBeNull();
+  });
+
+  it("cudzí tvar odpovede nezhodí hľadanie", () => {
+    expect(najdiPodlaIbanu({ nieco: "ine" }, "SK2902000000007307806959")).toBeNull();
+    expect(najdiPodlaIbanu(null, "SK2902000000007307806959")).toBeNull();
+  });
+
+  it("normalizácia IBAN-u", () => {
+    expect(cistyIban(" sk29 0200-0000 ")).toBe("SK2902000000");
+    expect(cistyIban(null)).toBe("");
   });
 });
