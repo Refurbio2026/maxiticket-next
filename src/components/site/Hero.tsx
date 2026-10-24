@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { useEvents } from "@/hooks/use-events";
 import { getLiveBuyersCount } from "@/lib/live-stats.functions";
+import { HeroKolaz } from "@/components/site/HeroKolaz";
 import hero from "@/assets/hero-concert.jpg";
 
 const stats = [
@@ -25,6 +26,14 @@ const stats = [
   { v: "8 400", l: "podujatí ročne" },
   { v: "120+", l: "miest na Slovensku" },
 ];
+
+/**
+ * Od koľkých kupujúcich sa odznak „Práve teraz" vôbec zobrazí.
+ *
+ * Pri jednom alebo dvoch to nie je sociálny dôkaz, ale priznanie, že je tu
+ * ticho — a pri nule by to bolo smiešne.
+ */
+const ODZNAK_OD = 5;
 
 export function Hero() {
   const navigate = useNavigate();
@@ -38,13 +47,27 @@ export function Hero() {
     queryFn: () => fetchBuyers(),
     refetchInterval: 30_000,
   });
+  const kupujucich = live?.count ?? 0;
 
-  // Ponuka miest vo vyhľadávaní vychádza z publikovaných podujatí v databáze.
+  // Ponuka miest vo vyhľadávaní aj koláž vychádzajú z publikovaných podujatí.
   const { data: publishedEvents = [] } = useEvents();
   const cities = useMemo(
     () => Array.from(new Set(publishedEvents.map((e) => e.city).filter(Boolean))).sort(),
     [publishedEvents],
   );
+
+  // Do koláže idú najbližšie podujatia, prednostne tie s obrázkom — karta bez
+  // obrázka vyzerá v koláži ako chyba.
+  const doKolaze = useMemo(() => {
+    const dnes = new Date().toISOString().slice(0, 10);
+    const buduce = publishedEvents
+      .filter((e) => e.event_date >= dnes)
+      .sort((a, b) => a.event_date.localeCompare(b.event_date));
+    return [...buduce.filter((e) => e.image_url), ...buduce.filter((e) => !e.image_url)].slice(
+      0,
+      4,
+    );
+  }, [publishedEvents]);
 
   const submit = () => {
     const search: Record<string, string> = {};
@@ -71,159 +94,184 @@ export function Hero() {
       />
       <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-background" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="absolute top-32 right-[8%] hidden lg:block animate-float"
-      >
-        <div className="glass rounded-2xl px-4 py-3 flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-accent/20 grid place-items-center">
-            <Sparkles className="size-5 text-accent" />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Práve teraz</div>
-            <div className="text-sm font-medium">{live?.count ?? 0} ľudí kupuje lístky</div>
-          </div>
-        </div>
-      </motion.div>
-
       <div className="relative mx-auto max-w-7xl px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-4xl"
-        >
-          <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs text-muted-foreground mb-6">
-            <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-            Najmodernejšia ticketing platforma na Slovensku
-          </div>
-
-          <h1 className="font-display font-bold tracking-tighter text-[clamp(2.75rem,7vw,6rem)] leading-[0.95]">
-            Každý zážitok <br />
-            má svoj <span className="text-gradient-flame">vstup.</span>
-          </h1>
-
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-            Koncerty, festivaly, šport, divadlo, stand-up — kupuj vstupenky bezpečne, okamžite a bez
-            skrytých poplatkov.
-          </p>
-
-          {/* search bar */}
+        <div className="grid items-start gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
+          {/* --- text --- */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.7 }}
-            className="mt-10 glass rounded-2xl p-2 max-w-3xl flex flex-col md:flex-row gap-2 shadow-card-premium"
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex items-center gap-3 px-4 flex-1 min-h-12">
-              <Search className="size-4 text-muted-foreground shrink-0" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={onKey}
-                placeholder="Hľadaj koncert, festival, klub..."
-                className="bg-transparent outline-none w-full text-sm placeholder:text-muted-foreground"
-              />
+            <div className="mb-6 inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+              Najmodernejšia ticketing platforma na Slovensku
             </div>
 
-            {/* City */}
-            <CityPicker city={city} setCity={setCity} cities={cities} />
+            {/*
+              Riadky sú `inline-block` s drobným vnútorným odsadením. Dôvod:
+              `leading-[1.06]` je tesné a pri slovenčine by chvost „ý“ alebo „j“
+              z prvého riadku sadol na mäkčeň či dĺžeň druhého. Odsadenie zväčší
+              inline box, takže sa riadky nedotknú, a pritom zostáva presne to
+              riadkovanie, ktoré má byť.
+            */}
+            <h1 className="font-display text-[clamp(2.75rem,6.2vw,5.5rem)] font-bold leading-[1.06] tracking-[-0.02em]">
+              <span className="inline-block py-[0.045em]">Každý zážitok</span>
+              <br />
+              <span className="inline-block py-[0.045em]">
+                má svoj <span className="text-gradient-flame">vstup.</span>
+              </span>
+            </h1>
 
-            {/* Date */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="hidden md:flex items-center gap-3 px-4 border-l border-border min-h-12 text-sm hover:text-foreground transition-colors"
-                >
-                  <CalIcon className="size-4 text-muted-foreground" />
-                  <span className={cn(date ? "text-foreground" : "text-muted-foreground")}>
-                    {date ? format(date, "d. M. yyyy") : "Vyber dátum"}
-                  </span>
-                  <ChevronDown className="size-3.5 text-muted-foreground" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-                {date && (
-                  <div className="p-2 border-t border-border">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs"
-                      onClick={() => setDate(undefined)}
-                    >
-                      Vyčistiť
-                    </Button>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
+            <p className="mt-7 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
+              Koncerty, festivaly, šport, divadlo, stand-up — kupuj vstupenky bezpečne, okamžite a
+              bez skrytých poplatkov.
+            </p>
 
-            <Button
-              onClick={submit}
-              className="rounded-xl bg-gradient-flame text-primary-foreground hover:opacity-90 px-6 h-12"
+            {/* vyhľadávanie */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.7 }}
+              className="mt-11 glass flex max-w-3xl flex-col gap-2 rounded-2xl p-2 shadow-card-premium md:flex-row"
             >
-              Nájsť
-              <ArrowRight className="size-4" />
-            </Button>
+              <div className="flex min-h-12 flex-1 items-center gap-3 px-4">
+                <Search className="size-4 shrink-0 text-muted-foreground" />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  onKeyDown={onKey}
+                  placeholder="Hľadaj koncert, festival, klub..."
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+
+              <CityPicker city={city} setCity={setCity} cities={cities} />
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="hidden min-h-12 items-center gap-3 border-l border-border px-4 text-sm transition-colors hover:text-foreground md:flex"
+                  >
+                    <CalIcon className="size-4 text-muted-foreground" />
+                    <span className={cn(date ? "text-foreground" : "text-muted-foreground")}>
+                      {date ? format(date, "d. M. yyyy") : "Vyber dátum"}
+                    </span>
+                    <ChevronDown className="size-3.5 text-muted-foreground" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                  {date && (
+                    <div className="border-t border-border p-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => setDate(undefined)}
+                      >
+                        Vyčistiť
+                      </Button>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+
+              <Button
+                onClick={submit}
+                className="h-12 rounded-xl bg-gradient-flame px-6 text-primary-foreground hover:opacity-90"
+              >
+                Nájsť
+                <ArrowRight className="size-4" />
+              </Button>
+            </motion.div>
+
+            {/* filtre na mobile — na desktope ich nahrádza riadok vyhľadávania */}
+            <div className="mt-3 flex flex-wrap gap-2 md:hidden">
+              <CityPicker city={city} setCity={setCity} cities={cities} mobile />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <CalIcon className="size-3.5" />
+                    {date ? format(date, "d. M.") : "Dátum"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
+              <span className="mr-1 text-muted-foreground">Trending:</span>
+              {["Pohoda 2026", "Calypso Bratislava", "HC Slovan", "Lúčnica", "Iné Kafe"].map(
+                (t) => (
+                  <button
+                    key={t}
+                    onClick={() => navigate({ to: "/events", search: { q: t } })}
+                    className="rounded-full border border-border px-3 py-1 transition-colors hover:border-primary hover:text-primary"
+                  >
+                    {t}
+                  </button>
+                ),
+              )}
+            </div>
+
+            {/* Čísla sú podradené nadpisu: bez gradientu a bez tučného rezu. */}
+            <div className="mt-20 grid max-w-xl grid-cols-3 gap-6 border-t border-black/5 pt-8 dark:border-white/10">
+              {stats.map((s) => (
+                <div key={s.l}>
+                  <div className="font-display text-4xl font-semibold tracking-tight text-foreground/90">
+                    {s.v}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">{s.l}</div>
+                </div>
+              ))}
+            </div>
           </motion.div>
 
-          {/* mobile filter summary */}
-          <div className="mt-3 md:hidden flex flex-wrap gap-2">
-            <CityPicker city={city} setCity={setCity} cities={cities} mobile />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <CalIcon className="size-3.5" />
-                  {date ? format(date, "d. M.") : "Dátum"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* quick tags */}
-          <div className="mt-6 flex flex-wrap gap-2 text-xs">
-            <span className="text-muted-foreground mr-1">Trending:</span>
-            {["Pohoda 2026", "Calypso Bratislava", "HC Slovan", "Lúčnica", "Iné Kafe"].map((t) => (
-              <button
-                key={t}
-                onClick={() => navigate({ to: "/events", search: { q: t } })}
-                className="rounded-full border border-border px-3 py-1 hover:border-primary hover:text-primary transition-colors"
+          {/* --- koláž --- */}
+          <div className="relative hidden lg:block">
+            {/*
+              Odznak je vnútri kontajnera, nie pri okraji obrazovky — predtým
+              visel na `right-[8%]` a pri úzkom okne sa orezal.
+            */}
+            {kupujucich >= ODZNAK_OD && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="absolute right-0 top-0 z-40 animate-float"
               >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-16 grid grid-cols-3 gap-6 max-w-xl">
-            {stats.map((s) => (
-              <div key={s.l}>
-                <div className="font-display text-3xl md:text-4xl font-bold text-gradient-flame">
-                  {s.v}
+                <div className="glass flex items-center gap-3 rounded-2xl px-4 py-3">
+                  <div className="grid size-10 place-items-center rounded-xl bg-accent/20">
+                    <Sparkles className="size-5 text-accent" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Práve teraz</div>
+                    <div className="text-sm font-medium">{kupujucich} ľudí kupuje lístky</div>
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-muted-foreground">{s.l}</div>
-              </div>
-            ))}
+              </motion.div>
+            )}
+
+            <div className="pt-14">
+              <HeroKolaz podujatia={doKolaze} />
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
