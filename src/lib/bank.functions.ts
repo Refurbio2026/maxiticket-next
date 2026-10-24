@@ -60,6 +60,10 @@ export type BankTransactionRecord = {
   refundovatelna: boolean;
   /** Prečo sa nedá — tlačidlo sa neskrýva, len zostane neaktívne. */
   refund_dovod: string | null;
+  /** Koľko je z objednávky vrátené; `null` = pohyb nemá objednávku. */
+  vratene: number | null;
+  /** `true`, keď je objednávka vrátená celá. */
+  vratene_cele: boolean;
 };
 
 async function assertAdmin(userId: string) {
@@ -300,7 +304,14 @@ async function dopocitajRefund(zaznamy: BankTransactionRecord[]): Promise<BankTr
       if (vratene + 0.01 >= Number(o.total_amount ?? 0)) return "Objednávka je už vrátená celá.";
       return null;
     })();
-    return { ...z, refundovatelna: dovod === null, refund_dovod: dovod };
+    const celkom = Number(o?.total_amount ?? 0);
+    return {
+      ...z,
+      refundovatelna: dovod === null,
+      refund_dovod: dovod,
+      vratene: o ? vratene : null,
+      vratene_cele: !!o && vratene > 0 && vratene + 0.01 >= celkom,
+    };
   });
 }
 
@@ -328,6 +339,8 @@ function naZaznam(t: Record<string, unknown>): BankTransactionRecord {
     // že sa tlačidlo niekde ukáže bez overenia stavu objednávky.
     refundovatelna: false,
     refund_dovod: null,
+    vratene: null,
+    vratene_cele: false,
   };
 }
 

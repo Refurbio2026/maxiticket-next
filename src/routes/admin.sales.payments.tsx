@@ -200,9 +200,14 @@ function Page() {
                     <td className="p-3 text-right whitespace-nowrap">
                       {eur(p.amount, p.currency)}
                       {!!p.order_refunded && p.order_refunded > 0 && (
-                        <div className="text-xs text-violet-600 dark:text-violet-400">
-                          vrátené {eur(p.order_refunded, p.currency)}
-                        </div>
+                        <Badge
+                          variant="outline"
+                          className="mt-1 border-violet-500/40 text-violet-600 dark:text-violet-400"
+                        >
+                          {p.order_total != null && p.order_refunded + 0.01 >= p.order_total
+                            ? "Refundované"
+                            : `Vrátené ${eur(p.order_refunded, p.currency)}`}
+                        </Badge>
                       )}
                     </td>
                     <td className="p-3">

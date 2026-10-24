@@ -445,6 +445,16 @@ function Page() {
                         platieb brány, kde je pohyb spárovaný s objednávkou;
                         tlačidlo sa neskrýva, len povie, prečo sa nedá.
                       */}
+                      {/* Vrátenie je stav objednávky, nie pohybu — preto sa
+                          píše sem, k riadku, ktorého sa týka. */}
+                      {!!t.vratene && t.vratene > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="mr-1 border-violet-500/40 text-violet-600 dark:text-violet-400"
+                        >
+                          {t.vratene_cele ? "Refundované" : `Vrátené ${eur(t.vratene, t.currency)}`}
+                        </Badge>
+                      )}
                       {t.matched_order_id && (
                         <Button
                           size="sm"
