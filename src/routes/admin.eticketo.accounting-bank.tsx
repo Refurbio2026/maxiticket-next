@@ -24,7 +24,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Landmark, Link2, Link2Off, Loader2, Plus, Trash2, Wand2 } from "lucide-react";
+import {
+  Download,
+  Landmark,
+  Link2,
+  Link2Off,
+  Loader2,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Wand2,
+} from "lucide-react";
 import {
   listBankAccounts,
   upsertBankAccount,
@@ -33,6 +43,7 @@ import {
   runMatching,
   setTransactionMatch,
   type BankAccountRecord,
+  type BankTransactionRecord,
 } from "@/lib/bank.functions";
 import {
   listStatementFormats,
@@ -43,6 +54,7 @@ import {
   deleteStatementSource,
   type ZdrojRecord,
 } from "@/lib/bank-ingest.functions";
+import { refundOrder } from "@/lib/refunds.functions";
 
 export const Route = createFileRoute("/admin/eticketo/accounting-bank")({
   head: () => ({ meta: [{ title: "Účtovanie · výpisy z banky · eticketo.eu Admin" }] }),
@@ -80,6 +92,10 @@ function Page() {
   const autoMatch = useServerFn(runMatching);
   const setMatch = useServerFn(setTransactionMatch);
 
+  const vrat = useServerFn(refundOrder);
+  const [refundFor, setRefundFor] = useState<BankTransactionRecord | null>(null);
+  const [refundSuma, setRefundSuma] = useState("");
+  const [refundDovod, setRefundDovod] = useState("");
   const [editing, setEditing] = useState<AccountForm | null>(null);
   const [accountFilter, setAccountFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "matched" | "unmatched">("all");
@@ -206,6 +222,68 @@ function Page() {
       <UploadCard accounts={accountRows} onHotovo={invalidate} />
 
       <ZdrojeCard accounts={accountRows} onHotovo={invalidate} />
+
+      <Dialog open={!!refundFor} onOpenChange={(o) => !o && setRefundFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Vrátiť peniaze</DialogTitle>
+            <DialogDescription>
+              {refundFor &&
+                `${refundFor.counterparty_name ?? "Zákazník"} · ${eur(refundFor.amount, refundFor.currency)} · objednávka ${refundFor.matched_order_short ?? ""}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Suma (prázdne = celá objednávka)</Label>
+              <Input
+                inputMode="decimal"
+                placeholder={refundFor ? String(refundFor.amount) : ""}
+                value={refundSuma}
+                onChange={(e) => setRefundSuma(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Dôvod</Label>
+              <Input
+                placeholder="Napríklad zrušené podujatie"
+                value={refundDovod}
+                onChange={(e) => setRefundDovod(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Peniaze pošle platobná brána a zákazníkovi odíde e-mail.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRefundFor(null)}>
+              Zrušiť
+            </Button>
+            <Button
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!refundFor?.matched_order_id) return;
+                try {
+                  await vrat({
+                    data: {
+                      order_id: refundFor.matched_order_id,
+                      amount: refundSuma.trim() ? Number(refundSuma.replace(",", ".")) : undefined,
+                      reason: refundDovod.trim() || null,
+                      notify_customer: true,
+                    },
+                  });
+                  toast.success("Peniaze vrátené");
+                  setRefundFor(null);
+                  invalidate();
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Vrátenie zlyhalo");
+                }
+              }}
+            >
+              Vrátiť peniaze
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {accounts.isLoading ? (
@@ -361,8 +439,29 @@ function Page() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {t.status === "matched" && (
-                      <div className="flex justify-end">
+                    <div className="flex justify-end gap-1">
+                      {/*
+                        Vrátenie peňazí priamo z výpisu. Má zmysel pri knihe
+                        platieb brány, kde je pohyb spárovaný s objednávkou;
+                        tlačidlo sa neskrýva, len povie, prečo sa nedá.
+                      */}
+                      {t.matched_order_id && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive"
+                          disabled={!t.refundovatelna}
+                          title={t.refund_dovod ?? "Vrátiť peniaze"}
+                          onClick={() => {
+                            setRefundFor(t);
+                            setRefundSuma("");
+                            setRefundDovod("");
+                          }}
+                        >
+                          <RotateCcw className="size-3.5" />
+                        </Button>
+                      )}
+                      {t.status === "matched" && (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -371,8 +470,8 @@ function Page() {
                         >
                           <Link2Off className="size-3.5" />
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

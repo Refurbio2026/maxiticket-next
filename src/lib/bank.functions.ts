@@ -56,6 +56,10 @@ export type BankTransactionRecord = {
   /** Krátke id spárovanej objednávky pre výpis. */
   matched_order_short: string | null;
   duplicate_of: string | null;
+  /** Dá sa z tohto pohybu vrátiť platba? Platí pre knihu platieb brány. */
+  refundovatelna: boolean;
+  /** Prečo sa nedá — tlačidlo sa neskrýva, len zostane neaktívne. */
+  refund_dovod: string | null;
 };
 
 async function assertAdmin(userId: string) {
@@ -229,7 +233,7 @@ export const listBankTransactions = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    return (rows || []).map(naZaznam);
+    return dopocitajRefund((rows || []).map(naZaznam));
   });
 
 /** Platby, ktoré čakajú na človeka. Toto je obrazovka „Nespárované platby". */
@@ -254,8 +258,51 @@ export const listNeedsReview = createServerFn({ method: "POST" })
     if (data.account_id) q = q.eq("account_id", data.account_id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows || []).map(naZaznam);
+    return dopocitajRefund((rows || []).map(naZaznam));
   });
+
+/**
+ * Doplní k pohybom, či sa z nich dá vrátiť platba.
+ *
+ * Týka sa knihy platieb brány (účet typu `psp`): pohyb je tam spárovaný
+ * s objednávkou, takže vrátenie sa dá spustiť rovno z výpisu. Pri bankovom
+ * prevode to zmysel nedáva — peniaze by sa museli poslať späť prevodom,
+ * nie cez bránu.
+ */
+async function dopocitajRefund(zaznamy: BankTransactionRecord[]): Promise<BankTransactionRecord[]> {
+  const idObjednavok = [...new Set(zaznamy.map((z) => z.matched_order_id).filter(Boolean))];
+  if (!idObjednavok.length) return zaznamy;
+
+  const { data: objednavky } = await supabaseAdmin
+    .from("orders")
+    .select("id, status, total_amount, refunded_amount, payment_provider")
+    .in("id", idObjednavok as string[]);
+
+  const { vsetkyBrany, pripravPristupy } = await import("./payment-gateways/index.server");
+  await pripravPristupy();
+  const vieRefundovat = new Map(vsetkyBrany().map((b) => [b.id as string, b.supportsRefund]));
+
+  return zaznamy.map((z) => {
+    if (!z.matched_order_id) return z;
+    const o = (objednavky ?? []).find((x) => x.id === z.matched_order_id);
+    const vratene = Number(o?.refunded_amount ?? 0);
+    const dovod = ((): string | null => {
+      if (!o) return "Objednávka sa nenašla.";
+      if (z.amount <= 0) return "Toto je už vrátenie, nie platba.";
+      if (!o.payment_provider)
+        return "Objednávka nebola platená cez bránu — vráť peniaze prevodom.";
+      if (!(vieRefundovat.get(o.payment_provider) ?? false)) {
+        return `Brána ${o.payment_provider} nevie vrátiť peniaze cez API — sprav to v jej portáli.`;
+      }
+      if (o.status !== "paid") {
+        return `Objednávka nie je zaplatená (stav „${o.status}“) — nie je čo vracať.`;
+      }
+      if (vratene + 0.01 >= Number(o.total_amount ?? 0)) return "Objednávka je už vrátená celá.";
+      return null;
+    })();
+    return { ...z, refundovatelna: dovod === null, refund_dovod: dovod };
+  });
+}
 
 function naZaznam(t: Record<string, unknown>): BankTransactionRecord {
   const orderId = (t.matched_order_id as string | null) ?? null;
@@ -277,6 +324,10 @@ function naZaznam(t: Record<string, unknown>): BankTransactionRecord {
     matched_order_id: orderId,
     matched_order_short: orderId ? orderId.slice(0, 8).toUpperCase() : null,
     duplicate_of: (t.duplicate_of as string | null) ?? null,
+    // Dopĺňa sa až v `dopocitajRefund` — tu zámerne nič, aby sa nestalo,
+    // že sa tlačidlo niekde ukáže bez overenia stavu objednávky.
+    refundovatelna: false,
+    refund_dovod: null,
   };
 }
 
