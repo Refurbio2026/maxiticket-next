@@ -89,15 +89,41 @@ export async function ulozVysledok(
     status: "received",
   }));
 
-  const { data: vlozene, error } = await supabaseAdmin
-    .from("bank_transactions")
-    .upsert(riadky, { onConflict: "account_id,external_id", ignoreDuplicates: true })
-    .select("id");
-  if (error) throw new Error(error.message);
+  // Duplicitám sa vyhýbame dopytom, nie cez ON CONFLICT.
+  //
+  // Jedinečnosť stráži `bank_transactions_external_key`, čo je ČIASTOČNÝ index
+  // (`where external_id is not null`). Postgres na taký index vie naviazať
+  // ON CONFLICT len vtedy, keď sa v príkaze zopakuje aj jeho podmienka —
+  // a tú cez PostgREST poslať nevieme. Výsledkom bolo „there is no unique or
+  // exclusion constraint matching the ON CONFLICT specification" a zdroj
+  // neuložil nič. Chyba tu bola od začiatku; prišlo sa na ňu až keď pribudol
+  // prvý automatický zdroj.
+  const kluce = riadky.map((r) => r.external_id).filter((x): x is string => !!x);
+  const uz = new Set<string>();
+  // Dopyt sa delí: zoznam kľúčov ide do URL a tá má svoj strop.
+  for (let i = 0; i < kluce.length; i += 200) {
+    const { data, error } = await supabaseAdmin
+      .from("bank_transactions")
+      .select("external_id")
+      .eq("account_id", accountId)
+      .in("external_id", kluce.slice(i, i + 200));
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) if (r.external_id) uz.add(r.external_id);
+  }
+
+  const nove = riadky.filter((r) => !r.external_id || !uz.has(r.external_id));
+  let vlozenych = 0;
+  if (nove.length) {
+    const { data, error } = await supabaseAdmin.from("bank_transactions").insert(nove).select("id");
+    // 23505 = ten istý pohyb stihol pribudnúť medzi dopytom a zápisom.
+    // Index si ustrážil svoje; pre nás to nie je chyba, len nula nových.
+    if (error && error.code !== "23505") throw new Error(error.message);
+    vlozenych = data?.length ?? 0;
+  }
 
   return {
     transakcii: riadky.length,
-    novych: vlozene?.length ?? 0,
+    novych: vlozenych,
     chyb: chyby.length,
     chyby,
     statement_id: statementId,
