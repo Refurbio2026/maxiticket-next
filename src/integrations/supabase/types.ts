@@ -1978,6 +1978,38 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * Zrkadlo objednávok starého systému. Dopĺňané ručne — generátor typov
+       * mieri na iný projekt, takže `om_*` tabuľky v ňom nie sú. Uvedené sú
+       * len stĺpce, ktoré aplikácia naozaj číta.
+       */
+      om_orders: {
+        Row: {
+          id_basket: string | null;
+          id_seat_note: string | null;
+          ordered_at: string | null;
+          paid_at: string | null;
+          total: number | null;
+          vs: string | null;
+        };
+        Insert: {
+          id_basket?: string | null;
+          id_seat_note?: string | null;
+          ordered_at?: string | null;
+          paid_at?: string | null;
+          total?: number | null;
+          vs?: string | null;
+        };
+        Update: {
+          id_basket?: string | null;
+          id_seat_note?: string | null;
+          ordered_at?: string | null;
+          paid_at?: string | null;
+          total?: number | null;
+          vs?: string | null;
+        };
+        Relationships: [];
+      };
       job_runs: {
         Row: {
           error: string | null;
