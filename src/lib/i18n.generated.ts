@@ -206,6 +206,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.pause": "Pauza",
     "orgMktList.pixelDesc":
       "Nastav GA4, GTM, Google Ads konverzie a Meta Pixel. Použité v predajnom flow.",
+    "orgMktList.pixelNotYet":
+      "Meracie kódy sa uložia, ale na verejný web sa zatiaľ nevkladajú — skripty tretích strán sa v EÚ nesmú spustiť bez súhlasu návštevníka a lištu so súhlasom ešte nemáme. Dovtedy sa tu nič nemeria.",
     "orgMktList.pixelTitle": "Pixel tracking a analytika",
     "orgMktList.saveSettings": "Uložiť nastavenia",
     "orgMktList.start": "Spustiť",
@@ -842,6 +844,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.pause": "Pause",
     "orgMktList.pixelDesc":
       "Set up GA4, GTM, Google Ads conversions and Meta Pixel. Used in the sales flow.",
+    "orgMktList.pixelNotYet":
+      "The tracking IDs are saved, but they are not injected into the public site yet — in the EU third-party scripts may not run without the visitor's consent, and we have no consent banner yet. Until then nothing is measured here.",
     "orgMktList.pixelTitle": "Pixel tracking and analytics",
     "orgMktList.saveSettings": "Save settings",
     "orgMktList.start": "Start",
@@ -1479,6 +1483,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.pause": "Pause",
     "orgMktList.pixelDesc":
       "Richte GA4, GTM, Google Ads-Conversions und Meta Pixel ein. Wird im Verkaufsablauf verwendet.",
+    "orgMktList.pixelNotYet":
+      "Die Mess-IDs werden gespeichert, aber noch nicht auf der öffentlichen Website eingebunden — in der EU dürfen Skripte Dritter ohne Einwilligung der Besucher nicht laufen, und ein Einwilligungsbanner haben wir noch nicht. Bis dahin wird hier nichts gemessen.",
     "orgMktList.pixelTitle": "Pixel-Tracking und Analytik",
     "orgMktList.saveSettings": "Einstellungen speichern",
     "orgMktList.start": "Starten",
@@ -2120,6 +2126,8 @@ export const generated: { sk: GenDict; en: GenDict; de: GenDict; hu: GenDict } =
     "orgMktList.pause": "Szünet",
     "orgMktList.pixelDesc":
       "Állítsd be a GA4-et, GTM-et, Google Ads konverziókat és a Meta Pixelt. Az értékesítési folyamatban használatos.",
+    "orgMktList.pixelNotYet":
+      "A mérőkódokat elmentjük, de a nyilvános oldalra egyelőre nem kerülnek be — az EU-ban harmadik féltől származó szkriptek a látogató hozzájárulása nélkül nem futhatnak, és hozzájárulási sávunk még nincs. Addig itt semmi sem mérhető.",
     "orgMktList.pixelTitle": "Pixelkövetés és analitika",
     "orgMktList.saveSettings": "Beállítások mentése",
     "orgMktList.start": "Indítás",

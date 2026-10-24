@@ -304,28 +304,3 @@ export function emptyMetrics(): CampaignMetrics {
 }
 
 // Simulácia výsledkov reklamy – pre potreby mock dashboardu.
-export function simulateMetrics(budget: number, daysActive = 7): CampaignMetrics {
-  const spend = Math.min(budget, +(budget * (0.4 + Math.random() * 0.6)).toFixed(2));
-  const cpc = +(0.18 + Math.random() * 0.42).toFixed(2);
-  const clicks = Math.max(1, Math.floor(spend / cpc));
-  const impressions = clicks * (60 + Math.floor(Math.random() * 80));
-  const ctr = +((clicks / impressions) * 100).toFixed(2);
-  const conversionRate = 0.04 + Math.random() * 0.08;
-  const conversions = Math.floor(clicks * conversionRate);
-  const tickets_sold = conversions;
-  const avgPrice = 18 + Math.random() * 20;
-  const revenue = +(tickets_sold * avgPrice).toFixed(2);
-  const roas = spend > 0 ? +(revenue / spend).toFixed(2) : 0;
-  return {
-    impressions,
-    clicks,
-    cpc,
-    ctr,
-    conversions,
-    tickets_sold,
-    revenue_eur: revenue,
-    spend_eur: spend,
-    roas,
-    updated_at: new Date().toISOString(),
-  };
-}

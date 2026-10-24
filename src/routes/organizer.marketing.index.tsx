@@ -15,12 +15,7 @@ import {
   setCampaignStatus as setCampaignStatusFn,
   deleteCampaign as deleteCampaignFn,
 } from "@/lib/marketing.functions";
-import {
-  simulateMetrics,
-  type CampaignGoal,
-  type Campaign,
-  type PixelSettings,
-} from "@/lib/marketing-db";
+import { type CampaignGoal, type Campaign, type PixelSettings } from "@/lib/marketing-db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +44,7 @@ import {
   Trash2,
   Wand2,
   Settings2,
+  Info as InfoIkona,
   Facebook,
   ChromeIcon,
 } from "lucide-react";
@@ -770,6 +766,16 @@ function PixelForm({ initial, organizerId }: { initial: PixelSettings; organizer
           <Settings2 className="h-4 w-4 text-primary" /> {t("orgMktList.pixelTitle")}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">{t("orgMktList.pixelDesc")}</p>
+      </div>
+      {/*
+        Kódy sa uložia, ale na verejný web sa zatiaľ nevkladajú: meracie
+        skripty tretích strán sa v EÚ nesmú spustiť bez súhlasu návštevníka
+        a lištu so súhlasom zatiaľ nemáme. Radšej to povieme rovno, než aby
+        organizátor čakal na čísla, ktoré neprídu.
+      */}
+      <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400">
+        <InfoIkona className="size-4 shrink-0 mt-0.5" />
+        <span>{t("orgMktList.pixelNotYet")}</span>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Field
