@@ -31,6 +31,26 @@ export type Kontext = {
 
 export type Zaradenie = { mimo: true; dovod: string; popis: string } | null;
 
+/**
+ * Platobné brány a zúčtovacie služby.
+ *
+ * Ich výplata je súhrn za mnoho objednávok naraz, takže sa k jednej
+ * objednávke spárovať ani nedá — a netreba: platbu kartou označí za
+ * prijatú notifikácia z brány, nie bankový pohyb. Do zoznamu na riešenie
+ * teda nepatrí; je to účtovná položka.
+ */
+const BRANY = [
+  "comgate",
+  "gopay",
+  "stripe",
+  "global payments",
+  "worldline",
+  "besteron",
+  "trustpay",
+  "paypal",
+  "sumup",
+];
+
 const BANKY = [
   "tatra banka",
   "vseobecna uverova banka",
@@ -85,14 +105,23 @@ export function zaradMimo(tx: PohybNaPosudenie, k: Kontext): Zaradenie {
     return { mimo: true, dovod: "vlastny_prevod", popis: "Presun medzi vlastnými účtami." };
   }
 
-  // 3) Poplatky, dane a úroky banky.
+  // 3) Výplata z platobnej brány.
+  if (BRANY.some((b) => protistrana.includes(b) || sprava.includes(b))) {
+    return {
+      mimo: true,
+      dovod: "vyuctovanie_brany",
+      popis: "Súhrnná výplata z platobnej brány — jednotlivé platby už spárovala brána.",
+    };
+  }
+
+  // 4) Poplatky, dane a úroky banky.
   const odBanky = BANKY.some((b) => protistrana.includes(bez(b)));
   const jePoplatok = POPLATKY.some((p) => sprava.includes(bez(p)) || protistrana.includes(bez(p)));
   if ((odBanky || jePoplatok) && !tx.vs_normalized) {
     return { mimo: true, dovod: "bankovy_poplatok", popis: "Poplatok, daň alebo úrok banky." };
   }
 
-  // 4) Odchádzajúca platba bez variabilného symbolu.
+  // 5) Odchádzajúca platba bez variabilného symbolu.
   //    S variabilným symbolom ju nechávame tak: mohlo by ísť o vrátenie
   //    vstupného, ktoré chceme vidieť.
   if (tx.amount < 0 && !tx.vs_normalized) {

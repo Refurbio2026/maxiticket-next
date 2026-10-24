@@ -44,6 +44,23 @@ describe("čo patrí mimo predaja vstupeniek", () => {
     ).toBe("bankovy_poplatok");
   });
 
+  it("výplatu z platobnej brány — je to súhrn za veľa objednávok", () => {
+    // Platbu kartou označí za prijatú notifikácia z brány; bankový pohyb je
+    // až súhrnná výplata, ktorá sa k jednej objednávke spárovať nedá.
+    expect(zaradMimo(pohyb({ amount: 2035.59, counterparty_name: "Comgate a.s." }), K)?.dovod).toBe(
+      "vyuctovanie_brany",
+    );
+    expect(zaradMimo(pohyb({ amount: -0.1, counterparty_name: "Comgate a.s." }), K)?.dovod).toBe(
+      "vyuctovanie_brany",
+    );
+    expect(
+      zaradMimo(
+        pohyb({ amount: 540.2, counterparty_name: "GoPay s.r.o.", message: "vyuctovanie" }),
+        K,
+      )?.dovod,
+    ).toBe("vyuctovanie_brany");
+  });
+
   it("odchádzajúcu platbu bez symbolu", () => {
     expect(zaradMimo(pohyb({ amount: -15000 }), K)?.dovod).toBe("odchadzajuca");
   });
