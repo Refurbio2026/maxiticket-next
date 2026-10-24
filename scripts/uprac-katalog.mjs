@@ -14,6 +14,7 @@
 // POUŽITIE:
 //   node scripts/uprac-katalog.mjs          # len vypíše, čo by spravil
 //   node scripts/uprac-katalog.mjs zapis    # vykoná zmeny
+import fs from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
 const env = {};
