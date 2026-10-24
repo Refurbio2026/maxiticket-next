@@ -7,8 +7,14 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ipBucket } from "./client-ip.server";
 import { pripravPristupy } from "./pristupy.server";
-import { druhDotazu, platneIco, type Firma } from "./firmy/firmy";
-import { hladajVRpo, overIcDph } from "./firmy/firmy.server";
+import { druhDotazu, platneIco, zlucFirmy, type Firma } from "./firmy/firmy";
+import {
+  hladajVRpo,
+  hladajVoFinstate,
+  jeFinstatNastaveny,
+  navrhyZFinstatu,
+  overIcDph,
+} from "./firmy/firmy.server";
 
 export type VysledokHladania = {
   firmy: Firma[];
@@ -57,7 +63,7 @@ export const najdiFirmu = createServerFn({ method: "POST" })
       };
     }
 
-    const firmy = await hladajVRpo(data.dotaz);
+    const firmy = await zozbierajFirmy(data.dotaz, druh);
 
     let icDph: VysledokHladania["icDph"] = null;
     if (druh === "ic_dph") {
@@ -91,3 +97,52 @@ export const najdiFirmu = createServerFn({ method: "POST" })
       icDph,
     };
   });
+
+/**
+ * Zozbiera firmy zo všetkých zdrojov, ktoré sú k dispozícii.
+ *
+ * Pri IČO sa FinStat a RPO volajú **naraz** a výsledky sa zlúčia: FinStat dá
+ * DIČ a IČ DPH, register zápis v obchodnom registri. Oba majú vlastný časový
+ * limit, takže keď jeden nejde, druhý to dotiahne.
+ *
+ * Pri názve sa použije FinStat autocomplete (keď je napojený), inak RPO.
+ * Autocomplete dáva len názov, IČO a mesto — zvyšok sa dotiahne až keď si
+ * zákazník niektorú vyberie, aby sa nepálil denný limit na návrhy.
+ */
+async function zozbierajFirmy(
+  dotaz: string,
+  druh: ReturnType<typeof druhDotazu>,
+): Promise<Firma[]> {
+  if (druh === "ico") {
+    const [zFinstatu, zRpo] = await Promise.all([
+      jeFinstatNastaveny() ? hladajVoFinstate(dotaz) : Promise.resolve(null),
+      hladajVRpo(dotaz, 1),
+    ]);
+    const zaklad = zFinstatu ?? zRpo[0] ?? null;
+    if (!zaklad) return [];
+    // Zlučuje sa v tomto poradí: čo chýba prvému, doplní druhý.
+    const doplnok = zFinstatu ? zRpo[0] : null;
+    return [zlucFirmy(zaklad, doplnok)];
+  }
+
+  if (druh === "nazov" && jeFinstatNastaveny()) {
+    const navrhy = await navrhyZFinstatu(dotaz);
+    if (navrhy.length > 0) {
+      return navrhy.map((n): Firma => ({
+        nazov: n.zrusena ? `${n.nazov} (zrušená)` : n.nazov,
+        ico: n.ico,
+        // Podrobnosti sa dotiahnu až po vybraní — pozri komentár vyššie.
+        dic: null,
+        ic_dph: null,
+        ulica: null,
+        mesto: n.mesto,
+        psc: null,
+        stat: "SK",
+        zdroj: "finstat" as const,
+        registracia: null,
+      }));
+    }
+  }
+
+  return hladajVRpo(dotaz);
+}

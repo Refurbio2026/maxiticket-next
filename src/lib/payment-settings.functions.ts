@@ -22,6 +22,7 @@ import {
   type PolozkaKonfiguracie,
 } from "./payment-gateways/types";
 import { systemPodlaId, vsetkyFakturacneSystemy } from "./invoicing/index.server";
+import { finstatKonfiguracia, finstatStav } from "./firmy/firmy.server";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
 import { jePovolenaSadzba, predvolenaSadzba, zabudniSadzbu } from "./dph.server";
@@ -30,7 +31,10 @@ import { jePovolenaSadzba, predvolenaSadzba, zabudniSadzbu } from "./dph.server"
 // a nedá sa nastaviť ako predvolená.
 const ID_BRANY = z.enum(GATEWAY_IDS as unknown as [GatewayId, ...GatewayId[]]);
 const ID_FAKTURACIE = z.enum(["superfaktura", "faktero"]);
-const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE]);
+// Registre firiem nie sú brána ani fakturácia, ale prístupy sa im ukladajú
+// tým istým spôsobom.
+const ID_REGISTRA = z.enum(["finstat"]);
+const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE, ID_REGISTRA]);
 
 export type PrehladBrany = {
   id: string;
@@ -67,9 +71,20 @@ export type PrehladFakturacie = {
   chybaju: string[];
 };
 
+export type PrehladRegistra = {
+  id: string;
+  label: string;
+  hint: string;
+  nakonfigurovana: boolean;
+  stav: string;
+  konfiguracia: PolozkaKonfiguracie[];
+  chybaju: string[];
+};
+
 export type PrehladPlatobnychBran = {
   brany: PrehladBrany[];
   fakturacia: PrehladFakturacie[];
+  registre: PrehladRegistra[];
   /** Systém, ktorý práve vystavuje faktúry. */
   fakturacnySystem: string | null;
   /** Predvolená sadzba DPH v percentách. */
@@ -211,6 +226,24 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
         chybaju: konfiguracia.filter((k) => k.povinna && !k.vyplnena).map((k) => k.premenna),
       };
     });
+
+    // Registre firiem — zatiaľ len FinStat. Nie je to brána ani fakturácia,
+    // ale prístupy sa ukladajú tým istým spôsobom, tak aj karta vyzerá rovnako.
+    const stavFinstatu = finstatStav();
+    const konfiguraciaFinstatu = finstatKonfiguracia();
+    const registre: PrehladRegistra[] = [
+      {
+        id: "finstat",
+        label: "FinStat (register firiem)",
+        hint: "Dopĺňa DIČ a IČ DPH pri nákupe na firmu. Bez neho sa hľadá v bezplatnom RPO, ktoré daňové čísla nedáva.",
+        nakonfigurovana: stavFinstatu.pripravene,
+        stav: stavFinstatu.detail,
+        konfiguracia: konfiguraciaFinstatu,
+        chybaju: konfiguraciaFinstatu
+          .filter((k) => k.povinna && !k.vyplnena)
+          .map((k) => k.premenna),
+      },
+    ];
     const pouzivaSa =
       fakturacia.find((f) => f.id === zvolenaFakturacia && f.nakonfigurovana)?.id ??
       fakturacia.find((f) => f.nakonfigurovana)?.id ??
@@ -225,6 +258,7 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
     return {
       brany,
       fakturacia,
+      registre,
       fakturacnySystem: pouzivaSa,
       sadzbaDph: await predvolenaSadzba(),
       adresaWebu,

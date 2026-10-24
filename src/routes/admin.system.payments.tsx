@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   getPaymentGatewayOverview,
+  type PrehladRegistra,
   savePaymentCredentials,
   testPaymentGateway,
   updatePaymentGatewaySettings,
@@ -293,6 +294,20 @@ function PaymentGatewaysPage() {
             onTest={() => otestovat(f.id)}
             onUlozPristupy={(values) => ulozPristupy(f.id, values)}
           />
+        ))}
+      </div>
+
+      <div>
+        <h2 className="font-display text-xl font-bold tracking-tight mt-6">Register firiem</h2>
+        <p className="text-muted-foreground text-sm mt-1">
+          Dopĺňa údaje, keď zákazník kupuje na firmu. Bez tohto napojenia sa hľadá v bezplatnom
+          registri právnických osôb, ktorý nedáva DIČ ani IČ DPH.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {data.registre.map((r) => (
+          <RegisterKarta key={r.id} register={r} onUlozPristupy={(v) => ulozPristupy(r.id, v)} />
         ))}
       </div>
 
@@ -925,6 +940,71 @@ function TransferCard() {
       <div className="flex justify-end">
         <Button onClick={() => mutacia.mutate(aktualne)} disabled={mutacia.isPending || !form}>
           Uložiť
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Karta registra firiem (FinStat).
+ *
+ * Nie je to brána ani fakturácia, takže nemá prepínač „používať" — register
+ * sa použije vtedy, keď má kľúče. Preto je karta jednoduchšia než ostatné.
+ */
+function RegisterKarta({
+  register,
+  onUlozPristupy,
+}: {
+  register: PrehladRegistra;
+  onUlozPristupy: (values: Record<string, string | null>) => Promise<void>;
+}) {
+  const [zmeny, setZmeny] = useState<Record<string, string | null>>({});
+  const [uklada, setUklada] = useState(false);
+  const zmenene = Object.keys(zmeny).length > 0;
+
+  const uloz = async () => {
+    setUklada(true);
+    try {
+      await onUlozPristupy(zmeny);
+      setZmeny({});
+    } finally {
+      setUklada(false);
+    }
+  };
+
+  return (
+    <Card className="p-5 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="font-display font-semibold">{register.label}</div>
+          <p className="text-sm text-muted-foreground mt-0.5">{register.hint}</p>
+        </div>
+        <Badge variant={register.nakonfigurovana ? "default" : "secondary"}>
+          {register.nakonfigurovana ? "napojený" : "nenapojený"}
+        </Badge>
+      </div>
+
+      <p className="text-xs text-muted-foreground">{register.stav}</p>
+
+      <div className="space-y-3">
+        {register.konfiguracia.map((k) => (
+          <PolePristupu
+            key={k.premenna}
+            polozka={k}
+            hodnota={zmeny[k.premenna]}
+            onZmena={(v) => setZmeny((z) => ({ ...z, [k.premenna]: v }))}
+            onVratit={() =>
+              setZmeny((z) => {
+                const { [k.premenna]: _, ...zvysok } = z;
+                return zvysok;
+              })
+            }
+          />
+        ))}
+        <Button size="sm" onClick={uloz} disabled={!zmenene || uklada}>
+          {uklada && <Loader2 className="size-4 mr-2 animate-spin" />}
+          Uložiť prístupy
         </Button>
       </div>
     </Card>

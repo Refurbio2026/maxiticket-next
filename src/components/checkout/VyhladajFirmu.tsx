@@ -39,7 +39,7 @@ export function VyhladajFirmu({ onVybrana }: Props) {
       setFirmy(v.firmy);
       setSprava(v.sprava);
       // Jediný výsledok netreba vyberať klikom.
-      if (v.firmy.length === 1) vyber(v.firmy[0]);
+      if (v.firmy.length === 1) await vyber(v.firmy[0]);
     } catch (e) {
       setFirmy([]);
       setSprava(e instanceof Error ? e.message : "Hľadanie sa nepodarilo.");
@@ -48,9 +48,23 @@ export function VyhladajFirmu({ onVybrana }: Props) {
     }
   };
 
-  const vyber = (f: Firma) => {
-    onVybrana(naFormular(f));
-    setVybrane(f.ico || f.nazov);
+  const vyber = async (f: Firma) => {
+    // Návrhy podľa názvu dávajú len názov, IČO a mesto — podrobnosti sa
+    // dotiahnu až tu, aby sa denný limit nepálil na každé písmeno v poli.
+    let plna = f;
+    if (f.ico && !f.dic && !f.ulica) {
+      setHlada(true);
+      try {
+        const v = await hladaj({ data: { dotaz: f.ico } });
+        if (v.firmy[0]) plna = v.firmy[0];
+      } catch {
+        // Nepodarilo sa dotiahnuť — doplní sa aspoň to, čo už vieme.
+      } finally {
+        setHlada(false);
+      }
+    }
+    onVybrana(naFormular(plna));
+    setVybrane(plna.ico || plna.nazov);
     setFirmy([]);
   };
 
@@ -95,7 +109,7 @@ export function VyhladajFirmu({ onVybrana }: Props) {
             <li key={`${f.ico}-${f.nazov}`}>
               <button
                 type="button"
-                onClick={() => vyber(f)}
+                onClick={() => void vyber(f)}
                 className="flex w-full items-start gap-2 p-2.5 text-left text-sm hover:bg-muted/60"
               >
                 <Building2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -114,7 +128,7 @@ export function VyhladajFirmu({ onVybrana }: Props) {
       )}
 
       <p className="mt-2 text-xs text-muted-foreground">
-        Hľadá sa v registri právnických osôb. DIČ a IČ DPH register nedáva — tie doplň sám.
+        Údaje sa dopĺňajú z registra firiem. Vždy ich prosím skontroluj.
       </p>
     </div>
   );

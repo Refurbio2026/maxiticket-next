@@ -10,9 +10,18 @@
 //     IČO, sídlo, zápis v obchodnom registri. **Nedá DIČ ani IČ DPH.**
 //   * VIES (EÚ) — bezplatné overenie IČ DPH, keď ho zákazník zadá.
 //   * FinStat — platený; vie aj DIČ a IČ DPH. Pozri `finstatStav()`.
-import { hodnota } from "../pristupy.server";
+import { hodnota, polozka } from "../pristupy.server";
+import type { PolozkaKonfiguracie } from "../payment-gateways/types";
 import { druhDotazu, normalizujIcDph, normalizujIco, type Firma } from "./firmy";
 import { precitajOdpoved } from "./rpo-parse";
+import {
+  adresa,
+  popisChyby,
+  precitajDetail,
+  precitajNavrhy,
+  type Navrh,
+  type Pristupy,
+} from "./finstat";
 
 const RPO = "https://api.statistics.sk/rpo/v1/search";
 const VIES = "https://ec.europa.eu/taxation_customs/vies/rest-api/ms";
@@ -107,33 +116,116 @@ export async function overIcDph(icDph: string): Promise<OverenieIcDph> {
 
 export type FinstatStav = { pripravene: boolean; detail: string };
 
-/**
- * Stav napojenia na FinStat.
- *
- * FinStat je **platený** (balíky PREMIUM a vyššie) a jeho technická
- * dokumentácia je prístupná len zákazníkom po prihlásení — vrátane presného
- * spôsobu podpisu požiadavky. Ten sa nedá uhádnuť a hádať sa nebude: zle
- * podpísané volanie by tichodko vracalo chybu a vyzeralo by to ako porucha
- * registra.
- *
- * Keď bude kľúč aj dokumentácia, doplní sa provider k RPO a bude navyše
- * dávať DIČ a IČ DPH.
- */
+/** Stav napojenia na FinStat — pre admina. */
 export function finstatStav(): FinstatStav {
-  const kluc = hodnota("finstat", "FINSTAT_API_KEY");
-  if (!kluc) {
+  const apiKey = hodnota("finstat", "FINSTAT_API_KEY");
+  const privateKey = hodnota("finstat", "FINSTAT_PRIVATE_KEY");
+  if (!apiKey && !privateKey) {
     return {
       pripravene: false,
       detail:
-        "FinStat nie je napojený. Je platený a jeho API dokumentácia je len pre zákazníkov — " +
-        "bez nej sa podpis požiadavky nedá doplniť. Dovtedy sa hľadá v bezplatnom registri RPO, " +
-        "ktorý nedáva DIČ ani IČ DPH.",
+        "FinStat nie je napojený — hľadá sa v bezplatnom registri RPO, ktorý nedáva DIČ ani IČ DPH.",
     };
   }
+  if (!apiKey || !privateKey) {
+    return {
+      pripravene: false,
+      detail: `Chýba ${!apiKey ? "API kľúč" : "privátny kľúč"} FinStatu — bez oboch sa hash požiadavky nedá spočítať.`,
+    };
+  }
+  return { pripravene: true, detail: "FinStat je napojený; dopĺňa DIČ a IČ DPH." };
+}
+
+// --- FinStat -----------------------------------------------------------------
+//
+// Toto je ten zdroj, ktorý dá **DIČ a IČ DPH** — bezplatný register ich nemá.
+// Limity z dokumentácie: 4 000 volaní denne, 75 000 mesačne, odporúčané
+// najviac 2 vlákna a výslovný zákaz volať to z prehliadača. Voláme to zo
+// servera, takže sa kľúč k zákazníkovi nedostane.
+
+function finstatPristupy(): Pristupy | null {
+  const apiKey = hodnota("finstat", "FINSTAT_API_KEY");
+  const privateKey = hodnota("finstat", "FINSTAT_PRIVATE_KEY");
+  if (!apiKey || !privateKey) return null;
   return {
-    pripravene: false,
-    detail:
-      "Kľúč k FinStatu je uložený, ale chýba jeho technická dokumentácia (podpis požiadavky). " +
-      "Pošli ju a napojenie doplním.",
+    apiKey,
+    privateKey,
+    // Podľa čoho FinStat v štatistikách rozlíši, odkiaľ volanie prišlo.
+    stationId: hodnota("finstat", "FINSTAT_STATION_ID") || "eticketo",
+    stationName: hodnota("finstat", "FINSTAT_STATION_NAME") || "eticketo.eu",
   };
+}
+
+export function jeFinstatNastaveny(): boolean {
+  return finstatPristupy() !== null;
+}
+
+/** Volanie FinStatu. Pri chybe vracia `null` a dôvod zapíše do logu. */
+async function volajFinstat(
+  metoda: "detail" | "autocomplete",
+  parameter: string,
+): Promise<unknown | null> {
+  const p = finstatPristupy();
+  if (!p) return null;
+
+  const prerusenie = new AbortController();
+  const casovac = setTimeout(() => prerusenie.abort(), LIMIT_MS);
+  try {
+    const r = await fetch(adresa(metoda, parameter, p), {
+      signal: prerusenie.signal,
+      headers: { Accept: "application/json" },
+    });
+    if (!r.ok) {
+      // 402 je vyčerpaný limit, 429 priveľa volaní — oboje má spadnúť na
+      // bezplatný register, nie zhodiť vyhľadávanie.
+      console.error(popisChyby(r.status), `(${metoda})`);
+      return null;
+    }
+    return (await r.json()) as unknown;
+  } catch (e) {
+    console.error("FinStat nedostupný", metoda, e instanceof Error ? e.message : e);
+    return null;
+  } finally {
+    clearTimeout(casovac);
+  }
+}
+
+/** Detail firmy podľa IČO — vráti aj DIČ a IČ DPH. */
+export async function hladajVoFinstate(ico: string): Promise<Firma | null> {
+  const data = await volajFinstat("detail", normalizujIco(ico));
+  return data ? precitajDetail(data) : null;
+}
+
+/** Návrhy firiem podľa názvu. FinStat vyžaduje najmenej tri znaky. */
+export async function navrhyZFinstatu(dotaz: string): Promise<Navrh[]> {
+  const t = dotaz.trim();
+  if (t.length < 3) return [];
+  const data = await volajFinstat("autocomplete", t);
+  return data ? precitajNavrhy(data) : [];
+}
+
+/** Čo FinStat potrebuje — pre kartu v admine. */
+export function finstatKonfiguracia(): PolozkaKonfiguracie[] {
+  return [
+    polozka("finstat", {
+      premenna: "FINSTAT_API_KEY",
+      nazov: "API kľúč",
+      popis: "Z FinStatu. Bez privátneho kľúča sa hash požiadavky nedá spočítať.",
+      povinna: true,
+      tajna: true,
+    }),
+    polozka("finstat", {
+      premenna: "FINSTAT_PRIVATE_KEY",
+      nazov: "Privátny kľúč",
+      popis: "Druhý kľúč z FinStatu. Do adresy volania sa nikdy neposiela, len do hashu.",
+      povinna: true,
+      tajna: true,
+    }),
+    polozka("finstat", {
+      premenna: "FINSTAT_STATION_ID",
+      nazov: "Označenie stanice",
+      popis: "Nepovinné. Bez vyplnenia sa posiela „eticketo“.",
+      povinna: false,
+    }),
+  ];
 }
