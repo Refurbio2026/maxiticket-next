@@ -11,6 +11,11 @@
 //
 // PRAVIDLO: keď je čo i len tieň pochybnosti, pohyb sa NEOZNAČÍ. Nespárovaná
 // platba navyše je otrava; prehliadnutá platba za vstupenku je sťažnosť.
+//
+// DÔLEŽITÝ PREDPOKLAD: sem prichádzajú **výhradne pohyby, ktoré párovanie už
+// skúsilo a neuspelo**. Preto sa dá o odchádzajúcej platbe s variabilným
+// symbolom povedať, že to nie je vrátenie vstupného: vrátenie nesie symbol
+// pôvodnej objednávky, a ten by sa bol spároval.
 
 export type PohybNaPosudenie = {
   amount: number;
@@ -100,8 +105,10 @@ export function zaradMimo(tx: PohybNaPosudenie, k: Kontext): Zaradenie {
 
   // 2) Presun medzi našimi vlastnými účtami.
   const nasIban = k.vlastneIbany.some((x) => x && iban === x.replace(/\s/g, "").toUpperCase());
+  // Pod naším vlastným menom zákazník za vstupenku neplatí; variabilný symbol
+  // na tom nič nemení, keď sa k nemu objednávka aj tak nenašla.
   const nasNazov = k.vlastneNazvy.some((n) => bez(n) && protistrana === bez(n));
-  if (nasIban || (nasNazov && !tx.vs_normalized)) {
+  if (nasIban || nasNazov) {
     return { mimo: true, dovod: "vlastny_prevod", popis: "Presun medzi vlastnými účtami." };
   }
 
@@ -121,14 +128,16 @@ export function zaradMimo(tx: PohybNaPosudenie, k: Kontext): Zaradenie {
     return { mimo: true, dovod: "bankovy_poplatok", popis: "Poplatok, daň alebo úrok banky." };
   }
 
-  // 5) Odchádzajúca platba bez variabilného symbolu.
-  //    S variabilným symbolom ju nechávame tak: mohlo by ísť o vrátenie
-  //    vstupného, ktoré chceme vidieť.
-  if (tx.amount < 0 && !tx.vs_normalized) {
+  // 5) Odchádzajúca platba, ku ktorej párovanie nenašlo objednávku.
+  //    Vrátenie vstupného nesie symbol pôvodnej objednávky a spárovalo by sa;
+  //    čo zostane, je platba dodávateľovi, výplata alebo odvod.
+  if (tx.amount < 0) {
     return {
       mimo: true,
       dovod: "odchadzajuca",
-      popis: "Odchádzajúca platba bez variabilného symbolu.",
+      popis: tx.vs_normalized
+        ? "Odchádzajúca platba — k symbolu sa nenašla objednávka, teda nejde o vrátenie vstupného."
+        : "Odchádzajúca platba bez variabilného symbolu.",
     };
   }
 

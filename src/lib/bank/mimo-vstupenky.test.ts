@@ -61,8 +61,27 @@ describe("čo patrí mimo predaja vstupeniek", () => {
     ).toBe("vyuctovanie_brany");
   });
 
-  it("odchádzajúcu platbu bez symbolu", () => {
+  it("odchádzajúcu platbu — aj so symbolom, keď sa k nemu objednávka nenašla", () => {
+    // Sem sa dostanú len pohyby, ktoré párovanie už skúsilo a neuspelo.
+    // Vrátenie vstupného nesie symbol pôvodnej objednávky a spárovalo by sa,
+    // takže čo zostane, je platba dodávateľovi alebo výplata.
     expect(zaradMimo(pohyb({ amount: -15000 }), K)?.dovod).toBe("odchadzajuca");
+    expect(zaradMimo(pohyb({ amount: -504.3, vs_normalized: "0002026038" }), K)?.dovod).toBe(
+      "odchadzajuca",
+    );
+  });
+
+  it("presun pod naším menom aj so symbolom", () => {
+    expect(
+      zaradMimo(
+        pohyb({
+          amount: 35000,
+          counterparty_name: "MAXITICKET S.R.O",
+          vs_normalized: "0000009999",
+        }),
+        K,
+      )?.dovod,
+    ).toBe("vlastny_prevod");
   });
 });
 
@@ -82,10 +101,6 @@ describe("čo sa NESMIE označiť", () => {
     expect(zaradMimo(pohyb({ amount: 19, counterparty_name: "Peter Novák" }), K)).toBeNull();
   });
 
-  it("odchádzajúca platba S variabilným symbolom — môže byť vrátenie vstupného", () => {
-    expect(zaradMimo(pohyb({ amount: -19, vs_normalized: "0001000033" }), K)).toBeNull();
-  });
-
   it("platba od banky, ale s variabilným symbolom", () => {
     expect(
       zaradMimo(
@@ -99,13 +114,14 @@ describe("čo sa NESMIE označiť", () => {
     expect(zaradMimo(pohyb({ amount: 31.06, vs_normalized: "0099999999" }), K)).toBeNull();
   });
 
-  it("vlastný názov, ale s variabilným symbolom — radšej nechať na posúdenie", () => {
+  it("príchodzia platba od firmy s neznámym symbolom", () => {
+    // Faktúra od partnera, ktorú nepoznáme — patrí na posúdenie človeku.
     expect(
       zaradMimo(
         pohyb({
-          amount: 35000,
-          counterparty_name: "MAXITICKET S.R.O",
-          vs_normalized: "0000009999",
+          amount: 98.4,
+          counterparty_name: "TRIO PRODUCTION, s.r.o.",
+          vs_normalized: "0027000001",
         }),
         K,
       ),
