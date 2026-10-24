@@ -26,11 +26,12 @@ const db = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
 });
 const ZAPISAT = process.argv[2] === "zapis";
 
-// Účet vo Fakere, na ktorý chodia platby za vstupenky prevodom. Zistené
-// porovnaním variabilných symbolov s objednávkami: 31 z 35 pohybov na tomto
-// účte má VS objednávky a chodia od 27 rôznych ľudí — teda skutoční kupujúci,
-// nie súhrnné zúčtovanie karty.
-const FAKTERO_UCET = "7c9a8242-5b05-4ab6-bc25-f543cf62079b";
+// Účet sa hľadá podľa IBAN-u z nastavenia prevodov, nie podľa uuid.
+//
+// Pôvodne tu bolo napevno uuid, ktoré som odvodil z chovania pohybov —
+// a bolo nesprávne: patrilo účtu v Slovenskej sporiteľni. Faktero medzitým
+// doplnilo zoznam účtov s IBAN-om, takže sa už nemusí hádať. Pohyby, ktoré
+// sa medzitým stiahli z cudzieho účtu, skript zmaže.
 
 /**
  * Banka podľa kódu v IBAN-e.
@@ -77,7 +78,7 @@ const { data: kluc } = await db
   .eq("kluc", "FAKTERO_API_KEY")
   .maybeSingle();
 console.log(`  kľúč k Fakteru: ${kluc ? "nájdený, prevezme sa zašifrovaný" : "CHÝBA"}`);
-console.log(`  poskytovateľ: faktero, účet vo Fakere: ${FAKTERO_UCET}`);
+console.log(`  poskytovateľ: faktero, účet sa nájde podľa IBAN ${iban}`);
 console.log("  okno: 7 dní dozadu, sťahovanie automaticky každých 10 minút");
 if (!kluc) process.exit(1);
 
@@ -123,7 +124,7 @@ const riadok = {
   provider: "faktero",
   enabled: true,
   window_days: 7,
-  config: { bank_account_id: FAKTERO_UCET },
+  config: { iban },
   secret_enc: kluc.hodnota_sifrovana,
   updated_at: new Date().toISOString(),
 };
@@ -131,3 +132,28 @@ const { error } = uz
   ? await db.from("bank_statement_sources").update(riadok).eq("id", uz.id)
   : await db.from("bank_statement_sources").insert(riadok);
 console.log(error ? `Zdroj sa nepodarilo uložiť: ${error.message}` : "zdroj uložený");
+
+// Pohyby stiahnuté z nesprávneho účtu. Nespárovali sa s ničím (patria inému
+// účtu), takže ich mazanie nič nerozbije — a nechať ich tam by znamenalo
+// tváriť sa, že sú z VÚB.
+const { data: cudzie } = await db
+  .from("bank_transactions")
+  .select("id, external_id, matched_order_id")
+  .eq("account_id", accountId);
+const naZmazanie = (cudzie ?? []).filter((t) => !t.matched_order_id);
+if (naZmazanie.length) {
+  const { error: ch } = await db
+    .from("bank_transactions")
+    .delete()
+    .in(
+      "id",
+      naZmazanie.map((t) => t.id),
+    );
+  console.log(
+    ch
+      ? `Staré pohyby sa nepodarilo zmazať: ${ch.message}`
+      : `zmazaných ${naZmazanie.length} pohybov stiahnutých z nesprávneho účtu`,
+  );
+}
+const ponechane = (cudzie ?? []).length - naZmazanie.length;
+if (ponechane > 0) console.log(`ponechaných ${ponechane} spárovaných — tie nemažem`);
