@@ -103,3 +103,27 @@ export function firemneUdaje(order: Record<string, unknown>): FakturaZakaznik["c
     country: t("customer_country"),
   };
 }
+
+/**
+ * Má sa k tejto objednávke vystaviť faktúra?
+ *
+ * **Fakturuje sa len firmám.** Fyzická osoba dostane vstupenku a e-mail;
+ * daňový doklad k nej nepotrebuje a vystavovať faktúru každému kupujúcemu
+ * lístka by zbytočne plnilo číselný rad aj účtovníctvo.
+ *
+ * Rozhoduje **názov firmy** — ten je v checkoute povinný, keď si zákazník
+ * zaškrtne nákup na firmu. IČO ani DIČ samo nestačí: bez názvu nie je komu
+ * faktúru vystaviť a Faktero by odberateľa ani nezaložilo.
+ */
+export function maSaFakturovat(order: Record<string, unknown>): boolean {
+  return firemneUdaje(order) !== null;
+}
+
+/** Prečo sa nefakturuje — ide do logu, nech je to v audite vidieť. */
+export function dovodNefakturovania(order: Record<string, unknown>): string {
+  const ico = typeof order.customer_ico === "string" ? order.customer_ico.trim() : "";
+  if (ico) {
+    return `Zákazník zadal IČO ${ico}, ale nie názov firmy — faktúra sa nevystavuje, komu by sa vystavila.`;
+  }
+  return "Nákup fyzickej osoby — faktúra sa podľa nastavenia vystavuje len firmám.";
+}

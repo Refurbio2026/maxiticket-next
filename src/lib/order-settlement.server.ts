@@ -10,7 +10,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { branaPodlaId, pripravPristupy } from "./payment-gateways/index.server";
 import { jeBrana, type GatewayId, type PaymentState } from "./payment-gateways/types";
 import { fakturacnySystem } from "./invoicing/index.server";
-import { firemneUdaje } from "./invoicing/types";
+import { dovodNefakturovania, firemneUdaje, maSaFakturovat } from "./invoicing/types";
 import { newSignedTicket } from "./qr-token.server";
 import { sendTicketsEmail } from "./ticket-mail.server";
 import { releaseCouponForOrder } from "./coupons.server";
@@ -311,6 +311,19 @@ async function vystavFakturu(order: Objednavka): Promise<void> {
       error_message:
         "Nie je nastavený fakturačný systém — faktúra nebola vystavená. " +
         "Doplň prístupy v Systém → Platobné brány, sekcia Fakturácia.",
+    });
+    return;
+  }
+
+  // Fakturuje sa len firmám — fyzická osoba dostane vstupenku a e-mail.
+  // Zapisuje sa to ako `ok`, nie ako chyba: je to zámer, nie zlyhanie, a log
+  // chýb má zostať čitateľný.
+  if (!maSaFakturovat(order as Record<string, unknown>)) {
+    await supabaseAdmin.from("superfaktura_logs").insert({
+      order_id: order.id,
+      endpoint: "fakturacia",
+      status: "ok",
+      error_message: dovodNefakturovania(order as Record<string, unknown>),
     });
     return;
   }
