@@ -10,6 +10,7 @@ import { errorMessage } from "../../error-message";
 import { maskujIban } from "../normalize";
 import type { NormalizovanaTransakcia } from "../normalize";
 import { camt053 } from "./camt053";
+import { fakteroApi } from "./faktero";
 import { fioApi, fioCsv } from "./fio";
 import type { ApiZdroj, ParserVypisu, SuhrnVypisu, VysledokParsovania } from "./types";
 
@@ -17,7 +18,7 @@ import type { ApiZdroj, ParserVypisu, SuhrnVypisu, VysledokParsovania } from "./
 export const PARSERY: ParserVypisu[] = [camt053, fioCsv];
 
 /** Zdroje, ktoré si pohyby vypýtajú samy. */
-export const API_ZDROJE: ApiZdroj[] = [fioApi];
+export const API_ZDROJE: ApiZdroj[] = [fioApi, fakteroApi];
 
 export function parserPodlaId(id: string): ParserVypisu | null {
   return PARSERY.find((p) => p.id === id) ?? null;

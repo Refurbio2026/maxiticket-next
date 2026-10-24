@@ -140,6 +140,8 @@ export type ZdrojRecord = {
   provider: string;
   enabled: boolean;
   window_days: number;
+  /** Doplnkové nastavenie zdroja, napríklad id účtu u poskytovateľa. */
+  config: Record<string, string>;
   /** Len náhľad `••••1234`; samotný token sa do prehliadača nevracia nikdy. */
   secret_preview: string | null;
   last_success_at: string | null;
@@ -168,6 +170,7 @@ export const listStatementSources = createServerFn({ method: "POST" })
         provider: z.provider,
         enabled: z.enabled,
         window_days: z.window_days,
+        config: (z.config ?? {}) as Record<string, string>,
         secret_preview: otvorene ? nahlad(otvorene) : null,
         last_success_at: z.last_success_at,
         last_error: z.last_error,
@@ -188,6 +191,8 @@ export const upsertStatementSource = createServerFn({ method: "POST" })
         provider: z.string().min(1).max(40),
         enabled: z.boolean().default(true),
         window_days: z.number().int().min(1).max(31).default(2),
+        /** Napríklad `bank_account_id` u poskytovateľa, ktorý vedie viac účtov. */
+        config: z.record(z.string(), z.string().max(200)).default({}),
         /** Prázdny reťazec = nemeniť; `null` = zmazať. */
         secret: z.string().max(500).optional().nullable(),
       })
@@ -212,6 +217,7 @@ export const upsertStatementSource = createServerFn({ method: "POST" })
       provider: data.provider,
       enabled: data.enabled,
       window_days: data.window_days,
+      config: data.config,
       ...tajomstvo,
     };
 

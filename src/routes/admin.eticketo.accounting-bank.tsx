@@ -38,6 +38,10 @@ import {
   listStatementFormats,
   importStatementFile,
   fetchFromSources,
+  listStatementSources,
+  upsertStatementSource,
+  deleteStatementSource,
+  type ZdrojRecord,
 } from "@/lib/bank-ingest.functions";
 
 export const Route = createFileRoute("/admin/eticketo/accounting-bank")({
@@ -200,6 +204,8 @@ function Page() {
       </div>
 
       <UploadCard accounts={accountRows} onHotovo={invalidate} />
+
+      <ZdrojeCard accounts={accountRows} onHotovo={invalidate} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {accounts.isLoading ? (
@@ -614,6 +620,328 @@ function UploadCard({
           Nahrať
         </Button>
       </div>
+    </Card>
+  );
+}
+
+/** Čo vie aplikácia sťahovať sama. Pribudne adaptér → pribudne riadok sem. */
+const POSKYTOVATELIA: Array<{ id: string; nazov: string; popis: string; idUctu?: string }> = [
+  {
+    id: "faktero",
+    nazov: "Faktero",
+    popis:
+      "Pohyby z účtu, ktorý je napojený vo Fakere. Použije sa API kľúč Faktera — ten istý, ktorý vystavuje faktúry.",
+    idUctu: "bank_account_id z Faktera (voliteľné, ak tam máš viac účtov)",
+  },
+  {
+    id: "fio",
+    nazov: "Fio banka",
+    popis: "Pohyby priamo z Fio API. Potrebný je token vygenerovaný v internetbankingu Fia.",
+  },
+];
+
+type ZdrojForm = {
+  id?: string;
+  account_id: string;
+  name: string;
+  provider: string;
+  enabled: boolean;
+  window_days: number;
+  bank_account_id: string;
+  secret: string;
+};
+
+/**
+ * Zdroje, z ktorých si aplikácia pohyby sťahuje sama.
+ *
+ * Bez tejto karty sa zdroj nedal pridať inak než zásahom do databázy —
+ * serverová funkcia existovala, ale nikto ju nevolal.
+ */
+function ZdrojeCard({
+  accounts,
+  onHotovo,
+}: {
+  accounts: BankAccountRecord[];
+  onHotovo: () => void;
+}) {
+  const qc = useQueryClient();
+  const nacitaj = useServerFn(listStatementSources);
+  const uloz = useServerFn(upsertStatementSource);
+  const zmaz = useServerFn(deleteStatementSource);
+  const [form, setForm] = useState<ZdrojForm | null>(null);
+
+  const zdroje = useQuery({
+    queryKey: ["bank-sources"],
+    queryFn: () => nacitaj({ data: undefined as never }),
+  });
+
+  const obnov = () => {
+    qc.invalidateQueries({ queryKey: ["bank-sources"] });
+    onHotovo();
+  };
+
+  const ulozenie = useMutation({
+    mutationFn: (f: ZdrojForm) =>
+      uloz({
+        data: {
+          id: f.id,
+          account_id: f.account_id,
+          name: f.name.trim(),
+          kind: "api",
+          provider: f.provider,
+          enabled: f.enabled,
+          window_days: f.window_days,
+          config: f.bank_account_id.trim() ? { bank_account_id: f.bank_account_id.trim() } : {},
+          // Prázdne pole = nechať uložený kľúč tak, ako je.
+          secret: f.secret.trim() ? f.secret.trim() : "",
+        },
+      }),
+    onSuccess: () => {
+      setForm(null);
+      obnov();
+      toast.success("Zdroj uložený");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Uloženie zlyhalo"),
+  });
+
+  const mazanie = useMutation({
+    mutationFn: (id: string) => zmaz({ data: { id } }),
+    onSuccess: () => {
+      obnov();
+      toast.success("Zdroj zmazaný");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Mazanie zlyhalo"),
+  });
+
+  const riadky: ZdrojRecord[] = zdroje.data ?? [];
+  const vyber = POSKYTOVATELIA.find((p) => p.id === form?.provider);
+
+  return (
+    <Card className="bg-card/60 border-border/50 p-5 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Automatické sťahovanie pohybov</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Pohyby sa sťahujú samé a hneď sa párujú s objednávkami podľa variabilného symbolu.
+            Nahrávanie výpisov zostáva ako záloha.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() =>
+            setForm({
+              account_id: accounts[0]?.id ?? "",
+              name: "Faktero",
+              provider: "faktero",
+              enabled: true,
+              window_days: 7,
+              bank_account_id: "",
+              secret: "",
+            })
+          }
+          disabled={accounts.length === 0}
+        >
+          <Plus className="size-4 mr-2" /> Pridať zdroj
+        </Button>
+      </div>
+
+      {zdroje.isLoading ? (
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      ) : riadky.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Zatiaľ nie je nastavený žiadny zdroj — pohyby treba nahrávať ručne zo súboru.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {riadky.map((z) => {
+            const ucet = accounts.find((a) => a.id === z.account_id);
+            return (
+              <div
+                key={z.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/40 p-3"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    {z.name}
+                    <Badge variant="outline" className="text-[10px]">
+                      {POSKYTOVATELIA.find((p) => p.id === z.provider)?.nazov ?? z.provider}
+                    </Badge>
+                    {!z.enabled && (
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                        vypnuté
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {ucet ? `${ucet.bank_name} · ${ucet.iban}` : "účet sa nenašiel"} · okno{" "}
+                    {z.window_days} dní · kľúč {z.secret_preview ?? "nie je"}
+                  </div>
+                  {z.last_error ? (
+                    <div className="text-xs text-destructive mt-0.5">
+                      Naposledy zlyhalo: {z.last_error}
+                    </div>
+                  ) : z.last_success_at ? (
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      Naposledy stiahnuté {new Date(z.last_success_at).toLocaleString("sk-SK")}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground mt-0.5">Ešte nebežalo.</div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setForm({
+                        id: z.id,
+                        account_id: z.account_id,
+                        name: z.name,
+                        provider: z.provider,
+                        enabled: z.enabled,
+                        window_days: z.window_days,
+                        bank_account_id: String(z.config?.bank_account_id ?? ""),
+                        secret: "",
+                      })
+                    }
+                  >
+                    Upraviť
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => mazanie.mutate(z.id)}
+                    disabled={mazanie.isPending}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{form?.id ? "Upraviť zdroj" : "Nový zdroj"}</DialogTitle>
+            <DialogDescription>{vyber?.popis}</DialogDescription>
+          </DialogHeader>
+          {form && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Poskytovateľ</Label>
+                <Select
+                  value={form.provider}
+                  onValueChange={(v) => setForm({ ...form, provider: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {POSKYTOVATELIA.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nazov}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Náš účet</Label>
+                <Select
+                  value={form.account_id}
+                  onValueChange={(v) => setForm({ ...form, account_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyber účet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.bank_name} · {a.iban}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Názov</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Okno (dní dozadu)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={form.window_days}
+                    onChange={(e) => setForm({ ...form, window_days: Number(e.target.value) || 1 })}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Okno sa zámerne prekrýva, nech pohyb nevypadne medzi dvoma behmi.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{form.id ? "Nový kľúč (prázdne = nemeniť)" : "API kľúč"}</Label>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.secret}
+                  onChange={(e) => setForm({ ...form, secret: e.target.value })}
+                  placeholder={form.id ? "nechaj prázdne, ak sa nemení" : ""}
+                />
+              </div>
+
+              {vyber?.idUctu && (
+                <div className="space-y-1.5">
+                  <Label>Účet u poskytovateľa</Label>
+                  <Input
+                    value={form.bank_account_id}
+                    onChange={(e) => setForm({ ...form, bank_account_id: e.target.value })}
+                    placeholder={vyber.idUctu}
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.enabled}
+                  onCheckedChange={(v) => setForm({ ...form, enabled: v })}
+                />
+                <span className="text-sm">Sťahovať automaticky</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setForm(null)}>
+              Zrušiť
+            </Button>
+            <Button
+              onClick={() => form && ulozenie.mutate(form)}
+              disabled={
+                ulozenie.isPending ||
+                !form?.account_id ||
+                !form?.name.trim() ||
+                (!form?.id && !form?.secret.trim())
+              }
+            >
+              {ulozenie.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+              Uložiť
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
