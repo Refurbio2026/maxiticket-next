@@ -1,61 +1,62 @@
 // Volanie ePodacieho hárku Slovenskej pošty.
 //
-// REST API, v1: https://mojezasielky.posta.sk/integration/rest/v1
-// Autentifikácia je hlavička `x-api-auth: apikey {userId}:{apiKey}`; kľúč sa
-// zapína v ich webe (Viac → Notifikácie a API → WebEPH API) a u nás sa ukladá
-// šifrovane medzi prístupy, rovnako ako platobné brány.
+// Služba: https://mojezasielky.posta.sk/integration/webServices/api
+// WSDL:    tá istá adresa s `?wsdl`
 //
-// Testovacie prostredie pošty je `ephtest1.posta.sk`. Adresu ich REST API pre
-// test dokumentácia neuvádza, preto je celá základná adresa nastaviteľná —
-// radšej pole v admine než uhádnutá URL v kóde.
+// PREČO SOAP a nie REST: ich REST rozhranie (/integration/rest/v1) odpovedá
+// na tomto účte HTTP 401 s HTML stránkou „Požiadavka bola zamietnutá" — a to
+// rovnako s kľúčom aj bez neho, takže ho účet jednoducho nemá otvorené.
+// SOAP rozhranie je to, ktoré má zapnuté.
+//
+// Prihlásenie nie je v hlavičke, ale v tele každej požiadavky (`auth`
+// s userId a apiKey). Adresa služby je nastaviteľná kvôli testovaciemu
+// prostrediu pošty.
 import { hodnota, polozka } from "@/lib/pristupy.server";
 import type { PolozkaKonfiguracie } from "@/lib/payment-gateways/types";
 import {
-  jeUspech,
-  precitajChyby,
-  skontrolujZasielku,
-  teloHarku,
-  teloZasielky,
-  type Adresa,
-  type Druh,
-  type Uhrada,
-  type Zasielka,
-} from "./eph";
+  chybyHarku,
+  ephXml,
+  fault,
+  hodnotaPrvku,
+  obalka,
+  xmlText,
+  type AdresaEph,
+  type ChybaHarku,
+  type ZasielkaEph,
+} from "./eph-soap";
 
 export const PROVIDER = "posta";
-const PREDVOLENA_ADRESA = "https://mojezasielky.posta.sk/integration/rest/v1";
-const CAS_LIMIT_MS = 20_000;
+const PREDVOLENA_ADRESA = "https://mojezasielky.posta.sk/integration/webServices/api";
+const CAS_LIMIT_MS = 30_000;
 
-type Pristupy = { userId: string; apiKey: string; zaklad: string };
+type Pristupy = { userId: string; apiKey: string; adresa: string };
 
 function pristupy(): Pristupy | null {
   const userId = hodnota(PROVIDER, "EPH_USER_ID");
   const apiKey = hodnota(PROVIDER, "EPH_API_KEY");
   if (!userId || !apiKey) return null;
-  return {
-    userId,
-    apiKey,
-    zaklad: (hodnota(PROVIDER, "EPH_BASE_URL") || PREDVOLENA_ADRESA).replace(/\/+$/, ""),
-  };
+  return { userId, apiKey, adresa: hodnota(PROVIDER, "EPH_BASE_URL") || PREDVOLENA_ADRESA };
 }
 
 export function jeEphNastavene(): boolean {
   return pristupy() !== null;
 }
 
-/** Odosielateľ — do hárku ide tak, ako je tu. */
-export function odosielatel(): Adresa | null {
+/** Odosielateľ — do hárku ide presne takto. */
+export function odosielatel(): (AdresaEph & { odosielatelId: string }) | null {
   const ulica = hodnota(PROVIDER, "EPH_ODOSIELATEL_ULICA");
   const mesto = hodnota(PROVIDER, "EPH_ODOSIELATEL_MESTO");
-  if (!ulica || !mesto) return null;
+  const id = hodnota(PROVIDER, "EPH_ODOSIELATEL_ID");
+  if (!ulica || !mesto || !id) return null;
   return {
-    organization: hodnota(PROVIDER, "EPH_ODOSIELATEL_FIRMA") || null,
-    name: hodnota(PROVIDER, "EPH_ODOSIELATEL_MENO") || null,
-    street: ulica,
-    city: mesto,
-    zip: hodnota(PROVIDER, "EPH_ODOSIELATEL_PSC") || null,
-    country: "sk",
-    phone: hodnota(PROVIDER, "EPH_ODOSIELATEL_TELEFON") || null,
+    odosielatelId: id,
+    organizacia: hodnota(PROVIDER, "EPH_ODOSIELATEL_FIRMA") || null,
+    meno: hodnota(PROVIDER, "EPH_ODOSIELATEL_MENO") || null,
+    ulica,
+    mesto,
+    psc: hodnota(PROVIDER, "EPH_ODOSIELATEL_PSC") || "",
+    krajina: "SK",
+    telefon: hodnota(PROVIDER, "EPH_ODOSIELATEL_TELEFON") || null,
     email: hodnota(PROVIDER, "EPH_ODOSIELATEL_EMAIL") || null,
   };
 }
@@ -69,17 +70,26 @@ export function ephStav(): { pripravene: boolean; detail: string } {
     };
   }
   if (!odosielatel()) {
-    return { pripravene: false, detail: "Prístupy sú, ale chýba adresa odosielateľa." };
+    return {
+      pripravene: false,
+      detail: "Prístupy sú, ale chýba adresa odosielateľa alebo jeho ID.",
+    };
   }
-  const test = p.zaklad !== PREDVOLENA_ADRESA;
+  if (!hodnota(PROVIDER, "EPH_DRUH_ZASIELKY") || !hodnota(PROVIDER, "EPH_VERZIA")) {
+    return {
+      pripravene: false,
+      detail: "Chýba druh zásielky alebo verzia formátu — čísla sú v prílohe pošty.",
+    };
+  }
+  const test = p.adresa !== PREDVOLENA_ADRESA;
   return {
     pripravene: true,
-    detail: test ? `Nastavené, volá sa ${p.zaklad}.` : "Nastavené, volá sa ostré API pošty.",
+    detail: test ? `Nastavené, volá sa ${p.adresa}.` : "Nastavené, volá sa ostrá služba pošty.",
   };
 }
 
 export function ephKonfiguracia(): PolozkaKonfiguracie[] {
-  const p = (
+  const pol = (
     premenna: string,
     nazov: string,
     popis: string,
@@ -92,30 +102,40 @@ export function ephKonfiguracia(): PolozkaKonfiguracie[] {
       povinna: opts?.povinna ?? false,
       tajna: opts?.tajna ?? false,
     });
+
   return [
-    p("EPH_USER_ID", "userId", "Z nastavenia WebEPH API vo webe pošty.", { povinna: true }),
-    p("EPH_API_KEY", "apiKey", "Druhá časť prístupu. Posiela sa v hlavičke, nikdy v adrese.", {
+    pol("EPH_USER_ID", "userId", "Z nastavenia WebEPH API vo webe pošty.", { povinna: true }),
+    pol("EPH_API_KEY", "apiKey", "Druhá časť prístupu. Posiela sa v tele požiadavky.", {
       povinna: true,
       tajna: true,
     }),
-    p(
-      "EPH_BASE_URL",
-      "Adresa API",
-      `Prázdne = ostré ${PREDVOLENA_ADRESA}. Pre skúšky adresa testovacieho prostredia pošty.`,
+    pol("EPH_BASE_URL", "Adresa služby", `Prázdne = ostrá ${PREDVOLENA_ADRESA}.`),
+    pol(
+      "EPH_VERZIA",
+      "Verzia formátu",
+      "Číslo verzie XML podľa prílohy pošty (atribút `verzia` na prvku EPH).",
+      { povinna: true },
     ),
-    p("EPH_ODOSIELATEL_FIRMA", "Odosielateľ — firma", "Názov, ktorý bude na štítku.", {
+    pol(
+      "EPH_DRUH_ZASIELKY",
+      "Druh zásielky (číslo)",
+      "Číslo z číselníka pošty — napríklad doporučený list alebo balík. V SOAP rozhraní sú to čísla, nie písmená.",
+      { povinna: true },
+    ),
+    pol("EPH_SPOSOB_UHRADY", "Spôsob úhrady (číslo)", "Nepovinné. Číslo z číselníka pošty."),
+    pol("EPH_TYP", "Typ EPH (číslo)", "Nepovinné. Podľa prílohy pošty."),
+    pol("EPH_ODOSIELATEL_ID", "ID odosielateľa", "Tvoje zákaznícke číslo u pošty.", {
       povinna: true,
     }),
-    p("EPH_ODOSIELATEL_MENO", "Odosielateľ — meno", "Nepovinné, ak je vyplnená firma."),
-    p("EPH_ODOSIELATEL_ULICA", "Odosielateľ — ulica a číslo", "", { povinna: true }),
-    p("EPH_ODOSIELATEL_MESTO", "Odosielateľ — obec", "", { povinna: true }),
-    p("EPH_ODOSIELATEL_PSC", "Odosielateľ — PSČ", "", { povinna: true }),
-    p(
-      "EPH_ODOSIELATEL_TELEFON",
-      "Odosielateľ — telefón",
-      "Pošta ho použije pri probléme so zásielkou.",
-    ),
-    p("EPH_ODOSIELATEL_EMAIL", "Odosielateľ — e-mail", ""),
+    pol("EPH_ODOSIELATEL_FIRMA", "Odosielateľ — firma", "Názov, ktorý bude na štítku.", {
+      povinna: true,
+    }),
+    pol("EPH_ODOSIELATEL_MENO", "Odosielateľ — meno", "Nepovinné, ak je vyplnená firma."),
+    pol("EPH_ODOSIELATEL_ULICA", "Odosielateľ — ulica a číslo", "", { povinna: true }),
+    pol("EPH_ODOSIELATEL_MESTO", "Odosielateľ — obec", "", { povinna: true }),
+    pol("EPH_ODOSIELATEL_PSC", "Odosielateľ — PSČ", "", { povinna: true }),
+    pol("EPH_ODOSIELATEL_TELEFON", "Odosielateľ — telefón", "Pošta ho použije pri probléme."),
+    pol("EPH_ODOSIELATEL_EMAIL", "Odosielateľ — e-mail", ""),
   ];
 }
 
@@ -130,134 +150,108 @@ export class ChybaPosty extends Error {
   }
 }
 
-async function volaj(
-  metoda: "GET" | "PUT" | "POST" | "DELETE",
-  cesta: string,
-  telo?: unknown,
-): Promise<Record<string, unknown>> {
+async function volaj(operacia: string, telo: string): Promise<string> {
   const p = pristupy();
   if (!p) throw new ChybaPosty("ePodací hárok nemá vyplnené prístupy.");
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CAS_LIMIT_MS);
   try {
-    const r = await fetch(`${p.zaklad}${cesta}`, {
-      method: metoda,
+    const r = await fetch(p.adresa, {
+      method: "POST",
       headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-        // Kľúč je v hlavičke, takže sa nedostane do logu adries ani do historie.
-        "x-api-auth": `apikey ${p.userId}:${p.apiKey}`,
+        "content-type": "text/xml; charset=utf-8",
+        // Binding je document/literal; SOAPAction je názov operácie a musí
+        // tam byť — bez nej príde fault `invalid_action`.
+        SOAPAction: `"${operacia}"`,
+        accept: "text/xml",
       },
-      body: telo === undefined ? undefined : JSON.stringify(telo),
+      body: obalka(operacia, telo, { userId: p.userId, apiKey: p.apiKey }),
       signal: controller.signal,
     });
-
     const text = await r.text();
-    let json: Record<string, unknown> = {};
-    try {
-      json = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-    } catch {
+
+    const chyba = fault(text);
+    if (chyba) throw new ChybaPosty(`Pošta odmietla požiadavku: ${chyba}`, [], r.status);
+    if (!r.ok) {
+      const html = text.trimStart().startsWith("<!DOCTYPE") || text.includes("<html");
       throw new ChybaPosty(
-        `Pošta vrátila odpoveď, ktorá nie je JSON (HTTP ${r.status}).`,
+        html
+          ? `Pošta odpovedala ${r.status} webovou stránkou, nie službou — over adresu a či je API na účte zapnuté.`
+          : `Pošta odpovedala ${r.status}.`,
         [],
         r.status,
       );
     }
-
-    if (!r.ok || !jeUspech(json)) {
-      const chyby = precitajChyby(json);
-      throw new ChybaPosty(
-        chyby.length ? `Pošta odmietla požiadavku: ${chyby[0]}` : `Pošta odpovedala ${r.status}.`,
-        chyby,
-        r.status,
-      );
-    }
-    return json;
+    return text;
   } finally {
     clearTimeout(timer);
   }
 }
 
-export type Harok = { id: string; ephid?: string; state?: string; charge?: unknown };
+export type StavHarku = { stav: string; chyby: ChybaHarku[] };
 
-/** Založí podací hárok. Zásielky sa doň pridávajú zvlášť. */
-export async function vytvorHarok(opts: {
-  druh: Druh;
-  uhrada: Uhrada;
-  podaj?: "post" | "courier";
-  zmluva?: boolean;
-}): Promise<Harok> {
+/** Stav hárku. Nič nevytvára, takže sa hodí aj na overenie spojenia. */
+export async function stavHarku(sheetId: string): Promise<StavHarku> {
+  const xml = await volaj("getSheetStatus", `<api:sheetId>${xmlText(sheetId)}</api:sheetId>`);
+  return { stav: hodnotaPrvku(xml, "sheetStatus") ?? "", chyby: chybyHarku(xml) };
+}
+
+export async function harok(sheetId: string): Promise<{ stav: string; xml: string }> {
+  const xml = await volaj("getSheet", `<api:sheetId>${xmlText(sheetId)}</api:sheetId>`);
+  return { stav: hodnotaPrvku(xml, "sheetStatus") ?? "", xml };
+}
+
+/**
+ * Pošle hárok so zásielkami. Vracia `sheetId`, pod ktorým ho pošta vedie.
+ *
+ * `preskocitChybne` zodpovedá ich `skipInvalid`: keď je zapnuté, pošta
+ * prijme hárok aj s chybnými zásielkami a tie vynechá. Predvolene vypnuté —
+ * ticho vynechaná zásielka znamená nedoručenú vstupenku.
+ */
+export async function importujHarok(
+  zasielky: ZasielkaEph[],
+  opts?: { zmluva?: boolean; preskocitChybne?: boolean; datum?: string },
+): Promise<{ sheetId: string }> {
   const od = odosielatel();
   if (!od) throw new ChybaPosty("Nie je vyplnená adresa odosielateľa.");
-  const o = await volaj("PUT", "/sheets", teloHarku(od, opts));
-  const sheet = (o.sheet ?? o) as Record<string, unknown>;
-  return {
-    id: String(sheet.id ?? ""),
-    ephid: sheet.ephid ? String(sheet.ephid) : undefined,
-    state: sheet.state ? String(sheet.state) : undefined,
-    charge: sheet.charge,
-  };
-}
+  if (!zasielky.length) throw new ChybaPosty("Hárok musí obsahovať aspoň jednu zásielku.");
 
-export type PridanaZasielka = { id: string; parcel_number?: string };
+  const druh = Number(hodnota(PROVIDER, "EPH_DRUH_ZASIELKY"));
+  const verzia = hodnota(PROVIDER, "EPH_VERZIA") ?? "";
+  if (!druh || !verzia) throw new ChybaPosty("Chýba druh zásielky alebo verzia formátu.");
 
-export async function pridajZasielku(
-  harokId: string,
-  z: Zasielka,
-  druh: Druh,
-  uhrada: Uhrada,
-): Promise<PridanaZasielka> {
-  // Kontrolujeme skôr, než to pošleme — ich chybové kódy sú strohé a
-  // zákazníkovi by sme z nich aj tak nič zrozumiteľné nepovedali.
-  const chyby = skontrolujZasielku(z, druh, uhrada);
+  const uhrada = Number(hodnota(PROVIDER, "EPH_SPOSOB_UHRADY")) || null;
+  const typ = Number(hodnota(PROVIDER, "EPH_TYP")) || null;
+
+  const xml = ephXml({
+    verzia,
+    mena: "EUR",
+    typEph: typ,
+    datum: opts?.datum ?? new Date().toISOString().slice(0, 10),
+    druhZasielky: druh,
+    sposobUhrady: uhrada,
+    odosielatel: od,
+    zasielky,
+  });
+
+  const odpoved = await volaj(
+    "importSheet",
+    [
+      opts?.zmluva === undefined ? "" : `<api:contract>${opts.zmluva}</api:contract>`,
+      `<api:skipInvalid>${opts?.preskocitChybne ?? false}</api:skipInvalid>`,
+      xml,
+    ].join(""),
+  );
+
+  const chyby = chybyHarku(odpoved);
   if (chyby.length) {
     throw new ChybaPosty(
-      chyby[0].sprava,
-      chyby.map((c) => `${c.pole}: ${c.sprava}`),
+      `Pošta hárok neprijala: ${chyby[0].pole} — ${chyby[0].dovod}`,
+      chyby.map((c) => `${c.pole}: ${c.dovod}`),
     );
   }
-  const o = await volaj("PUT", `/sheets/${encodeURIComponent(harokId)}/parcels`, teloZasielky(z));
-  const parcel = (o.parcel ?? o) as Record<string, unknown>;
-  return {
-    id: String(parcel.id ?? ""),
-    parcel_number: parcel.parcel_number ? String(parcel.parcel_number) : undefined,
-  };
-}
-
-export async function zmazZasielku(harokId: string, zasielkaId: string): Promise<void> {
-  await volaj(
-    "DELETE",
-    `/sheets/${encodeURIComponent(harokId)}/parcels/${encodeURIComponent(zasielkaId)}`,
-  );
-}
-
-/** Adresný štítok v PDF (A6). Vracia adresu na stiahnutie. */
-export async function stitok(harokId: string, zasielkaId: string): Promise<string | null> {
-  const o = await volaj(
-    "POST",
-    `/sheets/${encodeURIComponent(harokId)}/parcels/${encodeURIComponent(zasielkaId)}/labels`,
-    { format: "pdf", type: "address" },
-  );
-  const url = (o.url ?? (o.label as Record<string, unknown> | undefined)?.url) as
-    string | undefined;
-  return url ?? null;
-}
-
-/** Odošle hárok pošte. Po tomto sa už zásielky pridávať nedajú. */
-export async function odosliHarok(harokId: string): Promise<Harok> {
-  const o = await volaj("POST", `/sheets/${encodeURIComponent(harokId)}/register`, {});
-  const sheet = (o.sheet ?? o) as Record<string, unknown>;
-  return {
-    id: harokId,
-    ephid: sheet.ephid ? String(sheet.ephid) : undefined,
-    state: sheet.state ? String(sheet.state) : undefined,
-  };
-}
-
-export async function detailHarku(
-  harokId: string,
-  soZasielkami = true,
-): Promise<Record<string, unknown>> {
-  return volaj("GET", `/sheets/${encodeURIComponent(harokId)}${soZasielkami ? "?parcels=1" : ""}`);
+  const sheetId = hodnotaPrvku(odpoved, "sheetId");
+  if (!sheetId) throw new ChybaPosty("Pošta nevrátila identifikátor hárku.");
+  return { sheetId };
 }
