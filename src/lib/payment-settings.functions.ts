@@ -24,6 +24,7 @@ import {
 import { systemPodlaId, vsetkyFakturacneSystemy } from "./invoicing/index.server";
 import { finstatKonfiguracia, finstatStav } from "./firmy/firmy.server";
 import { asistentKonfiguracia, asistentStav } from "./asistent/klient.server";
+import { ephKonfiguracia, ephStav } from "./posta/eph.server";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
 import { jePovolenaSadzba, predvolenaSadzba, zabudniSadzbu } from "./dph.server";
@@ -37,7 +38,9 @@ const ID_FAKTURACIE = z.enum(["superfaktura", "faktero"]);
 const ID_REGISTRA = z.enum(["finstat"]);
 // Asistent na webe. Nie je to brána, ale kľúč k modelu sa ukladá rovnako.
 const ID_ASISTENTA = z.enum(["asistent"]);
-const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE, ID_REGISTRA, ID_ASISTENTA]);
+// Doručenie poštou — ePodací hárok Slovenskej pošty.
+const ID_DOPRAVY = z.enum(["posta"]);
+const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE, ID_REGISTRA, ID_ASISTENTA, ID_DOPRAVY]);
 
 /**
  * Polia, ktoré smie daný systém dostať.
@@ -54,6 +57,12 @@ function systemNaUlozenie(provider: string): { label: string; kluce: Set<string>
     return {
       label: "Asistent na webe",
       kluce: new Set(asistentKonfiguracia().map((k) => k.premenna)),
+    };
+  }
+  if (provider === "posta") {
+    return {
+      label: "Slovenská pošta (ePodací hárok)",
+      kluce: new Set(ephKonfiguracia().map((k) => k.premenna)),
     };
   }
   const system = jeFakturacia(provider) ? systemPodlaId(provider) : branaPodlaId(provider);
@@ -111,6 +120,8 @@ export type PrehladPlatobnychBran = {
   registre: PrehladRegistra[];
   /** Asistent na webe — tá istá karta, iný druh systému. */
   asistent: PrehladRegistra[];
+  /** Doručenie poštou. */
+  doprava: PrehladRegistra[];
   /** Systém, ktorý práve vystavuje faktúry. */
   fakturacnySystem: string | null;
   /** Predvolená sadzba DPH v percentách. */
@@ -286,6 +297,20 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
       },
     ];
 
+    const stavPosty = ephStav();
+    const konfiguraciaPosty = ephKonfiguracia();
+    const doprava: PrehladRegistra[] = [
+      {
+        id: "posta",
+        label: "Slovenská pošta — ePodací hárok",
+        hint: "Zásielky, podacie hárky a adresné štítky. Prístup sa zapína v mojezasielky.posta.sk (Viac → Notifikácie a API).",
+        nakonfigurovana: stavPosty.pripravene,
+        stav: stavPosty.detail,
+        konfiguracia: konfiguraciaPosty,
+        chybaju: konfiguraciaPosty.filter((k) => k.povinna && !k.vyplnena).map((k) => k.premenna),
+      },
+    ];
+
     const pouzivaSa =
       fakturacia.find((f) => f.id === zvolenaFakturacia && f.nakonfigurovana)?.id ??
       fakturacia.find((f) => f.nakonfigurovana)?.id ??
@@ -302,6 +327,7 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
       fakturacia,
       registre,
       asistent,
+      doprava,
       fakturacnySystem: pouzivaSa,
       sadzbaDph: await predvolenaSadzba(),
       adresaWebu,
@@ -401,9 +427,14 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean; detail: string }> => {
     await assertAdmin(context.userId);
     await pripravPristupy();
-    if (data.provider === "finstat" || data.provider === "asistent") {
+    if (data.provider === "finstat" || data.provider === "asistent" || data.provider === "posta") {
       // Tieto nemajú „skúšobné spojenie" — stav vidno priamo na karte.
-      const stav = data.provider === "finstat" ? finstatStav() : asistentStav();
+      const stav =
+        data.provider === "finstat"
+          ? finstatStav()
+          : data.provider === "asistent"
+            ? asistentStav()
+            : ephStav();
       return { ok: stav.pripravene, detail: stav.detail };
     }
     const brana = jeFakturacia(data.provider)

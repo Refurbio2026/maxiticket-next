@@ -326,6 +326,20 @@ function PaymentGatewaysPage() {
         ))}
       </div>
 
+      <div>
+        <h2 className="font-display text-xl font-bold tracking-tight mt-6">Doručenie poštou</h2>
+        <p className="text-muted-foreground text-sm mt-1">
+          ePodací hárok Slovenskej pošty — zásielky, podacie hárky a adresné štítky. Prístup si
+          zapneš v mojezasielky.posta.sk v časti Viac → Notifikácie a API.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {data.doprava.map((d) => (
+          <RegisterKarta key={d.id} register={d} onUlozPristupy={(v) => ulozPristupy(d.id, v)} />
+        ))}
+      </div>
+
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
           {data.predvolenaZPremennej
