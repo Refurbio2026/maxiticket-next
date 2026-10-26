@@ -11,7 +11,7 @@
 // Prihlásenie nie je v hlavičke, ale v tele každej požiadavky (`auth`
 // s userId a apiKey). Adresa služby je nastaviteľná kvôli testovaciemu
 // prostrediu pošty.
-import { hodnota, polozka } from "@/lib/pristupy.server";
+import { hodnota, polozka, pripravPristupy } from "@/lib/pristupy.server";
 import type { PolozkaKonfiguracie } from "@/lib/payment-gateways/types";
 import {
   DRUHY_ZASIELKY,
@@ -46,6 +46,27 @@ export function jeEphNastavene(): boolean {
 }
 
 /** Odosielateľ — do hárku ide presne takto. */
+/**
+ * Pevná cena poštovného pre zákazníka, alebo `null`, keď nie je nastavená.
+ *
+ * Jedna hodnota namiesto prepínača a ceny zvlášť: doručenie poštou sa ponúka
+ * práve vtedy, keď je cena určená. Nedá sa tak vyrobiť stav „zapnuté, ale
+ * bez ceny", kde by poštovné platil organizátor bez toho, aby to chcel.
+ */
+export function postovne(): number | null {
+  const suma = Number((hodnota(PROVIDER, "EPH_POSTOVNE") || "").replace(",", "."));
+  return Number.isFinite(suma) && suma > 0 ? Math.round(suma * 100) / 100 : null;
+}
+
+/**
+ * To isté ako `postovne()`, ale sama si načíta prístupy. Pokladňa sa o cenu
+ * pýta skôr, než sa v požiadavke dotkne čohokoľvek iného od pošty.
+ */
+export async function cenaPostovneho(): Promise<number | null> {
+  await pripravPristupy();
+  return postovne();
+}
+
 export function odosielatel(): (AdresaEph & { odosielatelId: string }) | null {
   const ulica = hodnota(PROVIDER, "EPH_ODOSIELATEL_ULICA");
   const mesto = hodnota(PROVIDER, "EPH_ODOSIELATEL_MESTO");
@@ -134,6 +155,12 @@ export function ephKonfiguracia(): PolozkaKonfiguracie[] {
         .join(" · ")}`,
     ),
     pol("EPH_TYP", "Typ EPH (číslo)", "Nepovinné. 1 = podací hárok, 2 = potvrdenie o prijatí."),
+    pol(
+      "EPH_POSTOVNE",
+      "Poštovné pre zákazníka (€)",
+      "Pevná suma, ktorú zákazník zaplatí za doručenie obálky. " +
+        "Prázdne alebo 0 = doručenie poštou sa v pokladni vôbec neponúkne.",
+    ),
     pol(
       "EPH_ODOSIELATEL_ID",
       "ID podávateľa",

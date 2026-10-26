@@ -78,6 +78,7 @@ import { Route as AdminReportsSalesRouteImport } from './routes/admin.reports.sa
 import { Route as AdminSalesCancellationsRouteImport } from './routes/admin.sales.cancellations'
 import { Route as AdminSalesNotesRouteImport } from './routes/admin.sales.notes'
 import { Route as AdminSalesPaymentsRouteImport } from './routes/admin.sales.payments'
+import { Route as AdminSalesPostaRouteImport } from './routes/admin.sales.posta'
 import { Route as AdminSalesSalesRouteImport } from './routes/admin.sales.sales'
 import { Route as AdminSystemEmailTemplatesRouteImport } from './routes/admin.system.email-templates'
 import { Route as AdminSystemHealthRouteImport } from './routes/admin.system.health'
@@ -466,6 +467,11 @@ const AdminSalesPaymentsRoute = AdminSalesPaymentsRouteImport.update({
   path: '/sales/payments',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSalesPostaRoute = AdminSalesPostaRouteImport.update({
+  id: '/sales/posta',
+  path: '/sales/posta',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSalesSalesRoute = AdminSalesSalesRouteImport.update({
   id: '/sales/sales',
   path: '/sales/sales',
@@ -718,6 +724,7 @@ export interface FileRoutesByFullPath {
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
   '/admin/sales/notes': typeof AdminSalesNotesRoute
   '/admin/sales/payments': typeof AdminSalesPaymentsRoute
+  '/admin/sales/posta': typeof AdminSalesPostaRoute
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/health': typeof AdminSystemHealthRoute
@@ -819,6 +826,7 @@ export interface FileRoutesByTo {
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
   '/admin/sales/notes': typeof AdminSalesNotesRoute
   '/admin/sales/payments': typeof AdminSalesPaymentsRoute
+  '/admin/sales/posta': typeof AdminSalesPostaRoute
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/health': typeof AdminSystemHealthRoute
@@ -925,6 +933,7 @@ export interface FileRoutesById {
   '/admin/sales/cancellations': typeof AdminSalesCancellationsRoute
   '/admin/sales/notes': typeof AdminSalesNotesRoute
   '/admin/sales/payments': typeof AdminSalesPaymentsRoute
+  '/admin/sales/posta': typeof AdminSalesPostaRoute
   '/admin/sales/sales': typeof AdminSalesSalesRoute
   '/admin/system/email-templates': typeof AdminSystemEmailTemplatesRoute
   '/admin/system/health': typeof AdminSystemHealthRoute
@@ -1032,6 +1041,7 @@ export interface FileRouteTypes {
     | '/admin/sales/cancellations'
     | '/admin/sales/notes'
     | '/admin/sales/payments'
+    | '/admin/sales/posta'
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/health'
@@ -1133,6 +1143,7 @@ export interface FileRouteTypes {
     | '/admin/sales/cancellations'
     | '/admin/sales/notes'
     | '/admin/sales/payments'
+    | '/admin/sales/posta'
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/health'
@@ -1238,6 +1249,7 @@ export interface FileRouteTypes {
     | '/admin/sales/cancellations'
     | '/admin/sales/notes'
     | '/admin/sales/payments'
+    | '/admin/sales/posta'
     | '/admin/sales/sales'
     | '/admin/system/email-templates'
     | '/admin/system/health'
@@ -1800,6 +1812,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSalesPaymentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/sales/posta': {
+      id: '/admin/sales/posta'
+      path: '/sales/posta'
+      fullPath: '/admin/sales/posta'
+      preLoaderRoute: typeof AdminSalesPostaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/sales/sales': {
       id: '/admin/sales/sales'
       path: '/sales/sales'
@@ -2094,6 +2113,7 @@ interface AdminRouteChildren {
   AdminSalesCancellationsRoute: typeof AdminSalesCancellationsRoute
   AdminSalesNotesRoute: typeof AdminSalesNotesRoute
   AdminSalesPaymentsRoute: typeof AdminSalesPaymentsRoute
+  AdminSalesPostaRoute: typeof AdminSalesPostaRoute
   AdminSalesSalesRoute: typeof AdminSalesSalesRoute
   AdminSystemEmailTemplatesRoute: typeof AdminSystemEmailTemplatesRoute
   AdminSystemHealthRoute: typeof AdminSystemHealthRoute
@@ -2143,6 +2163,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSalesCancellationsRoute: AdminSalesCancellationsRoute,
   AdminSalesNotesRoute: AdminSalesNotesRoute,
   AdminSalesPaymentsRoute: AdminSalesPaymentsRoute,
+  AdminSalesPostaRoute: AdminSalesPostaRoute,
   AdminSalesSalesRoute: AdminSalesSalesRoute,
   AdminSystemEmailTemplatesRoute: AdminSystemEmailTemplatesRoute,
   AdminSystemHealthRoute: AdminSystemHealthRoute,

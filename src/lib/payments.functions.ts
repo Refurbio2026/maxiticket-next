@@ -20,6 +20,8 @@ import { fakturacnySystem } from "./invoicing/index.server";
 import { firemneUdaje } from "./invoicing/types";
 import { sadzbaPodujatia } from "./dph.server";
 import { lehotaPrevodu, nastaveniePrevodu, posliPlatobneUdaje } from "./prevod.server";
+import { cenaPostovneho } from "./posta/eph.server";
+import { cenaDorucenia, normalizujPsc, prvaChyba, skontrolujDorucenie } from "./posta/postovne";
 
 /** Zaráta pokus; pri prekročení limitu vyhodí zrozumiteľnú chybu. */
 async function enforceRateLimit(
@@ -79,6 +81,22 @@ const CompanySchema = z.object({
   city: z.string().max(120).optional().nullable(),
   zip: z.string().max(20).optional().nullable(),
   country: z.string().max(2).optional().nullable(),
+});
+
+/**
+ * Kam majú vstupenky prísť. Predvolene e-mailom — tak to bolo vždy a tak to
+ * zostane pre každého, kto si nič nevyberie.
+ *
+ * BEZPEČNOSŤ: cena poštovného tu NIE JE. Klient hovorí len „chcem poštou"
+ * a adresu; sumu si server prečíta z nastavenia. Inak by stačilo poslať
+ * poštovné 0 € a dať si vstupenky poslať zadarmo.
+ */
+const DeliverySchema = z.object({
+  method: z.enum(["email", "posta"]).default("email"),
+  name: z.string().max(100).optional().nullable(),
+  street: z.string().max(100).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  zip: z.string().max(20).optional().nullable(),
 });
 
 // BEZPEČNOSŤ: klient posiela LEN to, ČO kupuje — nikdy za koľko. Cenu aj názov
@@ -146,6 +164,8 @@ export const submitOrder = createServerFn({ method: "POST" })
         // nejde cez bránu: dostane variabilný symbol, lehotu v pracovných
         // dňoch a dokončí ju až spárovanie bankového výpisu.
         payment_method: z.enum(["gateway", "transfer"]).default("gateway"),
+        // Doručenie vstupeniek. Chýbajúce = e-mailom, ako doteraz.
+        delivery: DeliverySchema.optional().nullable(),
       })
       .parse(input),
   )
@@ -361,6 +381,54 @@ export const submitOrder = createServerFn({ method: "POST" })
       }
     }
 
+    // --- Doručenie ---
+    // Rieši sa skôr než kupón: keby adresa neprešla až po uplatnení kupónu,
+    // museli by sme použitie vracať. Takto sa chybná objednávka zastaví skôr,
+    // než sa niečoho dotkne.
+    const sposobDorucenia = data.delivery?.method === "posta" ? "posta" : "email";
+    let poplatokDorucenia = 0;
+    let adresaDorucenia: {
+      delivery_name: string | null;
+      delivery_street: string | null;
+      delivery_city: string | null;
+      delivery_zip: string | null;
+      delivery_country: string | null;
+    } = {
+      delivery_name: null,
+      delivery_street: null,
+      delivery_city: null,
+      delivery_zip: null,
+      delivery_country: null,
+    };
+
+    if (sposobDorucenia === "posta") {
+      // Cenu určuje nastavenie, nie klient. Keď nie je nastavená, doručovanie
+      // poštou nie je spustené a objednávka sa nemá prijať — aj keby si
+      // niekto poslal `method: "posta"` ručne.
+      const cena = await cenaPostovneho();
+      if (!cena) {
+        throw new Error("Doručenie poštou nie je momentálne dostupné. Vstupenky pošleme e-mailom.");
+      }
+      const chyby = skontrolujDorucenie("posta", {
+        meno: data.delivery?.name,
+        ulica: data.delivery?.street,
+        mesto: data.delivery?.city,
+        psc: data.delivery?.zip,
+        krajina: "SK",
+      });
+      const chyba = prvaChyba(chyby);
+      if (chyba) throw new Error(chyba);
+
+      poplatokDorucenia = cenaDorucenia("posta", cena);
+      adresaDorucenia = {
+        delivery_name: data.delivery!.name!.trim(),
+        delivery_street: data.delivery!.street!.trim(),
+        delivery_city: data.delivery!.city!.trim(),
+        delivery_zip: normalizujPsc(data.delivery!.zip),
+        delivery_country: "SK",
+      };
+    }
+
     const subtotal = priced.reduce((s, it) => s + it.unit_price * it.quantity, 0);
 
     // --- Zľavový kupón ---
@@ -383,7 +451,9 @@ export const submitOrder = createServerFn({ method: "POST" })
       discount = result.discount;
     }
 
-    const total = Math.round((subtotal - discount) * 100) / 100;
+    // Poštovné sa pripočítava až po zľave. Kupón je na vstupenky — keby sa
+    // počítal zo sumy s poštovným, zľava by nám uhrádzala dopravu.
+    const total = Math.round((subtotal - discount + poplatokDorucenia) * 100) / 100;
 
     // --- Platba prevodom ---
     // Drží sedadlá dni, nie minúty, takže sa kontroluje, či je kanál vôbec
@@ -434,6 +504,9 @@ export const submitOrder = createServerFn({ method: "POST" })
         customer_country: data.company?.country?.trim()?.toUpperCase() || null,
         total_amount: total,
         discount_amount: discount,
+        delivery_method: sposobDorucenia,
+        delivery_fee: poplatokDorucenia,
+        ...adresaDorucenia,
         coupon_id: couponId,
         promo_code: couponId ? data.coupon_code!.trim().toUpperCase() : null,
         currency: "EUR",

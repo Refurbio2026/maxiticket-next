@@ -16,7 +16,7 @@ import { sendTicketsEmail } from "./ticket-mail.server";
 import { releaseCouponForOrder } from "./coupons.server";
 import { errorMessage } from "./error-message";
 import { objednavkySVstupenkou } from "./tickets-by-order.server";
-import { sadzbaPodujatia } from "./dph.server";
+import { predvolenaSadzba, sadzbaPodujatia } from "./dph.server";
 import { siteUrl } from "./site-url.server";
 import { signOrderAccess } from "./order-access.server";
 
@@ -350,12 +350,30 @@ async function vystavFakturu(order: Objednavka): Promise<void> {
 
         company: firemneUdaje(order as Record<string, string | null>),
       },
-      items: (items || []).map((it) => ({
-        name: it.label,
-        unit_price: Number(it.unit_price),
-        quantity: it.quantity || 1,
-        tax: dph,
-      })),
+      items: [
+        ...(items || []).map((it) => ({
+          name: it.label,
+          unit_price: Number(it.unit_price),
+          quantity: it.quantity || 1,
+          tax: dph,
+        })),
+        // Poštovné nie je položkou objednávky (z tých sa robia vstupenky),
+        // ale na faktúre byť musí — inak by súčet faktúry nesúhlasil
+        // so zaplatenou sumou.
+        //
+        // Sadzba: základná, nie sadzba podujatia. Znížená sadzba patrí
+        // vstupnému, nie doprave. Ak to má byť inak, mení sa to tu.
+        ...(Number(order.delivery_fee ?? 0) > 0
+          ? [
+              {
+                name: "Poštovné",
+                unit_price: Number(order.delivery_fee),
+                quantity: 1,
+                tax: await predvolenaSadzba(),
+              },
+            ]
+          : []),
+      ],
       paymentType: "card",
     });
 

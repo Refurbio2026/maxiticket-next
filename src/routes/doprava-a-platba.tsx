@@ -7,6 +7,9 @@
 // Všetko tu musí sedieť so skutočnosťou aj s obchodnými podmienkami. Keď sa
 // zmení spôsob platby alebo doručenia, mení sa to aj tu.
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { moznostiDorucenia } from "@/lib/dorucenie.functions";
 import { PageShell } from "@/components/site/PageShell";
 import { Card } from "@/components/ui/card";
 import { CreditCard, Mail, Receipt, ShieldCheck, Clock, Banknote } from "lucide-react";
@@ -32,6 +35,20 @@ export const Route = createFileRoute("/doprava-a-platba")({
 });
 
 function DopravaAPlatbaPage() {
+  // Text o doručení musí sedieť so skutočnosťou. Doručovanie poštou sa dá
+  // zapnúť a vypnúť v nastavení, preto sa tu nepíše nastálo — pýtame sa
+  // servera, čo pokladňa práve ponúka.
+  const nacitaj = useServerFn(moznostiDorucenia);
+  const { data } = useQuery({
+    queryKey: ["dorucenie-moznosti"],
+    queryFn: () => nacitaj({ data: undefined }),
+    staleTime: 10 * 60_000,
+  });
+  const posta = data?.posta ?? null;
+  const cenaPosty = posta
+    ? posta.cena.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : null;
+
   return (
     <PageShell
       eyebrow="Dodanie a platba"
@@ -40,7 +57,11 @@ function DopravaAPlatbaPage() {
           Ako sa platí a ako <span className="text-gradient-flame">dostaneš vstupenku</span>
         </>
       }
-      description="Vstupenky predávame elektronicky. Zaplatíš kartou alebo prevodom a vstupenku dostaneš e-mailom — žiadne poštovné, žiadne čakanie na kuriéra."
+      description={
+        posta
+          ? "Vstupenky predávame elektronicky. Zaplatíš kartou alebo prevodom a vstupenku dostaneš e-mailom. Kto chce vstupenky vytlačené na papieri, môže si ich nechať poslať poštou."
+          : "Vstupenky predávame elektronicky. Zaplatíš kartou alebo prevodom a vstupenku dostaneš e-mailom — žiadne poštovné, žiadne čakanie na kuriéra."
+      }
     >
       <div className="grid gap-5 md:grid-cols-2">
         <Blok
@@ -59,7 +80,9 @@ function DopravaAPlatbaPage() {
           body={[
             "Vstupenka s QR kódom príde e-mailom na adresu z objednávky, pri platbe kartou do niekoľkých sekúnd.",
             "Nájdeš ju aj po prihlásení v sekcii Moje vstupenky, odkiaľ sa dá kedykoľvek stiahnuť alebo poslať znova.",
-            "Doručenie je bezplatné — vstupenky neposielame poštou ani kuriérom, takže neplatíš žiadne poštovné.",
+            posta
+              ? `Doručenie e-mailom je bezplatné. Vytlačené vstupenky pošleme Slovenskou poštou na slovenskú adresu za ${cenaPosty} € — adresu zadáš v objednávke a vstupenky dostaneš aj e-mailom.`
+              : "Doručenie je bezplatné — vstupenky neposielame poštou ani kuriérom, takže neplatíš žiadne poštovné.",
           ]}
         />
 
@@ -70,6 +93,11 @@ function DopravaAPlatbaPage() {
             "Platba kartou: vstupenka okamžite po úspešnej platbe.",
             "Platba prevodom: do 24 hodín od pripísania sumy na účet; podľa banky to býva jeden až dva pracovné dni.",
             "Nezaplatená objednávka po uplynutí lehoty zaniká a sedadlá sa vracajú do predaja.",
+            ...(posta
+              ? [
+                  "Doručenie poštou: zásielku podávame doporučene najneskôr nasledujúci pracovný deň po zaplatení, doručenie trvá zvyčajne 2 až 4 pracovné dni. Ak je podujatie skôr, vyber si doručenie e-mailom.",
+                ]
+              : []),
           ]}
         />
 
@@ -77,7 +105,9 @@ function DopravaAPlatbaPage() {
           ikona={Receipt}
           nadpis="Ceny a doklad"
           body={[
-            "Uvedená cena vstupenky je konečná vrátane DPH. Nepripočítavame k nej servisný ani iný poplatok.",
+            posta
+              ? `Uvedená cena vstupenky je konečná vrátane DPH. Nepripočítavame k nej servisný ani iný poplatok — jediná položka navyše je poštovné ${cenaPosty} €, a to len keď si doručenie poštou vyberieš.`
+              : "Uvedená cena vstupenky je konečná vrátane DPH. Nepripočítavame k nej servisný ani iný poplatok.",
             "Potvrdenie objednávky spolu so vstupenkou slúži ako doklad o kúpe.",
             "Pri nákupe na firmu vystavíme faktúru — stačí v objednávke zadať firemné údaje.",
           ]}

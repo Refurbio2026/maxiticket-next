@@ -37,6 +37,7 @@ import {
   Mail,
   UserCog,
   FileBarChart,
+  Truck,
   TrendingUp,
   Flame,
   Megaphone,
@@ -155,6 +156,7 @@ const groups: Group[] = [
     items: [
       { title: "Predaj", url: "/admin/sales/sales", icon: ShoppingCart },
       { title: "Platby", url: "/admin/sales/payments", icon: CreditCard },
+      { title: "Zásielky", url: "/admin/sales/posta", icon: Truck },
       { title: "Storno", url: "/admin/sales/cancellations", icon: Ban },
       { title: "Poznámky", url: "/admin/sales/notes", icon: StickyNote },
     ],

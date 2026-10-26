@@ -193,6 +193,16 @@ export type Database = {
       orders: {
         Row: {
           previous_vs: number[];
+          delivery_method: string;
+          delivery_fee: number;
+          delivery_name: string | null;
+          delivery_street: string | null;
+          delivery_city: string | null;
+          delivery_zip: string | null;
+          delivery_country: string | null;
+          eph_sheet_id: string | null;
+          eph_code: string | null;
+          posted_at: string | null;
           transfer_due_at: string | null;
           transfer_reminder_sent_at: string | null;
           created_at: string;
@@ -248,6 +258,16 @@ export type Database = {
         };
         Insert: {
           previous_vs?: number[];
+          delivery_method?: string;
+          delivery_fee?: number;
+          delivery_name?: string | null;
+          delivery_street?: string | null;
+          delivery_city?: string | null;
+          delivery_zip?: string | null;
+          delivery_country?: string | null;
+          eph_sheet_id?: string | null;
+          eph_code?: string | null;
+          posted_at?: string | null;
           transfer_due_at?: string | null;
           transfer_reminder_sent_at?: string | null;
           created_at?: string;
@@ -303,6 +323,16 @@ export type Database = {
         };
         Update: {
           previous_vs?: number[];
+          delivery_method?: string;
+          delivery_fee?: number;
+          delivery_name?: string | null;
+          delivery_street?: string | null;
+          delivery_city?: string | null;
+          delivery_zip?: string | null;
+          delivery_country?: string | null;
+          eph_sheet_id?: string | null;
+          eph_code?: string | null;
+          posted_at?: string | null;
           transfer_due_at?: string | null;
           transfer_reminder_sent_at?: string | null;
           created_at?: string;

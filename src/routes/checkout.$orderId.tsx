@@ -11,6 +11,8 @@ import {
 } from "@/lib/ticketing-db";
 import { submitOrder, startPaymentForOrder, listPaymentGateways } from "@/lib/payments.functions";
 import { previewCoupon } from "@/lib/coupons.functions";
+import { moznostiDorucenia } from "@/lib/dorucenie.functions";
+import { prvaChyba, skontrolujDorucenie } from "@/lib/posta/postovne";
 import { useEvent } from "@/hooks/use-events";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
@@ -30,6 +32,7 @@ import {
   Mail,
   QrCode,
   Check,
+  Truck,
 } from "lucide-react";
 import { VyhladajFirmu } from "@/components/checkout/VyhladajFirmu";
 import { toast } from "sonner";
@@ -62,6 +65,12 @@ function CheckoutPage() {
     phone: "",
     consent: false,
   });
+
+  // Doručenie. Predvolene e-mailom — tak to chce väčšina a je to zadarmo.
+  // Poštu ponúkne až server, a to len keď je nastavená cena aj prístup k pošte.
+  const [dorucenie, setDorucenie] = useState<"email" | "posta">("email");
+  const [postaCena, setPostaCena] = useState<number | null>(null);
+  const [adresa, setAdresa] = useState({ meno: "", ulica: "", mesto: "", psc: "" });
 
   // Firemné údaje na faktúru. Kto nekupuje na firmu, nič z toho nevidí.
   const [naFirmu, setNaFirmu] = useState(false);
@@ -123,6 +132,21 @@ function CheckoutPage() {
     };
   }, [nacitajBrany]);
 
+  const nacitajDorucenie = useServerFn(moznostiDorucenia);
+  useEffect(() => {
+    let zrusene = false;
+    nacitajDorucenie({ data: undefined })
+      .then((r) => {
+        if (!zrusene) setPostaCena(r.posta?.cena ?? null);
+      })
+      .catch(() => {
+        // Keď sa možnosti nenačítajú, zostane e-mail. Vstupenka sa doručí vždy.
+      });
+    return () => {
+      zrusene = true;
+    };
+  }, [nacitajDorucenie]);
+
   // Zľavový kupón. Toto je len náhľad — záväzne ho uplatní až server pri
   // zakladaní objednávky, takže s hodnotami v prehliadači sa nedá hýbať.
   const checkCoupon = useServerFn(previewCoupon);
@@ -156,7 +180,14 @@ function CheckoutPage() {
     }
   };
 
-  const payable = order ? Math.max(0, order.total_amount - (coupon?.discount ?? 0)) : 0;
+  const postaMozna = postaCena !== null;
+  // Poštovné sa nezľavňuje kupónom — presne tak to počíta aj server.
+  const poplatokDorucenia = dorucenie === "posta" && postaCena ? postaCena : 0;
+  const payable = order
+    ? Math.max(0, order.total_amount - (coupon?.discount ?? 0)) + poplatokDorucenia
+    : 0;
+  // Keď je doručenie poštou v hre, platba je tretí krok, nie druhý.
+  const krokPlatby = postaMozna ? 3 : 2;
   const vybrana = brany.find((b) => b.id === brana) ?? null;
   // Sedadlá by objednávka na prevod držala niekoľko dní, preto sa voľba pri
   // sedadlových podujatiach ponúka len keď to prevádzkovateľ povolil.
@@ -172,6 +203,23 @@ function CheckoutPage() {
     if (!form.consent) {
       toast.error("Musíš súhlasiť s obchodnými podmienkami");
       return;
+    }
+    if (dorucenie === "posta") {
+      // Tá istá kontrola beží aj na serveri — tu je len preto, aby zákazník
+      // nemusel čakať na odpoveď, kým zistí, že mu chýba PSČ.
+      const chyba = prvaChyba(
+        skontrolujDorucenie("posta", {
+          meno: adresa.meno,
+          ulica: adresa.ulica,
+          mesto: adresa.mesto,
+          psc: adresa.psc,
+          krajina: "SK",
+        }),
+      );
+      if (chyba) {
+        toast.error(chyba);
+        return;
+      }
     }
     upsertOrder({
       ...order,
@@ -216,6 +264,17 @@ function CheckoutPage() {
           // objednávka videla ako cudzie a odmietla by sa.
           cart_session: getCartSessionId(),
           payment_method: brana === PREVOD ? "transfer" : "gateway",
+          // Cena poštovného sa neposiela — server si ju prečíta z nastavenia.
+          delivery:
+            dorucenie === "posta"
+              ? {
+                  method: "posta" as const,
+                  name: adresa.meno.trim(),
+                  street: adresa.ulica.trim(),
+                  city: adresa.mesto.trim(),
+                  zip: adresa.psc.trim(),
+                }
+              : { method: "email" as const },
         },
       });
 
@@ -407,10 +466,110 @@ function CheckoutPage() {
             </label>
           </Card>
 
+          {postaMozna && (
+            <Card className="p-6 bg-card/60 border-border/50">
+              <h2 className="font-display font-semibold text-lg mb-3">
+                <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs font-bold mr-2">
+                  2
+                </span>
+                Doručenie
+              </h2>
+
+              <div className="space-y-2">
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors",
+                    dorucenie === "email"
+                      ? "border-primary bg-primary/5"
+                      : "border-border/40 hover:border-border",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="dorucenie"
+                    value="email"
+                    checked={dorucenie === "email"}
+                    onChange={() => setDorucenie("email")}
+                    className="mt-1 accent-primary"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium">E-mailom — zadarmo</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Vstupenka s QR kódom príde hneď po zaplatení. Stačí ju mať v telefóne.
+                    </span>
+                  </span>
+                </label>
+
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors",
+                    dorucenie === "posta"
+                      ? "border-primary bg-primary/5"
+                      : "border-border/40 hover:border-border",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="dorucenie"
+                    value="posta"
+                    checked={dorucenie === "posta"}
+                    onChange={() => setDorucenie("posta")}
+                    className="mt-1 accent-primary"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium">
+                      Poštou na adresu — €{postaCena!.toFixed(2)}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      Vytlačené vstupenky doporučene, doručenie 2–4 pracovné dni. Pre istotu ich
+                      dostaneš aj e-mailom.
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              {dorucenie === "posta" && (
+                <div className="grid sm:grid-cols-2 gap-4 mt-4">
+                  <Field label="Meno a priezvisko adresáta" className="sm:col-span-2">
+                    <Input
+                      value={adresa.meno}
+                      onChange={(e) => setAdresa({ ...adresa, meno: e.target.value })}
+                      placeholder="Komu obálku doručiť"
+                    />
+                  </Field>
+                  <Field label="Ulica a číslo" className="sm:col-span-2">
+                    <Input
+                      value={adresa.ulica}
+                      onChange={(e) => setAdresa({ ...adresa, ulica: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Obec">
+                    <Input
+                      value={adresa.mesto}
+                      onChange={(e) => setAdresa({ ...adresa, mesto: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="PSČ">
+                    <Input
+                      value={adresa.psc}
+                      onChange={(e) => setAdresa({ ...adresa, psc: e.target.value })}
+                      placeholder="821 09"
+                    />
+                  </Field>
+                  <p className="sm:col-span-2 text-xs text-muted-foreground inline-flex items-start gap-2">
+                    <Truck className="size-3.5 mt-0.5 shrink-0" />
+                    Posielame len na slovenské adresy. Ak je podujatie do troch dní, radšej si vyber
+                    e-mail — obálka by nemusela doraziť načas.
+                  </p>
+                </div>
+              )}
+            </Card>
+          )}
+
           <Card className="p-6 bg-card/60 border-border/50">
             <h2 className="font-display font-semibold text-lg mb-3">
               <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs font-bold mr-2">
-                2
+                {krokPlatby}
               </span>
               Platba
             </h2>
@@ -586,6 +745,12 @@ function CheckoutPage() {
                   <span>−€{coupon.discount.toFixed(2)}</span>
                 </div>
               </>
+            )}
+            {poplatokDorucenia > 0 && (
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Poštovné</span>
+                <span>€{poplatokDorucenia.toFixed(2)}</span>
+              </div>
             )}
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Spolu</span>
