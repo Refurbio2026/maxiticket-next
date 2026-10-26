@@ -14,6 +14,9 @@
 import { hodnota, polozka } from "@/lib/pristupy.server";
 import type { PolozkaKonfiguracie } from "@/lib/payment-gateways/types";
 import {
+  DRUHY_ZASIELKY,
+  SPOSOBY_UHRADY,
+  VERZIA,
   chybyHarku,
   ephXml,
   fault,
@@ -46,10 +49,11 @@ export function jeEphNastavene(): boolean {
 export function odosielatel(): (AdresaEph & { odosielatelId: string }) | null {
   const ulica = hodnota(PROVIDER, "EPH_ODOSIELATEL_ULICA");
   const mesto = hodnota(PROVIDER, "EPH_ODOSIELATEL_MESTO");
-  const id = hodnota(PROVIDER, "EPH_ODOSIELATEL_ID");
-  if (!ulica || !mesto || !id) return null;
+  if (!ulica || !mesto) return null;
   return {
-    odosielatelId: id,
+    // Technické parametre, príloha 2: „identifikácia podávateľa — používatelia
+    // tento element nevypĺňajú". Posiela sa len tomu, kto ho má prideleny.
+    odosielatelId: hodnota(PROVIDER, "EPH_ODOSIELATEL_ID") ?? "",
     organizacia: hodnota(PROVIDER, "EPH_ODOSIELATEL_FIRMA") || null,
     meno: hodnota(PROVIDER, "EPH_ODOSIELATEL_MENO") || null,
     ulica,
@@ -75,10 +79,13 @@ export function ephStav(): { pripravene: boolean; detail: string } {
       detail: "Prístupy sú, ale chýba adresa odosielateľa alebo jeho ID.",
     };
   }
-  if (!hodnota(PROVIDER, "EPH_DRUH_ZASIELKY") || !hodnota(PROVIDER, "EPH_VERZIA")) {
+  const druh = Number(hodnota(PROVIDER, "EPH_DRUH_ZASIELKY"));
+  if (!druh || !DRUHY_ZASIELKY[druh]) {
     return {
       pripravene: false,
-      detail: "Chýba druh zásielky alebo verzia formátu — čísla sú v prílohe pošty.",
+      detail: `Chýba alebo nesedí druh zásielky. Možnosti: ${Object.entries(DRUHY_ZASIELKY)
+        .map(([k, v]) => `${k} = ${v}`)
+        .join(", ")}.`,
     };
   }
   const test = p.adresa !== PREDVOLENA_ADRESA;
@@ -110,23 +117,28 @@ export function ephKonfiguracia(): PolozkaKonfiguracie[] {
       tajna: true,
     }),
     pol("EPH_BASE_URL", "Adresa služby", `Prázdne = ostrá ${PREDVOLENA_ADRESA}.`),
-    pol(
-      "EPH_VERZIA",
-      "Verzia formátu",
-      "Číslo verzie XML podľa prílohy pošty (atribút `verzia` na prvku EPH).",
-      { povinna: true },
-    ),
+    pol("EPH_VERZIA", "Verzia formátu", `Prázdne = ${VERZIA}, ako uvádzajú technické parametre.`),
     pol(
       "EPH_DRUH_ZASIELKY",
       "Druh zásielky (číslo)",
-      "Číslo z číselníka pošty — napríklad doporučený list alebo balík. V SOAP rozhraní sú to čísla, nie písmená.",
+      Object.entries(DRUHY_ZASIELKY)
+        .map(([k, v]) => `${k} = ${v}`)
+        .join(" · "),
       { povinna: true },
     ),
-    pol("EPH_SPOSOB_UHRADY", "Spôsob úhrady (číslo)", "Nepovinné. Číslo z číselníka pošty."),
-    pol("EPH_TYP", "Typ EPH (číslo)", "Nepovinné. Podľa prílohy pošty."),
-    pol("EPH_ODOSIELATEL_ID", "ID odosielateľa", "Tvoje zákaznícke číslo u pošty.", {
-      povinna: true,
-    }),
+    pol(
+      "EPH_SPOSOB_UHRADY",
+      "Spôsob úhrady (číslo)",
+      `Nepovinné. ${Object.entries(SPOSOBY_UHRADY)
+        .map(([k, v]) => `${k} = ${v}`)
+        .join(" · ")}`,
+    ),
+    pol("EPH_TYP", "Typ EPH (číslo)", "Nepovinné. 1 = podací hárok, 2 = potvrdenie o prijatí."),
+    pol(
+      "EPH_ODOSIELATEL_ID",
+      "ID podávateľa",
+      "Nepovinné — vypĺňa sa, len ak ho pošta pridelila. Štandardne zostáva prázdne.",
+    ),
     pol("EPH_ODOSIELATEL_FIRMA", "Odosielateľ — firma", "Názov, ktorý bude na štítku.", {
       povinna: true,
     }),
@@ -218,8 +230,8 @@ export async function importujHarok(
   if (!zasielky.length) throw new ChybaPosty("Hárok musí obsahovať aspoň jednu zásielku.");
 
   const druh = Number(hodnota(PROVIDER, "EPH_DRUH_ZASIELKY"));
-  const verzia = hodnota(PROVIDER, "EPH_VERZIA") ?? "";
-  if (!druh || !verzia) throw new ChybaPosty("Chýba druh zásielky alebo verzia formátu.");
+  const verzia = hodnota(PROVIDER, "EPH_VERZIA") || VERZIA;
+  if (!druh) throw new ChybaPosty("Chýba druh zásielky — číslo z číselníka pošty.");
 
   const uhrada = Number(hodnota(PROVIDER, "EPH_SPOSOB_UHRADY")) || null;
   const typ = Number(hodnota(PROVIDER, "EPH_TYP")) || null;
@@ -228,7 +240,8 @@ export async function importujHarok(
     verzia,
     mena: "EUR",
     typEph: typ,
-    datum: opts?.datum ?? new Date().toISOString().slice(0, 10),
+    // Pošta chce RRRRMMDD; prevod je v `datumPosty`.
+    datum: opts?.datum,
     druhZasielky: druh,
     sposobUhrady: uhrada,
     odosielatel: od,

@@ -18,6 +18,46 @@
 
 export const NS = "http://mojezasielky.posta.sk/api";
 
+/** Verzia formátu XML podľa technických parametrov pošty. */
+export const VERZIA = "3.0";
+
+/**
+ * Druh zásielky — čísla z číselníka pošty (Technické parametre, príloha 2).
+ * V SOAP rozhraní sú to čísla, nie písmenové kódy ako v ich REST API.
+ */
+export const DRUHY_ZASIELKY: Record<number, string> = {
+  1: "Doporučený list",
+  2: "Poistený list",
+  3: "Úradná zásielka",
+  4: "Balík",
+  8: "Expres kuriér",
+  10: "Expres (EMS)",
+  11: "Expres Economy (EPG)",
+  15: "Easy Expres 1",
+  16: "Easy Expres 10",
+  30: "List",
+  33: "Balíček",
+};
+
+/** Spôsob úhrady výplatného. Číslo 6 v ich číselníku nie je. */
+export const SPOSOBY_UHRADY: Record<number, string> = {
+  1: "Poštovné úverované",
+  2: "Výplatný stroj",
+  3: "Platené prevodom",
+  4: "Poštové známky",
+  5: "Platené v hotovosti",
+  7: "Vec poštovej služby",
+  8: "Faktúra",
+  9: "Online (platba kartou)",
+};
+
+/** Dátum v tvare RRRRMMDD, ako ho pošta očakáva — nie ISO. */
+export function datumPosty(d: Date | string = new Date()): string {
+  const x = typeof d === "string" ? new Date(d) : d;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${x.getFullYear()}${p(x.getMonth() + 1)}${p(x.getDate())}`;
+}
+
 export type AdresaEph = {
   meno?: string | null;
   organizacia?: string | null;
@@ -126,7 +166,7 @@ export function ephXml(h: HarokEph): string {
     prvok("Mena", h.mena ?? "EUR"),
     prvok("TypEPH", h.typEph),
     prvok("EPHID", h.ephId),
-    prvok("Datum", h.datum),
+    prvok("Datum", h.datum ? datumPosty(h.datum) : datumPosty()),
     prvok("PocetZasielok", h.zasielky.length),
     h.sposobUhrady
       ? `<Uhrada>${prvok("SposobUhrady", h.sposobUhrady)}${prvok("SumaUhrady", h.sumaUhrady ?? "0")}</Uhrada>`

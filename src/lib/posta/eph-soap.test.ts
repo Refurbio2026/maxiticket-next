@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { chybyHarku, ephXml, fault, hodnotaPrvku, obalka, xmlText } from "./eph-soap";
+import {
+  DRUHY_ZASIELKY,
+  SPOSOBY_UHRADY,
+  chybyHarku,
+  datumPosty,
+  ephXml,
+  fault,
+  hodnotaPrvku,
+  obalka,
+  xmlText,
+} from "./eph-soap";
 
 const odosielatel = {
   odosielatelId: "1234567",
@@ -123,5 +133,43 @@ describe("čítanie odpovede", () => {
       "Bad credentials",
     );
     expect(fault("<sheetId>1</sheetId>")).toBeNull();
+  });
+});
+
+describe("číselníky a dátum", () => {
+  it("dátum ide v tvare RRRRMMDD, nie ISO", () => {
+    // Pošta ISO tvar neprijme; v technických parametroch je RRRRMMDD.
+    expect(datumPosty(new Date(2026, 9, 5))).toBe("20261005");
+    expect(datumPosty("2026-01-31T10:00:00")).toBe("20260131");
+  });
+
+  it("hárok nesie dátum v tom istom tvare", () => {
+    const xml = ephXml({
+      verzia: "3.0",
+      druhZasielky: 1,
+      datum: "2026-10-26",
+      odosielatel: {
+        odosielatelId: "",
+        organizacia: "MaxiTicket s.r.o.",
+        ulica: "Drevárska 23",
+        mesto: "Pezinok",
+        psc: "90201",
+      },
+      zasielky: [{ adresat: { meno: "Eva", ulica: "Hlavná 1", mesto: "Nitra", psc: "94901" } }],
+    });
+    expect(xml).toContain("<Datum>20261026</Datum>");
+    // Prázdne ID podávateľa sa neposiela — pošta píše, že ho používatelia
+    // nevypĺňajú.
+    expect(xml).not.toContain("<OdosielatelID>");
+  });
+
+  it("čísla druhov zásielok sedia s číselníkom pošty", () => {
+    expect(DRUHY_ZASIELKY[1]).toBe("Doporučený list");
+    expect(DRUHY_ZASIELKY[4]).toBe("Balík");
+    expect(DRUHY_ZASIELKY[8]).toBe("Expres kuriér");
+    expect(DRUHY_ZASIELKY[30]).toBe("List");
+    // Šestka v ich číselníku nie je.
+    expect(SPOSOBY_UHRADY[6]).toBeUndefined();
+    expect(SPOSOBY_UHRADY[9]).toBe("Online (platba kartou)");
   });
 });
