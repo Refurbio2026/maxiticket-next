@@ -32,6 +32,9 @@ import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as EventsIdRouteImport } from './routes/events.$id'
+import { Route as FeedPodujatiaDoticsRouteImport } from './routes/feed.podujatia[.]ics'
+import { Route as FeedPodujatiaDotjsonRouteImport } from './routes/feed.podujatia[.]json'
+import { Route as FeedPodujatiaDotxmlRouteImport } from './routes/feed.podujatia[.]xml'
 import { Route as OSubdomenaRouteImport } from './routes/o.$subdomena'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as OrganizerEventsRouteImport } from './routes/organizer.events'
@@ -228,6 +231,21 @@ const EventsIdRoute = EventsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => EventsRoute,
+} as any)
+const FeedPodujatiaDoticsRoute = FeedPodujatiaDoticsRouteImport.update({
+  id: '/feed/podujatia.ics',
+  path: '/feed/podujatia.ics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedPodujatiaDotjsonRoute = FeedPodujatiaDotjsonRouteImport.update({
+  id: '/feed/podujatia.json',
+  path: '/feed/podujatia.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedPodujatiaDotxmlRoute = FeedPodujatiaDotxmlRouteImport.update({
+  id: '/feed/podujatia.xml',
+  path: '/feed/podujatia.xml',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OSubdomenaRoute = OSubdomenaRouteImport.update({
   id: '/o/$subdomena',
@@ -677,6 +695,9 @@ export interface FileRoutesByFullPath {
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
+  '/feed/podujatia.ics': typeof FeedPodujatiaDoticsRoute
+  '/feed/podujatia.json': typeof FeedPodujatiaDotjsonRoute
+  '/feed/podujatia.xml': typeof FeedPodujatiaDotxmlRoute
   '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
@@ -781,6 +802,9 @@ export interface FileRoutesByTo {
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
+  '/feed/podujatia.ics': typeof FeedPodujatiaDoticsRoute
+  '/feed/podujatia.json': typeof FeedPodujatiaDotjsonRoute
+  '/feed/podujatia.xml': typeof FeedPodujatiaDotxmlRoute
   '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/payouts': typeof OrganizerPayoutsRoute
   '/organizer/profile': typeof OrganizerProfileRoute
@@ -886,6 +910,9 @@ export interface FileRoutesById {
   '/checkout/$orderId': typeof CheckoutOrderIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/events/$id': typeof EventsIdRoute
+  '/feed/podujatia.ics': typeof FeedPodujatiaDoticsRoute
+  '/feed/podujatia.json': typeof FeedPodujatiaDotjsonRoute
+  '/feed/podujatia.xml': typeof FeedPodujatiaDotxmlRoute
   '/o/$subdomena': typeof OSubdomenaRoute
   '/organizer/events': typeof OrganizerEventsRouteWithChildren
   '/organizer/marketing': typeof OrganizerMarketingRouteWithChildren
@@ -994,6 +1021,9 @@ export interface FileRouteTypes {
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
+    | '/feed/podujatia.ics'
+    | '/feed/podujatia.json'
+    | '/feed/podujatia.xml'
     | '/o/$subdomena'
     | '/organizer/events'
     | '/organizer/marketing'
@@ -1098,6 +1128,9 @@ export interface FileRouteTypes {
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
+    | '/feed/podujatia.ics'
+    | '/feed/podujatia.json'
+    | '/feed/podujatia.xml'
     | '/o/$subdomena'
     | '/organizer/payouts'
     | '/organizer/profile'
@@ -1202,6 +1235,9 @@ export interface FileRouteTypes {
     | '/checkout/$orderId'
     | '/checkout/return'
     | '/events/$id'
+    | '/feed/podujatia.ics'
+    | '/feed/podujatia.json'
+    | '/feed/podujatia.xml'
     | '/o/$subdomena'
     | '/organizer/events'
     | '/organizer/marketing'
@@ -1307,6 +1343,9 @@ export interface RootRouteChildren {
   WidgetDotjsRoute: typeof WidgetDotjsRoute
   CheckoutOrderIdRoute: typeof CheckoutOrderIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
+  FeedPodujatiaDoticsRoute: typeof FeedPodujatiaDoticsRoute
+  FeedPodujatiaDotjsonRoute: typeof FeedPodujatiaDotjsonRoute
+  FeedPodujatiaDotxmlRoute: typeof FeedPodujatiaDotxmlRoute
   OSubdomenaRoute: typeof OSubdomenaRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
@@ -1489,6 +1528,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$id'
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof EventsRoute
+    }
+    '/feed/podujatia.ics': {
+      id: '/feed/podujatia.ics'
+      path: '/feed/podujatia.ics'
+      fullPath: '/feed/podujatia.ics'
+      preLoaderRoute: typeof FeedPodujatiaDoticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed/podujatia.json': {
+      id: '/feed/podujatia.json'
+      path: '/feed/podujatia.json'
+      fullPath: '/feed/podujatia.json'
+      preLoaderRoute: typeof FeedPodujatiaDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed/podujatia.xml': {
+      id: '/feed/podujatia.xml'
+      path: '/feed/podujatia.xml'
+      fullPath: '/feed/podujatia.xml'
+      preLoaderRoute: typeof FeedPodujatiaDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/o/$subdomena': {
       id: '/o/$subdomena'
@@ -2269,6 +2329,9 @@ const rootRouteChildren: RootRouteChildren = {
   WidgetDotjsRoute: WidgetDotjsRoute,
   CheckoutOrderIdRoute: CheckoutOrderIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
+  FeedPodujatiaDoticsRoute: FeedPodujatiaDoticsRoute,
+  FeedPodujatiaDotjsonRoute: FeedPodujatiaDotjsonRoute,
+  FeedPodujatiaDotxmlRoute: FeedPodujatiaDotxmlRoute,
   OSubdomenaRoute: OSubdomenaRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,

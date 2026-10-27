@@ -11,7 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Megaphone, Plug } from "lucide-react";
+import { Check, Copy, Loader2, Megaphone, Plug, Rss } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { listCampaigns, listAdAccounts, type CampaignStatus } from "@/lib/marketing.functions";
 
 export const Route = createFileRoute("/admin/marketing")({
@@ -79,6 +81,8 @@ function Page() {
         <Stat label="Minuté" value={eur(spend)} />
         <Stat label="Tržby z kampaní" value={eur(revenue)} />
       </div>
+
+      <Feedy />
 
       <Card className="p-5 bg-card/60 border-border/50">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-3">
@@ -185,6 +189,107 @@ function Page() {
         )}
       </Card>
     </div>
+  );
+}
+
+/**
+ * Adresy, ktorými sa podujatia dostanú na voľnočasové portály.
+ *
+ * Portály typu kamdomesta alebo citylife nemajú zverejnené rozhranie, do
+ * ktorého by sa dalo zapisovať — do katalógu sa podujatia dostanú tak, že im
+ * pošleš odkaz na odoberateľný zdroj. Preto je tu adresa na skopírovanie
+ * a nie tlačidlo „odoslať na portál", ktoré by nemalo kam volať.
+ */
+function Feedy() {
+  const [skopirovane, setSkopirovane] = useState<string | null>(null);
+  const origin = typeof window === "undefined" ? "https://eticketo.eu" : window.location.origin;
+
+  const zdroje = [
+    {
+      cesta: "/feed/podujatia.xml",
+      nazov: "RSS",
+      komu: "Pre portály a čítačky. Toto pošli redakcii portálu — väčšina si vie feed odoberať sama.",
+    },
+    {
+      cesta: "/feed/podujatia.ics",
+      nazov: "iCalendar",
+      komu: "Kalendár na odoberanie. Pridá sa do Google kalendára, Outlooku aj do telefónu.",
+    },
+    {
+      cesta: "/feed/podujatia.json",
+      nazov: "JSON",
+      komu: "Pre portál, ktorý si čítanie napíše sám. Tvar zodpovedá schema.org/Event.",
+    },
+  ];
+
+  const kopiruj = async (adresa: string) => {
+    try {
+      await navigator.clipboard.writeText(adresa);
+      setSkopirovane(adresa);
+      toast.success("Adresa skopírovaná");
+      setTimeout(() => setSkopirovane((s) => (s === adresa ? null : s)), 2000);
+    } catch {
+      // Prehliadač bez prístupu k schránke (alebo bez HTTPS) — adresa je
+      // na obrazovke aj tak, dá sa označiť rukou.
+      toast.error("Schránka nie je dostupná, adresu označ a skopíruj ručne.");
+    }
+  };
+
+  return (
+    <Card className="p-4 sm:p-5 bg-card/60 border-border/50">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1">
+        <Rss className="size-3.5" /> Podujatia pre portály
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Všetky zverejnené podujatia a termíny v predaji, v troch formátoch. Zdroj sa obnovuje sám —
+        nové podujatie sa na portáli objaví pri jeho najbližšom načítaní.
+      </p>
+
+      <div className="space-y-3">
+        {zdroje.map((z) => {
+          const adresa = origin + z.cesta;
+          return (
+            <div
+              key={z.cesta}
+              className="rounded-lg border border-border/40 p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-normal shrink-0">
+                    {z.nazov}
+                  </Badge>
+                  {/* Na telefóne sa dlhá adresa láme, nie posúva do strany. */}
+                  <code className="text-xs font-mono break-all text-muted-foreground">
+                    {z.cesta}
+                  </code>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">{z.komu}</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => kopiruj(adresa)}
+                  className="flex-1 sm:flex-initial"
+                >
+                  {skopirovane === adresa ? (
+                    <Check className="size-3.5 sm:mr-2" />
+                  ) : (
+                    <Copy className="size-3.5 sm:mr-2" />
+                  )}
+                  <span className="sm:inline">Kopírovať</span>
+                </Button>
+                <Button variant="ghost" size="sm" asChild className="flex-1 sm:flex-initial">
+                  <a href={z.cesta} target="_blank" rel="noreferrer">
+                    Otvoriť
+                  </a>
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 

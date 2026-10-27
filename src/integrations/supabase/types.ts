@@ -60,6 +60,7 @@ export type Database = {
           cancelled_at: string | null;
           cancelled_by: string | null;
           category: string;
+          v_exporte: boolean;
           city: string;
           created_at: string;
           description: string | null;
@@ -89,6 +90,7 @@ export type Database = {
           cancelled_at?: string | null;
           cancelled_by?: string | null;
           category: string;
+          v_exporte?: boolean;
           city: string;
           created_at?: string;
           description?: string | null;
@@ -118,6 +120,7 @@ export type Database = {
           cancelled_at?: string | null;
           cancelled_by?: string | null;
           category?: string;
+          v_exporte?: boolean;
           city?: string;
           created_at?: string;
           description?: string | null;

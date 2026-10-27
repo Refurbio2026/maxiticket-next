@@ -1,4 +1,5 @@
 import { notFound, createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { sZonou } from "@/lib/datum-zona";
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -108,28 +109,6 @@ export const Route = createFileRoute("/events/$id")({
   },
   component: EventDetail,
 });
-
-/**
- * Čas s posunom voči UTC. Bez neho si Google čas domyslí a podujatie sa
- * ľuďom v inej zóne ukáže o hodinu inak.
- */
-function sZonou(datum: string, cas: string): string {
-  const hhmm = (cas || "00:00").slice(0, 5);
-  const cely = `${datum}T${hhmm}:00`;
-
-  // Posun voči UTC pre daný dátum: rozdiel medzi tým, čo z rovnakého okamihu
-  // prečíta Bratislava, a tým, čo prečíta UTC. Vyjde +02:00 v lete, +01:00 v zime.
-  const okamih = new Date(`${cely}Z`);
-  const vZone = new Date(okamih.toLocaleString("en-US", { timeZone: "Europe/Bratislava" }));
-  const vUtc = new Date(okamih.toLocaleString("en-US", { timeZone: "UTC" }));
-  const minuty = Math.round((vZone.getTime() - vUtc.getTime()) / 60000);
-  if (!Number.isFinite(minuty)) return cely;
-
-  const znak = minuty < 0 ? "-" : "+";
-  const h = String(Math.floor(Math.abs(minuty) / 60)).padStart(2, "0");
-  const m = String(Math.abs(minuty) % 60).padStart(2, "0");
-  return `${cely}${znak}${h}:${m}`;
-}
 
 /** schema.org/Event — z toho Google skladá kartu podujatia vo vyhľadávaní. */
 function strukturovaneUdaje(e: EventRecord, origin: string) {
