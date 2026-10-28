@@ -73,7 +73,9 @@ if (chybajuce.length) {
 console.log("Priradia sa tieto podujatia:");
 for (const p of podujatia) {
   const uz = p.group_id ? "  (POZOR: už je v inej série)" : "";
-  console.log(`  ${p.d}  ${p.status.padEnd(10)} ${p.city.padEnd(18)} ${p.venue.slice(0, 28).padEnd(30)} ${p.title.slice(0, 34)}${uz}`);
+  console.log(
+    `  ${p.d}  ${p.status.padEnd(10)} ${p.city.padEnd(18)} ${p.venue.slice(0, 28).padEnd(30)} ${p.title.slice(0, 34)}${uz}`,
+  );
 }
 
 const vInej = podujatia.filter((p) => p.group_id);
@@ -90,7 +92,9 @@ const { rows: uzExistuje } = await c.query(
   [slug],
 );
 if (uzExistuje.length) {
-  console.log(`\nSéria s týmto slugom už existuje („${uzExistuje[0].name}") — podujatia sa do nej len priradia.`);
+  console.log(
+    `\nSéria s týmto slugom už existuje („${uzExistuje[0].name}") — podujatia sa do nej len priradia.`,
+  );
 }
 
 if (!NAOSTRO) {
