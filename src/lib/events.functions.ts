@@ -57,6 +57,8 @@ export type EventRecord = {
   /** Séria / festivalový ročník, do ktorého podujatie patrí. */
   group_id?: string;
   group_name?: string;
+  /** Slug série — odkaz na jej verejnú stránku. */
+  group_slug?: string;
   venue_id?: string;
   venue_layout_id?: string;
   base_price?: number;
@@ -71,7 +73,7 @@ function mapEvent(
   tickets: EventTicketType[],
   dates: EventDateSummary[],
   organizerName?: string,
-  groupName?: string,
+  group?: { name: string; slug: string },
 ): EventRecord {
   const opt = <T>(v: unknown): T | undefined =>
     v === null || v === undefined ? undefined : (v as T);
@@ -101,19 +103,24 @@ function mapEvent(
     venue_id: opt<string>(row.venue_id),
     venue_layout_id: opt<string>(row.venue_layout_id),
     group_id: opt<string>(row.group_id),
-    group_name: groupName,
+    group_name: group?.name,
+    group_slug: group?.slug,
     base_price: row.base_price === null ? undefined : Number(row.base_price),
     total_tickets: opt<number>(row.total_tickets),
     vip_price: row.vip_price === null ? undefined : Number(row.vip_price),
   };
 }
 
-/** Názvy skupín pre podujatia — katalóg podľa nich filtruje. */
+/**
+ * Skupiny (série) pre podujatia — katalóg podľa nich filtruje a zoskupuje
+ * turné do jednej karty. Slug je tu preto, aby karta vedela odkázať na
+ * stránku série bez ďalšieho dotazu.
+ */
 async function loadGroupNames(groupIds: (string | null | undefined)[]) {
   const ids = [...new Set(groupIds.filter(Boolean))] as string[];
-  if (ids.length === 0) return new Map<string, string>();
-  const { data } = await supabaseAdmin.from("event_groups").select("id, name").in("id", ids);
-  return new Map((data || []).map((g) => [g.id, g.name]));
+  if (ids.length === 0) return new Map<string, { name: string; slug: string }>();
+  const { data } = await supabaseAdmin.from("event_groups").select("id, name, slug").in("id", ids);
+  return new Map((data || []).map((g) => [g.id, { name: g.name, slug: g.slug }]));
 }
 
 /** Načíta typy lístkov pre zadané podujatia naraz (bez N+1 dotazov). */

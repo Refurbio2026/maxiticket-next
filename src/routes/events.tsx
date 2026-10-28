@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useRouterState, useSearch } from "@tanstack/react-router";
-import { popisTerminov, vRozsahu } from "@/lib/terminy-popis";
+import { den, popisTerminov, rozsah, vRozsahu } from "@/lib/terminy-popis";
+import { pocetMiest, popisMiest, zoskupPodujatia } from "@/lib/serie";
 import { useEffect, useMemo, useState } from "react";
 import { useEvents, type EventRecord } from "@/hooks/use-events";
 import { pocetPodujati } from "@/lib/plural";
@@ -108,6 +109,12 @@ function EventsPage() {
       return true;
     });
   }, [events, q, city, category, group, dateFrom, dateTo, maxPrice]);
+
+  // Turné (to isté predstavenie vo viacerých mestách) je u nás viac podujatí,
+  // lebo termín nemá vlastné miesto. V katalógu z nich robíme jednu kartu —
+  // tri rovnaké karty bez súvislosti vyzerali ako duplicita. Podujatie bez
+  // série sa chová ako doteraz.
+  const polozky = useMemo(() => zoskupPodujatia(filtered, priceOf), [filtered]);
 
   const reset = () => {
     setQ("");
@@ -275,72 +282,80 @@ function EventsPage() {
               </Card>
             ) : (
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                {filtered.map((e) => (
-                  <Card
-                    key={e.id}
-                    className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 hover:shadow-glow transition group"
-                  >
-                    <Link
-                      to="/events/$id"
-                      params={{ id: e.id }}
-                      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                      <div
-                        className="aspect-video bg-muted bg-cover bg-center group-hover:scale-[1.02] transition-transform"
-                        style={e.image_url ? { backgroundImage: `url(${e.image_url})` } : undefined}
-                      />
-                      <div className="p-5 space-y-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
-                          {e.category}
-                        </span>
-                        <h3 className="font-display font-semibold text-lg leading-tight">
-                          {e.title}
-                        </h3>
-                        {/* Pri podujatí s viacerými termínmi rozsah a počet,
+                {polozky.map((item) =>
+                  item.druh === "seria" ? (
+                    <KartaSerie key={item.kluc} s={item} />
+                  ) : (
+                    ((e) => (
+                      <Card
+                        key={e.id}
+                        className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 hover:shadow-glow transition group"
+                      >
+                        <Link
+                          to="/events/$id"
+                          params={{ id: e.id }}
+                          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        >
+                          <div
+                            className="aspect-video bg-muted bg-cover bg-center group-hover:scale-[1.02] transition-transform"
+                            style={
+                              e.image_url ? { backgroundImage: `url(${e.image_url})` } : undefined
+                            }
+                          />
+                          <div className="p-5 space-y-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+                              {e.category}
+                            </span>
+                            <h3 className="font-display font-semibold text-lg leading-tight">
+                              {e.title}
+                            </h3>
+                            {/* Pri podujatí s viacerými termínmi rozsah a počet,
                             nie jeden dátum zo stĺpca podujatia — ten je len
                             najbližší z nich a kupujúci sa z karty nedozvedel,
                             že sa to hrá aj inokedy. Výber termínu je na
                             detaile, tak to robí aj Ticketportal. */}
-                        {(() => {
-                          const kedy = popisTerminov(e.dates, {
-                            event_date: e.event_date,
-                            event_time: e.event_time,
-                          });
-                          return (
-                            <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
-                              <Calendar className="size-3.5 shrink-0" />
-                              <span>{kedy.text}</span>
-                              {kedy.viac && (
-                                <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-medium">
-                                  {kedy.viac}
-                                </span>
-                              )}
+                            {(() => {
+                              const kedy = popisTerminov(e.dates, {
+                                event_date: e.event_date,
+                                event_time: e.event_time,
+                              });
+                              return (
+                                <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+                                  <Calendar className="size-3.5 shrink-0" />
+                                  <span>{kedy.text}</span>
+                                  {kedy.viac && (
+                                    <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-medium">
+                                      {kedy.viac}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <MapPin className="size-3.5" /> {e.venue}, {e.city}
                             </div>
-                          );
-                        })()}
-                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <MapPin className="size-3.5" /> {e.venue}, {e.city}
-                        </div>
-                        <div className="pt-2 flex items-center justify-between">
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">od </span>
-                            <span className="font-display font-bold text-base">
-                              €{priceOf(e).toFixed(2)}
-                            </span>
+                            <div className="pt-2 flex items-center justify-between">
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">od </span>
+                                <span className="font-display font-bold text-base">
+                                  €{priceOf(e).toFixed(2)}
+                                </span>
+                              </div>
+                              <span
+                                className={cn(
+                                  buttonVariants({ size: "sm" }),
+                                  "bg-gradient-flame text-primary-foreground shadow-glow",
+                                )}
+                              >
+                                Kúpiť vstupenky
+                              </span>
+                            </div>
                           </div>
-                          <span
-                            className={cn(
-                              buttonVariants({ size: "sm" }),
-                              "bg-gradient-flame text-primary-foreground shadow-glow",
-                            )}
-                          >
-                            Kúpiť vstupenky
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </Card>
-                ))}
+                        </Link>
+                      </Card>
+                    ))(item.podujatie)
+                  ),
+                )}
               </div>
             )}
           </div>
@@ -348,6 +363,67 @@ function EventsPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+/**
+ * Karta turné. Namiesto dátumu rozsah, namiesto mesta počet miest — a klik
+ * vedie na stránku série so zoznamom predstavení, nie do prvého mesta.
+ */
+function KartaSerie({
+  s,
+}: {
+  s: Extract<ReturnType<typeof zoskupPodujatia<EventRecord>>[number], { druh: "seria" }>;
+}) {
+  const odDo = s.od === s.po ? den(s.od) : rozsah(s.od, s.po);
+  return (
+    <Card className="overflow-hidden bg-card/60 border-border/50 hover:border-primary/40 hover:shadow-glow transition group">
+      <Link
+        to="/seria/$slug"
+        params={{ slug: s.podujatia[0].group_slug ?? "" }}
+        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <div
+          className="aspect-video bg-muted bg-cover bg-center group-hover:scale-[1.02] transition-transform"
+          style={s.obrazok ? { backgroundImage: `url(${s.obrazok})` } : undefined}
+        />
+        <div className="p-5 space-y-2">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+            {s.kategoria}
+          </span>
+          <h3 className="font-display font-semibold text-lg leading-tight">{s.nazov}</h3>
+          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+            <Calendar className="size-3.5 shrink-0" />
+            <span>{odDo}</span>
+            <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-medium">
+              {pocetMiest(s.mesta.length)}
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <MapPin className="size-3.5 shrink-0" />
+            <span className="truncate">{popisMiest(s.mesta)}</span>
+          </div>
+          <div className="pt-2 flex items-center justify-between">
+            <div className="text-sm">
+              {s.cenaOd > 0 && (
+                <>
+                  <span className="text-muted-foreground">od </span>
+                  <span className="font-display font-bold text-base">€{s.cenaOd.toFixed(2)}</span>
+                </>
+              )}
+            </div>
+            <span
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "bg-gradient-flame text-primary-foreground shadow-glow",
+              )}
+            >
+              Vybrať mesto
+            </span>
+          </div>
+        </div>
+      </Link>
+    </Card>
   );
 }
 

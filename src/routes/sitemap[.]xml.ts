@@ -30,9 +30,21 @@ async function handler() {
     .order("updated_at", { ascending: false })
     .limit(5000);
 
+  const { data: serie } = await supabaseAdmin
+    .from("event_groups")
+    .select("slug, updated_at")
+    .eq("active", true)
+    .limit(500);
+
   const polozky = [
     ...staticke.map(
       (cesta) => `  <url><loc>${xml(origin + cesta)}</loc><changefreq>daily</changefreq></url>`,
+    ),
+    ...(serie || []).map(
+      (g) =>
+        `  <url><loc>${xml(`${origin}/seria/${g.slug}`)}</loc>` +
+        `<lastmod>${new Date(g.updated_at).toISOString().slice(0, 10)}</lastmod>` +
+        `<changefreq>daily</changefreq></url>`,
     ),
     ...(podujatia || []).map(
       (e) =>

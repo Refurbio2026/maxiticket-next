@@ -43,6 +43,7 @@ import { Route as OrganizerPayoutsRouteImport } from './routes/organizer.payouts
 import { Route as OrganizerProfileRouteImport } from './routes/organizer.profile'
 import { Route as OrganizerWidgetRouteImport } from './routes/organizer.widget'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as SeriaSlugRouteImport } from './routes/seria.$slug'
 import { Route as AdminDataCategoriesRouteImport } from './routes/admin.data.categories'
 import { Route as AdminDataContentRouteImport } from './routes/admin.data.content'
 import { Route as AdminDataGroupsRouteImport } from './routes/admin.data.groups'
@@ -285,6 +286,11 @@ const OrganizerWidgetRoute = OrganizerWidgetRouteImport.update({
 const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
   path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SeriaSlugRoute = SeriaSlugRouteImport.update({
+  id: '/seria/$slug',
+  path: '/seria/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDataCategoriesRoute = AdminDataCategoriesRouteImport.update({
@@ -705,6 +711,7 @@ export interface FileRoutesByFullPath {
   '/organizer/profile': typeof OrganizerProfileRoute
   '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
+  '/seria/$slug': typeof SeriaSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -810,6 +817,7 @@ export interface FileRoutesByTo {
   '/organizer/profile': typeof OrganizerProfileRoute
   '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
+  '/seria/$slug': typeof SeriaSlugRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -920,6 +928,7 @@ export interface FileRoutesById {
   '/organizer/profile': typeof OrganizerProfileRoute
   '/organizer/widget': typeof OrganizerWidgetRoute
   '/p/$slug': typeof PSlugRoute
+  '/seria/$slug': typeof SeriaSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/data/categories': typeof AdminDataCategoriesRouteWithChildren
@@ -1031,6 +1040,7 @@ export interface FileRouteTypes {
     | '/organizer/profile'
     | '/organizer/widget'
     | '/p/$slug'
+    | '/seria/$slug'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -1136,6 +1146,7 @@ export interface FileRouteTypes {
     | '/organizer/profile'
     | '/organizer/widget'
     | '/p/$slug'
+    | '/seria/$slug'
     | '/admin'
     | '/organizer'
     | '/admin/data/categories'
@@ -1245,6 +1256,7 @@ export interface FileRouteTypes {
     | '/organizer/profile'
     | '/organizer/widget'
     | '/p/$slug'
+    | '/seria/$slug'
     | '/admin/'
     | '/organizer/'
     | '/admin/data/categories'
@@ -1348,6 +1360,7 @@ export interface RootRouteChildren {
   FeedPodujatiaDotxmlRoute: typeof FeedPodujatiaDotxmlRoute
   OSubdomenaRoute: typeof OSubdomenaRoute
   PSlugRoute: typeof PSlugRoute
+  SeriaSlugRoute: typeof SeriaSlugRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   ApiWidgetEventsRoute: typeof ApiWidgetEventsRoute
   CheckoutSuccessOrderIdRoute: typeof CheckoutSuccessOrderIdRoute
@@ -1604,6 +1617,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$slug'
       fullPath: '/p/$slug'
       preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/seria/$slug': {
+      id: '/seria/$slug'
+      path: '/seria/$slug'
+      fullPath: '/seria/$slug'
+      preLoaderRoute: typeof SeriaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/data/categories': {
@@ -2334,6 +2354,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeedPodujatiaDotxmlRoute: FeedPodujatiaDotxmlRoute,
   OSubdomenaRoute: OSubdomenaRoute,
   PSlugRoute: PSlugRoute,
+  SeriaSlugRoute: SeriaSlugRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   ApiWidgetEventsRoute: ApiWidgetEventsRoute,
   CheckoutSuccessOrderIdRoute: CheckoutSuccessOrderIdRoute,
