@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState, useSearch } from "@tanstack/react-router";
+import { popisTerminov, vRozsahu } from "@/lib/terminy-popis";
 import { useEffect, useMemo, useState } from "react";
 import { useEvents, type EventRecord } from "@/hooks/use-events";
 import { pocetPodujati } from "@/lib/plural";
@@ -100,8 +101,9 @@ function EventsPage() {
       if (city !== ALL && e.city !== city) return false;
       if (category !== ALL && e.category !== category) return false;
       if (group !== ALL && e.group_name !== group) return false;
-      if (dateFrom && e.event_date < dateFrom) return false;
-      if (dateTo && e.event_date > dateTo) return false;
+      // Podľa termínov, nie podľa `event_date` — ten je len najbližší z nich,
+      // takže podujatie, ktoré v hľadanom období hrá, podľa neho vypadlo.
+      if (!vRozsahu(e.dates, { event_date: e.event_date }, dateFrom, dateTo)) return false;
       if (maxPrice != null && priceOf(e) > maxPrice) return false;
       return true;
     });
@@ -294,9 +296,28 @@ function EventsPage() {
                         <h3 className="font-display font-semibold text-lg leading-tight">
                           {e.title}
                         </h3>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <Calendar className="size-3.5" /> {e.event_date} · {e.event_time}
-                        </div>
+                        {/* Pri podujatí s viacerými termínmi rozsah a počet,
+                            nie jeden dátum zo stĺpca podujatia — ten je len
+                            najbližší z nich a kupujúci sa z karty nedozvedel,
+                            že sa to hrá aj inokedy. Výber termínu je na
+                            detaile, tak to robí aj Ticketportal. */}
+                        {(() => {
+                          const kedy = popisTerminov(e.dates, {
+                            event_date: e.event_date,
+                            event_time: e.event_time,
+                          });
+                          return (
+                            <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+                              <Calendar className="size-3.5 shrink-0" />
+                              <span>{kedy.text}</span>
+                              {kedy.viac && (
+                                <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-medium">
+                                  {kedy.viac}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <MapPin className="size-3.5" /> {e.venue}, {e.city}
                         </div>
