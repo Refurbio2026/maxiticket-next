@@ -25,6 +25,7 @@ import { systemPodlaId, vsetkyFakturacneSystemy } from "./invoicing/index.server
 import { finstatKonfiguracia, finstatStav } from "./firmy/firmy.server";
 import { asistentKonfiguracia, asistentStav } from "./asistent/klient.server";
 import { ephKonfiguracia, ephStav } from "./posta/eph.server";
+import { meraniaKonfiguracia, meraniaStav } from "./merania/nastavenia.server";
 import { siteUrl } from "./site-url.server";
 import { errorMessage } from "./error-message";
 import { jePovolenaSadzba, predvolenaSadzba, zabudniSadzbu } from "./dph.server";
@@ -40,7 +41,16 @@ const ID_REGISTRA = z.enum(["finstat"]);
 const ID_ASISTENTA = z.enum(["asistent"]);
 // Doručenie poštou — ePodací hárok Slovenskej pošty.
 const ID_DOPRAVY = z.enum(["posta"]);
-const ID_SYSTEMU = z.union([ID_BRANY, ID_FAKTURACIE, ID_REGISTRA, ID_ASISTENTA, ID_DOPRAVY]);
+// Meracie kódy Google a Meta. Tajné nie sú, ale ukladajú sa rovnako.
+const ID_MERANI = z.enum(["merania"]);
+const ID_SYSTEMU = z.union([
+  ID_BRANY,
+  ID_FAKTURACIE,
+  ID_REGISTRA,
+  ID_ASISTENTA,
+  ID_DOPRAVY,
+  ID_MERANI,
+]);
 
 /**
  * Polia, ktoré smie daný systém dostať.
@@ -63,6 +73,12 @@ function systemNaUlozenie(provider: string): { label: string; kluce: Set<string>
     return {
       label: "Slovenská pošta (ePodací hárok)",
       kluce: new Set(ephKonfiguracia().map((k) => k.premenna)),
+    };
+  }
+  if (provider === "merania") {
+    return {
+      label: "Meracie kódy (Google, Meta)",
+      kluce: new Set(meraniaKonfiguracia().map((k) => k.premenna)),
     };
   }
   const system = jeFakturacia(provider) ? systemPodlaId(provider) : branaPodlaId(provider);
@@ -122,6 +138,8 @@ export type PrehladPlatobnychBran = {
   asistent: PrehladRegistra[];
   /** Doručenie poštou. */
   doprava: PrehladRegistra[];
+  /** Meracie kódy Google a Meta. */
+  merania: PrehladRegistra[];
   /** Systém, ktorý práve vystavuje faktúry. */
   fakturacnySystem: string | null;
   /** Predvolená sadzba DPH v percentách. */
@@ -297,6 +315,20 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
       },
     ];
 
+    const stavMerani = meraniaStav();
+    const konfiguraciaMerani = meraniaKonfiguracia();
+    const merania: PrehladRegistra[] = [
+      {
+        id: "merania",
+        label: "Meracie kódy — Google a Meta",
+        hint: "Analytics, Google Ads, Tag Manager a Meta Pixel. Na web sa vkladajú až po súhlase návštevníka s cookies — bez neho sa nespustí nič.",
+        nakonfigurovana: stavMerani.pripravene,
+        stav: stavMerani.detail,
+        konfiguracia: konfiguraciaMerani,
+        chybaju: konfiguraciaMerani.filter((k) => k.povinna && !k.vyplnena).map((k) => k.premenna),
+      },
+    ];
+
     const stavPosty = ephStav();
     const konfiguraciaPosty = ephKonfiguracia();
     const doprava: PrehladRegistra[] = [
@@ -328,6 +360,7 @@ export const getPaymentGatewayOverview = createServerFn({ method: "POST" })
       registre,
       asistent,
       doprava,
+      merania,
       fakturacnySystem: pouzivaSa,
       sadzbaDph: await predvolenaSadzba(),
       adresaWebu,

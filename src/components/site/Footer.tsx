@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { UDALOST_OTVOR } from "@/lib/merania/prehliadac";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listFooterPages } from "@/lib/site-pages.functions";
@@ -70,6 +71,18 @@ export function Footer() {
                     </Link>
                   </li>
                 ))}
+                {/* Súhlas sa musí dať odvolať rovnako ľahko, ako sa dal —
+                    bez tohto odkazu by sa raz prijaté cookies nedali vypnúť. */}
+                {c.titleKey === "footer.company" && (
+                  <li>
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent(UDALOST_OTVOR))}
+                      className="hover:text-foreground transition-colors text-left"
+                    >
+                      Nastavenie cookies
+                    </button>
+                  </li>
+                )}
                 {/* Obsahové stránky patria pod „Spoločnosť". */}
                 {c.titleKey === "footer.company" &&
                   pages.map((p) => (

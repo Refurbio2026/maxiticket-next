@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { KonverziaNakupu } from "@/components/site/KonverziaNakupu";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
@@ -169,6 +170,14 @@ function SuccessPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Konverzia pre Google a Meta. Hlási sa až po súhlase s marketingom
+          a podľa čísla objednávky, takže obnovenie tejto stránky
+          nevyrobí druhý nákup. */}
+      <KonverziaNakupu
+        objednavka={order?.id}
+        suma={order ? Number(order.total_amount) : undefined}
+        mena="EUR"
+      />
       <Navbar />
       <main className="mx-auto max-w-3xl px-4 pt-28 pb-20">
         {!loaded ? (

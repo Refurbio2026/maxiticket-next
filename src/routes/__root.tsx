@@ -1,4 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { SuhlasCookies } from "@/components/site/SuhlasCookies";
+import { Merania } from "@/components/site/Merania";
 import {
   Outlet,
   Link,
@@ -152,6 +154,11 @@ function RootComponent() {
       <Outlet />
       {/* Customer-support chat assistant (hidden on staff screens by the component). */}
       <SupportChat />
+      {/* Súhlas s cookies a vkladanie meracích kódov. V tomto poradí:
+          kým sa návštevník nerozhodne, `Merania` nevloží ani jeden
+          cudzí skript. */}
+      <SuhlasCookies />
+      <Merania />
     </Providers>
   );
 }

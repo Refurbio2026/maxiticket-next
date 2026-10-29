@@ -340,6 +340,29 @@ function PaymentGatewaysPage() {
         ))}
       </div>
 
+      <div>
+        <h2 className="font-display text-xl font-bold tracking-tight mt-6">
+          Meracie kódy — Google a Meta
+        </h2>
+        <p className="text-muted-foreground text-sm mt-1">
+          Analytics, Google Ads, Tag Manager a Meta Pixel pre celý web. Vkladajú sa až po tom, čo
+          návštevník prijme cookies — bez súhlasu sa nespustí nič, ani meranie návštevnosti. Nákup
+          sa hlási ako konverzia s číslom objednávky, takže obnovenie stránky s potvrdením sa
+          nepočíta druhý raz.
+        </p>
+        <p className="text-muted-foreground text-xs mt-2">
+          Pole na vlastný úryvok kódu tu zámerne nie je: kto by sa dostal k jednému adminskému účtu,
+          mal by ľubovoľný JavaScript na celom webe vrátane pokladne. Tvar každého identifikátora sa
+          preto overuje a čo neprejde, na web sa nevloží.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {data.merania.map((m) => (
+          <RegisterKarta key={m.id} register={m} onUlozPristupy={(v) => ulozPristupy(m.id, v)} />
+        ))}
+      </div>
+
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
           {data.predvolenaZPremennej
